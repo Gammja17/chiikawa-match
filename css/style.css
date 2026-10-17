@@ -76,8 +76,8 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; }
 
 #team { padding: 6px 12px 4px; background: #fff; border-bottom: 3px solid #f6dbe5; }
 #party { display: flex; justify-content: space-between; margin-bottom: 5px; }
-#party .pm { position: relative; width: 15%; aspect-ratio: 1; border-radius: 50%; }
-#party .pm img { width: 100%; height: 100%; border-radius: 50%; border: 3px solid var(--ring); }
+#party .pm { position: relative; width: 13%; aspect-ratio: 1; border-radius: 50%; }
+#party .pm img { width: 100%; height: 100%; border-radius: 50%; border: 3px solid var(--ring); background: #fff; object-fit: contain; padding: 2px; }
 #party .pm.attack { animation: hop .35s ease-out; }
 #teamHp .fill { background: var(--team); }
 
@@ -87,11 +87,11 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; }
 .cellbg::after { content: ''; position: absolute; inset: 3px; border-radius: 30%; background: #ffeef4; }
 .tile { position: absolute; left: 0; top: 0; width: var(--s); height: var(--s); padding: 3px; will-change: transform; }
 .tile .inner { position: relative; width: 100%; height: 100%; border-radius: 50%; }
-.tile .inner img { width: 100%; height: 100%; border-radius: 50%; border: calc(var(--s) * .06) solid var(--ring); box-shadow: 0 3px 0 #0002; pointer-events: none; display: block; }
+.tile .inner img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 3px 0 #0002); pointer-events: none; display: block; }
 .tile.sel .inner { animation: pulse .5s infinite; }
-.tile.sel .inner img { box-shadow: 0 0 0 3px #fff, 0 0 0 6px var(--pink-d); }
+.tile.sel .inner img { filter: drop-shadow(0 0 3px #fff) drop-shadow(0 0 5px var(--pink-d)); }
 .tile .inner.rainbow { background: conic-gradient(#ff8fb1, #ffd84d, #8fe38a, #7ec8ff, #c49bff, #ff8fb1); box-shadow: 0 3px 0 #0002, inset 0 0 0 3px #fff; animation: spin 3s linear infinite; }
-.tile .inner.rainbow img { border: 0; box-shadow: none; animation: spin 3s linear infinite reverse; background: transparent; transform: scale(.82); }
+.tile .inner.rainbow .rb { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: calc(var(--s) * .5); color: #fff; text-shadow: 0 2px 0 #0003; animation: spin 3s linear infinite reverse; }
 .mark { position: absolute; inset: 0; pointer-events: none; border-radius: 50%; }
 .mark.h { background: linear-gradient(transparent 38%, #fffc 38% 46%, transparent 46% 54%, #fffc 54% 62%, transparent 62%); }
 .mark.v { background: linear-gradient(90deg, transparent 38%, #fffc 38% 46%, transparent 46% 54%, #fffc 54% 62%, transparent 62%); }

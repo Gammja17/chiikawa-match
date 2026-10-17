@@ -12,13 +12,13 @@
 ## 놀이 방법
 
 - 옆 칸의 얼굴과 자리를 바꿔 같은 얼굴 3개 이상을 맞추면, 그 캐릭터가 몬스터를 공격합니다.
-- 시사를 맞추면 공격 대신 체력을 회복합니다. 우사기는 가끔 치명타("우라!")를 냅니다.
+- 카니를 맞추면 공격 대신 체력을 회복합니다. 우사기는 가끔 치명타("우라!")를 냅니다.
 - 연쇄로 터질수록 피해가 커집니다.
 - 몬스터는 몇 턴마다 반격합니다. 체력이 다 떨어지면 후퇴합니다.
 - 특수 구슬
   - 4개 한 줄: 한 줄을 지우는 줄폭탄
   - L, T 모양: 주변을 터뜨리는 폭탄
-  - 5개 한 줄: 한 캐릭터를 전부 지우는 쿠리만쥬 폭탄
+  - 5개 한 줄: 한 캐릭터를 전부 지우는 무지개 폭탄
   - 특수 구슬끼리 바꾸면 더 큰 효과
 - 스테이지 10개, 남은 체력에 따라 별 1~3개
 
@@ -34,7 +34,7 @@ python -m http.server 8770
 
 ## 저작권과 출처
 
-- 캐릭터, 몬스터 이미지: © nagano / chiikawa committee. [Chiikawa Wiki (Fandom)](https://chiikawa.fandom.com/)에서 가져왔습니다. 이미지의 권리는 원저작자에게 있으며, 이 저장소의 라이선스 대상이 아닙니다.
+- 캐릭터, 몬스터 이미지: © nagano / chiikawa committee. 퍼즐 얼굴은 인터넷에서 모은 이미지, 전신과 몬스터는 [Chiikawa Wiki (Fandom)](https://chiikawa.fandom.com/)에서 가져왔습니다. 이미지의 권리는 원저작자에게 있으며, 이 저장소의 라이선스 대상이 아닙니다.
 - 효과음: [Kenney](https://kenney.nl) Interface Sounds, Digital Audio, Impact Sounds (CC0). 라이선스 원문은 `assets/sfx/LICENSE-kenney.txt`
 - 글꼴: [Jua](https://fonts.google.com/specimen/Jua) (Google Fonts, SIL Open Font License)
 - 게임 코드(`js/`, `css/`, `index.html`): 팬 창작물

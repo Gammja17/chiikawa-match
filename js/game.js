@@ -20,7 +20,8 @@ Save.load();
 const unlockedIdx = () => Math.min(Save.data.stars.length, STAGES.length - 1);
 
 // 이미지 미리 불러오기
-[...CHARS.map(c => FACE(c.id)), ...CHARS.map(c => BODY(c.id)), BODY('kurimanju'), ...Object.values(MONSTERS).map(m => m.img)]
+[...CHARS.map(c => FACE(c.id)),
+  ...['chiikawa', 'hachiware', 'usagi', 'momonga', 'rakko', 'shisa', 'kurimanju'].map(BODY), ...Object.values(MONSTERS).map(m => m.img)]
   .forEach(src => (new Image().src = src));
 
 // ---------- 공통 ----------
@@ -296,7 +297,7 @@ function refreshTile(t) {
   inner.className = 'inner';
   if (t.special === 'rainbow' || t.type < 0) {
     inner.classList.add('rainbow');
-    inner.innerHTML = `<img src="${BODY('kurimanju')}" draggable="false">`;
+    inner.innerHTML = '<span class="rb">★</span>';
     return;
   }
   const ch = CHARS[t.type];
@@ -469,7 +470,7 @@ async function cascade(swapped, forced) {
 async function comboFx(combo) {
   const [r, c] = combo.at;
   const p = tileCenter(r, c);
-  const names = { rainbow: '쿠리만쥬 폭탄!', rainbow2: '쿠리만쥬 대폭발!!', 'bomb+bomb': '대폭발!', 'bomb+h': '크로스 폭발!', 'bomb+v': '크로스 폭발!' };
+  const names = { rainbow: '무지개 폭탄!', rainbow2: '무지개 대폭발!!', 'bomb+bomb': '대폭발!', 'bomb+h': '크로스 폭발!', 'bomb+v': '크로스 폭발!' };
   const label = names[combo.kind] || '크로스!';
   if (combo.converted) Board.each(B.grid, t => t.special && refreshTile(t));
   Sound.play(combo.kind.startsWith('rainbow') ? 'rainbow' : 'special', 1);
