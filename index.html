@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>치이카와 토벌 퍼즐 (팬게임)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+
+  <section id="title" class="screen active">
+    <div class="title-sky">
+      <h1>치이카와<br><span>토벌 퍼즐</span></h1>
+      <div id="titleParty" class="title-party"></div>
+      <button id="btnStart" class="big-btn">토벌 시작!</button>
+      <p class="credit">비공식 팬게임 · 캐릭터 © nagano / chiikawa committee<br>이미지 출처 Chiikawa Wiki · 효과음 Kenney (CC0)</p>
+    </div>
+  </section>
+
+  <section id="map" class="screen">
+    <header class="bar">
+      <button class="icon-btn" id="btnMapHome">⌂</button>
+      <div class="bar-title">토벌 지도</div>
+      <button class="icon-btn btn-mute">♪</button>
+    </header>
+    <div id="mapScroll"><div id="mapPath"></div></div>
+  </section>
+
+  <section id="battle" class="screen">
+    <header class="bar">
+      <button class="icon-btn" id="btnBack">◀</button>
+      <div class="bar-title"><span id="stageName"></span><small id="waveInfo"></small></div>
+      <button class="icon-btn btn-mute">♪</button>
+    </header>
+    <div id="arena">
+      <div id="monsterWrap">
+        <div id="monName"></div>
+        <div id="monHp" class="hp"><div class="fill"></div><span></span></div>
+        <div id="monSprite"><img id="monster" alt=""></div>
+        <div id="countdown"></div>
+      </div>
+    </div>
+    <div id="team">
+      <div id="party"></div>
+      <div id="teamHp" class="hp"><div class="fill"></div><span></span></div>
+    </div>
+    <div id="boardWrap"><div id="board"></div></div>
+  </section>
+
+  <div id="story" class="overlay">
+    <div class="story-box">
+      <img id="storyChar" alt="">
+      <div class="story-text">
+        <div id="storyName"></div>
+        <div id="storyLine"></div>
+        <div class="story-next">▼</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal" class="overlay">
+    <div class="modal-card">
+      <h2 id="modalTitle"></h2>
+      <div id="modalStars" class="stars"></div>
+      <img id="modalChar" alt="">
+      <p id="modalText"></p>
+      <div class="modal-btns">
+        <button id="modalBtn2" class="big-btn ghost"></button>
+        <button id="modalBtn1" class="big-btn"></button>
+      </div>
+    </div>
+  </div>
+
+  <div id="fx"></div>
+  <div id="flash"></div>
+</div>
+<script src="js/data.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/board.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
