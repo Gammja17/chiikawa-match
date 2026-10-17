@@ -21,7 +21,8 @@ const unlockedIdx = () => Math.min(Save.data.stars.length, STAGES.length - 1);
 
 // 이미지 미리 불러오기
 [...CHARS.map(c => FACE(c.id)),
-  ...['chiikawa', 'hachiware', 'usagi', 'momonga', 'rakko', 'shisa', 'kurimanju'].map(BODY), ...Object.values(MONSTERS).map(m => m.img)]
+  ...['chiikawa', 'hachiware', 'usagi', 'momonga', 'rakko', 'shisa', 'kurimanju'].map(BODY), ...Object.values(MONSTERS).map(m => m.img),
+  ...['h', 'v', 'bomb', 'rainbow', 'boom', 'sparkle'].map(ITEM)]
   .forEach(src => (new Image().src = src));
 
 // ---------- 공통 ----------
@@ -297,12 +298,14 @@ function refreshTile(t) {
   inner.className = 'inner';
   if (t.special === 'rainbow' || t.type < 0) {
     inner.classList.add('rainbow');
-    inner.innerHTML = '<span class="rb">★</span>';
+    inner.innerHTML = `<img src="${ITEM('rainbow')}" draggable="false">`;
     return;
   }
   const ch = CHARS[t.type];
   inner.style.setProperty('--ring', ch.ring);
-  inner.innerHTML = `<img src="${FACE(ch.id)}" draggable="false">` + (t.special ? `<div class="mark ${t.special}"></div>` : '');
+  inner.classList.toggle('special', !!t.special);
+  inner.innerHTML = `<img src="${FACE(ch.id)}" draggable="false">` +
+    (t.special ? `<img class="badge ${t.special}" src="${ITEM(t.special)}" draggable="false">` : '');
 }
 
 function buildParty() {
@@ -501,6 +504,7 @@ function effectFx(ef) {
     const p = tileCenter(ef.r, ef.c);
     const ring = addFx('ring', p.x, p.y);
     ring.animate([{ width: '0px', height: '0px', opacity: 1 }, { width: S * 5 + 'px', height: S * 5 + 'px', opacity: 0 }], { duration: 420, easing: 'ease-out' }).finished.then(() => ring.remove());
+    fxImage('boom', p.x, p.y, S * 2.4, 420);
     shake(7, 280);
     flash('#fff6a8', 0.3);
   } else if (ef.kind === 'rainbow') {
@@ -606,7 +610,24 @@ async function stepFx(res, combo) {
     const p = tileCenter(r, c);
     burst(p.x, p.y, '#ffffff', 10);
     Sound.play('special', 1.1, 0.8);
+    const LABEL = { h: '줄폭탄!', v: '줄폭탄!', bomb: '폭탄!', rainbow: '무지개 폭탄!' };
+    floatNum(p.x, p.y - B.S * 0.4, LABEL[tile.special], '#f07ea6');
+    fxImage('sparkle', p.x, p.y, B.S * 1.6, 500);
   });
+}
+
+// 아이템 그림을 화면 한 곳에 크게 띄웠다가 사라지게
+function fxImage(name, x, y, size, dur) {
+  const im = new Image();
+  im.src = ITEM(name);
+  im.className = 'fximg';
+  Object.assign(im.style, { left: x + 'px', top: y + 'px', width: size + 'px' });
+  fx.appendChild(im);
+  im.animate([
+    { transform: 'translate(-50%,-50%) scale(.2)', opacity: 1 },
+    { transform: 'translate(-50%,-50%) scale(1.1)', opacity: 1, offset: 0.4 },
+    { transform: 'translate(-50%,-50%) scale(1.3)', opacity: 0 },
+  ], { duration: dur, easing: 'ease-out' }).finished.then(() => im.remove());
 }
 
 function hitMonster(dmg, ch, crit, k) {

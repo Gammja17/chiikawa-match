@@ -3,13 +3,14 @@ const CHARS = [
   { id: 'chiikawa',  name: '치이카와', ring: '#f7a8c4', dmg: 10, line: '…!' },
   { id: 'hachiware', name: '하치와레', ring: '#6fa8dc', dmg: 10, line: '할 수 있어!' },
   { id: 'usagi',     name: '우사기',   ring: '#ffd84d', dmg: 9,  crit: 0.3, line: '우라!' },
-  { id: 'momonga',   name: '모몽가',   ring: '#8fd3ea', dmg: 11, line: '칭찬해줘!' },
+  { id: 'momonga',   name: '모몽가',   ring: '#b99cf0', dmg: 11, line: '칭찬해줘!' },
   { id: 'rakko',     name: '랏코',     ring: '#a9a9a9', dmg: 13, line: '…간다.' },
-  { id: 'kani',      name: '카니',     ring: '#f4a3a8', heal: 4, line: '힘내!' },
-  { id: 'kurimanju', name: '쿠리만쥬', ring: '#c99a6b', dmg: 12, line: '……(캬아)' },
+  { id: 'kani',      name: '카니',     ring: '#ff9f5a', heal: 4, line: '힘내!' },
+  { id: 'kurimanju', name: '쿠리만쥬', ring: '#a6d96a', dmg: 12, line: '……(캬아)' },
 ];
 const FACE = id => `assets/img/faces/${id}.png`;
 const BODY = id => `assets/img/chars/${id}.png`;
+const ITEM = name => `assets/img/items/${name}.png`;
 
 const MONSTERS = {
   chimera:   { name: '키메라',   img: 'assets/img/monsters/chimera.png' },
@@ -38,6 +39,7 @@ const STORY = {
     ['chiikawa', '(끄덕끄덕…)'],
     ['usagi', '우라~!'],
     ['hachiware', '같은 얼굴을 셋 맞추면 그 친구가 공격해. 카니는 회복이야!'],
+    ['hachiware', '4개는 ↔줄폭탄, L이나 T 모양은 💣폭탄, 5개는 🌈무지개 폭탄이 생겨!'],
   ],
   2: [
     ['momonga', '저 상자, 수상해. 내가 먼저 찾았으니까 칭찬해줘!'],
