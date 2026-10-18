@@ -600,7 +600,7 @@ function refreshTile(t) {
   if (t.special || t.type < 0) {
     const sp = t.special || 'rainbow';
     inner.classList.add('item', sp);
-    // 줄폭탄은 토벌봉 하나가 터질 방향으로 누워 있음 (가로: 갈래가 오른쪽 / 세로: 갈래가 위)
+    // 줄폭탄은 랏코 검 하나가 터질 방향으로 누워 있음 (가로: 칼끝이 오른쪽 / 세로: 칼끝이 위)
     inner.innerHTML = sp === 'h' || sp === 'v'
       ? `<i class="axis"></i><img class="sp" src="${ITEM('rocket')}" draggable="false">`
       : `<img src="${ITEM(ITEM_ICON[sp] || sp)}" draggable="false">`;
@@ -895,7 +895,9 @@ const settleAll = dur => {
 };
 
 // ---------- 콤보: 연쇄가 이어지는 동안 한 덩어리로 쾅쾅 커지고, 끝나면 톡 튀어 사라짐 ----------
-const COMBO_WORDS = ['', '', '좋아!', '멋져!', '굉장해!', '대단해!!'];
+// 콤보 글자는 그림으로 (숫자 + '콤보' + 칭찬 한마디)
+const CIMG = n => `assets/img/combo/${n}.png`;
+const COMBO_WORDS = ['', '', 'w_good', 'w_nice', 'w_great', 'w_amazing'];
 const Combo = {
   el: null,
   show(n) {
@@ -903,13 +905,15 @@ const Combo = {
     if (!this.el) {
       const b = boardEl.getBoundingClientRect(), a = app.getBoundingClientRect();
       this.el = addFx('combo', b.left - a.left + b.width / 2, b.top - a.top + b.height * 0.28);
-      this.el.innerHTML = '<i class="rays"></i><b></b><small></small>';
+      this.el.innerHTML = `<i class="rays"></i><div class="crow"><span class="cnum"></span><img class="cword" src="${CIMG('w_combo')}"></div><img class="cpraise">`;
     }
     const el = this.el;
     el.style.setProperty('--hue', col);
     el.style.setProperty('--rs', 0.8 + Math.min(n, 8) * 0.15); // 뒤 햇살 크기
-    el.querySelector('b').textContent = `${n} 콤보!`;
-    el.querySelector('small').textContent = COMBO_WORDS[n] ?? '최고야!!!';
+    el.querySelector('.cnum').innerHTML = String(n).split('').map(d => `<img src="${CIMG('d' + d)}">`).join('');
+    const w = COMBO_WORDS[n] ?? 'w_best', pr = el.querySelector('.cpraise');
+    pr.hidden = !w;
+    if (w) pr.src = CIMG(w);
     el.animate([
       { transform: `translate(-50%,-50%) scale(${s * 1.5}) rotate(${n % 2 ? -8 : 8}deg)` },
       { transform: `translate(-50%,-50%) scale(${s * 0.9}) rotate(0)`, offset: 0.55 },
@@ -968,12 +972,27 @@ async function mergeFx(ta, tb, at) {
   kp('flare_01', p.x, p.y, B.S * 4, '#ffffff', [{ transform: 'scale(.3)', opacity: 1 }, { transform: 'scale(1.3)', opacity: 0 }], { duration: 320 });
 }
 
+// 합체 아이템 그림: 합친 자리에서 크게 튀어나왔다가 사라짐 (글자 대신)
+const COMBO_ART = { rainbow: 'dango_any', rainbow2: 'dango_dango', 'bomb+bomb': 'bomb_bomb', 'bomb+h': 'bomb_sword', 'bomb+v': 'bomb_sword',
+  'h+h': 'sword_sword', 'h+v': 'sword_sword', 'v+v': 'sword_sword', 'plane+plane': 'plane_plane', 'bomb+plane': 'bomb_plane', 'h+plane': 'sword_plane', 'plane+v': 'sword_plane' };
+[...Object.values(COMBO_ART), 'w_combo', 'w_good', 'w_nice', 'w_great', 'w_amazing', 'w_best', ...'0123456789'.split('').map(d => 'd' + d)]
+  .forEach(n => (new Image().src = CIMG(n)));
+function comboArt(kind, p) {
+  const el = addFx('combo-art', p.x, p.y);
+  el.style.width = B.S * 2.6 + 'px';
+  el.innerHTML = `<img src="${CIMG(COMBO_ART[kind] || 'sword_sword')}">`;
+  el.animate([
+    { transform: 'translate(-50%,-50%) scale(.2) rotate(-25deg)', opacity: 0 },
+    { transform: 'translate(-50%,-50%) scale(1.25) rotate(6deg)', opacity: 1, offset: 0.25 },
+    { transform: 'translate(-50%,-50%) scale(1) rotate(0)', opacity: 1, offset: 0.4 },
+    { transform: 'translate(-50%,-50%) scale(1.04) rotate(0)', opacity: 1, offset: 0.75 },
+    { transform: 'translate(-50%,-50%) scale(1.5)', opacity: 0 },
+  ], { duration: 900, easing: 'ease-out' }).finished.then(() => el.remove());
+}
+
 async function comboFx(combo) {
   const [r, c] = combo.at;
   const p = tileCenter(r, c);
-  const names = { rainbow: '경단 대잔치!', rainbow2: '경단 대폭발!!', 'bomb+bomb': '대폭발!', 'bomb+h': '크로스 쾅!', 'bomb+v': '크로스 쾅!',
-    'plane+plane': '종이비행기 편대!', 'bomb+plane': '폭탄 배달!', 'h+plane': '토벌봉 배달!', 'plane+v': '토벌봉 배달!' };
-  const label = names[combo.kind] || '크로스!';
   Juice.zoom(p.x, p.y, combo.kind.startsWith('rainbow') || combo.kind === 'bomb+bomb' ? 1.12 : 1.07);
   if (combo.converted) Board.each(B.grid, t => t.special && refreshTile(t));
   Sound.play(combo.kind.startsWith('rainbow') ? 'rainbow' : 'special', 1);
@@ -981,7 +1000,7 @@ async function comboFx(combo) {
   shake(8, 350);
   const ring = addFx('ring', p.x, p.y);
   ring.animate([{ width: '0px', height: '0px', opacity: 1 }, { width: B.S * 8 + 'px', height: B.S * 8 + 'px', opacity: 0 }], { duration: 500, easing: 'ease-out' }).finished.then(() => ring.remove());
-  banner(label, 350);
+  comboArt(combo.kind, p);
   await sleep(250);
   if (combo.planes) {
     await Promise.all(combo.planes.map(tg => planeFly(p, tileCenter(tg[0], tg[1]), combo.carry, 620)));

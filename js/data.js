@@ -72,8 +72,8 @@ const attrMult = (atk, def) => ((atk === 'light' && def === 'dark') || (atk === 
 const FACE = id => `assets/img/faces/${id}.png`;
 const BODY = id => `assets/img/chars/${id}.png`;
 const TILE = id => `assets/img/tiles/${id}.png`;
-// 아이템은 치이카와 원작 도구로: 줄폭탄=토벌봉, 폭탄=동글 폭탄, 무지개=경단, 비행기=종이비행기 (VARCO로 그림)
-const ITEM_ALIAS = { rocket: 'stick', bomb: 'bombball', rainbow: 'dango3', plane: 'paperplane' };
+// 아이템은 치이카와 원작 도구로: 줄폭탄=랏코 검, 폭탄=동글 폭탄, 무지개=경단, 비행기=종이비행기 (VARCO로 그림)
+const ITEM_ALIAS = { rocket: 'sword', bomb: 'bombball', rainbow: 'dango3', plane: 'paperplane' };
 const ITEM = name => `assets/img/items/${ITEM_ALIAS[name] || name}.png`;
 // 전신 그림이 없는 캐릭터는 얼굴로
 const NO_BODY = new Set(['kani', 'shooting', 'darkstar', 'goblin', 'beetle']);
@@ -112,7 +112,7 @@ const STORY = {
     ['hachiware', '토벌 게시판에 새 의뢰가 붙었어! 괴물을 쓰러뜨리면 보수를 받을 수 있대.'],
     ['chiikawa', '(끄덕끄덕…)'],
     ['usagi', '우-라-!'],
-    ['hachiware', '같은 얼굴 셋을 맞추면 그 친구가 공격해. 넷이면 토벌봉, L이나 T는 폭탄, 다섯이면 경단!'],
+    ['hachiware', '같은 얼굴 셋을 맞추면 그 친구가 공격해. 넷이면 랏코 검, L이나 T는 폭탄, 다섯이면 경단!'],
   ],
   2: [
     ['momonga', '저 상자 내가 먼저 찾았어! 안에 든 건 전부 내 거야. 알았지?'],
