@@ -17,12 +17,16 @@ const Save = {
   save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(this.data)); } catch {} },
 };
 Save.load();
-const unlockedIdx = () => Math.min(Save.data.stars.length, STAGES.length - 1);
+// 지도 탭: 토벌(battle) / 일상(life)
+let mapMode = 'battle';
+const mapList = () => (mapMode === 'life' ? LIFE : STAGES);
+const mapStars = () => (mapMode === 'life' ? (Save.data.life = Save.data.life || []) : Save.data.stars);
+const unlockedIdx = () => Math.min(mapStars().length, mapList().length - 1);
 
 // 이미지 미리 불러오기
 [...CHARS.map(c => FACE(c.id)), ...CHARS.map(c => TILE(c.id)),
   ...['chiikawa', 'hachiware', 'usagi', 'momonga', 'rakko', 'shisa', 'kurimanju'].map(BODY), ...Object.values(MONSTERS).map(m => m.img),
-  ...['h', 'v', 'bomb', 'rainbow', 'boom', 'sparkle'].map(ITEM)]
+  ...['h', 'v', 'bomb', 'rainbow', 'boom', 'sparkle', 'plane', 'box', 'gift', 'bubble', 'weed1', 'weed2'].map(ITEM)]
   .forEach(src => (new Image().src = src));
 
 // ---------- 공통 ----------
@@ -122,7 +126,11 @@ const NODE_GAP = 108, NODE_TOP = 160;
 const nodePos = (i, W) => ({ x: (0.5 + Math.sin(i * 1.15) * 0.28) * W, y: NODE_TOP + i * NODE_GAP });
 
 function openMap(advanceFrom = null) {
+  Life.stopTimer();
   show('map');
+  document.querySelectorAll('.map-tabs button').forEach(b => b.classList.toggle('on', b.dataset.m === mapMode));
+  $('#mapTitle').textContent = mapMode === 'life' ? '일상 지도' : '토벌 지도';
+  const STAGES = mapList();
   Sound.music('map');
   $('#btnRamen').classList.toggle('on', Save.data.ramen !== false);
   const path = $('#mapPath');
@@ -142,17 +150,18 @@ function openMap(advanceFrom = null) {
   STAGES.forEach((st, i) => {
     const n = document.createElement('button');
     const locked = i > cur;
-    const boss = st.waves.some(w => w.boss);
+    const boss = st.waves?.some(w => w.boss);
     n.className = 'node' + (locked ? ' locked' : '') + (boss ? ' boss' : '') + (i === cur ? ' current' : '');
     n.style.left = pts[i].x + 'px';
     n.style.top = pts[i].y + 'px';
-    const s = Save.data.stars[i] || 0;
+    const s = mapStars()[i] || 0;
     n.innerHTML = `${locked ? '🔒' : boss ? '👹' : i + 1}<span class="nname">${st.name}</span>` +
+      (st.icon && !locked ? `<img class="nicon" src="${ITEM(st.icon)}">` : '') +
       (s ? `<span class="nstars">${'★'.repeat(s)}${'☆'.repeat(3 - s)}</span>` : '');
     n.onclick = () => {
       if (locked) { Sound.play('bad'); n.animate([{ transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' }, { transform: 'none' }], { duration: 200 }); return; }
       Sound.play('click');
-      go(() => openFormation(i));
+      go(() => (mapMode === 'life' ? Life.start(i) : openFormation(i)));
     };
     path.appendChild(n);
   });
@@ -182,6 +191,12 @@ function openMap(advanceFrom = null) {
     scroller.scrollTop = goal.y - scroller.clientHeight / 2;
   }
 }
+document.querySelectorAll('.map-tabs button').forEach(b => (b.onclick = () => {
+  if (mapMode === b.dataset.m) return;
+  Sound.play('pop', 1.2, 0.6);
+  mapMode = b.dataset.m;
+  openMap();
+}));
 $('#btnMapHome').onclick = () => { Sound.play('click'); go(() => show('title')); };
 
 // ---------- 스토리 ----------
@@ -252,7 +267,7 @@ function modal({ title, stars = null, char, img = null, photo = false, rows = []
 }
 
 // ---------- 전투 ----------
-const B = { team: [], gauge: [], grid: null, stage: 0, wave: 0, monHp: 0, monMax: 0, cd: 0, teamHp: 120, teamMax: 120, busy: true, over: false, sel: null, S: 56, pending: [] };
+const B = { mode: 'battle', team: [], gauge: [], grid: null, stage: 0, wave: 0, monHp: 0, monMax: 0, cd: 0, teamHp: 120, teamMax: 120, busy: true, over: false, sel: null, S: 56, pending: [] };
 const curWave = () => STAGES[B.stage].waves[B.wave];
 // 구슬 type(편성 순번) → 캐릭터
 const teamCh = type => CHARS[B.team[type]];
@@ -271,9 +286,22 @@ function layoutBoard() {
       boardEl.appendChild(d);
     }
   }
+  renderFloor();
   if (B.grid) Board.each(B.grid, (t, r, c) => t.el && place(t, r, c));
 }
 window.addEventListener('resize', () => { if ($('#battle').classList.contains('active')) layoutBoard(); });
+
+// 칸 바닥: 잡초 겹 수, 재료 나가는 곳
+function renderFloor() {
+  const cells = boardEl.querySelectorAll('.cellbg');
+  const exit = B.mode === 'life' && Life.hasIng();
+  cells.forEach((d, i) => {
+    const [r, c] = unkey(i), w = Board.floor?.[r][c] || 0;
+    const out = hole(r, c);
+    const bottom = !out && (r === ROWS - 1 || hole(r + 1, c));
+    d.className = 'cellbg' + (out ? ' void' : '') + (w ? ' weed w' + w : '') + (exit && bottom ? ' exit' : '');
+  });
+}
 
 const tf = (r, c) => `translate(${c * B.S}px,${r * B.S}px)`;
 function place(t, r, c) { t.el.style.transform = tf(r, c); }
@@ -305,6 +333,16 @@ function makeTile(t) {
 function refreshTile(t) {
   const inner = t.inner;
   inner.className = 'inner';
+  if (t.block) {
+    inner.classList.add('block', t.block);
+    inner.innerHTML = `<img src="${ITEM(t.block === 'bubble' ? 'bubble' : t.hp >= 2 ? 'gift' : 'box')}" draggable="false">`;
+    return;
+  }
+  if (t.type === ING) {
+    inner.classList.add('ing');
+    inner.innerHTML = `<img src="${ITEM(t.ing)}" draggable="false">`;
+    return;
+  }
   if (t.special === 'rainbow' || t.type < 0) {
     inner.classList.add('rainbow');
     inner.innerHTML = `<img src="${ITEM('rainbow')}" draggable="false">`;
@@ -371,6 +409,11 @@ function spawnMonster(animated) {
 }
 
 async function startStage(i) {
+  B.mode = 'battle';
+  app.classList.remove('life-mode');
+  Board.floor = null;
+  Board.mask = null;
+  Board.spawnIng = null;
   B.stage = i; B.wave = 0; B.over = false; B.busy = true; B.sel = null; B.pending = [];
   B.teamHp = B.teamMax = Save.data.buff === 'hp' ? 150 : 120;
   B.fever = 0;
@@ -390,7 +433,12 @@ async function startStage(i) {
   spawnMonster(false);
   updateTeam();
   if (STORY[i] && Save.data.stars[i] == null) await playStory(STORY[i]);
-  // 판 떨어지며 등장
+  await dropIn('토벌 시작!');
+  B.busy = false;
+}
+
+// 판 떨어지며 등장
+async function dropIn(text) {
   const ps = [];
   Board.each(B.grid, (t, r, c) => {
     makeTile(t);
@@ -398,10 +446,9 @@ async function startStage(i) {
     ps.push(slide(t, r, c, 420, 'cubic-bezier(.5,0,1,1)', c * 35 + (ROWS - r) * 25).then(() => squish(t)));
   });
   setTimeout(() => Sound.play('land', 1, 0.4), 450);
-  banner('토벌 시작!');
+  banner(text);
   Sound.play('jingle_start', 1, 0.8);
   await Promise.all(ps);
-  B.busy = false;
 }
 $('#btnBack').onclick = () => { if (B.busy && !B.over) return; Sound.play('click'); go(openMap); };
 
@@ -414,6 +461,7 @@ function cellAt(e) {
 }
 function setSel(cell) {
   clearSel();
+  if (!movable(B.grid[cell[0]][cell[1]])) return;
   B.sel = cell;
   B.grid[cell[0]][cell[1]].el.classList.add('sel');
   Sound.play('click', 1.4, 0.4);
@@ -437,7 +485,8 @@ boardEl.addEventListener('pointermove', e => {
   const [r, c] = down.cell;
   const to = Math.abs(dx) > Math.abs(dy) ? [r, c + Math.sign(dx)] : [r + Math.sign(dy), c];
   clearSel();
-  if (inside(to[0], to[1])) trySwap(down.cell, to);
+  if (inside(to[0], to[1]) && movable(B.grid[to[0]][to[1]])) trySwap(down.cell, to);
+  else if (B.grid[r][c]?.special) activate(down.cell); // 벽이나 장애물 쪽으로 밀어도 제자리에서 발동
 });
 boardEl.addEventListener('pointerup', () => {
   if (!down) return;
@@ -447,7 +496,11 @@ boardEl.addEventListener('pointerup', () => {
   if (B.sel) {
     const [r, c] = B.sel, [r2, c2] = d.cell;
     if (Math.abs(r - r2) + Math.abs(c - c2) === 1) { clearSel(); trySwap([r, c], [r2, c2]); return; }
-    if (r === r2 && c === c2) { clearSel(); return; }
+    if (r === r2 && c === c2) {
+      clearSel();
+      if (B.grid[r][c]?.special) activate([r, c]); // 아이템은 두 번 톡톡 누르면 발동
+      return;
+    }
   }
   setSel(d.cell);
 });
@@ -455,14 +508,17 @@ boardEl.addEventListener('pointercancel', () => (down = null));
 
 async function trySwap(a, b) {
   if (B.busy || B.over) return;
-  B.busy = true;
   const g = B.grid;
   const ta = g[a[0]][a[1]], tb = g[b[0]][b[1]];
+  if (!movable(ta) || !movable(tb)) return;
+  B.busy = true;
   Sound.play('swap', 1.15);
   Board.swap(g, a, b);
   await Promise.all([slide(ta, b[0], b[1], 100, 'cubic-bezier(.3,.7,.4,1)'), slide(tb, a[0], a[1], 100, 'cubic-bezier(.3,.7,.4,1)')]);
   const combo = Board.swapCombo(g, a, b);
-  if (!combo && !Board.findRuns(g).length) {
+  // 밀어서 옮긴 아이템은 매치가 없어도 그 자리에서 발동 (꿈의집처럼)
+  const items = combo ? [] : [[b, ta], [a, tb]].filter(([, t]) => t.special).map(([p]) => p);
+  if (!combo && !items.length && !Board.findRuns(g).length) {
     Sound.play('bad', 1.2, 0.7);
     Board.swap(g, a, b);
     await Promise.all([
@@ -473,10 +529,29 @@ async function trySwap(a, b) {
     return;
   }
   if (combo) await comboFx(combo);
-  await cascade([a, b], combo ? combo.cells : []);
+  await cascade([a, b], combo ? combo.cells : items);
   await endTurn();
   if (!B.over) B.busy = false;
 }
+
+// 아이템 하나를 제자리에서 터뜨림 (한 턴 씀)
+async function activate([r, c]) {
+  const t = B.grid[r][c];
+  if (B.busy || B.over || !t?.special) return;
+  B.busy = true;
+  clearSel();
+  Sound.play('click', 1.6, 0.5);
+  await t.inner.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.35)' }, { transform: 'scale(1.1)' }], { duration: 140, easing: 'ease-out' }).finished;
+  await cascade(null, [[r, c]]);
+  await endTurn();
+  if (!B.over) B.busy = false;
+}
+
+const settleAll = dur => {
+  const ps = [];
+  Board.each(B.grid, (t, r, c) => ps.push(slide(t, r, c, dur, 'cubic-bezier(.3,1.4,.6,1)')));
+  return Promise.all(ps);
+};
 
 // ---------- 연쇄 ----------
 async function cascade(swapped, forced) {
@@ -486,14 +561,15 @@ async function cascade(swapped, forced) {
     if (!res) break;
     combo++;
     B.maxCombo = Math.max(B.maxCombo || 0, combo);
-    if (combo === 5 && !B.fever) await feverShow();
+    if (B.mode === 'battle' && combo === 5 && !B.fever) await feverShow();
     await stepFx(res, combo);
     await fall(Board.gravity(B.grid));
+    if (B.mode === 'life') await Life.collect();
   }
   if (!Board.hasMove(B.grid)) {
     await banner('섞는 중…', 400);
     Board.shuffle(B.grid);
-    await Promise.all(B.grid.flatMap((row, r) => row.map((t, c) => slide(t, r, c, 380, 'cubic-bezier(.3,1.4,.6,1)'))));
+    await settleAll(380);
     if (Board.findRuns(B.grid).length) await cascade(null, []);
   }
 }
@@ -501,7 +577,8 @@ async function cascade(swapped, forced) {
 async function comboFx(combo) {
   const [r, c] = combo.at;
   const p = tileCenter(r, c);
-  const names = { rainbow: '무지개 폭탄!', rainbow2: '무지개 대폭발!!', 'bomb+bomb': '대폭발!', 'bomb+h': '크로스 폭발!', 'bomb+v': '크로스 폭발!' };
+  const names = { rainbow: '무지개 폭탄!', rainbow2: '무지개 대폭발!!', 'bomb+bomb': '대폭발!', 'bomb+h': '크로스 폭발!', 'bomb+v': '크로스 폭발!',
+    'plane+plane': '비행기 편대!', 'bomb+plane': '폭탄 배달!', 'h+plane': '줄폭탄 배달!', 'plane+v': '줄폭탄 배달!' };
   const label = names[combo.kind] || '크로스!';
   if (combo.converted) Board.each(B.grid, t => t.special && refreshTile(t));
   Sound.play(combo.kind.startsWith('rainbow') ? 'rainbow' : 'special', 1);
@@ -511,6 +588,25 @@ async function comboFx(combo) {
   ring.animate([{ width: '0px', height: '0px', opacity: 1 }, { width: B.S * 8 + 'px', height: B.S * 8 + 'px', opacity: 0 }], { duration: 500, easing: 'ease-out' }).finished.then(() => ring.remove());
   banner(label, 350);
   await sleep(250);
+  if (combo.planes) {
+    await Promise.all(combo.planes.map(tg => planeFly(p, tileCenter(tg[0], tg[1]), combo.carry)));
+    combo.planes.forEach(([tr, tc]) => (combo.carry ? effectFx({ kind: combo.carry, r: tr, c: tc }) : burst(tileCenter(tr, tc).x, tileCenter(tr, tc).y, '#bff3ff', 8)));
+  }
+}
+
+// 비행기가 목표 칸으로 휙 날아감 (carry: 싣고 가는 아이템)
+function planeFly(from, to, carry = null) {
+  Sound.play('swap', 0.75, 0.8);
+  const el = addFx('plane-fly', from.x, from.y);
+  el.innerHTML = `<img src="${ITEM('plane')}">` + (carry ? `<img class="carry" src="${ITEM(carry)}">` : '');
+  const dx = to.x - from.x, dy = to.y - from.y;
+  const ang = Math.atan2(dy, dx) * 180 / Math.PI + 30; // 그림이 오른쪽 위를 봄
+  const lift = -Math.max(60, Math.hypot(dx, dy) * 0.35);
+  return el.animate([
+    { transform: 'translate(-50%,-50%) scale(.6) rotate(0deg)' },
+    { transform: `translate(calc(-50% + ${dx * 0.4}px), calc(-50% + ${dy * 0.4 + lift}px)) scale(1.25) rotate(${ang}deg)`, offset: 0.45 },
+    { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(.8) rotate(${ang}deg)` },
+  ], { duration: 380, easing: 'ease-in-out' }).finished.then(() => el.remove());
 }
 
 function effectFx(ef) {
@@ -549,6 +645,13 @@ function effectFx(ef) {
     Sound.play('rainbow', 1);
     flash('#ffffff', 0.5);
     shake(6, 300);
+  } else if (ef.kind === 'plane') {
+    const p = tileCenter(ef.r, ef.c);
+    NEAR4.forEach(([dr, dc]) => inside(ef.r + dr, ef.c + dc) && burst(p.x + dc * S, p.y + dr * S, '#bff3ff', 3));
+    if (ef.target) {
+      const to = tileCenter(ef.target[0], ef.target[1]);
+      planeFly(p, to).then(() => { burst(to.x, to.y, '#ffffff', 8); Sound.play('pop', 0.9, 0.8); });
+    }
   }
 }
 
@@ -558,6 +661,41 @@ function popTile(t, delay) {
     { transform: 'scale(1.3)', opacity: 1, offset: 0.35 },
     { transform: 'scale(0) rotate(40deg)', opacity: 0 },
   ], { duration: 200, delay, easing: 'ease-in', fill: 'forwards' }).finished.then(() => t.el.remove());
+}
+
+// 장애물이 맞거나 깨짐, 잡초가 뽑힘
+function hitFx(res, late) {
+  res.hits.forEach(({ r, c, tile, gone }) => {
+    const p = tileCenter(r, c);
+    const delay = late.has(key(r, c)) ? 380 : 60;
+    setTimeout(() => {
+      const bubble = tile.block === 'bubble';
+      burst(p.x, p.y, bubble ? '#9fdcff' : '#c8955a', gone ? 8 : 4);
+      Sound.play(bubble ? 'pop' : 'land', bubble ? 1.5 : 1.6, 0.8);
+      if (gone) popTile(tile, 0);
+      else { refreshTile(tile); squish(tile); }
+    }, delay);
+  });
+  if (res.weeds.length) {
+    const cells = boardEl.querySelectorAll('.cellbg');
+    res.weeds.forEach(({ r, c, left }, i) => setTimeout(() => {
+      const d = cells[key(r, c)];
+      d.className = 'cellbg' + (left ? ' weed w' + left : '') + (d.classList.contains('exit') ? ' exit' : '');
+      const p = tileCenter(r, c);
+      const leaf = new Image();
+      leaf.src = ITEM(left ? 'weed2' : 'weed1');
+      leaf.className = 'fximg';
+      Object.assign(leaf.style, { left: p.x + 'px', top: p.y + 'px', width: B.S * 0.7 + 'px' });
+      fx.appendChild(leaf);
+      const dx = (Math.random() - 0.5) * 60;
+      leaf.animate([
+        { transform: 'translate(-50%,-50%) scale(.6) rotate(0)', opacity: 1 },
+        { transform: `translate(calc(-50% + ${dx}px), calc(-50% - 50px)) scale(1) rotate(${dx * 3}deg)`, opacity: 1, offset: 0.5 },
+        { transform: `translate(calc(-50% + ${dx * 1.4}px), calc(-50% + 10px)) scale(.7) rotate(${dx * 5}deg)`, opacity: 0 },
+      ], { duration: 650, easing: 'ease-out' }).finished.then(() => leaf.remove());
+    }, 40 + Math.min(i * 15, 150)));
+    setTimeout(() => Sound.play('sparkle', 1.4, 0.4), 60);
+  }
 }
 
 function projectile(from, to, img, ring, delay) {
@@ -575,14 +713,18 @@ async function stepFx(res, combo) {
   res.effects.forEach(effectFx);
   if (res.effects.length) await sleep(60);
 
-  // 뽀용 터짐
+  // 뽀용 터짐 (비행기가 날아간 칸은 도착할 때)
+  const late = new Set(res.effects.filter(e => e.target).map(e => key(e.target[0], e.target[1])));
   const n = res.cleared.length;
   res.cleared.forEach(({ r, c, tile }, i) => {
     const p = tileCenter(r, c);
     const color = tile.type >= 0 ? teamCh(tile.type).ring : '#ffd84d';
-    setTimeout(() => burst(p.x, p.y, color, n > 15 ? 3 : 6), Math.min(i * 10, 150));
-    popTile(tile, Math.min(i * 10, 150));
+    const delay = late.has(key(r, c)) ? 380 : Math.min(i * 10, 150);
+    setTimeout(() => burst(p.x, p.y, color, n > 15 ? 3 : 6), delay);
+    popTile(tile, delay);
   });
+  hitFx(res, late);
+  if (B.mode === 'life') Life.onStep(res, combo);
   for (let i = 0; i < Math.min(3, Math.ceil(n / 3)); i++) setTimeout(() => Sound.pop(combo - 1 + i), i * 70);
   if (n >= 6) setTimeout(() => Sound.play('sparkle', 1 + combo * 0.05, 0.6), 60);
 
@@ -601,9 +743,9 @@ async function stepFx(res, combo) {
     ], { duration: 800, easing: 'ease-out' }).finished.then(() => t.remove());
   }
 
-  // 공격과 회복
+  // 공격과 회복 (토벌에서만)
   const tally = new Map();
-  res.cleared.forEach(({ r, c, tile }) => {
+  (B.mode === 'battle' ? res.cleared : []).forEach(({ r, c, tile }) => {
     if (tile.type < 0) return;
     if (!tally.has(tile.type)) tally.set(tile.type, []);
     tally.get(tile.type).push([r, c]);
@@ -701,12 +843,16 @@ function hitMonster(dmg, ch, crit, k, eff = 1) {
   }
 }
 
+// 이동 경로(박자 단위)를 따라 떨어뜨림. 장애물을 비켜 비스듬히 가는 것도 한 번에
 async function fall(moves) {
-  const ps = moves.map(mv => {
-    const t = mv.tile;
-    if (mv.fresh) { makeTile(t); place(t, mv.from, mv.c); }
-    const dist = mv.to - mv.from;
-    return slide(t, mv.to, mv.c, 90 + Math.sqrt(dist) * 55, 'cubic-bezier(.6,0,1,1)').then(() => squish(t));
+  const ps = moves.map(({ tile: t, path, fresh }) => {
+    if (fresh) makeTile(t);
+    const t0 = path[0][2], span = Math.max(1, path[path.length - 1][2] - t0);
+    const [r1, c1] = path[path.length - 1];
+    place(t, r1, c1);
+    const frames = path.map(([r, c, k]) => ({ transform: tf(r, c), offset: (k - t0) / span }));
+    return t.el.animate(frames, { duration: 90 + Math.sqrt(span) * 55, delay: t0 * 40, easing: 'cubic-bezier(.6,0,1,1)', fill: 'backwards' })
+      .finished.then(() => squish(t));
   });
   if (moves.length) setTimeout(() => Sound.play('land', 1.3, 0.25), 180);
   await Promise.all(ps);
@@ -716,6 +862,7 @@ async function fall(moves) {
 async function endTurn() {
   await Promise.all(B.pending);
   B.pending = [];
+  if (B.mode === 'life') { await Life.endTurn(); return; }
   if (B.monHp <= 0) { await monsterDefeated(); return; }
   if (B.fever) { B.fever--; updateFever(); }
   B.cd--;
@@ -1018,7 +1165,7 @@ async function useSkill(k) {
     await sleep(400);
   } else if (id === 'cheer') {
     Board.shuffle(B.grid);
-    await Promise.all(B.grid.flatMap((row, r) => row.map((t, c) => slide(t, r, c, 420, 'cubic-bezier(.3,1.4,.6,1)'))));
+    await settleAll(420);
     B.gauge = B.gauge.map((g, j) => (j === k ? g : g + 4));
     updateGauges();
     Sound.play('sparkle', 1.1, 0.8);
@@ -1076,13 +1223,13 @@ function confetti(n = 14) {
   }
 }
 
-async function clearShow() {
+async function clearShow(text = '토벌<br>성공!') {
   const el = document.createElement('div');
   el.className = 'clear-show';
   const pool = B.team.map(i => CHARS[i]);
   const ch = pool[Math.floor(Math.random() * pool.length)];
   el.innerHTML = `<div class="dim"></div>
-    <div class="slam">토벌<br>성공!</div>
+    <div class="slam">${text}</div>
     <img class="hero" src="${art(ch.id)}"><div class="hero-say">${ch.line}</div>`;
   app.appendChild(el);
   const [dim, stamp, hero, say] = el.children;

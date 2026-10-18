@@ -6,7 +6,7 @@
 <title>치이카와 토벌 퍼즐 (팬게임)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Baloo+2:wght@700;800&family=Gaegu:wght@700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=10">
+<link rel="stylesheet" href="css/style.css?v=11">
 </head>
 <body>
 <div id="app">
@@ -23,9 +23,10 @@
   <section id="map" class="screen">
     <header class="bar">
       <button class="icon-btn" id="btnMapHome">⌂</button>
-      <div class="bar-title">토벌 지도</div>
+      <div class="bar-title" id="mapTitle">토벌 지도</div>
       <button class="icon-btn btn-mute">♪</button>
     </header>
+    <div class="map-tabs"><button data-m="battle">⚔️ 토벌</button><button data-m="life">🌿 일상</button></div>
     <div id="mapScroll"><div id="mapPath"></div></div>
     <button id="btnRamen" class="ramen-btn"><img src="assets/img/npc/armor.png" alt=""><span>라면 가게</span><i class="dot"></i></button>
   </section>
@@ -70,6 +71,12 @@
       <div id="party"></div>
       <div id="teamHp" class="hp"><div class="fill"></div><span></span></div>
     </div>
+    <div id="lifeHud">
+      <div class="lh-card lh-limit"><small id="lhLimitLabel">남은 이동</small><b id="lhLimit">0</b></div>
+      <div class="lh-card lh-goals"><small>목표</small><div id="lhGoals"></div></div>
+      <img id="lhChar" alt="">
+    </div>
+    <div id="lhScore"><div class="bar"><div class="fill"></div><i></i><i></i><i></i></div><b>0</b></div>
     <div id="boardWrap"><div id="board"></div></div>
   </section>
 
@@ -101,9 +108,10 @@
   <div id="fx"></div>
   <div id="flash"></div>
 </div>
-<script src="js/data.js?v=10"></script>
-<script src="js/audio.js?v=10"></script>
-<script src="js/board.js?v=10"></script>
-<script src="js/game.js?v=10"></script>
+<script src="js/data.js?v=11"></script>
+<script src="js/audio.js?v=11"></script>
+<script src="js/board.js?v=11"></script>
+<script src="js/game.js?v=11"></script>
+<script src="js/life.js?v=11"></script>
 </body>
 </html>

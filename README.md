@@ -22,6 +22,23 @@
   - 특수 구슬끼리 바꾸면 더 큰 효과
 - 스테이지 10개, 남은 체력에 따라 별 1~3개
 
+### 아이템
+
+- 4개 한 줄: 줄폭탄, L·T 모양: 폭탄, 5개 한 줄: 무지개 폭탄, **2×2 네모: 비행기** (목표 쪽으로 날아가 터뜨림)
+- 아이템은 **두 번 톡톡 누르거나 아무 쪽으로 쓱 밀면** 바로 발동 (매치가 없어도 됨)
+- 아이템끼리 바꾸면 더 큰 효과. 비행기는 상대 아이템을 싣고 날아감
+
+### 일상 퍼즐 (지도 위 「🌿 일상」 탭)
+
+몬스터 없이 목표를 채우는 스테이지 13개. 스테이지마다 판 모양이 다릅니다 (라면 그릇, 욕조, 하트 등).
+
+- 풀 뽑기: 초록 칸 위에서 구슬을 터뜨려 잡초를 모두 뽑기 (두 겹 잡초도 있음)
+- 요리: 나루토, 달걀, 경단 같은 재료를 맨 아래까지 떨구기
+- 거품 청소: 한 번 움직일 동안 거품을 하나도 못 터뜨리면 옆으로 번짐
+- 상자 뜯기: 바로 옆에서 구슬을 터뜨려 상자, 선물 상자(두 번) 뜯기
+- 제초 검정 5·4·3급: 제한 시간 안에 점수나 잡초 목표 (구슬이 터지는 동안 시계는 멈춤)
+- 목표를 채우면 남은 이동이 줄폭탄으로 바뀌는 보너스 타임, 점수에 따라 별 1~3개
+
 ## 실행
 
 정적 파일만 있어서 아무 웹 서버로 열면 됩니다.
@@ -38,6 +55,6 @@ python -m http.server 8770
 - 배경, 터짐 조각: [VARCO](https://3d.varco.ai)로 생성
 - 효과음: [Kenney](https://kenney.nl) Interface Sounds, Digital Audio, Impact Sounds, Music Jingles (CC0). 라이선스 원문은 `assets/sfx/LICENSE-kenney*.txt` (아이폰 재생을 위해 mp3로 변환)
 - 배경 음악: 코드(`js/audio.js`)로 직접 연주하는 오리지널 곡
-- 특수 구슬 아이콘: [Noto Emoji](https://github.com/googlefonts/noto-emoji) (Google, Apache License 2.0). 라이선스 원문은 `assets/img/items/LICENSE-noto.txt`
+- 특수 구슬, 장애물, 재료 아이콘: [Noto Emoji](https://github.com/googlefonts/noto-emoji) (Google, Apache License 2.0). 라이선스 원문은 `assets/img/items/LICENSE-noto.txt`
 - 글꼴: [Jua](https://fonts.google.com/specimen/Jua), [Baloo 2](https://fonts.google.com/specimen/Baloo+2), [Gaegu](https://fonts.google.com/specimen/Gaegu) (Google Fonts, SIL Open Font License)
 - 게임 코드(`js/`, `css/`, `index.html`): 팬 창작물

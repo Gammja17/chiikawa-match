@@ -224,3 +224,55 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 .fever-show { position: absolute; inset: 0; z-index: 26; pointer-events: none; overflow: hidden; }
 .fever-show img { position: absolute; left: 50%; bottom: 0; width: 72%; transform: translate(-50%, 110%); filter: drop-shadow(0 6px 0 #0002); }
 .fever-show .fever-txt { position: absolute; left: 50%; top: 30%; transform: translateX(-50%); white-space: nowrap; font-size: 38px; color: #fff; -webkit-text-stroke: 9px var(--pink); paint-order: stroke fill; filter: drop-shadow(0 4px 0 var(--pink-d)); }
+
+/* ---------- 일상 퍼즐 ---------- */
+.map-tabs { display: flex; gap: 6px; margin: 0 12px 8px; padding: 4px; background: #fff; border-radius: 99px; box-shadow: var(--shadow); }
+.map-tabs button { flex: 1; height: 36px; border-radius: 99px; font-size: 16px; color: var(--sub); }
+.map-tabs button.on { background: var(--pink); color: #fff; box-shadow: 0 3px 0 var(--pink-d); }
+.node .nicon { position: absolute; right: -10px; bottom: -6px; width: 30px; height: 30px; filter: drop-shadow(0 2px 0 #0002); }
+
+#lifeHud, #lhScore { display: none; }
+.life-mode #arena, .life-mode #team { display: none; }
+.life-mode #lifeHud { display: flex; align-items: stretch; gap: 8px; margin: 2px 12px 0; height: 92px; }
+.life-mode #lhScore { display: flex; align-items: center; gap: 10px; margin: 10px 14px 0; }
+.lh-card { background: #fff; border-radius: 20px; box-shadow: var(--shadow); padding: 8px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.lh-card small { font-size: 12px; color: var(--sub); }
+.lh-limit { width: 86px; flex: none; }
+.lh-limit b { font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 40px; line-height: 1; color: var(--lav); }
+.lh-limit.danger { background: #ef5a5a; animation: pulse .6s infinite; }
+.lh-limit.danger b, .lh-limit.danger small { color: #fff; }
+.lh-goals { flex: 1; min-width: 0; }
+#lhGoals { display: flex; gap: 10px; justify-content: center; margin-top: 2px; }
+.gchip { position: relative; width: 52px; height: 52px; }
+.gchip img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 2px 1px #0002); }
+.gchip b { position: absolute; right: -8px; bottom: -6px; min-width: 26px; padding: 0 6px; border-radius: 99px; background: var(--pink); color: #fff; font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 15px; line-height: 22px; text-align: center; border: 2px solid #fff; white-space: nowrap; }
+.gchip.score b { font-size: 12px; }
+.gchip.done b { background: var(--mint); }
+.gchip.done img { opacity: .55; }
+#lhChar { width: 78px; flex: none; object-fit: contain; object-position: bottom; animation: hop 1.6s ease-in-out infinite; filter: drop-shadow(0 4px 0 #0001); }
+#lhScore .bar { position: relative; flex: 1; height: 14px; border-radius: 99px; background: #fff; box-shadow: inset 0 0 0 2px #ebe6f5; }
+#lhScore .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 99px; background: linear-gradient(90deg, #ffc23d, #ff8ab8); transition: width .35s; }
+#lhScore i { position: absolute; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; font-style: normal; }
+#lhScore i::after { content: '★'; display: block; text-align: center; font-size: 20px; line-height: 22px; color: #ddd6ee; -webkit-text-stroke: 3px #fff; paint-order: stroke fill; }
+#lhScore i.on::after { color: var(--gold); }
+#lhScore b { min-width: 64px; text-align: right; font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 20px; color: var(--lav); }
+
+.cellbg.weed::after { background: #c9edb4; box-shadow: inset 0 0 0 2px #a9dc8f; }
+.cellbg.weed.w2::after { background: #8fd67a; box-shadow: inset 0 0 0 2px #6dbf57; }
+.cellbg.weed::before { content: ''; position: absolute; z-index: 1; right: 3px; bottom: 3px; width: 34%; height: 34%; background: url(../assets/img/items/weed1.png) center / contain no-repeat; }
+.cellbg.weed.w2::before { background-image: url(../assets/img/items/weed2.png); }
+.cellbg.exit::before { content: '▼'; position: absolute; z-index: 1; left: 0; right: 0; bottom: -3px; text-align: center; font-size: 11px; color: #ff9a4d; }
+.tile .inner.block img, .tile .inner.ing img { filter: drop-shadow(0 3px 0 #0002); }
+.tile .inner.bubble { border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, #d8f1ff 60%, #b6e2fb); box-shadow: inset 0 0 0 2px #fff; }
+.tile .inner.bubble img { transform: scale(.85); opacity: .9; }
+.tile .inner.ing { animation: bob 1.2s ease-in-out infinite; }
+.tile .inner.ing img { transform: scale(.88); }
+.plane-fly { position: absolute; width: 50px; height: 50px; z-index: 2; }
+.plane-fly img { width: 100%; height: 100%; filter: drop-shadow(0 4px 2px #0003); }
+.plane-fly img.carry { position: absolute; left: 30%; top: 30%; width: 60%; height: 60%; }
+.num.small { font-size: 20px; -webkit-text-stroke-width: 4px; }
+/* 판 모양: 일상 퍼즐은 칸마다 바탕을 그려서 구멍이 비어 보이게 */
+.life-mode #board { background: none; box-shadow: none; }
+.life-mode .cellbg { background: rgba(255, 255, 255, .8); box-shadow: 0 0 0 1px rgba(255, 255, 255, .8); }
+.life-mode .cellbg.void { background: none; box-shadow: none; }
+.life-mode .cellbg.void::after { display: none; }
