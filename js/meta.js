@@ -70,7 +70,7 @@ const Meta = {
   owned: id => !!Save.data.own[id],
   lv: id => Save.data.own[id] || 0,
   // 레벨마다 공격·회복 8%씩
-  mult: id => 1 + 0.08 * Math.max(0, Meta.lv(id) - 1),
+  mult: id => (1 + 0.08 * Math.max(0, Meta.lv(id) - 1)) * (Save.data.outfit?.[id] ? 1.05 : 1), // 레벨마다 +8%, 옷을 입으면 +5%
   addCoins(n) {
     Save.data.coins += n;
     Save.save();
@@ -255,7 +255,7 @@ const Sheet = {
       ${own ? `<div class="sheet-lv"><b>Lv ${lv}</b><div class="lvbar"><i style="width:${(lv / LV_MAX) * 100}%"></i></div><small>${lv >= LV_MAX ? 'MAX' : '뽑기에서 또 만나면 레벨 업'}</small></div>` : Sheet.recruitHtml(id)}
       <div class="sheet-rows"><div>${ch.heal ? '회복' : '공격'}<b>${stat.split(' ')[1]}</b></div><div>속성<b>${ATTR[ch.attr].icon}${ATTR[ch.attr].name}</b></div><div>스킬 게이지<b>${skillNeed(id, false)}</b><small>일상 ${skillNeed(id, true)}</small></div></div>
       <div class="sheet-skill"><b>${ch.skill.name}</b> ${ch.skill.desc}</div>
-      ${own && SKINS[id] ? `<div class="sheet-label">옷</div><div class="sheet-accs"><button data-s="" class="${Save.data.outfit[id] ? '' : 'on'}">기본</button>${(Save.data.skins[id] || []).map(s => `<button data-s="${s}" class="${Save.data.outfit[id] === s ? 'on' : ''}"><img src="${SKIN(id, s)}"></button>`).join('')}</div>
+      ${own && SKINS[id] ? `<div class="sheet-label">옷 <small>입으면 공격 +5%</small></div><div class="sheet-accs"><button data-s="" class="${Save.data.outfit[id] ? '' : 'on'}">기본</button>${(Save.data.skins[id] || []).map(s => `<button data-s="${s}" class="${Save.data.outfit[id] === s ? 'on' : ''}"><img src="${SKIN(id, s)}"></button>`).join('')}</div>
         ${(Save.data.skins[id] || []).length ? '' : '<small class="sheet-hint">캡슐 뽑기에서 옷을 모아 보세요</small>'}` : ''}
       <div class="sheet-stories">${own ? stories : ''}</div>
       <div class="sheet-btns"><button class="big-btn ghost" data-close>닫기</button>${opts.action && own ? `<button class="big-btn" data-act>${opts.action.label}</button>` : ''}</div>`;
@@ -309,6 +309,46 @@ function openFriends() {
     ${Meta.owned(c.id) ? Meta.figure(c.id, art(c.id)) : `<span class="fig"><img src="${art(c.id)}" class="shadow"></span>`}
     <span class="fname">${Meta.owned(c.id) ? c.name : '???'}</span>${Meta.owned(c.id) ? `<span class="flv">Lv${Meta.lv(c.id)}</span>` : treatBadge(c.id)}</button>`).join('');
   $('#friendsGrid').querySelectorAll('.fcard').forEach(b => (b.onclick = () => { Sound.play('click'); Sheet.open(b.dataset.id, { onChange: openFriends }); }));
+  albumUI();
+}
+// 도감 보상: 친구를 모으거나 레벨 합계를 올리면 한 번씩 받음
+const ALBUM = [
+  { k: 'f4', n: 4, coins: 150 }, { k: 'f6', n: 6, coins: 250, treat: 'parfait' }, { k: 'f8', n: 8, coins: 350 },
+  { k: 'f10', n: 10, coins: 500, treat: 'onigiri' }, { k: 'f12', n: 12, coins: 800 },
+  { k: 'l20', lv: 20, coins: 300 }, { k: 'l40', lv: 40, coins: 600, treat: 'dango' }, { k: 'l80', lv: 80, coins: 1000 },
+];
+const albumNow = () => ({ n: CHARS.filter(c => Meta.owned(c.id)).length, lv: CHARS.reduce((a, c) => a + Meta.lv(c.id), 0) });
+const albumDone = (a, now) => (a.n ? now.n >= a.n : now.lv >= a.lv);
+const albumReady = () => { const now = albumNow(), got = Save.data.album || []; return ALBUM.filter(a => !got.includes(a.k) && albumDone(a, now)); };
+function albumUI() {
+  const now = albumNow(), got = Save.data.album || [];
+  const next = kind => ALBUM.find(a => (kind === 'n' ? a.n : a.lv) && !got.includes(a.k));
+  const row = (a, label, have, need) => {
+    if (!a) return `<div class="alb-row done"><b>${label}</b><span>전부 받았어요!</span></div>`;
+    const ready = albumDone(a, now), gift = `${a.coins}<img src="${ITEM('coin')}">${a.treat ? ` + ${TREATS[a.treat]}` : ''}`;
+    return `<div class="alb-row${ready ? ' ready' : ''}"><b>${label} ${have}/${need}</b><span>${gift}</span>${ready ? `<button data-k="${a.k}">받기</button>` : ''}</div>`;
+  };
+  const fn = next('n'), ln = next('lv');
+  let bar = $('#albumBar');
+  if (!bar) { bar = document.createElement('div'); bar.id = 'albumBar'; $('#friendsGrid').before(bar); }
+  bar.innerHTML = row(fn, '친구 모으기', now.n, fn?.n) + row(ln, '레벨 합계', now.lv, ln?.lv);
+  bar.querySelectorAll('button').forEach(b => (b.onclick = () => {
+    const a = ALBUM.find(x => x.k === b.dataset.k);
+    (Save.data.album = Save.data.album || []).push(a.k);
+    if (a.treat) Save.data.treats[a.treat] = (Save.data.treats[a.treat] || 0) + 1;
+    Meta.addCoins(a.coins);
+    Sound.play('star', 1.2);
+    const r = b.getBoundingClientRect(), ar = app.getBoundingClientRect();
+    burst(r.left - ar.left + r.width / 2, r.top - ar.top + r.height / 2, '#ffcf3f', 12);
+    openFriends();
+  }));
+  friendsDot();
+}
+// 받을 도감 보상이 있으면 지도 '친구들' 버튼에 빨간 점
+function friendsDot() {
+  const btn = $('#btnFriends');
+  if (!btn.querySelector('.dot')) btn.insertAdjacentHTML('beforeend', '<i class="dot"></i>');
+  btn.classList.toggle('on', albumReady().length > 0);
 }
 
 // ---------- 캡슐 뽑기: 친구 뽑기 / 옷 뽑기, 한 번(100) · 10번(900, 새 친구나 새 옷 하나 확정) ----------

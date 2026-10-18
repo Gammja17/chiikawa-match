@@ -389,6 +389,7 @@ function openMap(advanceFrom = null) {
   const STAGES = ROUTE.map((_, k) => routeStage(k));
   Sound.music('map');
   $('#btnRamen').classList.toggle('on', Save.data.ramen !== false && !Save.data.buff);
+  friendsDot();
   const path = $('#mapPath');
   path.innerHTML = '';
   path.style.height = NODE_TOP + STAGES.length * NODE_GAP + 40 + 'px';
@@ -1738,12 +1739,13 @@ function renderFormation() {
   $('#formCount').textContent = `${formPick.length} / ${TEAM_SIZE}`;
   // 친구 카드: 누르면 상세 창에서 넣고 빼기
   $('#formRoster').innerHTML = CHARS.map((c, k) => {
-    const own = Meta.owned(c.id), good = own && [...foes].some(a => BEATS[c.attr] === a);
+    const strong = [...foes].some(a => attrMult(c.attr, a) > 1), own = Meta.owned(c.id), good = own && strong;
+    const wish = !own && strong && !RECRUIT[c.id]; // 아직 없지만 이 판에 유리한 친구 → 뽑기에서 만날 수 있음
     return `<button class="ccard${formPick.includes(k) ? ' on' : ''}${own ? '' : ' locked'}" style="--ring:${c.ring}" data-k="${k}">
       ${own ? Meta.figure(c.id, art(c.id)) : `<span class="fig"><img src="${art(c.id)}" class="shadow"></span>`}
       <span class="nm">${own ? c.name : '???'}</span>
       <span class="meta">${own ? `${attrIcon(c.attr)}Lv${Meta.lv(c.id)}` : RECRUIT[c.id]?.treat ? '' : LOCK_SVG}</span>${own ? '' : treatBadge(c.id)}
-      ${good ? '<span class="good">유리!</span>' : ''}</button>`;
+      ${good ? '<span class="good">유리!</span>' : ''}${wish ? '<span class="wish">유리 · 뽑기에서</span>' : ''}</button>`;
   }).join('');
   // 톡: 넣고 빼기, 꾹(0.4초): 친구 상세 (스킬, 레벨)
   $('#formRoster').querySelectorAll('.ccard').forEach(el => {

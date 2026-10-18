@@ -440,8 +440,9 @@ const Life = {
     Life.stopTimer();
     // 같이 갈 친구 한 명 (인어섬은 1층에서만 고름)
     if (run.kind === 'route' && run.i < 2 && !Save.data.helper) L.helper = CHARS.findIndex(c => c.id === 'hachiware'); // 처음 두 판은 하치와레가 알아서 따라옴
-    else if (run.kind !== 'tower' || run.floor === 1 || L.helper == null) await pickHelper();
-    Object.assign(L, { hg: 0, run, ending: false, st, i, moves: st.moves || 0, time: st.time || 0, score: 0, ing: 0, chars: {}, popped: false, extra: false, goalsHtml: '' });
+    else if (run.kind !== 'tower' || run.floor === 1 || L.helper == null) await pickHelper(st);
+    const buddy = !!st.host && CHARS[L.helper]?.id === st.host; // 단짝 보너스
+    Object.assign(L, { hg: 0, run, ending: false, st, i, moves: (st.moves || 0) + (buddy && st.moves ? 2 : 0), time: (st.time || 0) + (buddy && st.time ? 6 : 0), score: 0, ing: 0, chars: {}, popped: false, extra: false, goalsHtml: '' });
     Object.assign(B, { mode: 'life', stage: i, over: false, busy: true, inSkill: false, sel: null, pending: [], maxCombo: 0, fever: 0 });
     B.team = LIFE_CHARS.slice(0, st.types).map(id => CHARS.findIndex(c => c.id === id));
     Object.assign(B, { real: B.team.length, played: false, dmgBy: {} });
@@ -472,6 +473,7 @@ const Life = {
     if (run.kind === 'route' && LIFE_STORY[i] && (Save.data.life || [])[i] == null) await playStory(LIFE_STORY[i]);
     await dropIn(run.kind === 'route' && routeLevel(routeIdx('l', i)) === 'hard' ? 'HARD!' : st.intro);
     if (bowl) banner(`🍜 ${bowl.name}!`, 500);
+    if (buddy) setTimeout(() => banner(`단짝 보너스! ${st.time ? '+6초' : '이동 +2'}`, 450), bowl ? 900 : 0);
     B.busy = false;
     Tutor.onStart();
     Tutor.poke();
@@ -868,9 +870,10 @@ Life.contestEnd = async function () {
 };
 
 // ---------- 같이 갈 친구 고르기 (일상 퍼즐은 한 명만) ----------
-function pickHelper() {
+function pickHelper(st = L.st) {
   return new Promise(done => {
     const list = CHARS.map((c, k) => [c, k]).filter(([c]) => Meta.owned(c.id));
+    const host = st?.host ? CHARS[charIdx(st.host)] : null;
     let pick = L.helper != null && Meta.owned(CHARS[L.helper].id) ? L.helper : CHARS.findIndex(c => c.id === (Save.data.helper || 'hachiware'));
     if (pick < 0 || !Meta.owned(CHARS[pick].id)) pick = list[0][1];
     const card = $('#charSheet .sheet-card');
@@ -879,7 +882,8 @@ function pickHelper() {
       card.style.setProperty('--ring', ch.ring);
       card.innerHTML = `<div class="mates-title">같이 갈 친구 한 명</div>
         <div class="helper-pick"><span class="fig">${Meta.figure(ch.id, art(ch.id))}</span><div><b>${ch.name}</b><small>${ch.skill.name}</small><p>${ch.skill.desc}</p></div></div>
-        <div class="mates-grid">${list.map(([c, k]) => `<button class="${k === pick ? 'on' : ''}" data-k="${k}" style="--ring:${c.ring}"><img src="${FACE(c.id)}"><span>${c.name}</span></button>`).join('')}</div>
+        ${host ? `<div class="buddy-note${CHARS[pick].id === st.host ? ' on' : ''}">이 판 단짝: <b>${host.name}</b> · 데려가면 ${st.time ? '+6초' : '이동 +2'}${Meta.owned(host.id) ? '' : ' (아직 없는 친구)'}</div>` : ''}
+        <div class="mates-grid">${list.map(([c, k]) => `<button class="${k === pick ? 'on' : ''}${c.id === st?.host ? ' buddy' : ''}" data-k="${k}" style="--ring:${c.ring}"><img src="${FACE(c.id)}"><span>${c.name}</span></button>`).join('')}</div>
         <div class="sheet-btns"><button class="big-btn" data-go>같이 가자!</button></div>`;
       card.querySelectorAll('.mates-grid button').forEach(b => (b.onclick = () => { pick = +b.dataset.k; Sound.play('pop', 1.2, 0.5); draw(); }));
       card.querySelector('[data-go]').onclick = () => {
