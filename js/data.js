@@ -10,6 +10,7 @@ const CHARS = [
 ];
 const FACE = id => `assets/img/faces/${id}.png`;
 const BODY = id => `assets/img/chars/${id}.png`;
+const TILE = id => `assets/img/tiles/${id}.png`;
 const ITEM = name => `assets/img/items/${name}.png`;
 
 const MONSTERS = {

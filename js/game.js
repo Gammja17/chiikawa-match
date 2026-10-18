@@ -20,7 +20,7 @@ Save.load();
 const unlockedIdx = () => Math.min(Save.data.stars.length, STAGES.length - 1);
 
 // 이미지 미리 불러오기
-[...CHARS.map(c => FACE(c.id)),
+[...CHARS.map(c => FACE(c.id)), ...CHARS.map(c => TILE(c.id)),
   ...['chiikawa', 'hachiware', 'usagi', 'momonga', 'rakko', 'shisa', 'kurimanju'].map(BODY), ...Object.values(MONSTERS).map(m => m.img),
   ...['h', 'v', 'bomb', 'rainbow', 'boom', 'sparkle'].map(ITEM)]
   .forEach(src => (new Image().src = src));
@@ -304,7 +304,7 @@ function refreshTile(t) {
   const ch = CHARS[t.type];
   inner.style.setProperty('--ring', ch.ring);
   inner.classList.toggle('special', !!t.special);
-  inner.innerHTML = `<img src="${FACE(ch.id)}" draggable="false">` +
+  inner.innerHTML = `<img src="${TILE(ch.id)}" draggable="false">` +
     (t.special ? `<img class="badge ${t.special}" src="${ITEM(t.special)}" draggable="false">` : '');
 }
 
