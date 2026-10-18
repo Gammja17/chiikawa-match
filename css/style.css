@@ -212,7 +212,7 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 
 /* ---------- 판 ---------- */
 #boardWrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 8px; min-height: 0; }
-#board { position: relative; width: calc(var(--s) * 7); height: calc(var(--s) * 7); border-radius: 16px; background: var(--paper); border: var(--line); box-shadow: var(--sh); touch-action: none; overflow: hidden; }
+#board { position: relative; width: calc(var(--s) * var(--cols, 7)); height: calc(var(--s) * var(--rows, 7)); border-radius: 16px; background: var(--paper); border: var(--line); box-shadow: var(--sh); touch-action: none; overflow: hidden; }
 .cellbg { position: absolute; width: var(--s); height: var(--s); }
 .cellbg::after { content: ''; position: absolute; inset: 2px; border-radius: 10px; background: #f6f1fb; }
 .cellbg:nth-child(even)::after { background: #f1eaf8; }

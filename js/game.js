@@ -549,8 +549,12 @@ const attrTag = a => `<span class="attr-tag" style="--ac:${ATTR[a].color}">${att
 
 function layoutBoard() {
   const w = $('#boardWrap');
-  B.S = Math.max(30, Math.floor(Math.min(w.clientWidth - 16, w.clientHeight - 16) / COLS));
+  B.S = Math.max(28, Math.floor(Math.min((w.clientWidth - 16) / COLS, (w.clientHeight - 16) / ROWS)));
   app.style.setProperty('--s', B.S + 'px');
+  boardEl.style.setProperty('--cols', COLS);
+  boardEl.style.setProperty('--rows', ROWS);
+  // 판 크기가 바뀌면 칸 바탕을 새로 깖
+  if (boardEl.querySelectorAll('.cellbg').length !== ROWS * COLS) boardEl.querySelectorAll('.cellbg, .cellfg').forEach(e => e.remove());
   if (!boardEl.querySelector('.cellbg')) {
     for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
       const d = document.createElement('div');
@@ -718,6 +722,7 @@ function spawnMonster(animated) {
 async function startStage(i) {
   B.mode = 'battle';
   app.classList.remove('life-mode', 'tower-mode');
+  Board.setSize(7, 7);
   Board.floor = null;
   Board.syrup = null;
   Board.mask = null;
@@ -1997,12 +2002,12 @@ async function useSkill(k) {
     await actor(ch, linePath(cells), { onHit: i => actorHit(...cells[i], ch.ring, i) });
   } else if (id === 'rows2') {
     // 하치와레: 두 줄을 쓩 미끄러지며 지나감 (두 번째 줄은 반대로)
-    const rows = [0, 1, 2, 3, 4, 5, 6].sort(() => Math.random() - 0.5).slice(0, 2);
+    const rows = [...Array(ROWS).keys()].filter(r => [...Array(COLS).keys()].some(c => !hole(r, c))).sort(() => Math.random() - 0.5).slice(0, 2);
     rows.forEach((r, j) => { for (let c = 0; c < COLS; c++) cells.push([r, j ? COLS - 1 - c : c]); });
     await actor(ch, linePath(cells), { dur: 55, hop: 0.15, onHit: i => actorHit(...cells[i], ch.ring, i % 7) });
   } else if (id === 'cross') {
     // 랏코: 굵은 십자로 베고 괴물에게 큰 한 방
-    const r0 = 1 + Math.floor(Math.random() * 5), c0 = 1 + Math.floor(Math.random() * 5);
+    const r0 = 1 + Math.floor(Math.random() * (ROWS - 2)), c0 = 1 + Math.floor(Math.random() * (COLS - 2));
     for (let d = -1; d <= 1; d++) {
       for (let i = 0; i < COLS; i++) cells.push([r0 + d, i]);
       for (let i = 0; i < ROWS; i++) cells.push([i, c0 + d]);
@@ -2088,7 +2093,7 @@ async function useSkill(k) {
     cells = spots;
   } else if (id === 'cols2') {
     // 두 세로줄을 위아래로 쓩 (두 번째 줄은 반대로)
-    const cs = [0, 1, 2, 3, 4, 5, 6].sort(() => Math.random() - 0.5).slice(0, 2);
+    const cs = [...Array(COLS).keys()].filter(c => [...Array(ROWS).keys()].some(r => !hole(r, c))).sort(() => Math.random() - 0.5).slice(0, 2);
     cs.forEach((c, j) => { for (let r = 0; r < ROWS; r++) cells.push([j ? ROWS - 1 - r : r, c]); });
     await actor(ch, linePath(cells), { dur: 55, hop: 0.15, onHit: i => actorHit(...cells[i], ch.ring, i % 7) });
   } else if (id === 'stall') {
@@ -2103,7 +2108,8 @@ async function useSkill(k) {
     await sleep(400);
   } else if (id === 'cheer') {
     // 판 가운데를 좌우로 데굴데굴 지나가며 섞음
-    await actor(ch, [tileCenter(3, 0), tileCenter(3, 3), tileCenter(3, 6)], { hop: 0.5, dur: 200 });
+    const mid = ROWS >> 1;
+    await actor(ch, [tileCenter(mid, 0), tileCenter(mid, COLS >> 1), tileCenter(mid, COLS - 1)], { hop: 0.5, dur: 200 });
     Board.shuffle(B.grid);
     await settleAll(420);
     if (life) bonusMoves(1, ch.ring);

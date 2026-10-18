@@ -3,7 +3,7 @@
 //   type 0~: 캐릭터 구슬, -1: 무지개, -2: 재료(ing, 맨 밑으로 떨구면 모임), -3: 장애물(block: 'box'|'bubble', hp)
 //   special: null|'h'|'v'|'bomb'|'rainbow'|'plane'
 //   lock: 리본에 묶인 구슬. 못 움직이고, 한 번 터뜨리면 리본만 풀림
-const ROWS = 7, COLS = 7;
+let ROWS = 7, COLS = 7; // 판 크기: 토벌은 7x7, 일상 퍼즐은 판 그림(map) 크기대로 (최대 9x9)
 let NTYPES = 7; // 편성 인원에 맞춰 출격 때 바뀜
 const ING = -2, BLOCK = -3;
 let nextTileId = 1;
@@ -20,7 +20,8 @@ const NEAR4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 const hole = (r, c) => !!Board.mask && !Board.mask[r][c];
 
 const Board = {
-  mask: null,     // 판 모양 (없으면 7x7 꽉 찬 판)
+  mask: null,     // 판 모양 (없으면 꽉 찬 네모 판)
+  setSize(r, c) { ROWS = r; COLS = c; },
   floor: null,    // 잡초: floor[r][c] = 남은 겹 수 (일상 퍼즐에서만)
   syrup: null,    // 시럽: syrup[r][c] = 발렸는지. 시럽 칸이 낀 매치는 그 칸들에 시럽을 번지게 함
   spawnIng: null, // 새 칸을 채울 때 재료를 낼지: () => 재료 이름 | null
