@@ -1107,7 +1107,7 @@ async function win() {
   const ratio = B.teamHp / B.teamMax;
   const stars = ratio >= 0.7 ? 3 : ratio >= 0.35 ? 2 : 1;
   const firstClear = Save.data.stars[B.stage] == null;
-  const coins = Meta.reward(stars, firstClear);
+  const coins = Meta.reward(stars, firstClear), treat = Meta.treat('b', B.stage, stars, firstClear);
   if (firstClear) Save.data.ramen = true;
   Save.data.stars[B.stage] = Math.max(Save.data.stars[B.stage] || 0, stars);
   Save.save();
@@ -1121,7 +1121,7 @@ async function win() {
   const from = k;
   modal({
     title: '토벌 성공!', stars, char: ch.id, text: `${ch.name}: "${ch.line}"`,
-    rows: [['남은 체력', Math.round(ratio * 100) + '%'], ['코인', '+' + coins], ['라면', firstClear ? '+1그릇' : '-']],
+    rows: [['남은 체력', Math.round(ratio * 100) + '%'], [`<img class="row-ic" src="${ITEM('coin')}">`, '+' + coins], treat],
     btn2: '지도', on2: () => go(() => openMap(firstClear ? from : null)),
     btn1: isLast ? '지도로' : '다음 스테이지',
     on1: () => go(() => (isLast ? openMap(firstClear ? from : null) : goRoute(k + 1))),
@@ -1180,10 +1180,29 @@ function renderFormation() {
     return `<button class="ccard${formPick.includes(k) ? ' on' : ''}${own ? '' : ' locked'}" style="--ring:${c.ring}" data-k="${k}">
       ${own ? Meta.figure(c.id, art(c.id)) : `<span class="fig"><img src="${art(c.id)}" class="shadow"></span>`}
       <span class="nm">${own ? c.name : '???'}</span>
-      <span class="meta">${own ? `${attrIcon(c.attr)}Lv${Meta.lv(c.id)}` : LOCK_SVG}</span>
+      <span class="meta">${own ? `${attrIcon(c.attr)}Lv${Meta.lv(c.id)}` : RECRUIT[c.id]?.treat ? '' : LOCK_SVG}</span>${own ? '' : treatBadge(c.id)}
       ${good ? '<span class="good">유리!</span>' : ''}</button>`;
   }).join('');
-  $('#formRoster').querySelectorAll('.ccard').forEach(el => (el.onclick = () => {
+  // 톡: 넣고 빼기, 꾹(0.4초): 친구 상세 (스킬, 레벨)
+  $('#formRoster').querySelectorAll('.ccard').forEach(el => {
+    let timer = null, long = false;
+    el.onpointerdown = () => {
+      long = false;
+      timer = setTimeout(() => { long = true; el.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.06)' }, { transform: 'scale(1)' }], { duration: 200 }); openDetail(); }, 420);
+    };
+    el.onpointerup = el.onpointerleave = el.onpointercancel = () => clearTimeout(timer);
+    el.oncontextmenu = e => e.preventDefault();
+    el.onclick = () => {
+      if (long) return;
+      const k = +el.dataset.k, id = CHARS[k].id, at = formPick.indexOf(k);
+      if (!Meta.owned(id)) { openDetail(); return; }
+      if (at >= 0) formPick.splice(at, 1);
+      else if (formPick.length < TEAM_SIZE) { formPick.push(k); Sound.voice(id, 'pick'); }
+      else { Sound.play('bad'); el.animate([{ transform: 'translateX(-4px)' }, { transform: 'translateX(4px)' }, { transform: 'none' }], { duration: 180 }); return; }
+      Sound.play('pop', at >= 0 ? 0.9 : 1.3, 0.6);
+      renderFormation();
+    };
+    const openDetail = () => {
     const k = +el.dataset.k, id = CHARS[k].id, at = formPick.indexOf(k);
     Sound.play('click');
     Sheet.open(id, {
@@ -1199,7 +1218,8 @@ function renderFormation() {
       },
       onChange: renderFormation,
     });
-  }));
+    };
+  });
   $('#btnSortie').disabled = formPick.length !== TEAM_SIZE;
 }
 $('#btnSortie').onclick = () => {
@@ -1289,9 +1309,16 @@ async function useSkill(k) {
     const rows = [0, 1, 2, 3, 4, 5, 6].sort(() => Math.random() - 0.5).slice(0, 2);
     rows.forEach(r => { for (let c = 0; c < COLS; c++) cells.push([r, c]); });
   } else if (id === 'cross') {
+    // 랏코: 굵은 십자로 베고 몬스터에 큰 한 방
     const r0 = 1 + Math.floor(Math.random() * 5), c0 = 1 + Math.floor(Math.random() * 5);
-    for (let i = 0; i < COLS; i++) cells.push([r0, i]);
-    for (let i = 0; i < ROWS; i++) if (i !== r0) cells.push([i, c0]);
+    for (let d = -1; d <= 1; d++) {
+      for (let i = 0; i < COLS; i++) cells.push([r0 + d, i]);
+      for (let i = 0; i < ROWS; i++) cells.push([i, c0 + d]);
+    }
+    const eff = attrMult(ch.attr, curWave().a);
+    const m = centerOf($('#monster'));
+    Juice.zoom(m.x, m.y, 1.1, 500);
+    hitMonster(Math.round(ch.dmg * 10 * eff * Meta.mult(ch.id)), ch, true, 0, eff);
     B.cd += 2;
     updateCd();
     const p = centerOf($('#countdown'));

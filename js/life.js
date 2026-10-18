@@ -363,7 +363,7 @@ const Life = {
     const stars = L.score >= st.stars[2] ? 3 : L.score >= st.stars[1] ? 2 : 1;
     const list = (Save.data.life = Save.data.life || []);
     const first = list[i] == null;
-    const coins = Meta.reward(stars, first);
+    const coins = Meta.reward(stars, first), treat = Meta.treat('l', i, stars, first);
     list[i] = Math.max(list[i] || 0, stars);
     if (first) Save.data.ramen = true;
     Save.save();
@@ -371,11 +371,12 @@ const Life = {
     await clearShow(st.exam ? '검정<br>합격!' : '일<br>끝!');
     const k = routeIdx('l', i), last = k === ROUTE.length - 1;
     if (i === LIFE.length - 1 && first) await playStory(LIFE_STORY.end);
+    if (first) await Meta.stageJoin('l', i);
     Sound.music(null);
     const ch = CHARS.find(c => c.id === st.host) || CHARS[0];
     modal({
       title: st.exam ? '합격!' : '클리어!', stars, char: ch.id, text: `${ch.name}: "${ch.line}"`,
-      rows: [['점수', L.score], ['코인', '+' + coins], ['라면', first ? '+1그릇' : '-']],
+      rows: [['점수', L.score], [`<img class="row-ic" src="${ITEM('coin')}">`, '+' + coins], treat],
       btn2: '지도', on2: () => go(() => openMap(first ? k : null)),
       btn1: last ? '지도로' : '다음 스테이지',
       on1: () => go(() => (last ? openMap(first ? k : null) : goRoute(k + 1))),

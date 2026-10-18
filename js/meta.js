@@ -36,6 +36,17 @@ const CHAR_STORY = {
   goblin: [[2, [['goblin', '킥킥, 오늘은 장난 안 쳐.'], ['goblin', '…진짜야. 같이 놀래?'], ['usagi', '우라~!']]]],
   beetle: [[2, [['beetle', '부웅~'], ['beetle', '데굴데굴 굴리는 게 제일 좋아.'], ['chiikawa', '…(같이 데굴데굴)']]]],
 };
+// 몇몇 친구는 좋아하는 간식을 모아서 데려옴 (간식은 스테이지를 깨면 받음)
+const TREATS = { parfait: '딸기 파르페', dango: '경단', onigiri: '주먹밥' };
+const RECRUIT = {
+  momonga: { treat: 'parfait', n: 5, story: [['momonga', '딸기 파르페다! 그거 다 나 주는 거지?'], ['momonga', '…좋아, 오늘부터 같이 다녀 줄게. 대신 칭찬 많이 해 줘!'], ['chiikawa', '…!! (끄덕끄덕)']] },
+  kurimanju: { treat: 'dango', n: 5, story: [['kurimanju', '……(경단을 바라본다)'], ['kurimanju', '……(캬아)'], ['hachiware', '쿠리만쥬 씨도 같이 가 준대!']] },
+  goblin: { treat: 'onigiri', n: 4, story: [['goblin', '킥킥, 주먹밥 냄새가 나서 따라왔어.'], ['goblin', '…맛있다. 너희랑 다니면 이런 거 또 먹을 수 있어?'], ['usagi', '우라~!']] },
+  shisa: { stage: ['l', 8], story: [['shisa', '라멘 재료 나르는 거 도와줘서 고마워요!'], ['shisa', '이제 저도 토벌 따라갈게요~! 라멘 배달도 해 드릴게요!']] },
+};
+// 스테이지마다 주는 간식 (토벌은 딸기 파르페)
+const stageTreat = (t, i) => (t === 'b' ? 'parfait' : ['dango', 'parfait', 'onigiri'][i % 3]);
+
 const today = () => new Date().toISOString().slice(0, 10);
 const charIdx = id => CHARS.findIndex(c => c.id === id);
 
@@ -48,6 +59,7 @@ const Meta = {
     d.acc = d.acc || [];
     d.wear = d.wear || {};
     d.furn = d.furn || [];
+    d.treats = d.treats || {};
     Save.save();
     Meta.coinUI();
   },
@@ -67,6 +79,36 @@ const Meta = {
     });
   },
   // 처음 깨면 100 + 별마다 30, 다시 깨면 별마다 15
+  // 간식: 처음 깨면 별 수만큼, 다시 깨면 1개. 결과 창에 넣을 [아이콘, 개수]를 돌려줌
+  treat(t, i, stars, first) {
+    const k = stageTreat(t, i), n = first ? stars : 1;
+    Save.data.treats[k] = (Save.data.treats[k] || 0) + n;
+    Save.save();
+    return [`<img class="row-ic" src="${ITEM(k)}">`, '+' + n];
+  },
+  canRecruit(id) {
+    const r = RECRUIT[id];
+    return !!r && !Meta.owned(id) && (r.treat ? (Save.data.treats[r.treat] || 0) >= r.n : false);
+  },
+  async recruit(id) {
+    const r = RECRUIT[id];
+    if (r.treat) Save.data.treats[r.treat] -= r.n;
+    Save.data.own[id] = 1;
+    Save.save();
+    await playStory(r.story);
+    Sound.play('star', 1.2, 0.9);
+    confetti(16);
+  },
+  // 스테이지를 깨서 합류하는 친구 (시사)
+  async stageJoin(t, i) {
+    for (const [id, r] of Object.entries(RECRUIT)) {
+      if (r.stage && r.stage[0] === t && r.stage[1] === i && !Meta.owned(id)) {
+        Save.data.own[id] = 1;
+        Save.save();
+        await playStory(r.story);
+      }
+    }
+  },
   reward(stars, first) {
     const n = first ? 100 + stars * 30 : stars * 15;
     Meta.addCoins(n);
@@ -91,6 +133,15 @@ const Meta = {
 
 // ---------- 친구 상세 (편성, 친구들, 집에서 열림) ----------
 const Sheet = {
+  // 아직 없는 친구: 데려오는 방법 (간식 모으기, 스테이지, 뽑기)
+  recruitHtml(id) {
+    const r = RECRUIT[id];
+    if (!r) return `<div class="recruit"><img src="${ITEM('gift')}"><span>캡슐 뽑기에서 만나요</span></div>`;
+    if (r.stage) { const k = routeIdx(r.stage[0], r.stage[1]); return `<div class="recruit"><img src="${ITEM(routeStage(k).icon)}"><span>${k + 1}. ${routeStage(k).name}을(를) 깨면 와요</span></div>`; }
+    const have = Save.data.treats[r.treat] || 0;
+    return `<div class="recruit"><img src="${ITEM(r.treat)}"><span>${TREATS[r.treat]} ${Math.min(have, r.n)} / ${r.n}</span>
+      <button class="big-btn" data-recruit ${have >= r.n ? '' : 'disabled'}>데려오기</button></div>`;
+  },
   open(id, opts = {}) {
     const ch = CHARS[charIdx(id)];
     const own = Meta.owned(id), lv = Meta.lv(id);
@@ -103,7 +154,7 @@ const Sheet = {
     card.innerHTML = `
       <div class="sheet-art">${own ? Meta.figure(id, art(id), 'big') : `<span class="fig big"><img src="${art(id)}" class="shadow"></span>`}<div class="sheet-say"></div></div>
       <div class="sheet-name">${ch.name} ${attrTag(ch.attr)}</div>
-      ${own ? `<div class="sheet-lv"><b>Lv ${lv}</b><div class="lvbar"><i style="width:${(lv / LV_MAX) * 100}%"></i></div><small>${lv >= LV_MAX ? 'MAX' : '뽑기에서 또 만나면 레벨 업'}</small></div>` : '<div class="sheet-lv"><small>아직 못 만났어요. 캡슐 뽑기에서 만날 수 있어요!</small></div>'}
+      ${own ? `<div class="sheet-lv"><b>Lv ${lv}</b><div class="lvbar"><i style="width:${(lv / LV_MAX) * 100}%"></i></div><small>${lv >= LV_MAX ? 'MAX' : '뽑기에서 또 만나면 레벨 업'}</small></div>` : Sheet.recruitHtml(id)}
       <div class="sheet-rows"><div>${ch.heal ? '회복' : '공격'}<b>${stat.split(' ')[1]}</b></div><div>속성<b>${ATTR[ch.attr].icon}${ATTR[ch.attr].name}</b></div><div>스킬 게이지<b>${ch.skill.need}</b></div></div>
       <div class="sheet-skill"><b>${ch.skill.name}</b> ${ch.skill.desc}</div>
       ${own ? `<div class="sheet-label">액세서리</div><div class="sheet-accs"><button data-a="" class="${Save.data.wear[id] ? '' : 'on'}">없음</button>${Save.data.acc.map(a => `<button data-a="${a}" class="${Save.data.wear[id] === a ? 'on' : ''}"><img src="${ITEM(a)}"></button>`).join('') || ''}</div>
@@ -131,6 +182,8 @@ const Sheet = {
       Sheet.open(id, opts);
     }));
     card.querySelector('[data-close]').onclick = () => { Sound.play('click'); el.classList.remove('show'); };
+    const rb = card.querySelector('[data-recruit]');
+    if (rb) rb.onclick = async () => { el.classList.remove('show'); await Meta.recruit(id); Sheet.open(id, opts); opts.onChange && opts.onChange(); };
     const act = card.querySelector('[data-act]');
     if (act) act.onclick = () => { el.classList.remove('show'); opts.action.run(); };
     if (!el.classList.contains('show')) {
@@ -141,6 +194,13 @@ const Sheet = {
   },
 };
 
+// 아직 없는 친구 카드 위: 모으는 간식과 개수 (데려올 수 있으면 반짝)
+const treatBadge = id => {
+  const r = RECRUIT[id];
+  if (!r || !r.treat) return '';
+  return `<span class="tbadge${Meta.canRecruit(id) ? ' ready' : ''}"><img src="${ITEM(r.treat)}">${Math.min(Save.data.treats[r.treat] || 0, r.n)}/${r.n}</span>`;
+};
+
 // ---------- 친구들 (도감) ----------
 function openFriends() {
   show('friends');
@@ -148,7 +208,7 @@ function openFriends() {
   $('#friendsCount').textContent = `${n} / ${CHARS.length}`;
   $('#friendsGrid').innerHTML = CHARS.map(c => `<button class="fcard${Meta.owned(c.id) ? '' : ' locked'}" style="--ring:${c.ring}" data-id="${c.id}">
     ${Meta.owned(c.id) ? Meta.figure(c.id, art(c.id)) : `<span class="fig"><img src="${art(c.id)}" class="shadow"></span>`}
-    <span class="fname">${Meta.owned(c.id) ? c.name : '???'}</span>${Meta.owned(c.id) ? `<span class="flv">Lv${Meta.lv(c.id)}</span>` : ''}</button>`).join('');
+    <span class="fname">${Meta.owned(c.id) ? c.name : '???'}</span>${Meta.owned(c.id) ? `<span class="flv">Lv${Meta.lv(c.id)}</span>` : treatBadge(c.id)}</button>`).join('');
   $('#friendsGrid').querySelectorAll('.fcard').forEach(b => (b.onclick = () => { Sound.play('click'); Sheet.open(b.dataset.id, { onChange: openFriends }); }));
 }
 
@@ -165,7 +225,9 @@ async function pullGacha() {
   // 뽑기: 친구 60%, 액세서리 40%
   let prize;
   if (Math.random() < 0.6) {
-    const c = CHARS[Math.floor(Math.random() * CHARS.length)];
+    // 간식·스테이지로 데려오는 친구는 처음엔 뽑기에서 안 나옴
+    const pool = CHARS.filter(c => !RECRUIT[c.id] || Meta.owned(c.id));
+    const c = pool[Math.floor(Math.random() * pool.length)];
     const lv = Meta.lv(c.id);
     if (!lv) { Save.data.own[c.id] = 1; prize = { kind: 'new', id: c.id }; }
     else if (lv < LV_MAX) { Save.data.own[c.id] = lv + 1; prize = { kind: 'up', id: c.id, lv: lv + 1 }; }
