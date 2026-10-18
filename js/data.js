@@ -44,9 +44,14 @@ const ITEM = name => `assets/img/items/${name}.png`;
 // 전신 그림이 없는 캐릭터는 얼굴로
 const NO_BODY = new Set(['kani', 'shooting', 'darkstar', 'goblin', 'beetle']);
 const FXI = n => `assets/img/fx/${n}.png`;
-const UI = n => `assets/img/ui/${n}.png`;
 const FX_SPRITES = ['star_y', 'star_p', 'star_b', 'star_m', 'heart_p', 'heart_r', 'heart_l', 'heart_o', 'twinkle1', 'twinkle2', 'twinkle3', 'twinkle4'];
 const portrait = id => (NO_BODY.has(id) ? FACE(id) : BODY(id));
+// 귀여운 포즈 일러스트 (컷인, 스토리, 결과창에 씀)
+const ART = { chiikawa: 'pose_chiikawa', hachiware: 'pose_hachiware2', usagi: 'pose_usagi', momonga: 'pose_momonga', rakko: 'pose_rakko',
+  kani: 'body_kani', kurimanju: 'pose_kurimanju', shisa: 'pose_shisa' };
+const art = id => (ART[id] ? `assets/img/art/${ART[id]}.png` : portrait(id));
+const POCKETS = ['chiikawa', 'hachiware', 'usagi', 'momonga', 'rakko', 'shisa', 'kurimanju'].map(id => `assets/img/art/pocket_${id}.png`);
+const ONO = ['퍽!', '콩!', '뿅!', '팡!', '톡!', '쾅!'];
 
 const MONSTERS = {
   chimera:   { name: '키메라',   img: 'assets/img/monsters/chimera.png' },

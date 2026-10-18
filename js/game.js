@@ -110,7 +110,7 @@ function flash(color = '#ff4d6d', peak = 0.45) {
 // ---------- 타이틀 ----------
 ['chiikawa', 'hachiware', 'usagi', 'momonga', 'kurimanju', 'rakko', 'shisa'].forEach((id, i) => {
   const im = new Image();
-  im.src = BODY(id);
+  im.src = art(id);
   im.draggable = false;
   im.style.animationDelay = i * 0.12 + 's';
   $('#titleParty').appendChild(im);
@@ -123,6 +123,7 @@ const nodePos = (i, W) => ({ x: (0.5 + Math.sin(i * 1.15) * 0.28) * W, y: NODE_T
 
 function openMap(advanceFrom = null) {
   show('map');
+  Sound.music('map');
   $('#btnRamen').classList.toggle('on', Save.data.ramen !== false);
   const path = $('#mapPath');
   path.innerHTML = '';
@@ -202,7 +203,7 @@ function playStory(lines) {
     const next = () => {
       if (i >= lines.length) { ov.classList.remove('show'); ov.onclick = null; done(); return; }
       const [id, text] = lines[i++];
-      $('#storyChar').src = BODY(id);
+      $('#storyChar').src = art(id);
       $('#storyName').textContent = CHAR_NAME[id];
       $('#storyChar').animate([{ transform: 'translateY(24px) scale(.85)' }, { transform: 'translateY(0) scale(1)' }],
         { duration: 320, easing: 'cubic-bezier(.3,1.6,.6,1)' });
@@ -219,9 +220,12 @@ function playStory(lines) {
 }
 
 // ---------- 모달 ----------
-function modal({ title, stars = null, char, img = null, text, btn1, on1, btn2 = '', on2 = null }) {
+function modal({ title, stars = null, char, img = null, photo = false, rows = [], text, btn1, on1, btn2 = '', on2 = null }) {
   $('#modalTitle').textContent = title;
-  $('#modalChar').src = img || portrait(char);
+  $('#modalChar').src = img || art(char);
+  $('#modalChar').classList.toggle('photo', photo);
+  $('.modal-card').classList.toggle('has-photo', photo);
+  $('#modalRows').innerHTML = rows.map(([k, v]) => `<div>${k}<b>${v}</b></div>`).join('');
   $('#modalText').textContent = text;
   const st = $('#modalStars');
   st.innerHTML = stars == null ? '' : '<span>★</span><span>★</span><span>★</span>';
@@ -315,7 +319,7 @@ function refreshTile(t) {
 
 function buildParty() {
   $('#party').innerHTML = B.team.map(i => CHARS[i]).map(c =>
-    `<div class="pm" style="--ring:${c.ring}"><img src="${FACE(c.id)}" draggable="false"><span class="at">${ATTR[c.attr].icon}</span></div>`).join('');
+    `<div class="pm" style="--ring:${c.ring}"><img src="${FACE(c.id)}" draggable="false"><span class="at">${ATTR[c.attr].icon}</span><i class="g"></i></div>`).join('');
   [...$('#party').children].forEach((el, k) => (el.onclick = () => useSkill(k)));
   updateGauges();
 }
@@ -336,7 +340,7 @@ function updateMon() {
 }
 function updateCd() {
   const el = $('#countdown');
-  el.textContent = B.cd <= 1 ? '다음 턴 공격!' : `공격까지 ${B.cd}`;
+  el.innerHTML = `<b>${Math.max(B.cd, 0)}</b>${B.cd <= 1 ? '곧 공격!' : '턴 후 공격'}`;
   el.classList.toggle('danger', B.cd <= 1);
 }
 
@@ -370,7 +374,9 @@ async function startStage(i) {
   B.stage = i; B.wave = 0; B.over = false; B.busy = true; B.sel = null; B.pending = [];
   B.teamHp = B.teamMax = Save.data.buff === 'hp' ? 150 : 120;
   B.fever = 0;
+  B.maxCombo = 0;
   updateFever();
+  Sound.music('battle');
   NTYPES = B.team.length;
   B.gauge = B.team.map(k => (Save.data.buff === 'gauge' ? Math.floor(CHARS[k].skill.need / 2) : 0));
   if (Save.data.buff) { Save.data.buff = null; Save.save(); }
@@ -393,7 +399,7 @@ async function startStage(i) {
   });
   setTimeout(() => Sound.play('land', 1, 0.4), 450);
   banner('토벌 시작!');
-  Sound.play('open', 1.1);
+  Sound.play('jingle_start', 1, 0.8);
   await Promise.all(ps);
   B.busy = false;
 }
@@ -479,6 +485,7 @@ async function cascade(swapped, forced) {
     const res = Board.resolve(B.grid, combo === 0 ? swapped : null, combo === 0 ? forced : []);
     if (!res) break;
     combo++;
+    B.maxCombo = Math.max(B.maxCombo || 0, combo);
     if (combo === 5 && !B.fever) await feverShow();
     await stepFx(res, combo);
     await fall(Board.gravity(B.grid));
@@ -555,8 +562,7 @@ function popTile(t, delay) {
 
 function projectile(from, to, img, ring, delay) {
   const p = addFx('proj', from.x, from.y);
-  p.style.background = `#fff url(${img}) center/cover`;
-  p.style.borderColor = ring;
+  p.style.backgroundImage = `url(${img})`;
   const dx = to.x - from.x, dy = to.y - from.y, side = (Math.random() - 0.5) * 140;
   return p.animate([
     { transform: 'translate(0,0) scale(.5)', opacity: 0 },
@@ -608,7 +614,7 @@ async function stepFx(res, combo) {
   tally.forEach((cells, type) => {
     const ch = teamCh(type);
     const to = ch.heal ? teamC : monC;
-    cells.slice(0, 4).forEach(([r, c]) => projectile(tileCenter(r, c), to, FACE(ch.id), ch.ring, (d++) * 35));
+    cells.slice(0, 4).forEach(([r, c]) => projectile(tileCenter(r, c), to, TILE(ch.id), ch.ring, (d++) * 35));
   });
   const mult = (1 + 0.25 * (combo - 1)) * (B.fever ? 1.5 : 1);
   B.pending.push((async () => {
@@ -682,6 +688,17 @@ function hitMonster(dmg, ch, crit, k, eff = 1) {
   const mark = eff > 1 ? ' ▲' : eff < 1 ? ' ▼' : '';
   floatNum(x, y, (crit ? `${ch.line} ${dmg}` : `${dmg}`) + mark, ch.ring === '#ffd84d' ? '#d9a400' : ch.ring, crit || eff > 1 ? 'crit' : '');
   if (crit) shake(5, 200);
+  if (Math.random() < 0.55) {
+    const o = addFx('ono', x + (Math.random() - 0.5) * 60, y - 34);
+    o.textContent = ONO[Math.floor(Math.random() * ONO.length)];
+    o.style.setProperty('--c', ch.ring === '#ffd84d' || ch.ring === '#f5d90a' ? '#e8a600' : ch.ring);
+    o.animate([
+      { transform: 'translate(-50%,-50%) rotate(-10deg) scale(.2)', opacity: 0 },
+      { transform: 'translate(-50%,-50%) rotate(-10deg) scale(1.25)', opacity: 1, offset: 0.25 },
+      { transform: 'translate(-50%,-80%) rotate(-6deg) scale(1)', opacity: 1, offset: 0.7 },
+      { transform: 'translate(-50%,-110%) rotate(-6deg) scale(.9)', opacity: 0 },
+    ], { duration: 700, easing: 'ease-out' }).finished.then(() => o.remove());
+  }
 }
 
 async function fall(moves) {
@@ -770,11 +787,13 @@ async function win() {
   await clearShow();
   const isLast = B.stage === STAGES.length - 1;
   if (isLast && firstClear) await playStory(STORY.end);
-  const pool = B.team.map(i => CHARS[i]).filter(c => !NO_BODY.has(c.id));
+  const pool = B.team.map(i => CHARS[i]);
   const ch = pool[Math.floor(Math.random() * pool.length)] || CHARS[0];
+  Sound.music(null);
   const from = B.stage;
   modal({
     title: '토벌 성공!', stars, char: ch.id, text: `${ch.name}: "${ch.line}"`,
+    rows: [['남은 체력', Math.round(ratio * 100) + '%'], ['최대 콤보', B.maxCombo || 1], ['라면', firstClear ? '+1그릇' : '-']],
     btn2: '지도', on2: () => go(() => openMap(firstClear ? from : null)),
     btn1: isLast ? '지도로' : '다음 스테이지',
     on1: () => go(() => (isLast ? openMap(firstClear ? from : null) : openFormation(B.stage + 1))),
@@ -784,10 +803,11 @@ async function win() {
 async function lose() {
   B.over = true;
   B.busy = true;
-  Sound.play('lose', 1);
+  Sound.music(null);
+  Sound.play('jingle_lose', 1, 0.9);
   await banner('후퇴…', 600);
   modal({
-    title: '후퇴…', char: 'chiikawa', text: '치이카와: (훌쩍…) 다시 해볼까?',
+    title: '후퇴…', img: 'assets/img/art/scene_scared.jpg', photo: true, text: '치이카와: (훌쩍…) 다시 해볼까?',
     btn2: '지도', on2: () => go(openMap),
     btn1: '다시 하기', on1: () => go(() => startStage(B.stage)),
   });
@@ -822,7 +842,7 @@ function renderFormation() {
   $('#formRoster').innerHTML = CHARS.map((c, k) => {
     const good = [...foes].some(a => BEATS[c.attr] === a);
     return `<button class="ccard${formPick.includes(k) ? ' on' : ''}" style="--ring:${c.ring}" data-k="${k}">
-      <img src="${portrait(c.id)}"><div><div class="nm">${c.name} ${attrTag(c.attr)}</div>
+      <img src="${art(c.id)}"><div><div class="nm">${c.name} ${attrTag(c.attr)}</div>
       <div class="sk">${c.heal ? '회복' : '공격'} · ${c.skill.name}: ${c.skill.desc}</div></div>${good ? '<span class="good">유리!</span>' : ''}</button>`;
   }).join('');
   $('#formRoster').querySelectorAll('.ccard').forEach(el => (el.onclick = () => {
@@ -851,11 +871,11 @@ async function cutIn(ch) {
   const el = document.createElement('div');
   el.className = 'cutin';
   el.style.setProperty('--ring', ch.ring);
-  el.innerHTML = `<div class="dim"></div><div class="band"></div><img class="body" src="${portrait(ch.id)}">
+  el.innerHTML = `<div class="dim"></div><div class="band"></div><img class="body" src="${art(ch.id)}">
     <div class="say">${ch.skill.say}</div><div class="sname">${ch.skill.name}</div><div class="streak"></div>`;
   app.appendChild(el);
   const [dim, band, body, say, sname, streak] = el.children;
-  Sound.play('special', 0.9, 0.9);
+  Sound.play('jingle_skill', 1, 0.9);
   dim.animate([{ opacity: 0 }, { opacity: 0.55 }], { duration: 120, fill: 'forwards' });
   band.animate([
     { transform: 'rotate(-6deg) translateX(-110%)' },
@@ -1030,7 +1050,7 @@ async function go(fn) {
   wiping = true;
   const w = document.createElement('div');
   w.className = 'wipe';
-  w.innerHTML = `<img src="${FXI(FX_SPRITES[Math.floor(Math.random() * 4)])}">`;
+  w.innerHTML = `<img src="${POCKETS[Math.floor(Math.random() * POCKETS.length)]}">`;
   app.appendChild(w);
   await w.animate([{ transform: 'translateX(-105%) rotate(-4deg)' }, { transform: 'translateX(0) rotate(-4deg)' }],
     { duration: 240, easing: 'cubic-bezier(.3,.8,.4,1)', fill: 'forwards' }).finished;
@@ -1062,8 +1082,8 @@ async function clearShow() {
   const pool = B.team.map(i => CHARS[i]);
   const ch = pool[Math.floor(Math.random() * pool.length)];
   el.innerHTML = `<div class="dim"></div>
-    <div class="stamp"><img src="${UI('stamp')}"><span>토벌<br>성공</span></div>
-    <img class="hero" src="${portrait(ch.id)}"><div class="hero-say">${ch.line}</div>`;
+    <div class="slam">토벌<br>성공!</div>
+    <img class="hero" src="${art(ch.id)}"><div class="hero-say">${ch.line}</div>`;
   app.appendChild(el);
   const [dim, stamp, hero, say] = el.children;
   dim.animate([{ opacity: 0 }, { opacity: 0.35 }], { duration: 200, fill: 'forwards' });
@@ -1076,7 +1096,7 @@ async function clearShow() {
     { transform: 'translate(-50%,-50%) scale(1) rotate(-12deg)', opacity: 1 },
   ], { duration: 320, easing: 'cubic-bezier(.6,0,.9,.6)', fill: 'forwards' }).finished;
   Sound.play('hit1', 0.7, 1);
-  Sound.play('win', 1);
+  Sound.play('jingle_win', 1, 1);
   shake(12, 320);
   flash('#ffffff', 0.4);
   const sc = centerOf(stamp);
@@ -1086,7 +1106,7 @@ async function clearShow() {
     { transform: 'translateY(120%) rotate(-8deg)' },
     { transform: 'translateY(-6%) rotate(3deg)', offset: 0.7 },
     { transform: 'translateY(0) rotate(0)' },
-  ], { duration: 380, easing: 'ease-out', fill: 'forwards' });
+  ], { duration: 380, easing: 'ease-out' });
   say.animate([{ transform: 'scale(0)', opacity: 0 }, { transform: 'scale(1.12)', opacity: 1, offset: 0.7 }, { transform: 'scale(1)', opacity: 1 }],
     { duration: 260, delay: 280, fill: 'backwards' });
   setTimeout(() => Sound.play('pop', 1.3, 0.8), 300);
@@ -1104,7 +1124,7 @@ async function feverShow() {
   updateFever();
   const el = document.createElement('div');
   el.className = 'fever-show';
-  el.innerHTML = `<img src="assets/img/npc/pajama.png"><div class="fever-txt">응원 피버! 공격 ×1.5</div>`;
+  el.innerHTML = `<img src="assets/img/art/pajama_uwawa.png"><div class="fever-txt">응원 피버! 공격 ×1.5</div>`;
   app.appendChild(el);
   const [img, txt] = el.children;
   img.animate([{ transform: 'translate(-50%,110%) rotate(4deg)' }, { transform: 'translate(-50%,-6%) rotate(-2deg)', offset: 0.7 }, { transform: 'translate(-50%,0) rotate(0)' }],
@@ -1123,7 +1143,7 @@ async function feverShow() {
 $('#btnRamen').onclick = () => {
   Sound.play('click');
   if (Save.data.ramen === false) {
-    modal({ title: '라면 가게', img: 'assets/img/npc/armor.png', text: '갑옷 아저씨: 오늘 국물은 다 떨어졌어. 토벌 하나 더 하고 와.', btn1: '알겠어요', on1: () => {} });
+    modal({ title: '라면 가게', img: 'assets/img/art/armor_one.png', text: '갑옷 아저씨: 오늘 국물은 다 떨어졌어. 토벌 하나 더 하고 와.', btn1: '알겠어요', on1: () => {} });
     return;
   }
   const take = buff => {
@@ -1137,8 +1157,8 @@ $('#btnRamen').onclick = () => {
     floatNum(c.x, c.y - 30, buff === 'hp' ? '다음 토벌 체력 150!' : '다음 토벌 게이지 반!', '#e07b39');
   };
   modal({
-    title: '라면 가게', img: 'assets/img/npc/armor.png', text: '갑옷 아저씨: 한 그릇 먹고 가. 다음 토벌에 힘이 날 거야.',
-    btn2: '진한 국물 (게이지 반)', on2: () => take('gauge'),
-    btn1: '곱빼기 (체력 150)', on1: () => take('hp'),
+    title: '라면 가게', img: 'assets/img/art/armor_one.png', text: '갑옷 아저씨: 한 그릇 먹고 가. 곱빼기는 체력 150, 진한 국물은 스킬 게이지 반부터.',
+    btn2: '진한 국물', on2: () => take('gauge'),
+    btn1: '곱빼기', on1: () => take('hp'),
   });
 };
