@@ -133,7 +133,9 @@ function addFx(cls, x, y) {
 // Kenney 파티클(CC0) 그림을 원하는 색으로 칠해서 씀
 // CSS 변수 안의 url()은 css/ 기준으로 풀려서 절대 주소로 넣음
 const KP = n => `url(${new URL(`assets/img/fx/k/${n}.png`, location.href).href})`;
+const FX_MAX = 120;
 function kp(name, x, y, size, color, frames, opts) {
+  if (fx.childElementCount > FX_MAX) return Promise.resolve();
   const el = addFx('kp', x, y);
   Object.assign(el.style, { width: size + 'px', height: size + 'px', marginLeft: -size / 2 + 'px', marginTop: -size / 2 + 'px' });
   el.style.setProperty('--m', KP(name));
@@ -925,7 +927,9 @@ const Combo = {
     if (n >= 3) {
       const p = centerOf(el);
       burst(p.x, p.y, col, 6 + Math.min(n, 8));
-      boardEl.animate([{ boxShadow: `0 0 0 0 ${col}` }, { boxShadow: `0 0 0 7px ${col}, 0 0 22px 6px ${col}`, offset: 0.3 }, { boxShadow: '0 0 0 0 transparent' }], { duration: 460, easing: 'ease-out' });
+      const b = boardEl.getBoundingClientRect(), a = app.getBoundingClientRect(), glow = addFx('board-glow', b.left - a.left, b.top - a.top);
+      Object.assign(glow.style, { width: b.width + 'px', height: b.height + 'px', boxShadow: `0 0 0 7px ${col}, 0 0 22px 6px ${col}` });
+      glow.animate([{ opacity: 0 }, { opacity: 1, offset: 0.3 }, { opacity: 0 }], { duration: 460, easing: 'ease-out' }).finished.then(() => glow.remove()); // 투명도만 움직여서 가벼움
     }
   },
   end() {
@@ -1182,8 +1186,8 @@ function popTile(t, delay, push = null, to = null) {
     const fly = to && flyCount < 16;
     t.el.style.zIndex = 3;
     t.inner.animate([
-      { transform: 'scale(1)', filter: 'brightness(1)' },
-      { transform: 'scale(1.3,.68)', filter: 'brightness(1.25)', offset: 0.38 },
+      { transform: 'scale(1)' },
+      { transform: 'scale(1.3,.68)', offset: 0.38 },
       { transform: 'scale(.84,1.26) translateY(-10%)', offset: 0.72 },
       fly ? { transform: 'scale(1.1) translateY(-16%)' } : { transform: 'scale(0) translateY(-20%) rotate(25deg)' },
     ], { duration: fly ? 140 : 230, delay, easing: 'ease-out', fill: 'forwards' });
@@ -1200,10 +1204,10 @@ function popTile(t, delay, push = null, to = null) {
     });
   }
   return t.inner.animate([
-    { transform: 'scale(1)', opacity: 1, filter: 'brightness(1)' },
-    { transform: 'scale(1.18,.86)', opacity: 1, filter: 'brightness(2.2)', offset: 0.2 },
-    { transform: 'scale(1.38)', opacity: 1, filter: 'brightness(1.6)', offset: 0.45 },
-    { transform: 'scale(0) rotate(30deg)', opacity: 0, filter: 'brightness(1)' },
+    { transform: 'scale(1)', opacity: 1 },
+    { transform: 'scale(1.18,.86)', opacity: 1, offset: 0.2 },
+    { transform: 'scale(1.38)', opacity: 1, offset: 0.45 },
+    { transform: 'scale(0) rotate(30deg)', opacity: 0 },
   ], { duration: 260, delay, easing: 'ease-in', fill: 'forwards' }).finished.then(() => t.el.remove());
 }
 
@@ -1354,7 +1358,7 @@ function zoneCell([r, c], on, pop, kind) {
     { opacity: 0, transform: 'scale(.6)' },
     { opacity: 0.85, transform: 'scale(1)', offset: f(Math.min(70, wait * 0.5)) },
     { opacity: 0.55, transform: 'scale(.94)', offset: f(wait * 0.75) },
-    { opacity: 1, transform: 'scale(1.08)', filter: 'brightness(1.3)', offset: f(wait) },
+    { opacity: 1, transform: 'scale(1.08)', offset: f(wait) },
     { opacity: 0, transform: 'scale(1.2)' },
   ], { duration: dur, delay: on, easing: 'ease-out', fill: 'backwards' }).finished.then(() => el.remove());
 }
