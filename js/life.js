@@ -504,8 +504,8 @@ const Life = {
     modal({
       title: st.exam ? '합격!' : '클리어!', stars, char: ch.id, text: `${ch.name}: "${lineOf(ch.id)}"`,
       rows: [['점수', L.score], [`<img class="row-ic" src="${ITEM('coin')}">`, '+' + coins], treat],
-      btn2: '지도', on2: () => go(() => openMap(first ? k : null)),
-      btn1: last ? '지도로' : '다음 스테이지',
+      btn2: '🏠 지도로', on2: () => go(() => openMap(first ? k : null)),
+      btn1: last ? '🏠 지도로' : '다음 판 ▶',
       on1: () => (last ? go(() => openMap(first ? k : null)) : Hearts.need(() => go(() => goRoute(k + 1)), () => go(() => openMap(first ? k : null)))),
     });
   },

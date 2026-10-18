@@ -221,7 +221,7 @@ const Spot = {
   finish: null,
   show(target, text, { tap = false, pad = 8, who = 'hachiware' } = {}) {
     Spot.close();
-    const els = [].concat(target).filter(Boolean);
+    const els = [].concat(target).filter(e => e && e.getClientRects().length); // 안 보이는 곳(다른 화면의 버튼 등)은 건너뜀
     if (!els.length) return Promise.resolve();
     return new Promise(done => {
       const a = app.getBoundingClientRect();

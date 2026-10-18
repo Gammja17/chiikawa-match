@@ -37,6 +37,7 @@ const goRoute = k => (ROUTE[k][0] === 'b' ? openFormation(ROUTE[k][1]) : Life.st
 
 // ---------- 공통 ----------
 function show(id) {
+  if (typeof Spot !== 'undefined') Spot.close(); // 화면이 바뀌면 떠 있던 안내는 닫음 (안 보이는 버튼을 기다리며 멈추지 않게)
   document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
   fitText($('#' + id));
 }
@@ -486,8 +487,11 @@ function modal({ title, stars = null, char, img = null, photo = false, rows = []
   b1.textContent = btn1;
   b2.textContent = btn2;
   const close = () => $('#modal').classList.remove('show');
-  b1.onclick = () => { Sound.play('click'); close(); on1(); };
-  b2.onclick = () => { Sound.play('click'); close(); on2 && on2(); };
+  // 뜨자마자 눌리지 않게 (연출을 넘기던 손가락이 바로 버튼을 누르는 걸 막음)
+  const shownAt = performance.now();
+  const ready = () => performance.now() - shownAt > 500;
+  b1.onclick = () => { if (!ready()) return; Sound.play('click'); close(); on1(); };
+  b2.onclick = () => { if (!ready()) return; Sound.play('click'); close(); on2 && on2(); };
   $('#modal').classList.add('show');
   fitText($('#modal'));
   $('.modal-card').animate([{ transform: 'scale(.5)', opacity: 0 }, { transform: 'scale(1.06)', opacity: 1, offset: 0.6 }, { transform: 'scale(1)' }],
@@ -1594,8 +1598,8 @@ async function win() {
   modal({
     title: '토벌 성공!', stars, char: ch.id, text: `MVP ${ch.name}: "${lineOf(ch.id)}"`,
     rows: [['남은 체력', Math.round(ratio * 100) + '%'], [`<img class="row-ic" src="${ITEM('coin')}">`, '+' + coins], treat],
-    btn2: '지도', on2: () => go(() => openMap(firstClear ? from : null)),
-    btn1: isLast ? '지도로' : '다음 스테이지',
+    btn2: '🏠 지도로', on2: () => go(() => openMap(firstClear ? from : null)),
+    btn1: isLast ? '🏠 지도로' : '다음 판 ▶',
     on1: () => (isLast ? go(() => openMap(firstClear ? from : null)) : Hearts.need(() => go(() => goRoute(k + 1)), () => go(() => openMap(firstClear ? from : null)))),
   });
 }
