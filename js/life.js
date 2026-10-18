@@ -425,6 +425,7 @@ const Life = {
   },
 
   // 남은 이동(시간 3초마다)을 줄폭탄으로 바꿔 한꺼번에 터뜨림
+  // 로켓은 0.11초 간격으로 겹쳐 날아가고, 화면을 한 번 누르면 남은 칸은 바로 바뀜
   async bonus() {
     const left = () => (L.st.time ? Math.floor(L.time / 3) : L.moves);
     if (left() <= 0) return;
@@ -432,9 +433,15 @@ const Life = {
     await sleep(600);
     const cells = pickTiles(Math.min(left(), 12));
     const from = centerOf($('.lh-limit'));
-    for (const [i, [r, c]] of cells.entries()) {
-      flyTile(ITEM('rocket'), from, tileCenter(r, c), 0, '#bfe9ff');
-      await sleep(330);
+    let skip = false, skipNow;
+    const tapped = new Promise(ok => (skipNow = ok));
+    const onTap = () => { skip = true; skipNow(); };
+    window.addEventListener('pointerdown', onTap, { capture: true });
+    const done = new Set();
+    // 로켓이 꽂힌 칸을 줄폭탄으로 (건너뛰기와 겹쳐도 한 번만)
+    const make = (r, c, i) => {
+      if (done.has(r * 100 + c)) return;
+      done.add(r * 100 + c);
       const t = B.grid[r][c];
       t.special = Math.random() < 0.5 ? 'h' : 'v';
       t.type = -1;
@@ -442,11 +449,21 @@ const Life = {
       squish(t);
       const p = tileCenter(r, c);
       burst(p.x, p.y, '#ffffff', 6);
-      Sound.pop(i);
+      Sound.pop(Math.min(i, 11));
       if (L.st.time) L.time = Math.max(0, L.time - 3); else L.moves--;
       Life.hud();
-      await sleep(90);
+    };
+    const flights = [];
+    for (const [i, [r, c]] of cells.entries()) {
+      if (skip) break;
+      flights.push(flyTile(ITEM('rocket'), from, tileCenter(r, c), 0, '#bfe9ff', () => make(r, c, i)));
+      await sleep(110);
     }
+    // 다 날아갈 때까지 기다리다가, 그 사이 누르면 바로 다 바꿈
+    await Promise.race([Promise.all(flights), tapped]);
+    window.removeEventListener('pointerdown', onTap, { capture: true });
+    cells.forEach(([r, c], i) => make(r, c, i));
+    await sleep(skip ? 120 : 200);
     const rest = left();
     await cascade(null, cells);
     if (rest > 0) {
