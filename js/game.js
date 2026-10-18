@@ -112,13 +112,28 @@ document.addEventListener('touchend', e => {
 }, { passive: false });
 ['gesturestart', 'gesturechange', 'dblclick'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
 
+// 판과 화면의 위치는 한 프레임에 한 번만 읽음 (터질 때 수백 번 읽으며 화면 배치를 다시 계산하느라 멈칫하던 것)
+const RECT = new Map();
+let rectReset = 0;
+function cachedRect(el) {
+  let r = RECT.get(el);
+  if (!r) {
+    RECT.set(el, (r = el.getBoundingClientRect()));
+    if (!rectReset) {
+      const clear = () => { RECT.clear(); rectReset = 0; };
+      rectReset = requestAnimationFrame(clear);
+      setTimeout(clear, 100); // 창이 가려져 프레임이 안 돌 때도 비움
+    }
+  }
+  return r;
+}
 function rel(rect) {
-  const a = app.getBoundingClientRect();
+  const a = cachedRect(app);
   return { x: rect.left - a.left + rect.width / 2, y: rect.top - a.top + rect.height / 2, w: rect.width, h: rect.height };
 }
-const centerOf = el => rel(el.getBoundingClientRect());
+const centerOf = el => rel(cachedRect(el)); // 같은 프레임 안에서는 한 번만 읽음
 function tileCenter(r, c) {
-  const b = boardEl.getBoundingClientRect(), a = app.getBoundingClientRect();
+  const b = cachedRect(boardEl), a = cachedRect(app);
   return { x: b.left - a.left + (c + 0.5) * B.S, y: b.top - a.top + (r + 0.5) * B.S };
 }
 function addFx(cls, x, y) {
@@ -274,6 +289,7 @@ function flyToGoal(src, p, chip, color = '#ffd84d') {
 
 // 반짝이 별과 불똥이 사방으로 튐
 function burst(x, y, color, n = 6) {
+  if (fx.childElementCount > 60) n = Math.ceil(n / 2); // 효과가 이미 많으면 반만
   for (let i = 0; i < n; i++) {
     const ang = Math.random() * Math.PI * 2, d = 24 + Math.random() * 44, rot = (Math.random() - 0.5) * 300;
     const star = i % 3 !== 2;
@@ -907,7 +923,7 @@ const Combo = {
   show(n) {
     const col = `hsl(${(n * 47) % 360} 75% 58%)`, s = 1 + Math.min(n, 8) * 0.08;
     if (!this.el) {
-      const b = boardEl.getBoundingClientRect(), a = app.getBoundingClientRect();
+      const b = cachedRect(boardEl), a = cachedRect(app);
       this.el = addFx('combo', b.left - a.left + b.width / 2, b.top - a.top + b.height * 0.28);
       this.el.innerHTML = `<i class="rays"></i><div class="crow"><span class="cnum"></span><img class="cword" src="${CIMG('w_combo')}"></div><img class="cpraise">`;
     }
@@ -927,7 +943,7 @@ const Combo = {
     if (n >= 3) {
       const p = centerOf(el);
       burst(p.x, p.y, col, 6 + Math.min(n, 8));
-      const b = boardEl.getBoundingClientRect(), a = app.getBoundingClientRect(), glow = addFx('board-glow', b.left - a.left, b.top - a.top);
+      const b = cachedRect(boardEl), a = cachedRect(app), glow = addFx('board-glow', b.left - a.left, b.top - a.top);
       Object.assign(glow.style, { width: b.width + 'px', height: b.height + 'px', boxShadow: `0 0 0 7px ${col}, 0 0 22px 6px ${col}` });
       glow.animate([{ opacity: 0 }, { opacity: 1, offset: 0.3 }, { opacity: 0 }], { duration: 460, easing: 'ease-out' }).finished.then(() => glow.remove()); // 투명도만 움직여서 가벼움
     }
@@ -1048,13 +1064,13 @@ function afterFx(ef) {
     kp('smoke_04', o.x, o.y - S * 0.3, S * 2.6, '#d9cfc2', [{ transform: 'translateY(0) scale(.6)', opacity: 0.7 }, { transform: `translateY(${-S}px) scale(1.4)`, opacity: 0 }], { duration: 1000, easing: 'ease-out' });
     embers(o.x, o.y, '#ffb347', 8);
   } else if (ef.kind === 'h' || ef.kind === 'v') {
-    const b = boardEl.getBoundingClientRect(), a = app.getBoundingClientRect(), horiz = ef.kind === 'h';
+    const b = cachedRect(boardEl), a = cachedRect(app), horiz = ef.kind === 'h';
     const line = addFx('afterline' + (horiz ? '' : ' v'), horiz ? b.left - a.left : o.x, horiz ? o.y : b.top - a.top);
     Object.assign(line.style, horiz ? { width: b.width + 'px' } : { height: b.height + 'px' });
     line.animate([{ opacity: 0.9 }, { opacity: 0 }], { duration: 500, easing: 'ease-out' }).finished.then(() => line.remove());
     for (let k = 0; k < 7; k++) { const x = horiz ? b.left - a.left + (k + 0.5) * S : o.x, y = horiz ? o.y : b.top - a.top + (k + 0.5) * S; embers(x, y, '#bfe9ff', 1); }
   } else if (ef.kind === 'rainbow') {
-    const b = boardEl.getBoundingClientRect(), a = app.getBoundingClientRect();
+    const b = cachedRect(boardEl), a = cachedRect(app);
     const colors = ['#ff8ab8', '#ffd84d', '#7cc4ec', '#a6d96a', '#b99cf0'];
     for (let k = 0; k < 14; k++) embers(b.left - a.left + Math.random() * b.width, b.top - a.top + Math.random() * b.height, colors[k % 5], 1);
   } else if (ef.kind === 'plane' && ef.target) {
@@ -1177,9 +1193,8 @@ function effectFx(ef) {
 
 // 얼굴은 깨지지 않음: 꾹 눌렸다가 쭈욱 기지개 → 뿅 연기 → 괴물(또는 목표)에게 날아가 박치기
 // to: { at: {x, y}, hit } 날아갈 곳. 없으면 하트나 별로 뿅 사라짐. push: 아이템에 맞으면 통째로 튕겨 나감
-function popTile(t, delay, push = null, to = null) {
-  const r = t.el.getBoundingClientRect(), a = app.getBoundingClientRect();
-  const x = r.left - a.left + r.width / 2, y = r.top - a.top + r.height / 2;
+function popTile(t, delay, push = null, to = null, at = null) {
+  const { x, y } = at || centerOf(t.el);
   if (t.el.isConnected && t.type >= 0) {
     if (push && !to) return knockTile(t, x, y, push, delay);
     const S = B.S, src = t.inner.querySelector('img')?.src, color = teamCh(t.type)?.ring || '#ffd84d';
@@ -1213,6 +1228,7 @@ function popTile(t, delay, push = null, to = null) {
 
 // 조각이 포물선으로 튀어 떨어짐 (상자 나무 조각, 포장지, 흙, 물방울)
 function shards(x, y, colors, n = 8, size = 10, round = false) {
+  if (fx.childElementCount > 60) n = Math.ceil(n / 2);
   for (let i = 0; i < n; i++) {
     const el = addFx('shard' + (round ? ' round' : ''), x, y);
     el.style.background = colors[i % colors.length];
@@ -1403,7 +1419,7 @@ async function stepFx(res, combo, from = null) {
       burst(p.x, p.y, color, n > 15 ? 3 : 5);
       shards(p.x, p.y, [color, '#ffffff'], n > 12 ? 2 : 4, 9, true);
     }, delay + 50);
-    popTile(tile, delay, pushAt.get(key(r, c)), targetOf(tile));
+    popTile(tile, delay, pushAt.get(key(r, c)), targetOf(tile), p);
   });
   // 많이 터질수록 판이 통 울림
   if (n >= 4) setTimeout(() => boardEl.animate([{ transform: 'scale(1)' }, { transform: `scale(${1 + Math.min(0.03, n * 0.002)})` }, { transform: 'scale(1)' }], { duration: 160, easing: 'ease-out' }), 60);
@@ -1816,7 +1832,7 @@ async function cutIn(ch) {
     { transform: 'none', opacity: 1 },
   ], { duration: 420, delay: 120, easing: 'ease-out', fill: 'backwards' });
   setTimeout(() => {
-    const r = body.getBoundingClientRect(), a = app.getBoundingClientRect();
+    const r = body.getBoundingClientRect(), a = cachedRect(app);
     const x = r.left - a.left + r.width / 2, y = r.top - a.top + r.height / 2;
     burst(x, y, ch.ring, 14);
     burst(x, y, '#ffffff', 10);
@@ -1867,7 +1883,7 @@ async function actor(ch, points, { dur = 170, hop = 0.8, size = 1.5, onHit = nul
   im.style.width = S * size + 'px';
   fx.appendChild(im);
   const place = (p, extra = '') => `translate(${p.x}px, ${p.y}px) translate(-50%, -78%) ${extra}`;
-  let prev = { x: points[0].x, y: app.getBoundingClientRect().height + S }; // 화면 아래에서 폴짝 등장
+  let prev = { x: points[0].x, y: cachedRect(app).height + S }; // 화면 아래에서 폴짝 등장
   for (const [i, p] of points.entries()) {
     const f = p.x < prev.x - 1 ? -1 : 1;
     const mid = { x: (prev.x + p.x) / 2, y: Math.min(prev.y, p.y) - S * hop };

@@ -35,9 +35,15 @@ const Net = {
   cloudSave() {
     if (!Net.on || !Net.user) return;
     clearTimeout(Net.saveTimer);
-    Net.saveTimer = setTimeout(() => {
-      Net.db.collection('users').doc(Net.user.uid).set({ data: JSON.stringify(Save.data), at: Save.data.savedAt || Date.now() }).catch(() => {});
-    }, 2500);
+    Net.savePending = true;
+    Net.saveTimer = setTimeout(Net.flush, 2500);
+  },
+  // 미뤄 둔 저장을 바로 올림 (앱을 닫거나 다른 앱으로 넘어갈 때)
+  flush() {
+    clearTimeout(Net.saveTimer);
+    if (!Net.savePending || !Net.on || !Net.user) return;
+    Net.savePending = false;
+    Net.db.collection('users').doc(Net.user.uid).set({ data: JSON.stringify(Save.data), at: Save.data.savedAt || Date.now() }).catch(() => {});
   },
   async cloudLoad() {
     try {
@@ -86,8 +92,7 @@ function openChallenge() {
 $('#btnTower').onclick = () => { Sound.play('open'); go(() => Tower.start(1)); };
 $('#btnContest').onclick = () => { Sound.play('open'); go(() => Life.begin(CONTEST, { kind: 'contest' })); };
 $('#btnChallenge').onclick = () => { Sound.play('click'); go(openChallenge); };
-$('#btnRanking').onclick = () => { Sound.play('click'); go(() => openRanking('cleared')); };
-document.querySelectorAll('.btn-tochallenge').forEach(b => (b.onclick = () => { Sound.play('click'); go(openChallenge); }));
+$('#btnMapRank').onclick = () => { Sound.play('click'); go(() => openRanking('cleared')); };
 
 const BOARDS = { cleared: { label: '깬 스테이지', unit: '개' }, tower: { label: '인어섬', unit: '층' }, contest: { label: '제초 대회', unit: '점' } };
 let rankTab = 'cleared';
@@ -128,4 +133,17 @@ async function openRanking(tab = rankTab) {
 }
 document.querySelectorAll('.rank-tabs button').forEach(b => (b.onclick = () => { Sound.play('pop', 1.2, 0.5); openRanking(b.dataset.t); }));
 Net.onChange(() => { if ($('#ranking').classList.contains('active')) openRanking(); });
-Net.init();
+// 시작 화면: 구글로 로그인하면 진행이 계정에 저장됨 (로그인하면 이름과 '저장 중' 표시)
+function titleLogin() {
+  const b = $('#btnTitleLogin');
+  b.hidden = !Net.on;
+  if (!Net.on) return;
+  const u = Net.user, google = u && !u.isAnonymous;
+  b.classList.toggle('on', !!google);
+  b.textContent = google ? `✓ ${Net.name()} · 진행 저장 중` : u ? '구글 계정 연결하고 진행 저장' : '구글로 로그인하고 진행 저장';
+  b.onclick = google ? null : () => { Sound.play('click'); Net.google(); };
+}
+Net.onChange(titleLogin);
+document.addEventListener('visibilitychange', () => document.hidden && Net.flush());
+window.addEventListener('pagehide', () => Net.flush());
+Net.init().then(titleLogin);
