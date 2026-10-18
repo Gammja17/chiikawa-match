@@ -216,18 +216,17 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 .tile.sel .inner img { filter: drop-shadow(0 0 3px #fff) drop-shadow(0 0 3px var(--pink)); }
 .fximg { position: absolute; pointer-events: none; }
 
-/* 아이템: 얼굴 구슬처럼 둥근 원판 위에. 친구 색과 안 겹치게 흰 고리 + 연보라 테 */
-.tile .inner.item { animation: itemBob 1.4s ease-in-out infinite; }
-.tile .inner.item::before { content: ''; position: absolute; inset: 6%; border-radius: 50%; background: radial-gradient(circle at 50% 38%, #fffdf6 0 55%, #fbefd9 100%);
-  border: calc(var(--s) * .065) solid #fff; box-shadow: 0 0 0 1.5px #b5a3cf, 0 2px 0 1.5px #4a426230; }
-.tile .inner.item > img:not(.sp) { position: relative; }
-.tile .inner.item img { transform: scale(.74); filter: drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 1.5px #fff) drop-shadow(0 3px 0 #4a426240); }
+/* 아이템: 원판 없이 그림 모양을 따라 테두리 (얼굴 구슬처럼). 흰 띠 + 진한 선 */
+.tile .inner.item { animation: itemBob 1.4s ease-in-out infinite;
+  filter: drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff)
+    drop-shadow(1.5px 0 0 #4a4262) drop-shadow(-1.5px 0 0 #4a4262) drop-shadow(0 1.5px 0 #4a4262) drop-shadow(0 -1.5px 0 #4a4262) drop-shadow(0 3px 0 #4a426240); }
+.tile .inner.item img { transform: scale(.8); filter: none; }
 .tile .inner.item.h img, .tile .inner.item.v img { position: absolute; left: 50%; top: 50%; width: 100%; height: auto; }
 /* 랏코 검 그림은 칼끝이 오른쪽 위(45도). 가로는 오른쪽으로, 세로는 위로 눕힘 */
-.tile .inner.item.h .sp { transform: translate(-50%, -50%) rotate(45deg) scale(.72); } /* 대각선 그림을 눕히면 칸보다 길어서 줄임 */
-.tile .inner.item.v .sp { transform: translate(-50%, -50%) rotate(-45deg) scale(.72); }
-.tile .inner.item .sp { filter: drop-shadow(0 3px 0 #4a426240); }
-.tile .inner.item .axis { position: absolute; left: 50%; top: 50%; width: 84%; height: 22%; transform: translate(-50%, -50%); border-radius: 99px; background: #cfeeff; opacity: .9; }
+.tile .inner.item.h .sp { transform: translate(-50%, -50%) rotate(45deg) scale(.74); } /* 대각선 그림을 눕히면 칸보다 길어서 줄임 */
+.tile .inner.item.v .sp { transform: translate(-50%, -50%) rotate(-45deg) scale(.74); }
+/* 검이 방향을 보여 줘서 줄 표시는 숨김 */
+.tile .inner.item .axis { display: none; position: absolute; left: 50%; top: 50%; width: 84%; height: 22%; transform: translate(-50%, -50%); border-radius: 99px; background: #cfeeff; opacity: .9; }
 .tile .inner.item.v .axis { width: 22%; height: 84%; }
 
 /* 기믹: 구슬 위에 반투명하게 씌우고 아이콘은 가운데 */
@@ -717,6 +716,10 @@ img.shadow { filter: brightness(0) opacity(.15); }
 /* 합체 아이템 그림 */
 .combo-art { position: absolute; z-index: 6; pointer-events: none; }
 .combo-art img { display: block; width: 100%; filter: drop-shadow(0 4px 0 #4a426240) drop-shadow(0 0 10px #fff); }
+/* 랏코 칼질: 하얀 칼자국 + 휙 지나가는 칼 */
+.slash-cut { position: absolute; z-index: 6; pointer-events: none; transform-origin: 0 50%; border-radius: 99px;
+  background: linear-gradient(90deg, transparent, #fff 12%, #fff 88%, transparent); box-shadow: 0 0 14px 4px #fff, 0 0 4px 1px #cfe3ff; }
+.slash-sword { position: absolute; left: 0; top: 0; z-index: 7; pointer-events: none; filter: drop-shadow(0 0 6px #fff); }
 .combo .rays { position: absolute; left: 50%; top: 50%; width: 220px; height: 220px; margin: -110px 0 0 -110px; z-index: -1; border-radius: 50%; opacity: .55; scale: var(--rs, 1);
   background: repeating-conic-gradient(var(--hue) 0 9deg, transparent 9deg 22deg);
   -webkit-mask: radial-gradient(circle, #000 18%, transparent 68%); mask: radial-gradient(circle, #000 18%, transparent 68%); animation: spin 3.2s linear infinite; }

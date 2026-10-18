@@ -253,7 +253,7 @@ const Sheet = {
       <div class="sheet-art">${own ? Meta.figure(id, art(id), 'big') : `<span class="fig big"><img src="${art(id)}" class="shadow"></span>`}<div class="sheet-say"></div></div>
       <div class="sheet-name">${ch.name} ${attrTag(ch.attr)}</div>
       ${own ? `<div class="sheet-lv"><b>Lv ${lv}</b><div class="lvbar"><i style="width:${(lv / LV_MAX) * 100}%"></i></div><small>${lv >= LV_MAX ? 'MAX' : '뽑기에서 또 만나면 레벨 업'}</small></div>` : Sheet.recruitHtml(id)}
-      <div class="sheet-rows"><div>${ch.heal ? '회복' : '공격'}<b>${stat.split(' ')[1]}</b></div><div>속성<b>${ATTR[ch.attr].icon}${ATTR[ch.attr].name}</b></div><div>스킬 게이지<b>${ch.skill.need}</b></div></div>
+      <div class="sheet-rows"><div>${ch.heal ? '회복' : '공격'}<b>${stat.split(' ')[1]}</b></div><div>속성<b>${ATTR[ch.attr].icon}${ATTR[ch.attr].name}</b></div><div>스킬 게이지<b>${skillNeed(id, false)}</b><small>일상 ${skillNeed(id, true)}</small></div></div>
       <div class="sheet-skill"><b>${ch.skill.name}</b> ${ch.skill.desc}</div>
       ${own && SKINS[id] ? `<div class="sheet-label">옷</div><div class="sheet-accs"><button data-s="" class="${Save.data.outfit[id] ? '' : 'on'}">기본</button>${(Save.data.skins[id] || []).map(s => `<button data-s="${s}" class="${Save.data.outfit[id] === s ? 'on' : ''}"><img src="${SKIN(id, s)}"></button>`).join('')}</div>
         ${(Save.data.skins[id] || []).length ? '' : '<small class="sheet-hint">캡슐 뽑기에서 옷을 모아 보세요</small>'}` : ''}

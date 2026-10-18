@@ -197,7 +197,7 @@ const Life = {
     if (run.kind === 'route' && run.i < 2 && !Save.data.helper) L.helper = CHARS.findIndex(c => c.id === 'hachiware'); // 처음 두 판은 하치와레가 알아서 따라옴
     else if (run.kind !== 'tower' || run.floor === 1 || L.helper == null) await pickHelper();
     Object.assign(L, { hg: 0, run, ending: false, st, i, moves: st.moves || 0, time: st.time || 0, score: 0, ing: 0, chars: {}, popped: false, extra: false, goalsHtml: '' });
-    Object.assign(B, { mode: 'life', stage: i, over: false, busy: true, sel: null, pending: [], maxCombo: 0, fever: 0 });
+    Object.assign(B, { mode: 'life', stage: i, over: false, busy: true, inSkill: false, sel: null, pending: [], maxCombo: 0, fever: 0 });
     B.team = LIFE_CHARS.slice(0, st.types).map(id => CHARS.findIndex(c => c.id === id));
     Object.assign(B, { real: B.team.length, played: false, dmgBy: {} });
     NTYPES = st.types;
@@ -286,7 +286,7 @@ const Life = {
       m.classList.toggle('on', L.score >= st.stars[k]);
     });
     $('#lhScore b').textContent = L.score;
-    const need = CHARS[L.helper].skill.need;
+    const need = skillNeed(CHARS[L.helper].id);
     setGauge($('#lhHelper'), Math.min(1, L.hg / need), L.hg >= need);
   },
 
@@ -295,7 +295,7 @@ const Life = {
       res.unlocked.length * 60 + res.syrup.length * 40;
     res.cleared.forEach(({ tile }) => {
       // 데려간 친구 얼굴이면 게이지 1, 다른 얼굴은 1/3
-      L.hg += tile.type >= 0 && B.team[tile.type] === L.helper ? 1 : 1 / 3;
+      if (!B.inSkill) L.hg += tile.type >= 0 && B.team[tile.type] === L.helper ? 1 : 1 / 3;
       if (tile.type < 0) return;
       const id = teamCh(tile.type).id;
       L.chars[id] = (L.chars[id] || 0) + 1;

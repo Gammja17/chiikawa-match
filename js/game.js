@@ -438,6 +438,8 @@ $('#btnMapHome').onclick = () => { Sound.play('click'); go(() => show('title'));
 
 // ---------- 스토리 ----------
 // 입힌 옷이 있으면 그 그림, 없으면 기본 그림 (대화창·스킬 컷인·결과창)
+// 스킬 게이지 요구치: 일상 퍼즐(친구 한 명)은 2.5배, 친구 레벨 1마다 4%씩 줄어듦 (Lv10이면 64%)
+const skillNeed = (id, life = B.mode === 'life') => Math.round(CHARS[charIdx(id)].skill.need * (life ? 2.5 : 1) * (1 - 0.04 * Math.max(0, Meta.lv(id) - 1)));
 const artOf = id => { const s = Save.data.outfit?.[id]; return s && SKINS[id]?.[s] ? SKIN(id, s) : art(id); };
 function playStory(lines) {
   return new Promise(done => {
@@ -630,7 +632,7 @@ function setGauge(el, v, ready) {
 }
 function updateGauges() {
   [...$('#party').children].forEach((el, k) => {
-    const need = teamCh(k).skill.need;
+    const need = skillNeed(teamCh(k).id);
     setGauge(el, Math.min(1, B.gauge[k] / need), B.gauge[k] >= need);
   });
 }
@@ -692,7 +694,7 @@ async function startStage(i) {
   Board.syrup = null;
   Board.mask = null;
   Board.spawnIng = null;
-  B.stage = i; B.wave = 0; B.over = false; B.busy = true; B.sel = null; B.pending = [];
+  B.stage = i; B.wave = 0; B.over = false; B.busy = true; B.inSkill = false; B.sel = null; B.pending = [];
   B.teamHp = B.teamMax = Save.data.buff === 'hp' ? 150 : 120;
   B.fever = 0;
   B.maxCombo = 0;
@@ -706,7 +708,7 @@ async function startStage(i) {
   B.dmgBy = {};
   B.played = false;
   NTYPES = B.team.length;
-  B.gauge = B.team.map((k, j) => (j < B.real && Save.data.buff === 'gauge' ? Math.floor(CHARS[k].skill.need / 2) : 0));
+  B.gauge = B.team.map((k, j) => (j < B.real && Save.data.buff === 'gauge' ? Math.floor(skillNeed(CHARS[k].id, false) / 2) : 0));
   if (Save.data.buff) { Save.data.buff = null; Save.save(); }
   show('battle');
   stageTitle(routeIdx('b', i), STAGES[i].name);
@@ -1423,13 +1425,13 @@ async function stepFx(res, combo, from = null) {
     if (!tally.has(tile.type)) tally.set(tile.type, []);
     tally.get(tile.type).push([r, c]);
   });
-  const mult = (1 + 0.25 * (combo - 1)) * (B.fever ? 1.5 : 1);
+  const mult = (1 + 0.25 * (combo - 1)) * (B.fever ? 1.5 : 1), noGauge = B.inSkill;
   B.pending.push((async () => {
     await sleep(Math.min(1100, last + 560));
     let k = 0;
     for (const [type, cells] of tally) {
       const ch = teamCh(type), cheer = type >= B.real;
-      if (!cheer) B.gauge[type] += cells.length;
+      if (!cheer && !noGauge) B.gauge[type] += cells.length;
       $('#party').children[type]?.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-10px) scale(1.15)' }, { transform: 'translateY(0)' }], { duration: 260 });
       if (ch.heal) {
         const amt = Math.round(cells.length * ch.heal * mult * (cheer ? 0.5 : Meta.mult(ch.id)));
@@ -1885,6 +1887,49 @@ function actorHit(r, c, color, i = 0) {
   burst(p.x, p.y, color, 5);
   Sound.pop(Math.min(i, 11));
 }
+// 랏코: 십자 가운데에 폴짝 나타나 칼을 가로로 한 번, 세로로 한 번 휘두름. 칼이 지나간 자리에 하얀 칼자국이 남고 칸이 차례로 베임
+async function rakkoSlash(ch, r0, c0) {
+  const S = B.S, p = tileCenter(r0, c0), im = new Image();
+  im.src = artOf(ch.id);
+  im.className = 'actor';
+  im.style.width = S * 1.7 + 'px';
+  fx.appendChild(im);
+  const at = (extra = '') => `translate(${p.x}px, ${p.y}px) translate(-50%, -78%) ${extra}`;
+  await im.animate([{ transform: at('scale(.2)'), opacity: 0 }, { transform: at('scale(1.15, .85)'), opacity: 1, offset: 0.6 }, { transform: at() }],
+    { duration: 260, easing: 'ease-out', fill: 'forwards' }).finished;
+  const lines = [[[r0, 0], [r0, COLS - 1], [...Array(COLS).keys()].map(c => [r0, c])], [[0, c0], [ROWS - 1, c0], [...Array(ROWS).keys()].map(r => [r, c0])]];
+  for (const [k, [from, to, cells]] of lines.entries()) {
+    // 휘두르기 전 살짝 몸을 뒤로 젖힘
+    await im.animate([{ transform: at() }, { transform: at(`rotate(${k ? 10 : -12}deg) scale(1.05, .95)`) }], { duration: 90, easing: 'ease-out', fill: 'forwards' }).finished;
+    slashLine(tileCenter(...from), tileCenter(...to), cells, ch.ring);
+    im.animate([{ transform: at(`rotate(${k ? -16 : 18}deg) scale(1.1, .9)`) }, { transform: at() }], { duration: 220, easing: 'ease-out', fill: 'forwards' });
+    await sleep(260);
+  }
+  await im.animate([{ transform: at() }, { transform: at('translateY(-30%) scale(.6)'), opacity: 0 }], { duration: 240, easing: 'ease-in', fill: 'forwards' }).finished;
+  im.remove();
+}
+// 칼자국 한 줄: a→b로 하얀 빛줄기가 쫙 그어지고, 칼이 그 위를 휙 지나가며 칸을 차례로 벰
+function slashLine(a, b, cells, color) {
+  const S = B.S, dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) + S, ang = Math.atan2(dy, dx) * 180 / Math.PI;
+  const sx = a.x - (dx / Math.hypot(dx, dy)) * S / 2, sy = a.y - (dy / Math.hypot(dx, dy)) * S / 2;
+  const cut = document.createElement('i');
+  cut.className = 'slash-cut';
+  Object.assign(cut.style, { left: sx + 'px', top: sy + 'px', width: len + 'px', height: S * 0.42 + 'px', transform: `translateY(-50%) rotate(${ang}deg)` });
+  fx.appendChild(cut);
+  cut.animate([{ clipPath: 'inset(0 100% 0 0)', opacity: 1 }, { clipPath: 'inset(0 0 0 0)', opacity: 1, offset: 0.35 }, { clipPath: 'inset(0 0 0 0)', opacity: 0, transform: `translateY(-50%) rotate(${ang}deg) scaleY(.2)` }],
+    { duration: 420, easing: 'ease-out', fill: 'forwards' }).finished.then(() => cut.remove());
+  const sw = new Image();
+  sw.src = ITEM('rocket');
+  sw.className = 'slash-sword';
+  sw.style.width = S * 1.1 + 'px';
+  fx.appendChild(sw);
+  const pos = (x, y) => `translate(${x}px, ${y}px) translate(-50%, -50%) rotate(${ang + 45}deg)`; // 그림은 칼끝이 오른쪽 위
+  sw.animate([{ transform: pos(sx, sy), opacity: 0 }, { opacity: 1, offset: 0.1 }, { opacity: 1, offset: 0.85 }, { transform: pos(sx + dx + (dx / Math.hypot(dx, dy)) * S, sy + dy + (dy / Math.hypot(dx, dy)) * S), opacity: 0 }],
+    { duration: 160, easing: 'cubic-bezier(.3,0,.2,1)', fill: 'forwards' }).finished.then(() => sw.remove());
+  Sound.play('swap', 1.4, 0.9);
+  shake(5, 180);
+  cells.forEach(([r, c], i) => setTimeout(() => actorHit(r, c, color, i % 7), 20 + i * (130 / cells.length)));
+}
 // 칸 목록 → 친구가 지나갈 길
 const linePath = cs => cs.map(([r, c]) => tileCenter(r, c));
 
@@ -1893,12 +1938,13 @@ async function useSkill(k) {
   const ch = life ? CHARS[L.helper] : teamCh(k);
   if (B.busy || B.over || !ch) return;
   const btn = life ? $('#lhHelper') : $('#party').children[k];
-  if ((life ? L.hg : B.gauge[k]) < ch.skill.need) {
+  if ((life ? L.hg : B.gauge[k]) < skillNeed(ch.id)) {
     Sound.play('bad', 1.2, 0.5);
     btn.animate([{ transform: 'translateX(-4px)' }, { transform: 'translateX(4px)' }, { transform: 'none' }], { duration: 180 });
     return;
   }
   B.busy = true;
+  B.inSkill = true; // 스킬로 깨진 칸(이어지는 연쇄 포함)은 게이지를 안 채움: 스킬이 스킬을 부르는 무한 반복 막기
   clearSel();
   Tutor.hideHand();
   if (life) { L.hg = 0; Life.hud(); } else { B.gauge[k] = 0; updateGauges(); }
@@ -1929,9 +1975,8 @@ async function useSkill(k) {
       for (let i = 0; i < COLS; i++) cells.push([r0 + d, i]);
       for (let i = 0; i < ROWS; i++) cells.push([i, c0 + d]);
     }
-    // 가운데 가로줄을 휙, 이어서 세로줄을 휙 베고 지나감
-    const slash = [...Array(COLS).keys()].map(c => [r0, c]).concat([...Array(ROWS).keys()].map(r => [r, c0]));
-    await actor(ch, linePath(slash), { dur: 45, hop: 0.12, onHit: i => actorHit(...slash[i], ch.ring, i % 7) });
+    // 랏코가 십자 가운데에 서서 칼로 가로 한 번, 세로 한 번 슉슉 벰
+    await rakkoSlash(ch, r0, c0);
     if (!life) {
       const eff = attrMult(ch.attr, curWave().a);
       const m = centerOf($('#monster'));
@@ -2050,6 +2095,7 @@ async function useSkill(k) {
   await cascade(null, cells);
   await Promise.all(B.pending);
   B.pending = [];
+  B.inSkill = false;
   if (life) { Life.hud(); await Life.check(); } else if (B.monHp <= 0) await monsterDefeated();
   if (!B.over) { B.busy = false; if (!Tutor.lesson()) setTimeout(autoSkill, 300); }
 }
@@ -2059,8 +2105,8 @@ function autoSkill() {
   if (B.busy || B.over || !$('#battle').classList.contains('active')) return;
   if (Tutor.skillSpot()) return; // 처음 게이지가 꽉 차면 눌러 보라고 비춰 줌
   if (!Save.data.autoSkill) return;
-  if (B.mode === 'life') { if (L.helper != null && L.hg >= CHARS[L.helper].skill.need) useSkill(0); return; }
-  const k = B.team.findIndex((_, j) => j < B.real && B.gauge[j] >= teamCh(j).skill.need);
+  if (B.mode === 'life') { if (L.helper != null && L.hg >= skillNeed(CHARS[L.helper].id)) useSkill(0); return; }
+  const k = B.team.findIndex((_, j) => j < B.real && B.gauge[j] >= skillNeed(teamCh(j).id));
   if (k >= 0) useSkill(k);
 }
 const updateAutoBtn = () => document.querySelectorAll('.btn-auto').forEach(b => b.classList.toggle('on', !!Save.data.autoSkill));
