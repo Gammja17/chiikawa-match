@@ -11,7 +11,7 @@
   --s: 56px;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin: 0; height: 100%; background: #f3d9e4; color: var(--ink); font-family: 'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; overflow: hidden; user-select: none; -webkit-user-select: none; touch-action: none; }
+html, body { margin: 0; height: 100%; background: #f3d9e4; color: var(--ink); font-family: 'Gaegu', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; font-weight: 700; overflow: hidden; user-select: none; -webkit-user-select: none; touch-action: none; }
 button { font-family: inherit; color: inherit; cursor: pointer; border: 0; }
 #app { position: relative; width: 100%; max-width: 480px; height: 100dvh; margin: 0 auto; background: var(--bg); overflow: hidden; box-shadow: 0 0 40px #0002; }
 
@@ -106,7 +106,9 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; }
 .num.crit { font-size: 36px; }
 .banner { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 40px; color: #fff; -webkit-text-stroke: 2px var(--pink-d); paint-order: stroke fill; text-shadow: 0 5px 0 var(--pink-d); white-space: nowrap; }
 .combo { position: absolute; font-size: 34px; color: #fff; paint-order: stroke fill; white-space: nowrap; transform: translate(-50%, -50%); }
-.beam { position: absolute; background: linear-gradient(90deg, transparent, #fff, #fff8c4, #fff, transparent); box-shadow: 0 0 18px #fff6a8; border-radius: 99px; }
+.beam { position: absolute; border-radius: 99px; background: linear-gradient(90deg, transparent, #bff3ff 12%, #fff 50%, #bff3ff 88%, transparent); box-shadow: 0 0 16px 6px #9be7ff, 0 0 34px 12px #ffffff88; }
+.beam.v { background: linear-gradient(180deg, transparent, #bff3ff 12%, #fff 50%, #bff3ff 88%, transparent); }
+.blast { position: absolute; border-radius: 50%; transform: translate(-50%, -50%); background: radial-gradient(circle, #fff 0 40%, #fff6a8 60%, transparent 70%); }
 .ring { position: absolute; border-radius: 50%; border: 6px solid #ffe066; box-shadow: 0 0 20px #fff6a8; transform: translate(-50%, -50%); }
 
 /* 스토리, 모달 */

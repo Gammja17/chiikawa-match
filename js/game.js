@@ -434,7 +434,7 @@ async function trySwap(a, b) {
   const ta = g[a[0]][a[1]], tb = g[b[0]][b[1]];
   Sound.play('swap', 1.15);
   Board.swap(g, a, b);
-  await Promise.all([slide(ta, b[0], b[1], 150, 'ease-in-out'), slide(tb, a[0], a[1], 150, 'ease-in-out')]);
+  await Promise.all([slide(ta, b[0], b[1], 100, 'cubic-bezier(.3,.7,.4,1)'), slide(tb, a[0], a[1], 100, 'cubic-bezier(.3,.7,.4,1)')]);
   const combo = Board.swapCombo(g, a, b);
   if (!combo && !Board.findRuns(g).length) {
     Sound.play('bad', 1.2, 0.7);
@@ -490,18 +490,28 @@ function effectFx(ef) {
   const bx = b.left - a.left, by = b.top - a.top, S = B.S;
   if (ef.kind === 'h' || ef.kind === 'v') {
     Sound.play('line', 1.1, 0.7);
-    const beam = addFx('beam', 0, 0);
-    if (ef.kind === 'h') {
-      Object.assign(beam.style, { left: bx + 'px', top: by + (ef.r + 0.3) * S + 'px', width: S * COLS + 'px', height: S * 0.4 + 'px' });
-      beam.animate([{ transform: 'scaleX(0)', opacity: 1 }, { transform: 'scaleX(1.1)', opacity: 1, offset: 0.4 }, { transform: 'scaleX(1.1) scaleY(.2)', opacity: 0 }], { duration: 380 }).finished.then(() => beam.remove());
-    } else {
-      Object.assign(beam.style, { left: bx + (ef.c + 0.3) * S + 'px', top: by + 'px', width: S * 0.4 + 'px', height: S * ROWS + 'px', background: 'linear-gradient(180deg, transparent, #fff, #fff8c4, #fff, transparent)' });
-      beam.animate([{ transform: 'scaleY(0)', opacity: 1 }, { transform: 'scaleY(1.1)', opacity: 1, offset: 0.4 }, { transform: 'scaleY(1.1) scaleX(.2)', opacity: 0 }], { duration: 380 }).finished.then(() => beam.remove());
+    const horiz = ef.kind === 'h', thick = S * 0.55;
+    const beam = addFx('beam ' + ef.kind, 0, 0);
+    Object.assign(beam.style, horiz
+      ? { left: '0px', top: by + (ef.r + 0.5) * S - thick / 2 + 'px', width: app.clientWidth + 'px', height: thick + 'px' }
+      : { left: bx + (ef.c + 0.5) * S - thick / 2 + 'px', top: '0px', width: thick + 'px', height: app.clientHeight + 'px' });
+    const [along, across] = horiz ? ['X', 'Y'] : ['Y', 'X'];
+    beam.animate([
+      { transform: `scale${along}(0) scale${across}(1.6)`, opacity: 1 },
+      { transform: `scale${along}(1) scale${across}(1)`, opacity: 1, offset: 0.3 },
+      { transform: `scale${along}(1) scale${across}(.15)`, opacity: 0 },
+    ], { duration: 450, easing: 'ease-out' }).finished.then(() => beam.remove());
+    const n = horiz ? COLS : ROWS, from = horiz ? ef.c : ef.r;
+    for (let i = 0; i < n; i++) {
+      const p = horiz ? tileCenter(ef.r, i) : tileCenter(i, ef.c);
+      setTimeout(() => burst(p.x, p.y, '#bff3ff', 3), 40 + Math.abs(i - from) * 25);
     }
     shake(4, 200);
   } else if (ef.kind === 'bomb') {
     Sound.play('line', 0.7, 0.9);
     const p = tileCenter(ef.r, ef.c);
+    const blast = addFx('blast', p.x, p.y);
+    blast.animate([{ width: '0px', height: '0px', opacity: 1 }, { width: S * 3.5 + 'px', height: S * 3.5 + 'px', opacity: 0 }], { duration: 260, easing: 'ease-out' }).finished.then(() => blast.remove());
     const ring = addFx('ring', p.x, p.y);
     ring.animate([{ width: '0px', height: '0px', opacity: 1 }, { width: S * 5 + 'px', height: S * 5 + 'px', opacity: 0 }], { duration: 420, easing: 'ease-out' }).finished.then(() => ring.remove());
     fxImage('boom', p.x, p.y, S * 2.4, 420);
@@ -519,7 +529,7 @@ function popTile(t, delay) {
     { transform: 'scale(1)', opacity: 1 },
     { transform: 'scale(1.3)', opacity: 1, offset: 0.35 },
     { transform: 'scale(0) rotate(40deg)', opacity: 0 },
-  ], { duration: 260, delay, easing: 'ease-in', fill: 'forwards' }).finished.then(() => t.el.remove());
+  ], { duration: 200, delay, easing: 'ease-in', fill: 'forwards' }).finished.then(() => t.el.remove());
 }
 
 function projectile(from, to, img, ring, delay) {
@@ -536,14 +546,15 @@ function projectile(from, to, img, ring, delay) {
 
 async function stepFx(res, combo) {
   res.effects.forEach(effectFx);
+  if (res.effects.length) await sleep(60);
 
   // 뽀용 터짐
   const n = res.cleared.length;
   res.cleared.forEach(({ r, c, tile }, i) => {
     const p = tileCenter(r, c);
     const color = tile.type >= 0 ? CHARS[tile.type].ring : '#ffd84d';
-    setTimeout(() => burst(p.x, p.y, color, n > 15 ? 3 : 6), Math.min(i * 14, 200));
-    popTile(tile, Math.min(i * 14, 200));
+    setTimeout(() => burst(p.x, p.y, color, n > 15 ? 3 : 6), Math.min(i * 10, 150));
+    popTile(tile, Math.min(i * 10, 150));
   });
   for (let i = 0; i < Math.min(3, Math.ceil(n / 3)); i++) setTimeout(() => Sound.pop(combo - 1 + i), i * 70);
   if (n >= 6) setTimeout(() => Sound.play('sparkle', 1 + combo * 0.05, 0.6), 60);
@@ -600,7 +611,7 @@ async function stepFx(res, combo) {
     }
   })());
 
-  await sleep(Math.min(n * 14, 200) + 240);
+  await sleep(Math.min(n * 10, 150) + 170);
 
   res.created.forEach(({ r, c, tile }) => {
     makeTile(tile);
@@ -653,7 +664,7 @@ async function fall(moves) {
     const t = mv.tile;
     if (mv.fresh) { makeTile(t); place(t, mv.from, mv.c); }
     const dist = mv.to - mv.from;
-    return slide(t, mv.to, mv.c, 110 + Math.sqrt(dist) * 90, 'cubic-bezier(.55,0,1,.9)').then(() => squish(t));
+    return slide(t, mv.to, mv.c, 90 + Math.sqrt(dist) * 55, 'cubic-bezier(.6,0,1,1)').then(() => squish(t));
   });
   if (moves.length) setTimeout(() => Sound.play('land', 1.3, 0.25), 180);
   await Promise.all(ps);
