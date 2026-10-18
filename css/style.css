@@ -216,10 +216,8 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 .tile.sel .inner img { filter: drop-shadow(0 0 3px #fff) drop-shadow(0 0 3px var(--pink)); }
 .fximg { position: absolute; pointer-events: none; }
 
-/* 아이템: 원판 없이 그림 모양을 따라 테두리 (얼굴 구슬처럼). 흰 띠 + 진한 선 */
-.tile .inner.item { animation: itemBob 1.4s ease-in-out infinite;
-  filter: drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff)
-    drop-shadow(1.5px 0 0 #4a4262) drop-shadow(-1.5px 0 0 #4a4262) drop-shadow(0 1.5px 0 #4a4262) drop-shadow(0 -1.5px 0 #4a4262) drop-shadow(0 3px 0 #4a426240); }
+/* 아이템: 테두리는 그림에 미리 그려 둠 (_o.png). 필터를 겹치면 아이템이 많을 때 렉 */
+.tile .inner.item { animation: itemBob 1.4s ease-in-out infinite; }
 .tile .inner.item img { transform: scale(.8); filter: none; }
 .tile .inner.item.h img, .tile .inner.item.v img { position: absolute; left: 50%; top: 50%; width: 100%; height: auto; }
 /* 랏코 검 그림은 칼끝이 오른쪽 위(45도). 가로는 오른쪽으로, 세로는 위로 눕힘 */
