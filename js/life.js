@@ -466,10 +466,12 @@ const Life = {
     boardEl.querySelectorAll('.tile').forEach(e => e.remove());
     fx.innerHTML = '';
     B.grid = Board.create(lay);
+    const bowl = run.kind === 'route' ? Ramen.takeLife() : null; // 먹고 온 라멘: 아이템 깔기·이동 더하기
     renderFloor();
     Life.hud();
     if (run.kind === 'route' && LIFE_STORY[i] && (Save.data.life || [])[i] == null) await playStory(LIFE_STORY[i]);
     await dropIn(run.kind === 'route' && routeLevel(routeIdx('l', i)) === 'hard' ? 'HARD!' : st.intro);
+    if (bowl) banner(`🍜 ${bowl.name}!`, 500);
     B.busy = false;
     Tutor.onStart();
     Tutor.poke();

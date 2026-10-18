@@ -664,12 +664,20 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .bowl { position: absolute; left: 50%; bottom: 31%; width: 22%; z-index: 5; pointer-events: none; }
 #shopSay { position: absolute; z-index: 6; left: 50%; top: 20%; max-width: 72%; padding: 6px 14px; border-radius: 14px; background: #fff; color: var(--ink); font-family: var(--hand); font-weight: 700; font-size: 19px; line-height: 1.25; text-align: center; opacity: 0; pointer-events: none; box-shadow: var(--sh); }
 #ramenMenu { padding: 12px 12px 14px; }
-.rm-btns { display: flex; gap: 10px; }
+/* 메뉴가 늘어서 두 줄씩, 넘치면 스크롤 */
+.rm-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-height: 34vh; overflow-y: auto; padding: 2px; }
 .rm-btns button { flex: 1; display: grid; grid-template-columns: 48px 1fr; grid-template-rows: auto auto; align-items: center; column-gap: 8px; padding: 10px 12px; border-radius: 16px; background: var(--paper); box-shadow: var(--sh); text-align: left; }
 .rm-btns img { grid-row: span 2; width: 48px; }
 .rm-btns b { font-family: var(--head); font-size: 22px; font-weight: 400; line-height: 1.1; }
 .rm-btns small { font-size: 13px; color: var(--ink2); }
 #ramenMenu.off .rm-btns button { opacity: .45; }
+.rm-btns button { position: relative; }
+.rm-btns button.locked { opacity: .45; }
+.rm-btns button.on { box-shadow: 0 0 0 3px var(--gold, #ffcf3f), var(--sh); }
+.rm-btns em { position: absolute; right: 8px; top: 6px; display: flex; align-items: center; gap: 2px; font-style: normal; font-family: var(--head); font-size: 14px; color: var(--ink); }
+.rm-btns em img { width: 14px; grid-row: auto; }
+.rm-btns em.free { color: #e2543f; }
+.rm-btns b { font-size: 18px; }
 #ramenNote { margin: 8px 0 0; text-align: center; font-size: 14px; color: var(--ink2); }
 
 /* ---------- 스포트라이트 안내 ---------- */

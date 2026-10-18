@@ -388,7 +388,7 @@ function openMap(advanceFrom = null) {
   Meta.checkDaily();
   const STAGES = ROUTE.map((_, k) => routeStage(k));
   Sound.music('map');
-  $('#btnRamen').classList.toggle('on', Save.data.ramen !== false);
+  $('#btnRamen').classList.toggle('on', Save.data.ramen !== false && !Save.data.buff);
   const path = $('#mapPath');
   path.innerHTML = '';
   path.style.height = NODE_TOP + STAGES.length * NODE_GAP + 40 + 'px';
@@ -722,7 +722,8 @@ async function startStage(i) {
   Board.mask = null;
   Board.spawnIng = null;
   B.stage = i; B.wave = 0; B.over = false; B.busy = true; B.inSkill = false; B.sel = null; B.pending = [];
-  B.teamHp = B.teamMax = Save.data.buff === 'hp' ? 150 : 120;
+  const bowl = Ramen.takeBattle(); // 먹고 온 라멘
+  B.teamHp = B.teamMax = bowl && (bowl.id === 'hp' || bowl.id === 'okinawa') ? 150 : 120;
   B.fever = 0;
   B.maxCombo = 0;
   updateFever();
@@ -735,8 +736,7 @@ async function startStage(i) {
   B.dmgBy = {};
   B.played = false;
   NTYPES = B.team.length;
-  B.gauge = B.team.map((k, j) => (j < B.real && Save.data.buff === 'gauge' ? Math.floor(skillNeed(CHARS[k].id, false) / 2) : 0));
-  if (Save.data.buff) { Save.data.buff = null; Save.save(); }
+  B.gauge = B.team.map((k, j) => (j < B.real && bowl && (bowl.id === 'gauge' || bowl.id === 'okinawa') ? Math.floor(skillNeed(CHARS[k].id, false) / 2) : 0));
   show('battle');
   stageTitle(routeIdx('b', i), STAGES[i].name);
   buildParty();
@@ -748,6 +748,7 @@ async function startStage(i) {
   updateTeam();
   if (STORY[i] && Save.data.stars[i] == null) await playStory(STORY[i]);
   await dropIn(routeLevel(routeIdx('b', i)) === 'hard' ? 'HARD!' : '토벌 시작!');
+  if (bowl) banner(`🍜 ${bowl.name}!`, 500);
   B.busy = false;
   Tutor.onStart();
   Tutor.poke();
@@ -2321,31 +2322,97 @@ function openRamen() {
     el.animate([{ transform: 'translateX(-60px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 500, delay: 300, easing: 'ease-out', fill: 'backwards' });
   }
   renderRamenMenu();
-  setTimeout(() => $('#ramen').classList.contains('active') && shopSay($('#shopMaster'), Save.data.ramen === false ? '오늘 국물은 다 떨어졌다. 토벌 하나 더 하고 와라.' : '왔군. 한 그릇 먹고 가라.'), 450);
+  setTimeout(() => $('#ramen').classList.contains('active') && shopSay($('#shopMaster'), Save.data.buff ? '먹던 거부터 다 먹고 와라.' : ramenFree() ? '왔군. 한 그릇은 서비스다.' : '왔군. 한 그릇 먹고 가라.'), 450);
 }
+// 라멘 메뉴: 모험 지도를 at판까지 깨면 열림. mode b = 다음 토벌, l = 다음 일상 퍼즐에 효과
+// 새로 깬 판이 생기면 다음 한 그릇은 서비스(공짜), 그 밖에는 코인. 한 번에 한 그릇만 (먹은 효과가 남아 있으면 못 시킴)
+const RAMEN_MENU = [
+  { id: 'hp', name: '곱빼기', icon: 'ramen', desc: '토벌 체력 150', mode: 'b', price: 60, at: 0, say: '곱빼기다. 남기지 마라.' },
+  { id: 'gauge', name: '진한 국물', icon: 'pot', desc: '토벌 스킬 게이지 반', mode: 'b', price: 60, at: 0, say: '진한 국물이다. 힘이 날 거다.' },
+  { id: 'naruto', name: '나루토 토핑', icon: 'naruto', desc: '퍼즐: 랏코 검 2개 깔고 시작', mode: 'l', price: 50, at: 10, say: '나루토 듬뿍. 판이 술술 풀릴 거다.' },
+  { id: 'egg', name: '반숙 달걀', icon: 'egg', desc: '퍼즐: 이동 +3 (시간 판 +10초)', mode: 'l', price: 70, at: 20, say: '반숙이다. 터뜨리지 말고 먹어라.' },
+  { id: 'onigiri', name: '주먹밥 세트', icon: 'onigiri', desc: '퍼즐: 폭탄·종이비행기 깔고 시작', mode: 'l', price: 90, at: 30, say: '주먹밥도 같이 먹어라. 든든할 거다.' },
+  { id: 'okinawa', name: '사타안다기 세트', icon: 'donut', desc: '토벌: 체력 150 + 게이지 반', mode: 'b', price: 120, at: 40, say: '시사가 튀긴 거다. 맛있게 먹어라.' },
+  { id: 'secret', name: '스승님 비밀 메뉴', icon: 'dango', desc: '퍼즐: 경단 깔고 + 이동 +2', mode: 'l', price: 150, at: 50, say: '…아무한테도 말하지 마라.' },
+];
+const ramenOf = id => RAMEN_MENU.find(m => m.id === id);
+const ramenFree = () => Save.data.ramen !== false;
 function renderRamenMenu() {
-  const ready = Save.data.ramen !== false;
-  $('#ramenMenu').classList.toggle('off', !ready);
-  $('#ramenNote').textContent = ready ? '하나 골라요 · 다음 토벌 한 번' : Save.data.buff ? `다음 토벌에 ${Save.data.buff === 'hp' ? '곱빼기' : '진한 국물'} 효과가 있어요` : '토벌을 새로 깨면 또 한 그릇';
+  const cur = Save.data.buff ? ramenOf(Save.data.buff) : null, prog = unlockedIdx();
+  const wrap = $('#ramenMenu .rm-btns');
+  wrap.innerHTML = RAMEN_MENU.map(m => {
+    const locked = prog < m.at && !(m.at === 0);
+    const price = ramenFree() ? '<em class="free">서비스</em>' : `<em><img src="${ITEM('coin')}">${m.price}</em>`;
+    return `<button data-b="${m.id}" class="${locked ? 'locked' : ''}${cur?.id === m.id ? ' on' : ''}">` +
+      `<img src="${ITEM(m.icon)}" alt=""><b>${m.name}</b><small>${locked ? `${m.at + 1}판을 열면 메뉴에 나와요` : m.desc}</small>${locked ? '' : price}</button>`;
+  }).join('');
+  wrap.querySelectorAll('button').forEach(b => (b.onclick = () => orderRamen(b.dataset.b)));
+  const stamp = Save.data.ramenStamp || 0;
+  $('#ramenNote').innerHTML = cur
+    ? `먹은 효과: <b>${cur.name}</b> · 다음 ${cur.mode === 'b' ? '토벌' : '퍼즐'}에서 써요`
+    : `${ramenFree() ? '새로 깬 판 축하 · 한 그릇은 서비스! ' : ''}도장 ${'●'.repeat(stamp % 5)}${'○'.repeat(5 - (stamp % 5))} (5개마다 간식)`;
 }
-$('#ramenMenu').querySelectorAll('button').forEach(b => (b.onclick = async () => {
-  if (Save.data.ramen === false) { Sound.play('bad'); shopSay($('#shopMaster'), '토벌 하나 더 하고 와라.'); return; }
-  const buff = b.dataset.b;
-  Save.data.buff = buff;
+function orderRamen(id) {
+  const m = ramenOf(id), shopkeep = $('#shopMaster');
+  if (unlockedIdx() < m.at) { Sound.play('bad'); shopSay(shopkeep, '그건 아직 안 판다.'); return; }
+  if (Save.data.buff) { Sound.play('bad'); shopSay(shopkeep, '먹던 거부터 다 먹고 와라.'); return; }
+  const free = ramenFree();
+  if (!free && Save.data.coins < m.price) { Sound.play('bad'); shopSay(shopkeep, '코인이 모자라다. 토벌하고 와라.'); return; }
+  if (!free) Meta.addCoins(-m.price);
+  Save.data.buff = id;
   Save.data.ramen = false;
+  Save.data.ramenStamp = (Save.data.ramenStamp || 0) + 1;
   Save.save();
   // 그릇이 카운터에 탁 놓이고 김이 모락모락
   const sc = $('#shopScene'), bowl = document.createElement('img');
   bowl.className = 'bowl';
-  bowl.src = ITEM('ramen');
+  bowl.src = ITEM(m.icon === 'ramen' || m.icon === 'pot' ? 'ramen' : m.icon);
   sc.appendChild(bowl);
   Sound.play('land', 0.9, 0.9);
   bowl.animate([{ transform: 'translate(-50%, -120px) scale(.6)', opacity: 0 }, { transform: 'translate(-50%, 6px) scale(1.1, .9)', opacity: 1, offset: 0.7 }, { transform: 'translate(-50%, 0)' }], { duration: 420, easing: 'ease-in' });
   const c = centerOf(bowl);
-  setTimeout(() => { Sound.play('heal', 1, 0.9); burst(c.x, c.y, '#ff9f5a', 14); floatNum(c.x, c.y - 40, buff === 'hp' ? '다음 토벌 체력 150!' : '다음 토벌 게이지 반!', '#e07b39'); }, 420);
-  shopSay($('#shopMaster'), buff === 'hp' ? '곱빼기다. 남기지 마라.' : '진한 국물이다. 힘이 날 거다.');
+  setTimeout(() => { Sound.play('heal', 1, 0.9); burst(c.x, c.y, '#ff9f5a', 14); floatNum(c.x, c.y - 40, m.desc, '#e07b39'); }, 420);
+  shopSay(shopkeep, free ? '서비스다. ' + m.say : m.say);
+  // 도장 5개: 문가 손님이 좋아하는 간식(없으면 아무 간식) 하나
+  if (Save.data.ramenStamp % 5 === 0) setTimeout(() => {
+    const gid = ['momonga', 'kurimanju', 'goblin'].find(g => !Meta.owned(g));
+    const t = gid ? RECRUIT[gid].treat : Object.keys(TREATS)[Math.floor(Math.random() * 3)];
+    Save.data.treats[t] = (Save.data.treats[t] || 0) + 1;
+    Save.save();
+    shopSay(shopkeep, `도장 다섯 개다. ${TREATS[t]}, 덤이다.`);
+    Sound.play('star', 1.2);
+    floatNum(c.x, c.y - 70, `+ ${TREATS[t]}`, '#ff5d9e');
+    setTimeout(() => $('#ramen').classList.contains('active') && openRamen(), 1600); // 문가 손님 간식 숫자 새로
+  }, 2200);
   renderRamenMenu();
   $('#btnRamen').classList.remove('on');
   setTimeout(() => bowl.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, fill: 'forwards' }).finished.then(() => bowl.remove()), 2600);
-}));
+}
+// 먹은 라멘 효과 쓰기. 토벌: 시작할 때 체력·게이지 / 일상 퍼즐: 판에 아이템을 깔거나 이동 더하기
+const Ramen = {
+  takeBattle() {
+    const m = Save.data.buff && ramenOf(Save.data.buff);
+    if (!m || m.mode !== 'b') return null;
+    Save.data.buff = null;
+    Save.save();
+    return m;
+  },
+  takeLife() {
+    const m = Save.data.buff && ramenOf(Save.data.buff);
+    if (!m || m.mode !== 'l') return null;
+    Save.data.buff = null;
+    Save.save();
+    const put = kinds => {
+      const spots = [];
+      Board.each(B.grid, (t, r, c) => { if (t.type >= 0 && !t.special && !t.lock) spots.push(t); });
+      kinds.forEach(k => { const t = spots.splice(Math.floor(Math.random() * spots.length), 1)[0]; if (t) { t.special = k; t.type = -1; } });
+    };
+    const more = n => (L.st.time ? (L.time += n * 10 / 3) : (L.moves += n));
+    if (m.id === 'naruto') put(['h', 'v']);
+    if (m.id === 'egg') more(3);
+    if (m.id === 'onigiri') put(['bomb', 'plane']);
+    if (m.id === 'secret') { put(['rainbow']); more(2); }
+    return m;
+  },
+};
 $('#btnRamen').onclick = () => { Sound.play('click'); go(openRamen); };
