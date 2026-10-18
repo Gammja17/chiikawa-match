@@ -171,6 +171,59 @@ const LIFE_STORY = {
     ['chiikawa', '(두근두근…)'],
     ['usagi', '하아?!'],
   ],
+  5: [
+    ['hachiware', '(흥얼흥얼) 흐흥~ ♪'],
+    ['chiikawa', '…!? (두리번두리번)'],
+    ['hachiware', '앗, 들었어…? 노래 연습 중이었어. 조금 부끄럽네…'],
+    ['hachiware', '내 얼굴을 모아 주면 박자를 맞출 수 있을 것 같아!'],
+  ],
+  7: [
+    ['hachiware', '토벌도 하고 풀도 뽑고… 요즘 일이 많아졌다!'],
+    ['momonga', '선물 상자 잔뜩 받았어. 정리는 너네가 해.'],
+    ['hachiware', '선물 상자는 두 번 터뜨려야 열린대!'],
+    ['momonga', '흥! 빨리 해!'],
+  ],
+  8: [
+    ['shisa', '어서 와사~! 오늘은 손님이 너무 많사!'],
+    ['shisa', '스승님이 재료를 3개 더 가져오래사. 도와줄 수 있사?'],
+    ['hachiware', '상자 밑에 깔린 재료도 꺼내 줄게!'],
+  ],
+  9: [
+    ['hachiware', '4급 시험이다! 이번엔 시간 안에 잡초를 전부 뽑아야 해.'],
+    ['usagi', '우라!'],
+    ['chiikawa', '(두근두근…)'],
+  ],
+  10: [
+    ['hachiware', '목욕탕 거품이 또 넘쳤대! 이번엔 잡초까지 자랐다는 거야!?'],
+    ['chiikawa', '…!! (부들부들)'],
+    ['usagi', '야하!'],
+  ],
+  11: [
+    ['kurimanju', '……(술병을 들어 보인다)'],
+    ['kurimanju', '(빈 안주 접시를 가리킨다)'],
+    ['hachiware', '안주가 필요하구나! 경단이랑 주먹밥을 내려 주자!'],
+  ],
+  15: [
+    ['hachiware', '2급… 리본 사이에 잡초가 숨어 있대.'],
+    ['usagi', '하아?!'],
+    ['hachiware', '3급도 붙었으니까, 어떻게든 되겠지~!'],
+  ],
+  16: [
+    ['shisa', '오늘은 국물부터 새로 끓이사!'],
+    ['shisa', '스승님이 국물은 냄비 전체에 골고루 퍼져야 한대사.'],
+    ['hachiware', '국물 바르고 재료도 내리자!'],
+  ],
+  17: [
+    ['hachiware', '토벌 끝나고 목욕이다~!'],
+    ['kurimanju', '(냉탕에 몸을 담근다) ……하아~~'],
+    ['hachiware', '리본 묶인 수건이 거품에 섞였어. 같이 치우자!'],
+  ],
+  18: [
+    ['hachiware', '내일은 소풍이다! 도시락 싸자~'],
+    ['chiikawa', '…!! (폴짝폴짝)'],
+    ['kurimanju', '(주먹밥을 슥 내민다)'],
+    ['hachiware', '1급 시험 전에 든든하게 먹어 두자!'],
+  ],
   12: [
     ['usagi', '야하!'],
     ['chiikawa', '…(꿀꺽)'],
@@ -297,6 +350,22 @@ const LIFE_STORY = {
     ['usagi', '야하~!!'],
     ['shisa', '어서 와사~! 오늘은 축하 곱빼기사! 우레시사~!'],
   ],
+};
+// 그 일상 퍼즐을 처음 깼을 때 나오는 장 끝 대사
+const LIFE_STORY_AFTER = {
+  6: [
+    ['hachiware', '합격이다~!! 제초 검정 5급!'],
+    ['chiikawa', '…!! (울먹울먹)'],
+    ['usagi', '야하~!!'],
+    ['hachiware', '다음엔 더 높은 급수도 따 보자! 어떻게든 될 거야~'],
+  ],
+  12: [
+    ['hachiware', '3급 합격…! 큰 잡초도 이제 무섭지 않아!'],
+    ['usagi', '우라!!'],
+    ['shisa', '축하해사~! 라멘 먹고 가사!'],
+    ['chiikawa', '(모구모구…) …!!'],
+  ],
+  19: LIFE_STORY.end,
 };
 
 // 모험 루트: 일상 일을 하다 토벌 의뢰가 끼어드는 순서. 마지막은 토벌 대작전
@@ -675,7 +744,7 @@ const Life = {
     Sound.play('win', 1);
     await clearShow(st.exam ? '검정<br>합격!' : doneWord(st));
     const k = routeIdx('l', i), last = k === ROUTE.length - 1;
-    if (i === 19 && first) await playStory(LIFE_STORY.end); // 3장 끝: 제초 검정 1급 합격
+    if (LIFE_STORY_AFTER[i] && first) await playStory(LIFE_STORY_AFTER[i]); // 장 끝 대사
     if (first) await Meta.stageJoin('l', i);
     Sound.music(null);
     const ch = mvp();
