@@ -36,7 +36,7 @@ python -m http.server 8770
 
 - 캐릭터, 몬스터 이미지: © nagano / chiikawa committee. 퍼즐 얼굴은 인터넷에서 모은 이미지, 전신·포즈 일러스트와 몬스터는 [Chiikawa Wiki (Fandom)](https://chiikawa.fandom.com/)에서 가져왔습니다. 이미지의 권리는 원저작자에게 있으며, 이 저장소의 라이선스 대상이 아닙니다.
 - 배경, 터짐 조각: [VARCO](https://3d.varco.ai)로 생성
-- 효과음: [Kenney](https://kenney.nl) Interface Sounds, Digital Audio, Impact Sounds, Music Jingles (CC0). 라이선스 원문은 `assets/sfx/LICENSE-kenney*.txt`
+- 효과음: [Kenney](https://kenney.nl) Interface Sounds, Digital Audio, Impact Sounds, Music Jingles (CC0). 라이선스 원문은 `assets/sfx/LICENSE-kenney*.txt` (아이폰 재생을 위해 mp3로 변환)
 - 배경 음악: 코드(`js/audio.js`)로 직접 연주하는 오리지널 곡
 - 특수 구슬 아이콘: [Noto Emoji](https://github.com/googlefonts/noto-emoji) (Google, Apache License 2.0). 라이선스 원문은 `assets/img/items/LICENSE-noto.txt`
 - 글꼴: [Jua](https://fonts.google.com/specimen/Jua), [Baloo 2](https://fonts.google.com/specimen/Baloo+2), [Gaegu](https://fonts.google.com/specimen/Gaegu) (Google Fonts, SIL Open Font License)

@@ -13,7 +13,7 @@ const Sound = {
     this.master.gain.value = 0.8;
     this.master.connect(this.ctx.destination);
     SFX_NAMES.forEach(n => {
-      fetch(`assets/sfx/${n}.ogg`)
+      fetch(`assets/sfx/${n}.mp3`)
         .then(r => r.arrayBuffer())
         .then(b => this.ctx.decodeAudioData(b))
         .then(buf => (this.buffers[n] = buf))
@@ -34,7 +34,7 @@ const Sound = {
       src.connect(g).connect(this.master);
       src.start();
     } else if (this.fallback) {
-      const a = new Audio(`assets/sfx/${name}.ogg`);
+      const a = new Audio(`assets/sfx/${name}.mp3`);
       a.preservesPitch = false;
       a.playbackRate = rate;
       a.volume = Math.min(1, vol * 0.8);
