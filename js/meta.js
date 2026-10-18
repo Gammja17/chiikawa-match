@@ -23,9 +23,9 @@ const CHAR_STORY = {
   chiikawa: [[2, [['chiikawa', '(풀 뽑기 끝! 땀을 닦는다)'], ['chiikawa', '(동전을 세어 본다) …!'], ['hachiware', '저기~ 라멘 먹으러 가자!'], ['chiikawa', '…!! (끄덕끄덕)']]]],
   hachiware: [[2, [['hachiware', '(기타 둥가둥가~) 흐흥~ ♪'], ['hachiware', '언젠가 노래 대회에 나가 보고 싶어. 조금 부끄럽지만…'], ['chiikawa', '…!! (박수)'], ['hachiware', '네가 들어 주면 어떻게든 될 것 같아!']]]],
   usagi: [[2, [['usagi', '우라!'], ['usagi', '(반짝이는 돌을 내민다)'], ['hachiware', '돌 모으는 게 취미라는 거야!? 이거 주는 거야!?'], ['usagi', '야하~!']]]],
-  momonga: [[2, [['momonga', '모몽가 오늘 토벌 엄청 열심히 했어.'], ['momonga', '그러니까 칭찬해 줘! 많이! 지금!'], ['chiikawa', '…(쓰담쓰담)'], ['momonga', '에헤헤~ 더!']]]],
+  momonga: [[2, [['momonga', '(남의 토벌 보수를 슬쩍 챙긴다)'], ['momonga', '뭘 봐? 내가 제일 열심히 했으니까 내 거야.'], ['chiikawa', '…!! (울먹울먹)'], ['momonga', '흥! 대신 칭찬하게 해 줄게. 빨리 해!']]]],
   rakko: [[2, [['rakko', '…검을 닦는 것도 수련이다.'], ['hachiware', '선생님 멋있다…!'], ['rakko', '…너희도 매일 하면 강해진다.'], ['rakko', '(단 과자를 한 입) (좋아… 맛있다…!)']]]],
-  kani: [[2, [['kani', '(헌책방 문 앞에서 꾸벅 인사한다)'], ['kani', '(게 모자를 고쳐 쓰고, 책 한 권을 골라 준다)'], ['momonga', '모몽가 단짝이야! 부럽지? 칭찬해 줘!'], ['kani', '(모몽가에게 간식을 슬쩍 내민다)'], ['chiikawa', '…!! (반짝반짝)']]]],
+  kani: [[2, [['kani', '(헌책방 문 앞에서 꾸벅 인사한다)'], ['kani', '(게 모자를 고쳐 쓰고, 책 한 권을 골라 준다)'], ['momonga', '얘는 내 단짝이야. 건드리면 가만 안 둬!'], ['kani', '(모몽가에게 간식을 슬쩍 내민다)'], ['chiikawa', '…!! (반짝반짝)']]]],
   kurimanju: [[2, [['kurimanju', '(꿀꺽꿀꺽)'], ['kurimanju', '……하아~~ 으어어…'], ['kurimanju', '(안주를 슥 내민다)'], ['chiikawa', '(모구모구…) …!!']]]],
   shisa: [[2, [['shisa', '오늘도 라멘 가게 수행이사!'], ['shisa', '스승님한테 국물 맛 칭찬받았사! 우레시사~!'], ['chiikawa', '…!! (박수)']]]],
   shooting: [[2, [['shooting', '반짝!'], ['shooting', '소원을 하나 들어줄게. 뭐든지!'], ['chiikawa', '…!! (라멘 그림을 가리킨다)']]]],
@@ -36,7 +36,7 @@ const CHAR_STORY = {
 // 몇몇 친구는 좋아하는 간식을 모아서 데려옴 (간식은 스테이지를 깨면 받음)
 const TREATS = { parfait: '딸기 파르페', dango: '경단', onigiri: '주먹밥' };
 const RECRUIT = {
-  momonga: { treat: 'parfait', n: 5, story: [['momonga', '딸기 파르페다! 그거 다 모몽가 주는 거지?'], ['momonga', '에헤헤~ 좋아, 오늘부터 같이 다녀 줄게. 대신 매일 칭찬해 줘야 해!'], ['chiikawa', '…!! (끄덕끄덕)']] },
+  momonga: { treat: 'parfait', n: 5, story: [['momonga', '딸기 파르페다! 이리 내. 전부.'], ['momonga', '(순식간에 다 먹어 치운다) …흥, 같이 다녀 줄게. 대신 매일 칭찬해. 안 하면 운다?'], ['chiikawa', '…!! (끄덕끄덕)']] },
   kurimanju: { treat: 'dango', n: 5, story: [['kurimanju', '……(경단을 바라본다)'], ['kurimanju', '(한 입) ……하아~~'], ['hachiware', '같이 가 준다는 거야!?']] },
   goblin: { treat: 'onigiri', n: 4, story: [['goblin', '(주먹밥 냄새를 킁킁)'], ['goblin', '옴 빰 빰~ 예 예 예~!'], ['usagi', '야하!']] },
   // 모험을 하다 보면 차례로 합류

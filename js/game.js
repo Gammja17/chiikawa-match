@@ -2190,7 +2190,7 @@ function shopSay(el, text) {
   Sound.play('pop', 1.1 + Math.random() * 0.3, 0.6);
 }
 // 문가 손님이 하는 말 (간식을 모아 오면 친구가 됨)
-const RECRUIT_ASK = { momonga: '딸기 파르페 5개 갖다주면… 모몽가가 같이 다녀 줄게! 착하지?', kurimanju: '……(경단 쪽을 힐끔)', goblin: '옴 빰 빰~ (주먹밥 4개를 가리킨다)' };
+const RECRUIT_ASK = { momonga: '딸기 파르페 5개 가져와. 그럼 같이 다녀 줄 수도 있고~ 흥.', kurimanju: '……(경단 쪽을 힐끔)', goblin: '옴 빰 빰~ (주먹밥 4개를 가리킨다)' };
 function openRamen() {
   show('ramen');
   Meta.coinUI();
