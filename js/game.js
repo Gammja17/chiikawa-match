@@ -437,6 +437,8 @@ function openMap(advanceFrom = null) {
 $('#btnMapHome').onclick = () => { Sound.play('click'); go(() => show('title')); };
 
 // ---------- 스토리 ----------
+// 입힌 옷이 있으면 그 그림, 없으면 기본 그림 (대화창·스킬 컷인·결과창)
+const artOf = id => { const s = Save.data.outfit?.[id]; return s && SKINS[id]?.[s] ? SKIN(id, s) : art(id); };
 function playStory(lines) {
   return new Promise(done => {
     const ov = $('#story'), lineEl = $('#storyLine');
@@ -455,7 +457,7 @@ function playStory(lines) {
     const next = () => {
       if (i >= lines.length) { ov.classList.remove('show'); ov.onclick = null; done(); return; }
       const [id, text] = lines[i++];
-      $('#storyChar').src = art(id);
+      $('#storyChar').src = artOf(id);
       $('#storyName').textContent = CHAR_NAME[id];
       $('#storyChar').animate([{ transform: 'translateY(24px) scale(.85)' }, { transform: 'translateY(0) scale(1)' }],
         { duration: 320, easing: 'cubic-bezier(.3,1.6,.6,1)' });
@@ -474,7 +476,7 @@ function playStory(lines) {
 // ---------- 모달 ----------
 function modal({ title, stars = null, char, img = null, photo = false, rows = [], text, btn1, on1, btn2 = '', on2 = null }) {
   $('#modalTitle').textContent = title;
-  $('#modalChar').src = img || art(char);
+  $('#modalChar').src = img || artOf(char);
   $('#modalChar').classList.toggle('photo', photo);
   $('#modalChar').classList.remove('icon');
   $('.modal-card').classList.toggle('has-photo', photo);
@@ -618,11 +620,18 @@ function buildParty() {
   [...$('#party').children].forEach((el, k) => (el.onclick = () => useSkill(k)));
   updateGauges();
 }
+// 스킬 게이지 칸: 값이 오르면 고리가 톡 부풂 (일상 퍼즐 도우미도 같이 씀)
+function setGauge(el, v, ready) {
+  if (v > (el._g ?? v) && !ready) el.animate([{ scale: 1 }, { scale: 1.1 }, { scale: 1 }], { duration: 260, easing: 'ease-out' });
+  if (ready && !el.classList.contains('ready')) el.animate([{ scale: 1 }, { scale: 1.3 }, { scale: .95 }, { scale: 1 }], { duration: 420, easing: 'cubic-bezier(.3,1.6,.6,1)' });
+  el._g = v;
+  el.style.setProperty('--g', v);
+  el.classList.toggle('ready', ready);
+}
 function updateGauges() {
   [...$('#party').children].forEach((el, k) => {
     const need = teamCh(k).skill.need;
-    el.style.setProperty('--g', Math.min(1, B.gauge[k] / need));
-    el.classList.toggle('ready', B.gauge[k] >= need);
+    setGauge(el, Math.min(1, B.gauge[k] / need), B.gauge[k] >= need);
   });
 }
 // 지금 괴물에게 유리한 친구는 ▲ 표시
@@ -885,6 +894,43 @@ const settleAll = dur => {
   return Promise.all(ps);
 };
 
+// ---------- 콤보: 연쇄가 이어지는 동안 한 덩어리로 쾅쾅 커지고, 끝나면 톡 튀어 사라짐 ----------
+const COMBO_WORDS = ['', '', '좋아!', '멋져!', '굉장해!', '대단해!!'];
+const Combo = {
+  el: null,
+  show(n) {
+    const col = `hsl(${(n * 47) % 360} 75% 58%)`, s = 1 + Math.min(n, 8) * 0.08;
+    if (!this.el) {
+      const b = boardEl.getBoundingClientRect(), a = app.getBoundingClientRect();
+      this.el = addFx('combo', b.left - a.left + b.width / 2, b.top - a.top + b.height * 0.28);
+      this.el.innerHTML = '<i class="rays"></i><b></b><small></small>';
+    }
+    const el = this.el;
+    el.style.setProperty('--hue', col);
+    el.style.setProperty('--rs', 0.8 + Math.min(n, 8) * 0.15); // 뒤 햇살 크기
+    el.querySelector('b').textContent = `${n} 콤보!`;
+    el.querySelector('small').textContent = COMBO_WORDS[n] ?? '최고야!!!';
+    el.animate([
+      { transform: `translate(-50%,-50%) scale(${s * 1.5}) rotate(${n % 2 ? -8 : 8}deg)` },
+      { transform: `translate(-50%,-50%) scale(${s * 0.9}) rotate(0)`, offset: 0.55 },
+      { transform: `translate(-50%,-50%) scale(${s})` },
+    ], { duration: 320, easing: 'ease-out', fill: 'forwards' });
+    // 콤보 3부터: 숫자에서 반짝이가 터지고 판 테두리가 콤보 색으로 번쩍
+    if (n >= 3) {
+      const p = centerOf(el);
+      burst(p.x, p.y, col, 6 + Math.min(n, 8));
+      boardEl.animate([{ boxShadow: `0 0 0 0 ${col}` }, { boxShadow: `0 0 0 7px ${col}, 0 0 22px 6px ${col}`, offset: 0.3 }, { boxShadow: '0 0 0 0 transparent' }], { duration: 460, easing: 'ease-out' });
+    }
+  },
+  end() {
+    const el = this.el;
+    if (!el) return;
+    this.el = null;
+    el.animate([{ opacity: 1 }, { transform: 'translate(-50%,-80%) scale(1.15)', opacity: 1, offset: 0.35 }, { transform: 'translate(-50%,-130%) scale(.7)', opacity: 0 }],
+      { duration: 420, easing: 'ease-in', fill: 'forwards' }).finished.then(() => el.remove());
+  },
+};
+
 // ---------- 연쇄 ----------
 async function cascade(swapped, forced, origin = null) {
   let combo = 0;
@@ -898,6 +944,7 @@ async function cascade(swapped, forced, origin = null) {
     await fall(Board.gravity(B.grid));
     if (B.mode === 'life') await Life.collect();
   }
+  Combo.end();
   if (!Board.hasMove(B.grid)) {
     await banner('섞는 중…', 400);
     Board.shuffle(B.grid);
@@ -1348,20 +1395,7 @@ async function stepFx(res, combo, from = null) {
   for (let i = 0; i < Math.min(3, Math.ceil(n / 3)); i++) setTimeout(() => Sound.pop(combo - 1 + i), i * 70);
   if (n >= 6) setTimeout(() => Sound.play('sparkle', 1 + combo * 0.05, 0.6), 60);
 
-  if (combo >= 2) {
-    const b = boardEl.getBoundingClientRect(), a = app.getBoundingClientRect();
-    const t = addFx('combo', b.left - a.left + b.width / 2, b.top - a.top + b.height * 0.3);
-    t.textContent = `${combo} 콤보!`;
-    const hue = (combo * 47) % 360;
-    t.style.webkitTextStroke = `2px hsl(${hue} 70% 55%)`;
-    t.style.textShadow = `0 4px 0 hsl(${hue} 70% 45%)`;
-    t.animate([
-      { transform: 'translate(-50%,-50%) scale(0)', opacity: 0 },
-      { transform: `translate(-50%,-50%) scale(${1.2 + combo * 0.08})`, opacity: 1, offset: 0.25 },
-      { transform: 'translate(-50%,-80%) scale(1)', opacity: 1, offset: 0.75 },
-      { transform: 'translate(-50%,-110%) scale(.9)', opacity: 0 },
-    ], { duration: 800, easing: 'ease-out' }).finished.then(() => t.remove());
-  }
+  if (combo >= 2) Combo.show(combo);
 
   // 공격과 회복 (토벌에서만)
   const tally = new Map();
@@ -1735,7 +1769,7 @@ async function cutIn(ch) {
   el.style.setProperty('--ring', ch.ring);
   const letters = [...ch.skill.name].map((t, k) => `<i style="animation-delay:${0.32 + k * 0.05}s">${t === ' ' ? '&nbsp;' : t}</i>`).join('');
   el.innerHTML = `<div class="dim"></div><div class="lines"></div><div class="band"><span></span></div><div class="band2"></div>
-    <img class="body" src="${art(ch.id)}"><div class="say">${ch.skill.say}</div><div class="sname">${letters}</div><div class="streak"></div>`;
+    <img class="body" src="${artOf(ch.id)}"><div class="say">${ch.skill.say}</div><div class="sname">${letters}</div><div class="streak"></div>`;
   app.appendChild(el);
   const [dim, lines, band, band2, body, say, sname, streak] = el.children;
   Sound.play('jingle_skill', 1, 0.9);
@@ -1798,6 +1832,43 @@ function pickTiles(n, ok = t => !t.special && t.type >= 0) {
 
 // 게이지가 차면 파티 얼굴을 눌러 사용. 턴은 쓰지 않음
 // 일상 퍼즐에서는 데려간 친구 한 명(L.helper)의 스킬을 씀. 전투 전용 효과는 일상용으로 바꿈
+// ---------- 스킬 쓸 때 친구가 판 위에 나와서 직접 움직임 (입은 옷 그대로) ----------
+// points를 차례로 콩콩 뛰어다니고, 도착할 때마다 onHit(i). hop: 뛰는 높이(칸), dur: 한 번 뛰는 시간
+async function actor(ch, points, { dur = 170, hop = 0.8, size = 1.5, onHit = null } = {}) {
+  if (!points.length) return;
+  const S = B.S, im = new Image();
+  im.src = artOf(ch.id);
+  im.className = 'actor';
+  im.style.width = S * size + 'px';
+  fx.appendChild(im);
+  const place = (p, extra = '') => `translate(${p.x}px, ${p.y}px) translate(-50%, -78%) ${extra}`;
+  let prev = { x: points[0].x, y: app.getBoundingClientRect().height + S }; // 화면 아래에서 폴짝 등장
+  for (const [i, p] of points.entries()) {
+    const f = p.x < prev.x - 1 ? -1 : 1;
+    const mid = { x: (prev.x + p.x) / 2, y: Math.min(prev.y, p.y) - S * hop };
+    await im.animate([
+      { transform: place(prev, `scale(${f}, 1)`) },
+      { transform: place(mid, `scale(${f * 0.9}, 1.12)`), offset: 0.5 },
+      { transform: place(p, `scale(${f * 1.15}, .82)`) },
+    ], { duration: i ? dur : 280, easing: 'ease-in-out', fill: 'forwards' }).finished;
+    onHit?.(i, p);
+    prev = p;
+  }
+  await im.animate([{ transform: place(prev) }, { transform: place({ x: prev.x, y: prev.y - S * 2 }, 'scale(.6)'), opacity: 0 }],
+    { duration: 260, easing: 'ease-in', fill: 'forwards' }).finished;
+  im.remove();
+}
+// 친구가 닿은 칸: 찌그러지며 반짝
+function actorHit(r, c, color, i = 0) {
+  const t = B.grid[r]?.[c];
+  if (t?.inner) squish(t);
+  const p = tileCenter(r, c);
+  burst(p.x, p.y, color, 5);
+  Sound.pop(Math.min(i, 11));
+}
+// 칸 목록 → 친구가 지나갈 길
+const linePath = cs => cs.map(([r, c]) => tileCenter(r, c));
+
 async function useSkill(k) {
   const life = B.mode === 'life';
   const ch = life ? CHARS[L.helper] : teamCh(k);
@@ -1824,10 +1895,14 @@ async function useSkill(k) {
   const id = ch.skill.id;
   let cells = [];
   if (id === 'random8') {
+    // 치이카와: 8칸을 울면서 콩콩 뛰어다니며 휘두름
     cells = pickTiles(8, () => true);
+    await actor(ch, linePath(cells), { onHit: i => actorHit(...cells[i], ch.ring, i) });
   } else if (id === 'rows2') {
+    // 하치와레: 두 줄을 쓩 미끄러지며 지나감 (두 번째 줄은 반대로)
     const rows = [0, 1, 2, 3, 4, 5, 6].sort(() => Math.random() - 0.5).slice(0, 2);
-    rows.forEach(r => { for (let c = 0; c < COLS; c++) cells.push([r, c]); });
+    rows.forEach((r, j) => { for (let c = 0; c < COLS; c++) cells.push([r, j ? COLS - 1 - c : c]); });
+    await actor(ch, linePath(cells), { dur: 55, hop: 0.15, onHit: i => actorHit(...cells[i], ch.ring, i % 7) });
   } else if (id === 'cross') {
     // 랏코: 굵은 십자로 베고 괴물에게 큰 한 방
     const r0 = 1 + Math.floor(Math.random() * 5), c0 = 1 + Math.floor(Math.random() * 5);
@@ -1835,6 +1910,9 @@ async function useSkill(k) {
       for (let i = 0; i < COLS; i++) cells.push([r0 + d, i]);
       for (let i = 0; i < ROWS; i++) cells.push([i, c0 + d]);
     }
+    // 가운데 가로줄을 휙, 이어서 세로줄을 휙 베고 지나감
+    const slash = [...Array(COLS).keys()].map(c => [r0, c]).concat([...Array(ROWS).keys()].map(r => [r, c0]));
+    await actor(ch, linePath(slash), { dur: 45, hop: 0.12, onHit: i => actorHit(...slash[i], ch.ring, i % 7) });
     if (!life) {
       const eff = attrMult(ch.attr, curWave().a);
       const m = centerOf($('#monster'));
@@ -1847,12 +1925,14 @@ async function useSkill(k) {
   } else if (id === 'bighit' && life) {
     // 일상: 제일 귀찮은 칸에 폭탄을 꽂음
     const tg = Board.pickTarget(B.grid) || pickTiles(1)[0];
+    if (tg) await actor(ch, [tileCenter(tg[0], tg[1])], { hop: 1.6 });
     if (tg && B.grid[tg[0]][tg[1]] && !B.grid[tg[0]][tg[1]].block) { const t = B.grid[tg[0]][tg[1]]; t.special = 'bomb'; t.type = -1; refreshTile(t); squish(t); }
     cells = tg ? [tg] : [];
     await sleep(200);
   } else if (id === 'bighit') {
     const eff = attrMult(ch.attr, curWave().a);
     const m = centerOf($('#monster'));
+    await actor(ch, [m], { hop: 2.2, dur: 320, size: 1.8 }); // 우사기: 괴물에게 높이 뛰어올라 쾅
     fxImage('boom', m.x, m.y, B.S * 4, 500);
     flash('#fff6a8', 0.5);
     shake(14, 420);
@@ -1860,22 +1940,19 @@ async function useSkill(k) {
     await sleep(500);
   } else if (id === 'convert6') {
     const into = life ? Math.max(0, B.team.indexOf(L.helper)) : k;
-    pickTiles(6, t => !t.special && t.type >= 0 && t.type !== into).forEach(([r, c], i) => {
-      const t = B.grid[r][c];
-      t.type = into;
-      setTimeout(() => {
-        refreshTile(t);
-        squish(t);
-        const p = tileCenter(r, c);
-        burst(p.x, p.y, ch.ring, 6);
-        Sound.pop(i);
-      }, i * 70);
-    });
-    await sleep(6 * 70 + 200);
+    // 모몽가: 6칸을 콩콩 다니며 닿는 칸을 모몽가로 바꿈
+    const picks = pickTiles(6, t => !t.special && t.type >= 0 && t.type !== into);
+    picks.forEach(([r, c]) => (B.grid[r][c].type = into));
+    await actor(ch, linePath(picks), { onHit: i => { const [r, c] = picks[i]; refreshTile(B.grid[r][c]); actorHit(r, c, ch.ring, i); } });
+    await sleep(150);
   } else if (life && (id === 'heal40' || id === 'ramen' || id === 'stall')) {
+    const p = centerOf($('.lh-limit'));
+    await actor(ch, [p, { x: p.x + B.S * 0.6, y: p.y }, p], { hop: 0.6, dur: 200, size: 1.2 });
     bonusMoves(id === 'heal40' ? 4 : 3, ch.ring);
     await sleep(400);
   } else if (id === 'heal40') {
+    const hp = centerOf($('#teamHp'));
+    await actor(ch, [hp, { x: hp.x + B.S, y: hp.y }], { hop: 0.7, dur: 220, size: 1.2 }); // 카니: 체력바 위에서 통통
     const amt = Math.round(B.teamMax * 0.4);
     B.teamHp = Math.min(B.teamMax, B.teamHp + amt);
     updateTeam();
@@ -1885,6 +1962,8 @@ async function useSkill(k) {
     floatNum(p.x, p.y - 10, `+${amt}`, '#3fae4f', 'crit');
     await sleep(400);
   } else if (id === 'ramen') {
+    const hp = centerOf($('#teamHp'));
+    await actor(ch, [hp, { x: hp.x - B.S, y: hp.y }, hp], { hop: 0.7, dur: 200, size: 1.2 }); // 시사: 간식 들고 통통
     const amt = Math.round(B.teamMax * 0.2);
     B.teamHp = Math.min(B.teamMax, B.teamHp + amt);
     updateTeam();
@@ -1912,9 +1991,13 @@ async function useSkill(k) {
     spots.forEach(([r, c]) => { const t = B.grid[r][c]; t.special = 'bomb'; t.type = -1; refreshTile(t); });
     cells = spots;
   } else if (id === 'cols2') {
+    // 두 세로줄을 위아래로 쓩 (두 번째 줄은 반대로)
     const cs = [0, 1, 2, 3, 4, 5, 6].sort(() => Math.random() - 0.5).slice(0, 2);
-    cs.forEach(c => { for (let r = 0; r < ROWS; r++) cells.push([r, c]); });
+    cs.forEach((c, j) => { for (let r = 0; r < ROWS; r++) cells.push([j ? ROWS - 1 - r : r, c]); });
+    await actor(ch, linePath(cells), { dur: 55, hop: 0.15, onHit: i => actorHit(...cells[i], ch.ring, i % 7) });
   } else if (id === 'stall') {
+    const cd = centerOf($('#countdown'));
+    await actor(ch, [cd, { x: cd.x - B.S * 0.7, y: cd.y }, { x: cd.x + B.S * 0.7, y: cd.y }, cd], { hop: 0.7, dur: 180, size: 1.2 }); // 고블린: 옴 빰 빰 춤
     B.cd += 3;
     updateCd();
     const p = centerOf($('#countdown'));
@@ -1923,6 +2006,8 @@ async function useSkill(k) {
     hitMonster(Math.round(ch.dmg * 4 * eff), ch, false, 0, eff);
     await sleep(400);
   } else if (id === 'cheer') {
+    // 판 가운데를 좌우로 데굴데굴 지나가며 섞음
+    await actor(ch, [tileCenter(3, 0), tileCenter(3, 3), tileCenter(3, 6)], { hop: 0.5, dur: 200 });
     Board.shuffle(B.grid);
     await settleAll(420);
     if (life) bonusMoves(1, ch.ring);
@@ -1930,6 +2015,7 @@ async function useSkill(k) {
     Sound.play('sparkle', 1.1, 0.8);
   } else if (id === 'rainbow') {
     const [rc] = pickTiles(1);
+    if (rc) await actor(ch, [tileCenter(rc[0], rc[1])], { hop: 1.2, dur: 260 }); // 쿠리만쥬: 폴짝 와서 경단 두고 감
     if (rc) {
       const t = B.grid[rc[0]][rc[1]];
       t.special = 'rainbow';

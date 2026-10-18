@@ -287,8 +287,7 @@ const Life = {
     });
     $('#lhScore b').textContent = L.score;
     const need = CHARS[L.helper].skill.need;
-    $('#lhHelper').style.setProperty('--g', Math.min(1, L.hg / need));
-    $('#lhHelper').classList.toggle('ready', L.hg >= need);
+    setGauge($('#lhHelper'), Math.min(1, L.hg / need), L.hg >= need);
   },
 
   onStep(res, combo) {
@@ -424,7 +423,7 @@ const Life = {
     el.remove();
   },
 
-  // 남은 이동(시간 3초마다)을 줄폭탄으로 바꿔 한꺼번에 터뜨림
+  // 남은 이동(시간 3초마다)을 아이템(줄폭탄 50%, 폭탄 30%, 종이비행기 20%)으로 바꿔 한꺼번에 터뜨림. 칸마다 +150
   // 로켓은 0.11초 간격으로 겹쳐 날아가고, 화면을 한 번 누르면 남은 칸은 바로 바뀜
   async bonus() {
     const left = () => (L.st.time ? Math.floor(L.time / 3) : L.moves);
@@ -438,17 +437,20 @@ const Life = {
     const onTap = () => { skip = true; skipNow(); };
     window.addEventListener('pointerdown', onTap, { capture: true });
     const done = new Set();
+    const kind = () => { const x = Math.random(); return x < 0.5 ? (Math.random() < 0.5 ? 'h' : 'v') : x < 0.8 ? 'bomb' : 'plane'; };
     // 로켓이 꽂힌 칸을 줄폭탄으로 (건너뛰기와 겹쳐도 한 번만)
     const make = (r, c, i) => {
       if (done.has(r * 100 + c)) return;
       done.add(r * 100 + c);
       const t = B.grid[r][c];
-      t.special = Math.random() < 0.5 ? 'h' : 'v';
+      t.special = kind();
       t.type = -1;
       refreshTile(t);
       squish(t);
       const p = tileCenter(r, c);
       burst(p.x, p.y, '#ffffff', 6);
+      L.score += 150;
+      floatNum(p.x, p.y, '+150', '#e07b39');
       Sound.pop(Math.min(i, 11));
       if (L.st.time) L.time = Math.max(0, L.time - 3); else L.moves--;
       Life.hud();
@@ -467,10 +469,10 @@ const Life = {
     const rest = left();
     await cascade(null, cells);
     if (rest > 0) {
-      L.score += rest * 300;
+      L.score += rest * 500;
       if (L.st.time) L.time = 0; else L.moves = 0;
       const c = centerOf($('#lhScore'));
-      floatNum(c.x, c.y, `+${rest * 300}`, '#e07b39', 'crit');
+      floatNum(c.x, c.y, `+${rest * 500}`, '#e07b39', 'crit');
     }
     Life.hud();
     await sleep(400);
