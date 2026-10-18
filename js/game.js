@@ -64,7 +64,8 @@ function addFx(cls, x, y) {
 }
 
 // Kenney 파티클(CC0) 그림을 원하는 색으로 칠해서 씀
-const KP = n => `url(assets/img/fx/k/${n}.png)`;
+// CSS 변수 안의 url()은 css/ 기준으로 풀려서 절대 주소로 넣음
+const KP = n => `url(${new URL(`assets/img/fx/k/${n}.png`, location.href).href})`;
 function kp(name, x, y, size, color, frames, opts) {
   const el = addFx('kp', x, y);
   Object.assign(el.style, { width: size + 'px', height: size + 'px', marginLeft: -size / 2 + 'px', marginTop: -size / 2 + 'px' });
