@@ -220,11 +220,11 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 /* 아이템: 원판 없이 아이콘만, 칸 안에 */
 .tile .inner.item { animation: itemBob 1.4s ease-in-out infinite; }
 .tile .inner.item img { transform: scale(.86); filter: drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 1.5px #fff) drop-shadow(0 3px 0 #4a426240); }
-.tile .inner.item.h img, .tile .inner.item.v img { position: absolute; left: 50%; top: 50%; width: 52%; height: auto; }
-.tile .inner.item.h .r1 { transform: translate(-12%, -50%) rotate(45deg); }
-.tile .inner.item.h .r2 { transform: translate(-88%, -50%) rotate(-135deg); }
-.tile .inner.item.v .r1 { transform: translate(-50%, -88%) rotate(-45deg); }
-.tile .inner.item.v .r2 { transform: translate(-50%, -12%) rotate(135deg); }
+.tile .inner.item.h img, .tile .inner.item.v img { position: absolute; left: 50%; top: 50%; width: 100%; height: auto; }
+/* 그림은 갈래가 오른쪽 위(45도). 가로는 오른쪽으로, 세로는 위로 눕힘 */
+.tile .inner.item.h .sp { transform: translate(-50%, -50%) rotate(45deg) scale(1.12); }
+.tile .inner.item.v .sp { transform: translate(-50%, -50%) rotate(-45deg) scale(1.12); }
+.tile .inner.item .sp { filter: drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 1px #c2557f) drop-shadow(0 3px 0 #4a426240); }
 .tile .inner.item .axis { position: absolute; left: 50%; top: 50%; width: 84%; height: 22%; transform: translate(-50%, -50%); border-radius: 99px; background: #cfeeff; opacity: .9; }
 .tile .inner.item.v .axis { width: 22%; height: 84%; }
 

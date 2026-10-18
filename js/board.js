@@ -110,7 +110,7 @@ const Board = {
     let kind = null;
     if (maxLen >= 5) kind = 'rainbow';
     else if (hasH && hasV) kind = 'bomb';
-    else if (maxLen === 4) kind = lines.find(r => r.cells.length === 4).dir;
+    else if (maxLen === 4) kind = lines.find(r => r.cells.length === 4).dir === 'h' ? 'v' : 'h'; // 가로 4개면 세로로, 세로 4개면 가로로 터짐
     else if (grp.runs.some(r => r.dir === 'sq')) kind = 'plane';
     if (!kind) return null;
     let pos = (swapped || []).find(([r, c]) => grp.keys.has(key(r, c)));

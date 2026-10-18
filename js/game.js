@@ -552,9 +552,9 @@ function refreshTile(t) {
   if (t.special || t.type < 0) {
     const sp = t.special || 'rainbow';
     inner.classList.add('item', sp);
-    // 줄폭탄은 로켓 두 개가 등을 맞대고 터질 방향(가로 ◀▶ / 세로 ▲▼)을 가리킴
+    // 줄폭탄은 토벌봉 하나가 터질 방향으로 누워 있음 (가로: 갈래가 오른쪽 / 세로: 갈래가 위)
     inner.innerHTML = sp === 'h' || sp === 'v'
-      ? `<i class="axis"></i><img class="r1" src="${ITEM('rocket')}" draggable="false"><img class="r2" src="${ITEM('rocket')}" draggable="false">`
+      ? `<i class="axis"></i><img class="sp" src="${ITEM('rocket')}" draggable="false">`
       : `<img src="${ITEM(ITEM_ICON[sp] || sp)}" draggable="false">`;
     return;
   }
@@ -904,8 +904,8 @@ async function mergeFx(ta, tb, at) {
 async function comboFx(combo) {
   const [r, c] = combo.at;
   const p = tileCenter(r, c);
-  const names = { rainbow: '경단 대잔치!', rainbow2: '경단 대폭발!!', 'bomb+bomb': '뚜껑 대폭발!', 'bomb+h': '크로스 쾅!', 'bomb+v': '크로스 쾅!',
-    'plane+plane': '종이비행기 편대!', 'bomb+plane': '뚜껑 배달!', 'h+plane': '막대 배달!', 'plane+v': '막대 배달!' };
+  const names = { rainbow: '경단 대잔치!', rainbow2: '경단 대폭발!!', 'bomb+bomb': '대폭발!', 'bomb+h': '크로스 쾅!', 'bomb+v': '크로스 쾅!',
+    'plane+plane': '종이비행기 편대!', 'bomb+plane': '폭탄 배달!', 'h+plane': '토벌봉 배달!', 'plane+v': '토벌봉 배달!' };
   const label = names[combo.kind] || '크로스!';
   Juice.zoom(p.x, p.y, combo.kind.startsWith('rainbow') || combo.kind === 'bomb+bomb' ? 1.12 : 1.07);
   if (combo.converted) Board.each(B.grid, t => t.special && refreshTile(t));

@@ -72,8 +72,8 @@ const attrMult = (atk, def) => ((atk === 'light' && def === 'dark') || (atk === 
 const FACE = id => `assets/img/faces/${id}.png`;
 const BODY = id => `assets/img/chars/${id}.png`;
 const TILE = id => `assets/img/tiles/${id}.png`;
-// 아이템은 치이카와 원작 도구로: 줄폭탄=토벌 막대, 폭탄=냄비 뚜껑, 무지개=경단, 비행기=종이비행기 (VARCO로 그림)
-const ITEM_ALIAS = { rocket: 'stick', bomb: 'lid', rainbow: 'dango3', plane: 'paperplane' };
+// 아이템은 치이카와 원작 도구로: 줄폭탄=토벌봉, 폭탄=동글 폭탄, 무지개=경단, 비행기=종이비행기 (VARCO로 그림)
+const ITEM_ALIAS = { rocket: 'stick', bomb: 'bombball', rainbow: 'dango3', plane: 'paperplane' };
 const ITEM = name => `assets/img/items/${ITEM_ALIAS[name] || name}.png`;
 // 전신 그림이 없는 캐릭터는 얼굴로
 const NO_BODY = new Set(['kani', 'shooting', 'darkstar', 'goblin', 'beetle']);
