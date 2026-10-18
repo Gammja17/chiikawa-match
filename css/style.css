@@ -413,28 +413,55 @@ img.shadow { filter: brightness(0) opacity(.15); }
 
 /* ---------- 캡슐 뽑기 ---------- */
 .gacha-body { flex: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding-bottom: 30px; }
-#gachaMachine { position: relative; width: 220px; transform-origin: 50% 100%; }
-#gachaMachine .globe { position: relative; height: 190px; border-radius: 50%; background: #e8f6fd; border: 3px solid var(--ink); overflow: hidden; }
-#gachaMachine .globe::after { content: ''; position: absolute; left: 22%; top: 12%; width: 22%; height: 12%; border-radius: 50%; background: #fff; transform: rotate(-30deg); }
-#gachaMachine .globe i { position: absolute; width: 50px; height: 50px; border-radius: 50%; border: 2px solid var(--ink); background: linear-gradient(180deg, var(--c) 50%, #fff 50%); }
-#gachaMachine .globe i:nth-child(1) { --c: #ff86a8; left: 20px; bottom: 14px; }
-#gachaMachine .globe i:nth-child(2) { --c: #7cc4ec; left: 66px; bottom: 6px; transform: rotate(40deg); }
-#gachaMachine .globe i:nth-child(3) { --c: #ffc83d; left: 112px; bottom: 12px; transform: rotate(-30deg); }
-#gachaMachine .globe i:nth-child(4) { --c: #a9db8c; left: 152px; bottom: 28px; }
-#gachaMachine .globe i:nth-child(5) { --c: #b99cf0; left: 40px; bottom: 56px; transform: rotate(80deg); }
-#gachaMachine .globe i:nth-child(6) { --c: #ff9f5a; left: 90px; bottom: 52px; }
-#gachaMachine .globe i:nth-child(7) { --c: #ff86a8; left: 134px; bottom: 68px; transform: rotate(-60deg); }
-#gachaMachine .base { height: 90px; margin: -12px 10px 0; border-radius: 14px; background: var(--pink); border: 3px solid var(--ink);  display: flex; justify-content: center; align-items: center; }
-#gachaMachine .slot { width: 64px; height: 40px; border-radius: 10px; background: var(--ink); border: 0; cursor: default; flex: none; aspect-ratio: auto; }
-.capsule { position: absolute; left: 50%; top: 50%; width: 70px; height: 70px; display: none; z-index: 2; }
-.capsule.show { display: block; }
-.capsule i { position: absolute; left: 0; right: 0; height: 50%; border: 3px solid var(--ink); transition: transform .35s cubic-bezier(.3, 1.6, .6, 1); }
-.capsule .top { top: 0; border-radius: 35px 35px 0 0; background: var(--cap); border-bottom-width: 1.5px; }
-.capsule .bottom { bottom: 0; border-radius: 0 0 35px 35px; background: #fff; border-top-width: 1.5px; }
-.capsule.open .top { transform: translate(-26px, -36px) rotate(-40deg); }
-.capsule.open .bottom { transform: translate(18px, 12px) rotate(20deg); }
-#btnPull { display: flex; align-items: center; gap: 6px; }
-#btnPull img { width: 30px; height: 30px; }
+.gacha-tabs { display: flex; gap: 6px; padding: 4px; border-radius: 99px; background: var(--paper); box-shadow: var(--sh); }
+.gacha-tabs button { padding: 6px 16px 4px; border-radius: 99px; font-family: var(--head); font-size: 19px; color: var(--ink2); }
+.gacha-tabs button.on { background: var(--pink); color: #fff; }
+#gachaMachine { position: relative; width: min(230px, 60%); transform-origin: 50% 100%; }
+#gachaMachine img { width: 100%; display: block; pointer-events: none; }
+/* 손잡이: 그림 위에 같은 모양을 덧그려서 돌림 (자리는 meta.js의 MACHINE과 같게) */
+#gachaKnob { position: absolute; left: 65%; top: 66.5%; width: 27%; aspect-ratio: 1; transform: translate(-50%, -50%) rotate(var(--turn, 0deg)); border-radius: 50%;
+  background: #fff8f8; border: 3px solid #5b3a32; touch-action: none; cursor: grab; transition: transform .08s; }
+#gachaKnob i { position: absolute; left: 6%; right: 6%; top: 36%; height: 28%; border-radius: 99px; background: #fff; border: 3px solid #5b3a32; box-shadow: inset 0 -3px 0 #f1dfe3; }
+#gachaKnob.ready { box-shadow: 0 0 0 4px #fff, 0 0 0 7px var(--pink); animation: knobGlow 1s ease-in-out infinite; }
+@keyframes knobGlow { 50% { box-shadow: 0 0 0 4px #fff, 0 0 0 10px #ff8ab880; } }
+.knob-hint { position: absolute; left: 50%; top: 46%; transform: translateX(-50%); padding: 2px 12px 0; border-radius: 99px; background: var(--ink); color: #fff;
+  font-family: var(--head); font-size: 18px; white-space: nowrap; animation: bob 1s ease-in-out infinite; pointer-events: none; }
+.gacha-note { margin: -10px 16px 0; min-height: 20px; text-align: center; font-size: 14px; color: var(--ink2); }
+.gacha-btns { display: flex; gap: 10px; }
+.gacha-btns .big-btn { display: flex; align-items: center; gap: 4px; min-width: 0; padding: 0 16px; font-size: 26px; }
+.gacha-btns .big-btn img { width: 26px; height: 26px; }
+/* 뽑기 무대: 캡슐과 결과가 뜨는 층 (10번 뽑기 때는 어둡게 깔림) */
+#gachaStage { position: absolute; inset: 0; pointer-events: none; }
+#gachaStage:not(:empty) { pointer-events: auto; }
+#gachaStage.ten { background: rgba(74, 66, 98, .45); }
+.cap { position: absolute; width: 76px; height: 76px; transform: translate(-50%, -50%); cursor: pointer; filter: drop-shadow(0 4px 0 #4a426240); }
+.cap.small { width: 50px; height: 50px; }
+.cap i { position: absolute; left: 0; right: 0; height: 50%; border: 3px solid var(--ink); transition: transform .35s cubic-bezier(.3, 1.6, .6, 1), opacity .35s; }
+.cap .top { top: 0; border-radius: 99px 99px 0 0; background: var(--cap); border-bottom-width: 1.5px; }
+.cap .bottom { bottom: 0; border-radius: 0 0 99px 99px; background: #fff; border-top-width: 1.5px; }
+.cap.rainbow .top { background: conic-gradient(from 90deg, #ff8ab8, #ffd84d, #a6d96a, #7cc4ec, #b99cf0, #ff8ab8); }
+/* 모으는 동안 이음새로 결과 색 빛이 새어 나옴 */
+.cap.charge::after { content: ''; position: absolute; left: -30%; right: -30%; top: 50%; height: 14%; transform: translateY(-50%); border-radius: 99px;
+  background: radial-gradient(closest-side, #fff, var(--glow) 55%, transparent); animation: seam .45s ease-in forwards; pointer-events: none; }
+@keyframes seam { from { opacity: 0; transform: translateY(-50%) scaleX(.4); } to { opacity: 1; transform: translateY(-50%) scale(1.1, 1.8); } }
+.cap.open::after { opacity: 0; transition: opacity .2s; }
+.cap.open { cursor: default; pointer-events: none; }
+/* 새 것: 위로 솟는 빛기둥 */
+.beam { position: absolute; width: 90px; height: 70vh; border-radius: 50% 50% 0 0; pointer-events: none; transform-origin: 50% 100%;
+  background: linear-gradient(to top, var(--glow), transparent 85%); filter: blur(2px); mix-blend-mode: screen; }
+.beam.rainbow { background: linear-gradient(to top, #ffd84d, #ff8ab8 30%, #7cc4ec 55%, transparent 85%); }
+.prize.float img { animation: bob 1.6s ease-in-out infinite; }
+.cap-hint { position: absolute; left: 50%; top: 58%; transform: translateX(-50%); padding: 2px 12px 0; border-radius: 99px; background: var(--ink); color: #fff;
+  font-family: var(--head); font-size: 18px; white-space: nowrap; animation: bob 1s ease-in-out infinite; pointer-events: none; }
+.prize { position: absolute; width: 120px; height: 120px; transform: translate(-50%, -50%); pointer-events: none; }
+.prize.small { width: 62px; height: 62px; }
+.prize img { position: relative; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 3px #fff) drop-shadow(0 3px 0 #4a426240); }
+.prize b { position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); padding: 0 6px; border-radius: 8px; background: var(--ink); color: #fff;
+  font-family: var(--head); font-size: 13px; line-height: 1.4; white-space: nowrap; font-weight: 400; }
+.prize.fresh b { background: var(--pink); }
+.prize .rays { position: absolute; left: 50%; top: 50%; width: 220%; height: 220%; transform: translate(-50%, -50%); border-radius: 50%; opacity: .7;
+  background: repeating-conic-gradient(#ffe680 0 10deg, transparent 10deg 24deg); -webkit-mask: radial-gradient(circle, #000 15%, transparent 68%); mask: radial-gradient(circle, #000 15%, transparent 68%); animation: spin 4s linear infinite; }
+.ten-btn { position: absolute; left: 50%; bottom: 14%; transform: translateX(-50%); }
 
 /* ---------- 우리 집 ---------- */
 #room { position: relative; flex: 1; margin: 0 12px; border-radius: var(--r); box-shadow: var(--sh); overflow: hidden; min-height: 0; }

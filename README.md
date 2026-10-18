@@ -52,7 +52,7 @@
 - 하트: 5개까지, 20분마다 하나씩 참. 모험 지도 스테이지를 못 깨거나 하던 중에 나가면 하나 줄어듦 (코인 150으로 다 채우기)
 - 기능은 깬 스테이지 수에 따라 열림: 친구들 2, 라멘 가게 4, 집 6, 캡슐 뽑기 8, 도전 10. 열릴 때 그 자리를 비춰 주며 안내
 - 라멘 가게: 갑옷 아저씨와 시사에게 말 걸기, 토벌을 새로 깰 때마다 한 그릇(곱빼기: 체력 150 / 진한 국물: 스킬 게이지 반)
-- 캡슐 뽑기(100코인): 새 친구를 만나거나, 이미 있는 친구면 레벨 업(최대 Lv10, 레벨마다 공격·회복 +8%), 옷 (가진 친구의 아직 없는 옷만 나옴)
+- 캡슐 뽑기: 친구 뽑기와 옷 뽑기(치이카와 포켓 코스튬 130여 벌), 1번 100코인·10번 900코인(새 친구나 새 옷 하나 확정). 손잡이를 빙글 돌리면 캡슐이 나오고, 톡톡 눌러서 엶
 - 편성: 친구 카드를 톡 누르면 넣고 빼기, 꾹 누르면 친구 상세
 - 친구 상세: 레벨, 스탯, 스킬, 옷 갈아입히기 (그림을 통째로 바꿈, `assets/img/skins/`), 레벨 2에 열리는 짧은 이야기
 - 친구네 집: 친구마다 집이 있고 가구와 같이 살 친구를 정함. 친구를 꾹 잡고 끌어서 자리를 옮김. 들고 있으면 성격대로 바둥바둥 (치이카와는 울먹), 톡 누르면 쫄깃하게 눌리며 한마디, 세 번 연달아 찌르면 반응
@@ -77,7 +77,7 @@ python -m http.server 8770
 
 ## 저작권과 출처
 
-- 캐릭터, 괴물 이미지: © nagano / chiikawa committee. 퍼즐 얼굴은 인터넷에서 모은 이미지, 전신·포즈 일러스트와 괴물은 [Chiikawa Wiki (Fandom)](https://chiikawa.fandom.com/)에서, 옷 그림은 [ちいかわぽけっと 공식 사이트](https://jp.chiikawa-pocket.com/ja/)에서, 춤추는 치이카와 GIF는 작가 nagano의 [GIPHY](https://giphy.com/ngntrtr)에서 가져왔습니다. 이미지의 권리는 원저작자에게 있으며, 이 저장소의 라이선스 대상이 아닙니다.
+- 캐릭터, 괴물 이미지: © nagano / chiikawa committee. 퍼즐 얼굴은 인터넷에서 모은 이미지, 전신·포즈 일러스트와 괴물은 [Chiikawa Wiki (Fandom)](https://chiikawa.fandom.com/)에서, 옷 그림은 [ちいかわぽけっと 공식 사이트](https://jp.chiikawa-pocket.com/ja/)와 [Game8 치이카와 포켓 공략](https://game8.jp/chiikawa-pocket)의 코스튬 그림(배경을 지우고 크기를 맞춤)에서, 춤추는 치이카와 GIF는 작가 nagano의 [GIPHY](https://giphy.com/ngntrtr)에서 가져왔습니다. 이미지의 권리는 원저작자에게 있으며, 이 저장소의 라이선스 대상이 아닙니다.
 - 도전 화면 그림(인어섬, 제초 검정, 랏코), 타이틀 풀밭 그림: 원작 애니메이션·게임 이미지 (© nagano / chiikawa committee, 「映画ちいかわ」製作委員会, Applibot)
 - 배경, 터짐 조각: [VARCO](https://3d.varco.ai)로 생성
 - 효과음: [Pixabay](https://pixabay.com/sound-effects/) (floraphonic, humordome / Pixabay Content License)와 [Mixkit](https://mixkit.co/free-sound-effects/) (Mixkit Sound Effects Free License). 크기를 맞추고 일부는 잘라서 mp3로 변환했습니다. 소리 파일만 따로 떼어 배포하는 것은 각 라이선스에서 허용하지 않습니다. 소리마다 볼륨은 `js/audio.js`의 `SFX_VOL`

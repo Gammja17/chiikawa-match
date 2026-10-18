@@ -6,7 +6,7 @@
 <title>먼작귀 퍼즐 토벌 대작전! (팬게임)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poor+Story&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=30">
+<link rel="stylesheet" href="css/style.css?v=31">
 </head>
 <body>
 <div id="app">
@@ -83,12 +83,14 @@
       <div class="coins"><img src="assets/img/items/coin.png" alt=""><b>0</b></div>
     </header>
     <div class="gacha-body">
-      <div id="gachaMachine">
-        <div class="globe"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-        <div class="base"><span class="slot"></span></div>
+      <div class="gacha-tabs"><button data-g="friend" class="on">친구 뽑기</button><button data-g="outfit">옷 뽑기</button></div>
+      <div id="gachaMachine"><img src="assets/img/gacha/machine.png" alt="" draggable="false"><div id="gachaKnob"><i></i></div></div>
+      <p id="gachaNote" class="gacha-note"></p>
+      <div class="gacha-btns">
+        <button id="btnPull" class="big-btn ghost"><img src="assets/img/items/coin.png" alt="">100 · 1번</button>
+        <button id="btnPull10" class="big-btn"><img src="assets/img/items/coin.png" alt="">900 · 10번</button>
       </div>
-      <div id="capsule" class="capsule"><i class="top"></i><i class="bottom"></i></div>
-      <button id="btnPull" class="big-btn"><img src="assets/img/items/coin.png" alt="">100 · 한 번 뽑기</button>
+      <div id="gachaStage"></div>
     </div>
   </section>
 
@@ -230,13 +232,13 @@
   <div id="fx"></div>
   <div id="flash"></div>
 </div>
-<script src="js/data.js?v=29"></script>
+<script src="js/data.js?v=30"></script>
 <script src="js/audio.js?v=29"></script>
 <script src="js/board.js?v=28"></script>
-<script src="js/game.js?v=31"></script>
+<script src="js/game.js?v=32"></script>
 <script src="js/life.js?v=32"></script>
-<script src="js/tutor.js?v=30"></script>
-<script src="js/meta.js?v=29"></script>
+<script src="js/tutor.js?v=31"></script>
+<script src="js/meta.js?v=30"></script>
 <script src="js/firebase-config.js?v=28"></script>
 <script src="js/net.js?v=28"></script>
 </body>

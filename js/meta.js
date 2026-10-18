@@ -311,69 +311,310 @@ function openFriends() {
   $('#friendsGrid').querySelectorAll('.fcard').forEach(b => (b.onclick = () => { Sound.play('click'); Sheet.open(b.dataset.id, { onChange: openFriends }); }));
 }
 
-// ---------- 캡슐 뽑기 ----------
+// ---------- 캡슐 뽑기: 친구 뽑기 / 옷 뽑기, 한 번(100) · 10번(900, 새 친구나 새 옷 하나 확정) ----------
+const GACHA10_COST = 900;
+// 기계 그림에서 손잡이(가운데 x·y, 반지름은 너비 비율)와 캡슐이 나오는 구멍 자리
+const MACHINE = { knob: { x: 0.65, y: 0.665, r: 0.13 }, chute: { x: 0.66, y: 0.85 } };
+const CHUTE = MACHINE.chute;
+let gachaKind = 'friend', gachaBusy = false;
+// 옷 뽑기 후보: 내가 가진 친구의 옷 전부 (이미 있는 옷이 나오면 코인 40)
+const outfitPool = () => Object.entries(SKINS).flatMap(([cid, ss]) => (Meta.owned(cid) ? Object.keys(ss).map(s => [cid, s]) : []));
+const hasSkin = (cid, s) => (Save.data.skins[cid] || []).includes(s);
+const friendPool = () => CHARS.filter(c => !RECRUIT[c.id] || Meta.owned(c.id)); // 간식·스테이지로 데려오는 친구는 처음엔 안 나옴
+const isFresh = p => p.kind === 'new' || p.kind === 'skin';
+const pickOne = a => a[Math.floor(Math.random() * a.length)];
+
+// 뽑기 한 번: 결과를 정하고 저장까지. sure면 아직 없는 친구·옷 중에서 (10번 뽑기 확정)
+function drawPrize(kind, sure = false) {
+  if (kind === 'outfit') {
+    const all = outfitPool(), fresh = all.filter(([c, s]) => !hasSkin(c, s));
+    const [cid, s] = pickOne(sure && fresh.length ? fresh : all);
+    if (hasSkin(cid, s)) { Save.data.coins += 40; return { kind: 'skindup', id: cid, skin: s }; }
+    (Save.data.skins[cid] = Save.data.skins[cid] || []).push(s);
+    return { kind: 'skin', id: cid, skin: s };
+  }
+  const all = friendPool(), fresh = all.filter(c => !Meta.owned(c.id));
+  const c = pickOne(sure && fresh.length ? fresh : all), lv = Meta.lv(c.id);
+  if (!lv) { Save.data.own[c.id] = 1; return { kind: 'new', id: c.id }; }
+  if (lv < LV_MAX) { Save.data.own[c.id] = lv + 1; return { kind: 'up', id: c.id, lv: lv + 1 }; }
+  Save.data.coins += 50;
+  return { kind: 'max', id: c.id };
+}
+// 아직 안 가진 게 남아 있는지 (없으면 10번 뽑기 확정도 없음)
+const canFresh = kind => (kind === 'outfit' ? outfitPool().some(([c, s]) => !hasSkin(c, s)) : friendPool().some(c => !Meta.owned(c.id)));
+
+const CAP_COLOR = { new: '#ff8ab8', up: '#ffd84d', max: '#d9d2e6', skin: '#8fd3ff', skindup: '#d9d2e6' };
+const prizeImg = p => (p.skin ? SKIN(p.id, p.skin) : FACE(p.id));
+const prizeTag = p => ({ new: 'NEW', up: `Lv${p.lv}`, max: '+50', skin: 'NEW', skindup: '+40' })[p.kind];
+
 function openGacha() {
   show('gacha');
   Meta.coinUI();
-  $('#btnPull').disabled = Save.data.coins < GACHA_COST;
+  $('#gachaStage').innerHTML = '';
+  $('#gachaStage').className = '';
+  gachaBusy = false;
+  syncGacha();
 }
-async function pullGacha() {
-  if (Save.data.coins < GACHA_COST || wiping) return;
-  Meta.addCoins(-GACHA_COST);
-  $('#btnPull').disabled = true;
-  // 뽑기: 아직 없는 옷이 남아 있으면 40%로 옷, 아니면 친구 (내가 가진 친구의 옷만 나옴)
-  let prize;
-  const left = Object.entries(SKINS).flatMap(([cid, ss]) => Meta.owned(cid)
-    ? Object.keys(ss).filter(s => !(Save.data.skins[cid] || []).includes(s)).map(s => [cid, s]) : []);
-  if (left.length && Math.random() < 0.4) {
-    const [cid, s] = left[Math.floor(Math.random() * left.length)];
-    (Save.data.skins[cid] = Save.data.skins[cid] || []).push(s);
-    prize = { kind: 'skin', id: cid, skin: s };
-  } else {
-    // 간식·스테이지로 데려오는 친구는 처음엔 뽑기에서 안 나옴
-    const pool = CHARS.filter(c => !RECRUIT[c.id] || Meta.owned(c.id));
-    const c = pool[Math.floor(Math.random() * pool.length)];
-    const lv = Meta.lv(c.id);
-    if (!lv) { Save.data.own[c.id] = 1; prize = { kind: 'new', id: c.id }; }
-    else if (lv < LV_MAX) { Save.data.own[c.id] = lv + 1; prize = { kind: 'up', id: c.id, lv: lv + 1 }; }
-    else { Save.data.coins += 50; prize = { kind: 'max', id: c.id }; }
-  }
-  Save.save();
-  // 캡슐이 덜컹덜컹 굴러 나와 톡 열림
+function syncGacha() {
+  document.querySelectorAll('.gacha-tabs button').forEach(b => b.classList.toggle('on', b.dataset.g === gachaKind));
+  const none = gachaKind === 'outfit' && !outfitPool().length;
+  $('#gachaNote').textContent = none ? '옷이 있는 친구를 먼저 데려와요'
+    : (gachaKind === 'outfit' ? '가진 친구의 옷이 나와요 · 이미 있으면 코인 40' : '새 친구를 만나거나 레벨 업!') +
+      (canFresh(gachaKind) ? ` · 10번 뽑기는 새 ${gachaKind === 'outfit' ? '옷' : '친구'} 하나 확정` : '');
+  $('#btnPull').disabled = gachaBusy || none || Save.data.coins < GACHA_COST;
+  $('#btnPull10').disabled = gachaBusy || none || Save.data.coins < GACHA10_COST;
+}
+
+// 캡슐 하나 (새 친구는 무지개 캡슐)
+function capsuleEl(p) {
+  const el = document.createElement('div');
+  el.className = 'cap' + (p.kind === 'new' ? ' rainbow' : '');
+  el.style.setProperty('--cap', CAP_COLOR[p.kind]);
+  el.innerHTML = '<i class="top"></i><i class="bottom"></i>';
+  return el;
+}
+// 기계 구멍 자리 (뽑기 무대 기준 좌표)
+function chutePos() {
+  const m = $('#gachaMachine img').getBoundingClientRect(), st = $('#gachaStage').getBoundingClientRect();
+  return { x: m.left - st.left + m.width * CHUTE.x, y: m.top - st.top + m.height * CHUTE.y };
+}
+const placeAt = (el, x, y) => Object.assign(el.style, { left: x + 'px', top: y + 'px' });
+
+// 손잡이 돌리기: 손가락으로 빙글 돌리거나 톡톡 누르면(한 번에 90도) 한 바퀴에 캡슐이 나옴
+function turnKnob() {
+  const knob = $('#gachaKnob'), m = $('#gachaMachine');
+  const hint = document.createElement('div');
+  hint.className = 'knob-hint';
+  hint.textContent = '손잡이를 빙글 돌려요!';
+  m.appendChild(hint);
+  knob.classList.add('ready');
+  return new Promise(done => {
+    let turned = 0, step = 0, last = null;
+    const set = () => {
+      knob.style.setProperty('--turn', turned + 'deg');
+      // 90도마다 딸깍 + 기계가 톡
+      while (turned >= (step + 1) * 90) {
+        step++;
+        Sound.play('click', 0.7 + step * 0.08, 0.9);
+        Haptic.tap(15);
+        m.animate([{ transform: 'none' }, { transform: `scale(1.02, .98) rotate(${step % 2 ? -2 : 2}deg)` }, { transform: 'none' }], { duration: 160 });
+      }
+      if (turned >= 360) {
+        knob.classList.remove('ready');
+        knob.onpointerdown = knob.onpointermove = knob.onpointerup = knob.onpointercancel = null;
+        hint.remove();
+        done();
+      }
+    };
+    const ang = e => { const r = knob.getBoundingClientRect(); return Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)) * 180 / Math.PI; };
+    let moved = 0;
+    knob.onpointerdown = e => { e.preventDefault(); knob.setPointerCapture(e.pointerId); last = ang(e); moved = 0; };
+    knob.onpointermove = e => {
+      if (last == null) return;
+      const a = ang(e);
+      let d = a - last;
+      if (d > 180) d -= 360;
+      if (d < -180) d += 360;
+      last = a;
+      moved += Math.abs(d);
+      turned += Math.abs(d); // 어느 쪽으로 돌려도 앞으로
+      set();
+    };
+    knob.onpointerup = knob.onpointercancel = () => {
+      if (last != null && moved < 8) { turned = (step + 1) * 90; set(); } // 톡 누르면 90도
+      last = null;
+    };
+  });
+}
+// 손잡이를 다 돌리면 기계가 찌그러졌다 튐 (10번이면 더 크게)
+async function crankMachine(big) {
   const m = $('#gachaMachine');
-  Sound.play('click', 0.8, 0.9);
-  await m.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(-6deg)' }, { transform: 'rotate(6deg)' }, { transform: 'rotate(-4deg)' }, { transform: 'rotate(0)' }], { duration: 500 }).finished;
-  const cap = $('#capsule');
-  const hue = prize.kind === 'new' ? '#ff8ab8' : prize.kind === 'skin' ? '#8fd3ff' : '#ffd84d';
-  cap.style.setProperty('--cap', hue);
-  cap.className = 'capsule show';
+  Sound.play('land', 0.8, 0.8);
+  Haptic.tap(big ? 40 : 20);
+  const a = big ? 9 : 5;
+  await m.animate([
+    { transform: 'none' }, { transform: `scale(1.06, .9) rotate(-${a}deg)` }, { transform: `scale(.95, 1.06) rotate(${a}deg)` },
+    { transform: `scale(1.04, .94) rotate(-${a / 2}deg)` }, { transform: 'none' },
+  ], { duration: big ? 700 : 520, easing: 'ease-in-out' }).finished;
+}
+// 캡슐 열기: 부르르 모으다가(이음새로 결과 색 빛이 샘) → 펑! 반쪽이 날아가고 충격파·빛기둥 → 결과가 톡 튀어나옴
+async function popCapsule(cap, p, small = false) {
+  const col = p.kind === 'new' ? '#ffffff' : CAP_COLOR[p.kind], fresh = isFresh(p);
+  cap.style.setProperty('--glow', col);
+  cap.classList.add('charge');
+  Sound.play('sparkle', 0.8, small ? 0.3 : 0.6);
+  await cap.animate([
+    { transform: 'translate(-50%,-50%) scale(1)' },
+    { transform: 'translate(-50%,-50%) scale(1.12) rotate(-6deg)', offset: 0.3 },
+    { transform: 'translate(-50%,-50%) scale(1.18) rotate(6deg)', offset: 0.6 },
+    { transform: 'translate(-50%,-50%) scale(1.28, 1.22) rotate(-3deg)' },
+  ], { duration: small ? 200 : 450, easing: 'ease-in', fill: 'forwards' }).finished;
+  await sleep(small ? 30 : 80); // 멈칫
+  const [top, bottom] = cap.children, { x, y } = centerOf(cap), k = small ? 0.6 : 1;
+  cap.classList.add('open');
+  top.animate([{ transform: 'none' }, { transform: `translate(${-40 * k}px, ${-90 * k}px) rotate(-260deg)`, opacity: 1, offset: 0.6 }, { transform: `translate(${-70 * k}px, ${-40 * k}px) rotate(-400deg)`, opacity: 0 }],
+    { duration: 600, easing: 'cubic-bezier(.2,.8,.5,1)', fill: 'forwards' });
+  bottom.animate([{ transform: 'none' }, { transform: `translate(${50 * k}px, ${30 * k}px) rotate(140deg)`, opacity: 1, offset: 0.6 }, { transform: `translate(${80 * k}px, ${90 * k}px) rotate(220deg)`, opacity: 0 }],
+    { duration: 600, easing: 'cubic-bezier(.2,.8,.5,1)', fill: 'forwards' });
+  ringFx(x, y, small ? 90 : 170, '#ffffff', 420);
+  setTimeout(() => ringFx(x, y, small ? 120 : 240, col === '#ffffff' ? '#ffd84d' : col, 520), 80);
+  burst(x, y, CAP_COLOR[p.kind], fresh ? 18 : 8);
+  Haptic.tap(fresh ? 40 : 20);
+  if (!small) shake(fresh ? 8 : 4, 220);
+  if (fresh) {
+    // 위로 솟는 빛기둥 + 별 반짝이 (새 친구면 꽃가루까지)
+    const beam = document.createElement('i');
+    beam.className = 'beam' + (p.kind === 'new' ? ' rainbow' : '');
+    beam.style.setProperty('--glow', col);
+    placeAt(beam, cap.offsetLeft, cap.offsetTop);
+    cap.parentNode.appendChild(beam);
+    beam.animate([{ transform: 'translate(-50%,-100%) scaleX(0)', opacity: 1 }, { transform: 'translate(-50%,-100%) scaleX(1)', opacity: 1, offset: 0.3 }, { transform: 'translate(-50%,-100%) scaleX(.2)', opacity: 0 }],
+      { duration: 900, easing: 'ease-out', fill: 'forwards' }).finished.then(() => beam.remove());
+    for (let i = 0; i < (small ? 3 : 6); i++) setTimeout(() => burst(x + (Math.random() - 0.5) * 120 * k, y - Math.random() * 140 * k, '#fff6a8', 4), 80 + i * 60);
+    if (!small) flash('#ffffff', 0.45);
+    if (p.kind === 'new') confetti(small ? 6 : 18);
+    Sound.play('star', 1.1, 0.9);
+  } else Sound.play('pop', 1.2, 0.8);
+}
+// 결과 그림이 캡슐 속에서 톡 튀어나와 크게 통 커졌다 자리 잡고 둥실
+function riseUp(pe, small) {
+  const lift = small ? 0 : -20;
+  return pe.animate([
+    { transform: 'translate(-50%,-50%) scale(.2)', opacity: 0 },
+    { transform: `translate(-50%,-50%) translateY(${lift - (small ? 14 : 40)}px) scale(1.35)`, opacity: 1, offset: 0.55 },
+    { transform: `translate(-50%,-50%) translateY(${lift}px) scale(.94)`, offset: 0.8 },
+    { transform: `translate(-50%,-50%) translateY(${lift}px) scale(1)` },
+  ], { duration: small ? 380 : 520, easing: 'ease-out', fill: 'forwards' }).finished.then(() => pe.classList.add('float'));
+}
+// 결과 그림 (캡슐 자리에 톡 떠오름)
+function prizeEl(p) {
+  const el = document.createElement('div');
+  el.className = 'prize' + (isFresh(p) ? ' fresh' : '');
+  el.innerHTML = `${isFresh(p) ? '<i class="rays"></i>' : ''}<img src="${prizeImg(p)}"><b>${prizeTag(p)}</b>`;
+  return el;
+}
+
+// 한 번 뽑기: 캡슐이 굴러 나오고, 세 번 톡톡 눌러야 열림
+async function openOne(p) {
+  const st = $('#gachaStage'), from = chutePos(), w = st.clientWidth;
+  const cap = capsuleEl(p);
+  placeAt(cap, w / 2, st.clientHeight * 0.42);
+  st.appendChild(cap);
+  const dx = from.x - w / 2, dy = from.y - st.clientHeight * 0.42;
   Sound.play('land', 1.2, 0.8);
   await cap.animate([
-    { transform: 'translate(-50%, -120px) scale(.5)' },
-    { transform: 'translate(-50%, 0) scale(1.1,.9)', offset: 0.55 },
-    { transform: 'translate(-50%, -24px) scale(.95,1.05)', offset: 0.75 },
-    { transform: 'translate(-50%, 0) scale(1)' },
-  ], { duration: 650, easing: 'ease-in', fill: 'forwards' }).finished;
-  await cap.animate([{ transform: 'translate(-50%,0) rotate(0)' }, { transform: 'translate(-50%,0) rotate(-10deg)' }, { transform: 'translate(-50%,0) rotate(10deg)' }, { transform: 'translate(-50%,0) rotate(0)' }],
-    { duration: 380, iterations: 2 }).finished;
-  cap.classList.add('open');
-  Sound.play('star', 1.1, 0.9);
-  const c = centerOf(cap);
-  burst(c.x, c.y, hue, 16);
-  confetti(prize.kind === 'new' ? 18 : 8);
-  flash('#ffffff', 0.5);
-  await sleep(300);
-  const ch = prize.id ? CHARS[charIdx(prize.id)] : null;
+    { transform: `translate(-50%,-50%) translate(${dx}px, ${dy - 14}px) scale(.3)`, opacity: 0 },
+    { transform: `translate(-50%,-50%) translate(${dx}px, ${dy + 10}px) scale(.45)`, opacity: 1, offset: 0.22 }, // 구멍에서 툭 떨어지고
+    { transform: `translate(-50%,-50%) translate(${dx * 0.4}px, ${dy * 0.3 - 90}px) scale(.9) rotate(-200deg)`, offset: 0.55 }, // 통 튀어 가운데로
+    { transform: 'translate(-50%,-50%) scale(1.15, .85) rotate(-360deg)', offset: 0.85 },
+    { transform: 'translate(-50%,-50%) scale(1)' },
+  ], { duration: 900, easing: 'ease-out', fill: 'forwards' }).finished;
+  const hint = document.createElement('div');
+  hint.className = 'cap-hint';
+  hint.textContent = '톡! 톡! 눌러서 열기';
+  st.appendChild(hint);
+  await new Promise(done => {
+    let n = 0;
+    cap.onclick = () => {
+      n++;
+      Haptic.tap(15 + n * 10);
+      if (n < 3) {
+        Sound.play('pop', 1 + n * 0.25, 0.7);
+        const a = 8 + n * 8;
+        cap.animate([{ transform: 'translate(-50%,-50%) rotate(0)' }, { transform: `translate(-50%,-50%) rotate(-${a}deg) scale(1.1)` }, { transform: `translate(-50%,-50%) rotate(${a}deg)` }, { transform: 'translate(-50%,-50%)' }], { duration: 260 });
+        return;
+      }
+      cap.onclick = null;
+      hint.remove();
+      done();
+    };
+  });
+  await popCapsule(cap, p);
+  const pe = prizeEl(p);
+  placeAt(pe, w / 2, st.clientHeight * 0.42);
+  st.appendChild(pe);
+  riseUp(pe, false);
+  await sleep(900);
+  const ch = CHARS[charIdx(p.id)];
   const info = {
-    new: () => ({ title: '새 친구!', char: prize.id, text: `${ch.name}: "${lineOf(ch.id)}"`, rows: [['친구', ch.name], ['레벨', 'Lv1']] }),
-    up: () => ({ title: '레벨 업!', char: prize.id, text: `${ch.name}이(가) 더 강해졌어요!`, rows: [['친구', ch.name], ['레벨', `Lv${prize.lv}`], ['공격·회복', `+${Math.round((Meta.mult(prize.id) - 1) * 100)}%`]] }),
-    max: () => ({ title: '이미 최고 레벨', char: prize.id, text: '대신 코인 50개를 돌려받았어요.', rows: [['코인', '+50']] }),
-    skin: () => ({ title: '새 옷!', img: SKIN(prize.id, prize.skin), text: `${ch.name}의 ${SKINS[prize.id][prize.skin].name}! 친구 상세에서 갈아입힐 수 있어요.`, rows: [] }),
-  }[prize.kind]();
-  if (prize.kind === 'new' || prize.kind === 'up') Sound.voice(prize.id, 'pick');
+    new: () => ({ title: '새 친구!', char: p.id, text: `${ch.name}: "${lineOf(ch.id)}"`, rows: [['친구', ch.name], ['레벨', 'Lv1']] }),
+    up: () => ({ title: '레벨 업!', char: p.id, text: `${ch.name}이(가) 더 강해졌어요!`, rows: [['친구', ch.name], ['레벨', `Lv${p.lv}`], ['공격·회복', `+${Math.round((Meta.mult(p.id) - 1) * 100)}%`]] }),
+    max: () => ({ title: '이미 최고 레벨', char: p.id, text: '대신 코인 50개를 돌려받았어요.', rows: [['코인', '+50']] }),
+    skin: () => ({ title: '새 옷!', img: SKIN(p.id, p.skin), text: `${ch.name}의 ${SKINS[p.id][p.skin].name}! 친구 상세에서 갈아입힐 수 있어요.`, rows: [] }),
+    skindup: () => ({ title: '이미 있는 옷', img: SKIN(p.id, p.skin), text: '대신 코인 40개를 돌려받았어요.', rows: [['코인', '+40']] }),
+  }[p.kind]();
+  if (p.kind === 'new' || p.kind === 'up') Sound.voice(p.id, 'pick');
+  await new Promise(done => modal({ ...info, btn1: '좋아!', on1: done }));
+  st.innerHTML = '';
+}
+
+// 10번 뽑기: 캡슐 10개가 쏟아져 줄을 서고, 하나씩 눌러 열거나 '모두 열기'
+async function openTen(prizes) {
+  const st = $('#gachaStage'), from = chutePos(), w = st.clientWidth, h = st.clientHeight;
+  st.className = 'ten';
+  const cell = Math.min(70, (w - 24) / 5);
+  const pos = prizes.map((_, i) => ({ x: w / 2 + (i % 5 - 2) * cell, y: h * 0.3 + Math.floor(i / 5) * cell * 1.35 }));
+  const caps = prizes.map((p, i) => {
+    const cap = capsuleEl(p);
+    cap.classList.add('small');
+    placeAt(cap, pos[i].x, pos[i].y);
+    st.appendChild(cap);
+    const dx = from.x - pos[i].x, dy = from.y - pos[i].y;
+    cap.animate([
+      { transform: `translate(-50%,-50%) translate(${dx}px, ${dy}px) scale(.3)`, opacity: 0 },
+      { transform: `translate(-50%,-50%) translate(${dx * 0.5}px, ${dy * 0.5 - 70}px) scale(.8) rotate(-180deg)`, opacity: 1, offset: 0.55 },
+      { transform: 'translate(-50%,-50%) scale(1.1, .9) rotate(-360deg)', offset: 0.85 },
+      { transform: 'translate(-50%,-50%)' },
+    ], { duration: 560, delay: i * 90, easing: 'ease-out', fill: 'backwards' });
+    setTimeout(() => Sound.play('land', 1 + i * 0.04, 0.5), i * 90 + 300);
+    return cap;
+  });
+  await sleep(prizes.length * 90 + 560);
+  const btn = document.createElement('button');
+  btn.className = 'big-btn ten-btn';
+  btn.textContent = '모두 열기';
+  st.appendChild(btn);
+  let left = prizes.length;
+  await new Promise(done => {
+    const open = (i, delay = 0) => {
+      const cap = caps[i];
+      if (cap.opened) return;
+      cap.opened = true;
+      setTimeout(async () => {
+        await popCapsule(cap, prizes[i], true);
+        const pe = prizeEl(prizes[i]);
+        pe.classList.add('small');
+        placeAt(pe, pos[i].x, pos[i].y);
+        st.appendChild(pe);
+        riseUp(pe, true);
+        if (--left === 0) { btn.textContent = '확인'; btn.onclick = () => { Sound.play('click'); done(); }; }
+      }, delay);
+    };
+    caps.forEach((cap, i) => (cap.onclick = () => open(i)));
+    btn.onclick = () => { Sound.play('click'); let k = 0; caps.forEach((c, i) => !c.opened && open(i, k++ * 140)); };
+  });
+  st.innerHTML = '';
+  st.className = '';
+}
+
+async function pullGacha(n = 1) {
+  const cost = n === 10 ? GACHA10_COST : GACHA_COST;
+  if (gachaBusy || wiping || Save.data.coins < cost || (gachaKind === 'outfit' && !outfitPool().length)) return;
+  gachaBusy = true;
+  Meta.addCoins(-cost);
+  syncGacha();
+  const prizes = [];
+  for (let i = 0; i < n - 1; i++) prizes.push(drawPrize(gachaKind));
+  // 10번 뽑기: 앞의 9번에 새 친구(새 옷)가 없으면 마지막은 확정, 자리는 아무 데나
+  const last = drawPrize(gachaKind, n === 10 && !prizes.some(isFresh));
+  prizes.splice(Math.floor(Math.random() * (prizes.length + 1)), 0, last);
+  Save.save();
+  await turnKnob();
+  await crankMachine(n === 10);
+  if (n === 10) await openTen(prizes); else await openOne(prizes[0]);
   Meta.coinUI();
-  modal({ ...info, btn1: '좋아!', on1: () => { cap.className = 'capsule'; openGacha(); } });
-  $('#modalChar').classList.toggle('icon', !!info.img && prize.kind !== 'skin');
+  gachaBusy = false;
+  syncGacha();
 }
 
 // ---------- 친구네 집: 친구마다 자기 집이 있고, 가구를 놓고, 같이 살 친구를 정함 ----------
@@ -561,6 +802,8 @@ function pickMates(id) {
 $('#btnHouse').onclick = () => { Sound.play('click'); go(() => openHouse()); };
 $('#btnGacha').onclick = () => { Sound.play('click'); go(openGacha); };
 $('#btnFriends').onclick = () => { Sound.play('click'); go(openFriends); };
-$('#btnPull').onclick = pullGacha;
+$('#btnPull').onclick = () => pullGacha(1);
+$('#btnPull10').onclick = () => pullGacha(10);
+document.querySelectorAll('.gacha-tabs button').forEach(b => (b.onclick = () => { if (gachaBusy) return; Sound.play('pop', 1.2, 0.5); gachaKind = b.dataset.g; syncGacha(); }));
 document.querySelectorAll('.btn-tomap').forEach(b => (b.onclick = () => { Sound.play('click'); go(openMap); }));
 Meta.init();

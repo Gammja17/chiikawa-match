@@ -170,6 +170,20 @@ const SKINS = {
   shisa:     { chef: { name: '요리사 옷', img: 'chef.png' } },
 };
 const SKIN = (id, s) => `assets/img/skins/${id}/${SKINS[id][s].img}`;
+// 치이카와 포켓 코스튬 (옷 뽑기에서 나옴): 친구마다 가진 코스튬을 SKINS에 등록
+const COSTUME_NAMES = { alice: '앨리스', beach: '해변', bento: '도시락', circus: '서커스', cooking: '요리사', dino: '공룡옷', edo: '에도', fantasy: '판타지 용사',
+  fes: '음악 페스', fruit: '과일', halloween: '할로윈', ice: '아이스크림', mermaid: '인어섬', moon: '달맞이', newyear: '설날', peterpan: '피터팬',
+  picnic: '소풍', rain: '비 오는 날', shop: '가게놀이', snow: '백설공주', xmas: '크리스마스' };
+const POCKET_COSTUMES = {
+  chiikawa: 'alice beach bento cooking dino edo fantasy fes fruit halloween ice moon newyear peterpan rain shop snow xmas',
+  hachiware: 'alice beach bento cooking dino edo fantasy fes fruit halloween ice moon newyear peterpan rain shop snow xmas',
+  usagi: 'alice beach bento circus cooking dino edo fantasy fes fruit halloween ice mermaid moon newyear peterpan rain shop snow xmas',
+  momonga: 'alice beach bento circus dino edo fantasy fes fruit halloween ice mermaid moon newyear peterpan picnic rain shop snow xmas',
+  rakko: 'alice beach bento circus dino edo fantasy fes halloween ice mermaid moon newyear peterpan picnic rain shop snow xmas',
+  kurimanju: 'alice beach bento dino edo fantasy fes fruit halloween ice mermaid moon newyear peterpan picnic rain shop snow xmas',
+  shisa: 'alice beach bento dino edo fantasy fes fruit halloween ice mermaid moon newyear peterpan picnic rain shop snow xmas',
+};
+Object.entries(POCKET_COSTUMES).forEach(([id, list]) => list.split(' ').forEach(c => ((SKINS[id] = SKINS[id] || {})[c] = { name: COSTUME_NAMES[c], img: c + '.webp' })));
 // 표정: 기본 옷일 때만 잠깐 바꿔 끼움
 const MOODS = { chiikawa: { cry: 'cry.png', happy: 'dance.gif' } };
 // 집에서 들어 올렸을 때 반응: held=들고 있을 때 말, cry=오래 들면, drop=내려놨을 때 말, mood=들고 있을 때 표정
