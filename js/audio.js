@@ -1,10 +1,23 @@
-// 효과음: Kenney CC0 팩. WebAudio로 재생하고, file:// 처럼 fetch가 막히면 <audio>로 대체
-const SFX_NAMES = ['swap', 'bad', 'pop', 'sparkle', 'click', 'win', 'star', 'open', 'special', 'line',
-  'rainbow', 'heal', 'lose', 'defeat', 'wave', 'hit1', 'hit2', 'hit3', 'enemy', 'land',
-  'jingle_win', 'jingle_lose', 'jingle_start', 'jingle_skill'];
+// 효과음: Pixabay(floraphonic 등)·Mixkit 무료 효과음. 받은 뒤 크기를 맞춰 mp3로 변환
+// WebAudio로 재생하고, file:// 처럼 fetch가 막히면 <audio>로 대체
+const SFX_NAMES = ['star', 'heal', 'open', 'win', 'jingle_win', 'jingle_lose', 'jingle_start', 'jingle_skill',
+  'enemy', 'wave', 'defeat', 'pop', 'swap', 'bad', 'click', 'land', 'line', 'special', 'sparkle', 'hit', 'rainbow'];
+const SFX_V = 2; // 파일을 바꾸면 올려서 예전 소리가 캐시에서 나오지 않게 함
+// 소리마다 볼륨 (자주 나는 소리는 작게). 여기 숫자만 바꾸면 조절됨
+const SFX_VOL = { pop: 0.55, click: 0.45, swap: 0.5, land: 0.4, bad: 0.6, line: 0.7, hit: 0.75, sparkle: 0.6,
+  special: 0.8, star: 0.8, heal: 0.8, enemy: 0.85 };
+// 예전 이름 → 새 소리 (이름, 음높이)
+const SFX_ALIAS = { hit1: ['hit', 1], hit2: ['hit', 1.1], hit3: ['hit', 0.9], thwack: ['hit', 0.85] };
 
 const Sound = {
   ctx: null, buffers: {}, muted: false, fallback: false,
+  // 효과음·배경음악 볼륨 (설정 창에서 바꿈, 이 기기에 저장)
+  vol: (() => { try { return { sfx: 0.8, bgm: 0.6, ...JSON.parse(localStorage.getItem('chiikawaMatch.v1.vol')) }; } catch { return { sfx: 0.8, bgm: 0.6 }; } })(),
+  setVol(k, v) {
+    this.vol[k] = v;
+    try { localStorage.setItem('chiikawaMatch.v1.vol', JSON.stringify(this.vol)); } catch {}
+    if (this[k]) this[k].gain.value = v;
+  },
 
   unlock() {
     if (this.ctx) { if (this.ctx.state === 'suspended') this.ctx.resume(); return; }
@@ -12,8 +25,9 @@ const Sound = {
     this.master = this.ctx.createGain();
     this.master.gain.value = 0.8;
     this.master.connect(this.ctx.destination);
+    ['sfx', 'bgm'].forEach(k => { this[k] = this.ctx.createGain(); this[k].gain.value = this.vol[k]; this[k].connect(this.master); });
     SFX_NAMES.forEach(n => {
-      fetch(`assets/sfx/${n}.mp3`)
+      fetch(`assets/sfx/${n}.mp3?v=${SFX_V}`)
         .then(r => r.arrayBuffer())
         .then(b => this.ctx.decodeAudioData(b))
         .then(buf => (this.buffers[n] = buf))
@@ -21,10 +35,11 @@ const Sound = {
     });
   },
 
-  // rate: 재생 속도(음높이), vol: 볼륨. 퍼즐 손맛 소리는 직접 합성(SYN), 나머지는 Kenney 효과음
+  // rate: 재생 속도(음높이), vol: 볼륨 (SFX_VOL을 곱함)
   play(name, rate = 1, vol = 1) {
     if (this.muted) return;
-    if (SYN[name] && this.ctx && this.ctx.state === 'running') { SYN[name](this.ctx, this.master, rate, vol); return; }
+    if (SFX_ALIAS[name]) { rate *= SFX_ALIAS[name][1]; name = SFX_ALIAS[name][0]; }
+    vol *= SFX_VOL[name] ?? 1;
     const buf = this.buffers[name];
     if (buf && this.ctx) {
       const src = this.ctx.createBufferSource();
@@ -32,13 +47,13 @@ const Sound = {
       src.playbackRate.value = rate;
       const g = this.ctx.createGain();
       g.gain.value = vol;
-      src.connect(g).connect(this.master);
+      src.connect(g).connect(this.sfx);
       src.start();
     } else if (this.fallback) {
-      const a = new Audio(`assets/sfx/${name}.mp3`);
+      const a = new Audio(`assets/sfx/${name}.mp3?v=${SFX_V}`);
       a.preservesPitch = false;
       a.playbackRate = rate;
-      a.volume = Math.min(1, vol * 0.8);
+      a.volume = Math.min(1, vol * 0.8 * this.vol.sfx);
       a.play().catch(() => {});
     }
   },
@@ -64,93 +79,6 @@ const Sound = {
     const semi = scale[Math.min(combo, scale.length - 1)] + (i % 2) * 0.3;
     this.play('pop', Math.pow(2, semi / 12) * 1.05, 0.9);
     Haptic.tap(combo > 2 ? 18 : 12);
-  },
-};
-
-// ---------- 합성 효과음: 짧고 또렷하게 (뽁, 슉, 쾅) ----------
-let NOISE = null;
-function noiseBuf(ctx) {
-  if (NOISE) return NOISE;
-  NOISE = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
-  const d = NOISE.getChannelData(0);
-  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-  return NOISE;
-}
-// 음 하나: 주파수가 f0→f1로 미끄러지며 짧게 울림
-function tone(ctx, out, { type = 'sine', f0, f1 = f0, t = 0, dur = 0.1, vol = 0.5, attack = 0.003 }) {
-  const now = ctx.currentTime + t;
-  const o = ctx.createOscillator(), g = ctx.createGain();
-  o.type = type;
-  o.frequency.setValueAtTime(f0, now);
-  o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), now + dur);
-  g.gain.setValueAtTime(0.0001, now);
-  g.gain.exponentialRampToValueAtTime(vol, now + attack);
-  g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
-  o.connect(g).connect(out);
-  o.start(now);
-  o.stop(now + dur + 0.02);
-}
-// 잡음 한 줌: 필터를 걸어 톡, 슉, 쿵을 만듦
-function hiss(ctx, out, { t = 0, dur = 0.05, vol = 0.3, type = 'bandpass', f0 = 3000, f1 = f0, q = 1 }) {
-  const now = ctx.currentTime + t;
-  const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
-  s.buffer = noiseBuf(ctx);
-  f.type = type;
-  f.Q.value = q;
-  f.frequency.setValueAtTime(f0, now);
-  f.frequency.exponentialRampToValueAtTime(Math.max(40, f1), now + dur);
-  g.gain.setValueAtTime(vol, now);
-  g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
-  s.connect(f).connect(g).connect(out);
-  s.start(now, Math.random() * 0.5);
-  s.stop(now + dur + 0.02);
-}
-const SYN = {
-  // 구슬 뽁: 동글한 음이 뚝 떨어지고 끝에 톡
-  pop(ctx, out, r, v) {
-    tone(ctx, out, { f0: 620 * r, f1: 240 * r, dur: 0.09, vol: 0.55 * v });
-    tone(ctx, out, { type: 'triangle', f0: 1240 * r, f1: 700 * r, dur: 0.05, vol: 0.18 * v });
-    hiss(ctx, out, { dur: 0.012, vol: 0.35 * v, type: 'highpass', f0: 2500 });
-  },
-  swap(ctx, out, r, v) {
-    hiss(ctx, out, { dur: 0.05, vol: 0.25 * v, f0: 1800 * r, f1: 3600 * r, q: 2 });
-    tone(ctx, out, { f0: 520 * r, f1: 760 * r, dur: 0.05, vol: 0.15 * v });
-  },
-  bad(ctx, out, r, v) {
-    tone(ctx, out, { type: 'triangle', f0: 260, f1: 240, dur: 0.09, vol: 0.35 * v });
-    tone(ctx, out, { type: 'triangle', f0: 200, f1: 170, t: 0.1, dur: 0.12, vol: 0.35 * v });
-  },
-  click(ctx, out, r, v) {
-    tone(ctx, out, { f0: 1500 * r, f1: 1100 * r, dur: 0.03, vol: 0.2 * v });
-  },
-  // 착지: 아주 작은 툭
-  land(ctx, out, r, v) {
-    tone(ctx, out, { f0: 220 * r, f1: 110 * r, dur: 0.05, vol: 0.18 * v });
-  },
-  // 로켓: 슈웅 하고 쓸고 지나감
-  line(ctx, out, r, v) {
-    hiss(ctx, out, { dur: 0.28, vol: 0.4 * v, f0: 500 * r, f1: 5000 * r, q: 1.4 });
-    tone(ctx, out, { type: 'sawtooth', f0: 1400 * r, f1: 260 * r, dur: 0.22, vol: 0.08 * v });
-  },
-  // 아이템 생김: 띠링
-  special(ctx, out, r, v) {
-    [0, 4, 7, 12].forEach((s, i) => tone(ctx, out, { f0: 880 * r * Math.pow(2, s / 12), t: i * 0.045, dur: 0.22, vol: 0.2 * v }));
-  },
-  sparkle(ctx, out, r, v) {
-    for (let i = 0; i < 3; i++) tone(ctx, out, { f0: (2000 + Math.random() * 1400) * r, t: i * 0.035, dur: 0.12, vol: 0.08 * v });
-  },
-  // 몬스터 맞음: 퍽
-  hit1(ctx, out, r, v) { SYN.thwack(ctx, out, r, v); },
-  hit2(ctx, out, r, v) { SYN.thwack(ctx, out, r * 1.1, v); },
-  hit3(ctx, out, r, v) { SYN.thwack(ctx, out, r * 0.9, v); },
-  thwack(ctx, out, r, v) {
-    hiss(ctx, out, { dur: 0.08, vol: 0.55 * v, type: 'lowpass', f0: 2600 * r, f1: 500 });
-    tone(ctx, out, { f0: 190 * r, f1: 55, dur: 0.14, vol: 0.6 * v });
-  },
-  // 무지개: 도레미솔라 쫙
-  rainbow(ctx, out, r, v) {
-    [0, 2, 4, 7, 9, 12, 14, 16, 19].forEach((s, i) => tone(ctx, out, { type: 'triangle', f0: 660 * Math.pow(2, s / 12), t: i * 0.035, dur: 0.18, vol: 0.14 * v }));
-    hiss(ctx, out, { dur: 0.4, vol: 0.12 * v, type: 'highpass', f0: 5000 });
   },
 };
 
@@ -247,7 +175,7 @@ Object.assign(Sound, {
     g.gain.setValueAtTime(0, t);
     g.gain.linearRampToValueAtTime(vol, t + 0.008);
     g.gain.exponentialRampToValueAtTime(0.0008, t + len);
-    o.connect(g).connect(this.master);
+    o.connect(g).connect(this.bgm);
     o.start(t);
     o.stop(t + len + 0.05);
     if (kind === 'mallet') {      // 마림바 느낌: 2배음을 아주 짧게 섞음
@@ -255,7 +183,7 @@ Object.assign(Sound, {
       o2.frequency.value = f * 4;
       g2.gain.setValueAtTime(vol * 0.35, t);
       g2.gain.exponentialRampToValueAtTime(0.0005, t + 0.08);
-      o2.connect(g2).connect(this.master);
+      o2.connect(g2).connect(this.bgm);
       o2.start(t);
       o2.stop(t + 0.1);
     }

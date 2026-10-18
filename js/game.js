@@ -49,15 +49,57 @@ function fitText(root = document) {
   }));
 }
 function updateMute() {
-  document.querySelectorAll('.btn-mute').forEach(b => b.classList.toggle('off', Sound.muted));
+  document.querySelectorAll('.btn-set').forEach(b => b.classList.toggle('off', Sound.muted)); // 소리를 꺼 두면 ⚙가 흐려짐
   try { localStorage.setItem(SAVE_KEY + '.mute', Sound.muted ? '1' : '0'); } catch {}
 }
-document.querySelectorAll('.btn-mute').forEach(b => (b.onclick = () => { Sound.muted = !Sound.muted; updateMute(); Sound.play('click'); }));
 updateMute();
 const updateVib = () => document.querySelectorAll('.btn-vib').forEach(b => b.classList.toggle('off', !Haptic.on));
 document.querySelectorAll('.btn-vib').forEach(b => (b.onclick = () => { Haptic.toggle(); updateVib(); Sound.play('click'); }));
 updateVib();
 window.addEventListener('pointerdown', () => Sound.unlock(), { capture: true });
+// 설정: 어디서든 ⚙로 열림. 효과음·배경음악 볼륨, 소리 끄기, 진동, 게임 초기화
+function openSettings() {
+  const el = $('#settings');
+  const sync = () => {
+    ['sfx', 'bgm'].forEach(k => { const r = el.querySelector(`[data-s=${k}]`); r.value = Math.round(Sound.vol[k] * 100); r.nextElementSibling.textContent = r.value; });
+    el.querySelector('[data-s=mute]').classList.toggle('off', Sound.muted);
+    el.querySelector('[data-s=vib]').classList.toggle('off', !Haptic.on);
+  };
+  ['sfx', 'bgm'].forEach(k => {
+    const r = el.querySelector(`[data-s=${k}]`);
+    r.oninput = () => { Sound.setVol(k, r.value / 100); r.nextElementSibling.textContent = r.value; };
+    if (k === 'sfx') r.onchange = () => Sound.play('pop'); // 손을 떼면 바뀐 크기로 한 번 들려줌
+  });
+  el.querySelector('[data-s=mute]').onclick = () => { Sound.muted = !Sound.muted; updateMute(); Sound.play('click'); sync(); };
+  el.querySelector('[data-s=vib]').onclick = () => { Haptic.toggle(); updateVib(); Sound.play('click'); sync(); };
+  const close = () => el.classList.remove('show');
+  // 게임 초기화: 한 번 더 물어보고, 이 기기 기록(계정에 연결돼 있으면 계정 기록도)을 지우고 처음부터
+  el.querySelector('[data-s=reset]').onclick = () => {
+    Sound.play('click');
+    close();
+    modal({
+      title: '처음부터 할까요?', char: 'chiikawa', text: '친구, 코인, 깬 스테이지, 집까지 전부 사라져요. 되돌릴 수 없어요.',
+      btn2: '취소', on2: openSettings,
+      btn1: '초기화',
+      on1: async () => {
+        Save.wiped = true;
+        Life.stopTimer();
+        try { localStorage.removeItem(SAVE_KEY); } catch {}
+        if (typeof Net !== 'undefined' && Net.on && Net.user) {
+          clearTimeout(Net.saveTimer);
+          await Net.db.collection('users').doc(Net.user.uid).delete().catch(() => {});
+        }
+        location.reload();
+      },
+    });
+  };
+  el.querySelector('[data-s=close]').onclick = () => { Sound.play('click'); close(); };
+  sync();
+  el.classList.add('show');
+  fitText(el);
+  el.querySelector('.modal-card').animate([{ transform: 'scale(.6)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }], { duration: 220, easing: 'cubic-bezier(.3,1.5,.6,1)' });
+}
+document.querySelectorAll('.btn-set').forEach(b => (b.onclick = () => { Sound.play('click'); openSettings(); }));
 // 아이폰에서 빠르게 두 번 누르면 화면이 확대되는 것 막기 (두 번째 탭은 클릭으로 그대로 전달)
 let lastTouchEnd = 0;
 document.addEventListener('touchend', e => {
@@ -702,7 +744,7 @@ async function dropIn(text) {
   Sound.play('jingle_start', 1, 0.8);
   await Promise.all(ps);
 }
-// 일시정지: 계속하기, 소리, 진동, 나가기 (모험 지도 스테이지를 하다 나가면 하트 하나)
+// 일시정지: 계속하기, 설정, 나가기 (모험 지도 스테이지를 하다 나가면 하트 하나)
 const leaveTo = () => (B.mode === 'life' && L.run && L.run.kind !== 'route' ? openChallenge : openMap);
 const inRoute = () => B.mode === 'battle' || L.run?.kind === 'route';
 $('#btnBack').onclick = () => {
@@ -713,11 +755,6 @@ $('#btnBack').onclick = () => {
   const costs = inRoute() && B.played;
   const el = $('#pause');
   el.querySelector('.p-warn').textContent = costs ? '지금 나가면 하트가 하나 줄어요' : '';
-  const sync = () => {
-    el.querySelector('[data-p=sound]').classList.toggle('off', Sound.muted);
-    el.querySelector('[data-p=vib]').classList.toggle('off', !Haptic.on);
-  };
-  sync();
   el.classList.add('show');
   fitText(el);
   el.querySelector('.modal-card').animate([{ transform: 'scale(.6)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }], { duration: 220, easing: 'cubic-bezier(.3,1.5,.6,1)' });
@@ -727,28 +764,7 @@ $('#btnBack').onclick = () => {
     close();
     if (B.mode === 'life' && L.st?.time && !B.over) Life.runTimer();
   };
-  el.querySelector('[data-p=sound]').onclick = () => { Sound.muted = !Sound.muted; updateMute(); Sound.play('click'); sync(); };
-  el.querySelector('[data-p=vib]').onclick = () => { Haptic.toggle(); updateVib(); Sound.play('click'); sync(); };
-  // 게임 초기화: 한 번 더 물어보고, 이 기기 기록(계정에 연결돼 있으면 계정 기록도)을 지우고 처음부터
-  el.querySelector('[data-p=reset]').onclick = () => {
-    Sound.play('click');
-    close();
-    modal({
-      title: '처음부터 할까요?', char: 'chiikawa', text: '친구, 코인, 깬 스테이지, 집까지 전부 사라져요. 되돌릴 수 없어요.',
-      btn2: '취소', on2: () => $('#btnBack').onclick(),
-      btn1: '초기화',
-      on1: async () => {
-        Save.wiped = true;
-        Life.stopTimer();
-        try { localStorage.removeItem(SAVE_KEY); } catch {}
-        if (typeof Net !== 'undefined' && Net.on && Net.user) {
-          clearTimeout(Net.saveTimer);
-          await Net.db.collection('users').doc(Net.user.uid).delete().catch(() => {});
-        }
-        location.reload();
-      },
-    });
-  };
+  el.querySelector('[data-p=settings]').onclick = () => { Sound.play('click'); openSettings(); };
   el.querySelector('[data-p=quit]').onclick = () => {
     Sound.play('click');
     close();

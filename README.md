@@ -80,7 +80,7 @@ python -m http.server 8770
 - 캐릭터, 괴물 이미지: © nagano / chiikawa committee. 퍼즐 얼굴은 인터넷에서 모은 이미지, 전신·포즈 일러스트와 괴물은 [Chiikawa Wiki (Fandom)](https://chiikawa.fandom.com/)에서, 옷 그림은 [ちいかわぽけっと 공식 사이트](https://jp.chiikawa-pocket.com/ja/)에서, 춤추는 치이카와 GIF는 작가 nagano의 [GIPHY](https://giphy.com/ngntrtr)에서 가져왔습니다. 이미지의 권리는 원저작자에게 있으며, 이 저장소의 라이선스 대상이 아닙니다.
 - 도전 화면 그림(인어섬, 제초 검정, 랏코), 타이틀 풀밭 그림: 원작 애니메이션·게임 이미지 (© nagano / chiikawa committee, 「映画ちいかわ」製作委員会, Applibot)
 - 배경, 터짐 조각: [VARCO](https://3d.varco.ai)로 생성
-- 효과음: 구슬 터짐, 로켓, 타격 같은 퍼즐 소리는 코드(`js/audio.js`)로 직접 합성. 징글과 일부 효과음은 [Kenney](https://kenney.nl) Interface Sounds, Digital Audio, Impact Sounds, Music Jingles (CC0). 라이선스 원문은 `assets/sfx/LICENSE-kenney*.txt` (아이폰 재생을 위해 mp3로 변환)
+- 효과음: [Pixabay](https://pixabay.com/sound-effects/) (floraphonic, humordome / Pixabay Content License)와 [Mixkit](https://mixkit.co/free-sound-effects/) (Mixkit Sound Effects Free License). 크기를 맞추고 일부는 잘라서 mp3로 변환했습니다. 소리 파일만 따로 떼어 배포하는 것은 각 라이선스에서 허용하지 않습니다. 소리마다 볼륨은 `js/audio.js`의 `SFX_VOL`
 - 파티클 이펙트: [Kenney Particle Pack](https://kenney.nl/assets/particle-pack) (CC0). 라이선스 원문은 `assets/img/fx/k/LICENSE-kenney-particles.txt`
 - 배경 음악: 코드(`js/audio.js`)로 직접 연주하는 오리지널 곡
 - 아이템, 장애물, 재료, 가구, 액세서리 아이콘: [Noto Emoji](https://github.com/googlefonts/noto-emoji) (Google, Apache License 2.0). 라이선스 원문은 `assets/img/items/LICENSE-noto.txt`
