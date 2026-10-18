@@ -21,11 +21,11 @@ const FURN_OLD = { plant: 'f_grass', candle: 'f_tissue', sunflower: 'f_cushion',
 // 레벨이 오르면 열리는 짧은 이야기 (팬 창작)
 const CHAR_STORY = {
   chiikawa: [[2, [['chiikawa', '(풀 뽑기 끝…)'], ['chiikawa', '(오늘 번 돈으로… 뭐 먹지…)'], ['hachiware', '치이카와~ 라멘 먹으러 가자!'], ['chiikawa', '…!! (끄덕끄덕)']]]],
-  hachiware: [[2, [['hachiware', '흐흥~ ♪'], ['hachiware', '언젠가 노래 대회에 나가 보고 싶어. 조금 부끄럽지만…'], ['chiikawa', '…!! (박수)'], ['hachiware', '치이카와가 들어 주면 어떻게든 될 것 같아!']]]],
-  usagi: [[2, [['usagi', '우라!'], ['usagi', '푸루루루루…'], ['hachiware', '우사기가 오늘 번 돈으로 간식 사 왔대!'], ['usagi', '야하~!']]]],
+  hachiware: [[2, [['hachiware', '(기타 둥가둥가~) 흐흥~ ♪'], ['hachiware', '언젠가 노래 대회에 나가 보고 싶어. 조금 부끄럽지만…'], ['chiikawa', '…!! (박수)'], ['hachiware', '치이카와가 들어 주면 어떻게든 될 것 같아!']]]],
+  usagi: [[2, [['usagi', '우라!'], ['usagi', '(반짝이는 돌을 내민다)'], ['hachiware', '우사기는 돌 모으는 게 취미래. 이거 주는 거야!?'], ['usagi', '야하~!']]]],
   momonga: [[2, [['momonga', '모몽가 오늘 토벌 엄청 열심히 했어.'], ['momonga', '그러니까 칭찬해 줘! 많이! 지금!'], ['chiikawa', '…(쓰담쓰담)'], ['momonga', '에헤헤~ 더!']]]],
-  rakko: [[2, [['rakko', '…검을 닦는 것도 수련이다.'], ['hachiware', '랏코 선배 멋있다…!'], ['rakko', '…너희도 매일 하면 된다.']]]],
-  kani: [[2, [['kani', '다친 데 없어?'], ['chiikawa', '…(도리도리)'], ['kani', '그래도 반창고는 붙이자. 호~']]]],
+  rakko: [[2, [['rakko', '…검을 닦는 것도 수련이다.'], ['hachiware', '랏코 씨 멋있다…!'], ['rakko', '…너희도 매일 하면 된다.'], ['rakko', '(가방에서 단 과자를 꺼내 나눠 준다)']]]],
+  kani: [[2, [['kani', '어서 와. 헌책방이야.'], ['kani', '이 머리띠? 모몽가가 줬어. 그래서 다들 카니라고 불러.'], ['momonga', '모몽가가 골라 준 거야! 칭찬해 줘!'], ['chiikawa', '…!! (잘 어울린다…!)']]]],
   kurimanju: [[2, [['kurimanju', '(꿀꺽꿀꺽)'], ['kurimanju', '……프하아~'], ['kurimanju', '(안주를 슥 내민다)'], ['chiikawa', '…!! (맛있다…!)']]]],
   shisa: [[2, [['shisa', '오늘도 라멘 가게 수행이에요!'], ['shisa', '마스터한테 국물 맛 칭찬받았어요~!'], ['chiikawa', '…!! (박수)']]]],
   shooting: [[2, [['shooting', '반짝!'], ['shooting', '소원을 하나 들어줄게. 뭐든지!'], ['chiikawa', '…(라멘 곱빼기…)']]]],
@@ -42,8 +42,8 @@ const RECRUIT = {
   // 모험을 하다 보면 차례로 합류
   hachiware: { stage: ['l', 0], story: [['hachiware', '치이카와~ 같이 하니까 금방 끝났다!'], ['hachiware', '앞으로도 같이 일하자. 둘이면 어떻게든 될 거야~!'], ['chiikawa', '…!! (끄덕끄덕)']] },
   usagi: { stage: ['l', 1], story: [['usagi', '우라!'], ['hachiware', '우사기도 같이 다니고 싶다는 거야!?'], ['usagi', '야하~!!']] },
-  kani: { stage: ['b', 0], story: [['kani', '다들 다친 데 없어? 토벌하면 꼭 어디 까지더라.'], ['kani', '내가 따라가서 호~ 해 줄게!'], ['chiikawa', '…!']] },
-  rakko: { stage: ['b', 1], story: [['rakko', '…제법이군.'], ['rakko', '다음 토벌, 같이 간다.'], ['hachiware', '랏코 선배랑 같이…!?'], ['chiikawa', '…!!!']] },
+  kani: { stage: ['b', 0], story: [['kani', '토벌 다녀왔어? 고생했네. 잠깐 쉬다 가.'], ['kani', '쉬는 동안 읽을 책, 내가 골라 줄게. 같이 다니면서 읽어 줄 수도 있고.'], ['chiikawa', '…!! (끄덕끄덕)']] },
+  rakko: { stage: ['b', 1], story: [['rakko', '…제법이군.'], ['rakko', '다음 토벌, 같이 간다.'], ['hachiware', '랏코 씨랑 같이…!?'], ['chiikawa', '…!!!']] },
   shisa: { stage: ['l', 8], story: [['shisa', '도와주셔서 감사합니다~!'], ['shisa', '마스터가 밖에서 수행하고 오래요. 저도 토벌 따라가도 될까요!?'], ['hachiware', '물론이지~! 같이 가자!'], ['shisa', '넵! 열심히 하겠습니다!']] },
 };
 // 스테이지마다 주는 간식 (토벌은 딸기 파르페)
