@@ -6,7 +6,7 @@
 <title>치이카와 토벌 퍼즐 (팬게임)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Baloo+2:wght@700;800&family=Gaegu:wght@700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=11">
+<link rel="stylesheet" href="css/style.css?v=12">
 </head>
 <body>
 <div id="app">
@@ -23,12 +23,53 @@
   <section id="map" class="screen">
     <header class="bar">
       <button class="icon-btn" id="btnMapHome">⌂</button>
-      <div class="bar-title" id="mapTitle">토벌 지도</div>
+      <div class="bar-title" id="mapTitle">모험 지도</div>
+      <div class="coins"><img src="assets/img/items/coin.png" alt=""><b>0</b></div>
       <button class="icon-btn btn-mute">♪</button>
     </header>
-    <div class="map-tabs"><button data-m="battle">⚔️ 토벌</button><button data-m="life">🌿 일상</button></div>
     <div id="mapScroll"><div id="mapPath"></div></div>
-    <button id="btnRamen" class="ramen-btn"><img src="assets/img/npc/armor.png" alt=""><span>라면 가게</span><i class="dot"></i></button>
+    <nav class="dock">
+      <button id="btnHouse"><img src="assets/img/items/house.png" alt=""><span>집</span></button>
+      <button id="btnGacha"><img src="assets/img/items/gift.png" alt=""><span>캡슐 뽑기</span></button>
+      <button id="btnFriends"><img src="assets/img/faces/chiikawa.png" alt=""><span>친구들</span></button>
+      <button id="btnRamen" class="ramen-btn"><img src="assets/img/npc/armor.png" alt=""><span>라면 가게</span><i class="dot"></i></button>
+    </nav>
+  </section>
+
+  <section id="house" class="screen">
+    <header class="bar">
+      <button class="icon-btn btn-tomap">◀</button>
+      <div class="bar-title">우리 집<small>가구를 사서 꾸며요</small></div>
+      <div class="coins"><img src="assets/img/items/coin.png" alt=""><b>0</b></div>
+    </header>
+    <div id="room"><div class="wall"></div><div class="floor"></div></div>
+    <div class="shop-wrap"><div class="shop-label">가구 가게</div><div id="shop"></div></div>
+  </section>
+
+  <section id="gacha" class="screen">
+    <header class="bar">
+      <button class="icon-btn btn-tomap">◀</button>
+      <div class="bar-title">캡슐 뽑기<small>친구 60% · 액세서리 40%</small></div>
+      <div class="coins"><img src="assets/img/items/coin.png" alt=""><b>0</b></div>
+    </header>
+    <div class="gacha-body">
+      <div id="gachaMachine">
+        <div class="globe"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="base"><span class="slot"></span></div>
+      </div>
+      <div id="capsule" class="capsule"><i class="top"></i><i class="bottom"></i></div>
+      <p class="gacha-note">같은 친구를 또 만나면 레벨 업 (최대 Lv10)</p>
+      <button id="btnPull" class="big-btn"><img src="assets/img/items/coin.png" alt="">100 · 한 번 뽑기</button>
+    </div>
+  </section>
+
+  <section id="friends" class="screen">
+    <header class="bar">
+      <button class="icon-btn btn-tomap">◀</button>
+      <div class="bar-title">친구들<small id="friendsCount"></small></div>
+      <div class="coins"><img src="assets/img/items/coin.png" alt=""><b>0</b></div>
+    </header>
+    <div id="friendsGrid"></div>
   </section>
 
   <section id="formation" class="screen">
@@ -91,6 +132,8 @@
     </div>
   </div>
 
+  <div id="charSheet" class="overlay"><div class="sheet-card"></div></div>
+
   <div id="modal" class="overlay">
     <div class="modal-card">
       <h2 id="modalTitle"></h2>
@@ -108,10 +151,11 @@
   <div id="fx"></div>
   <div id="flash"></div>
 </div>
-<script src="js/data.js?v=11"></script>
-<script src="js/audio.js?v=11"></script>
-<script src="js/board.js?v=11"></script>
-<script src="js/game.js?v=11"></script>
-<script src="js/life.js?v=11"></script>
+<script src="js/data.js?v=12"></script>
+<script src="js/audio.js?v=12"></script>
+<script src="js/board.js?v=12"></script>
+<script src="js/game.js?v=12"></script>
+<script src="js/life.js?v=12"></script>
+<script src="js/meta.js?v=12"></script>
 </body>
 </html>

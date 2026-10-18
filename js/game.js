@@ -17,11 +17,12 @@ const Save = {
   save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(this.data)); } catch {} },
 };
 Save.load();
-// 지도 탭: 토벌(battle) / 일상(life)
-let mapMode = 'battle';
-const mapList = () => (mapMode === 'life' ? LIFE : STAGES);
-const mapStars = () => (mapMode === 'life' ? (Save.data.life = Save.data.life || []) : Save.data.stars);
-const unlockedIdx = () => Math.min(mapStars().length, mapList().length - 1);
+// 지도는 한 줄 루트: 토벌(b)과 일상(l) 스테이지가 정해진 순서로 섞여 있음 (ROUTE는 life.js)
+const routeStage = k => (ROUTE[k][0] === 'b' ? STAGES : LIFE)[ROUTE[k][1]];
+const routeStars = k => (ROUTE[k][0] === 'b' ? Save.data.stars : Save.data.life || [])[ROUTE[k][1]];
+const routeIdx = (t, i) => ROUTE.findIndex(([tt, ii]) => tt === t && ii === i);
+const unlockedIdx = () => { const k = ROUTE.findIndex((_, k) => routeStars(k) == null); return k < 0 ? ROUTE.length - 1 : k; };
+const goRoute = k => (ROUTE[k][0] === 'b' ? openFormation(ROUTE[k][1]) : Life.start(ROUTE[k][1]));
 
 // 이미지 미리 불러오기
 [...CHARS.map(c => FACE(c.id)), ...CHARS.map(c => TILE(c.id)),
@@ -128,9 +129,9 @@ const nodePos = (i, W) => ({ x: (0.5 + Math.sin(i * 1.15) * 0.28) * W, y: NODE_T
 function openMap(advanceFrom = null) {
   Life.stopTimer();
   show('map');
-  document.querySelectorAll('.map-tabs button').forEach(b => b.classList.toggle('on', b.dataset.m === mapMode));
-  $('#mapTitle').textContent = mapMode === 'life' ? '일상 지도' : '토벌 지도';
-  const STAGES = mapList();
+  Meta.coinUI();
+  Meta.checkDaily();
+  const STAGES = ROUTE.map((_, k) => routeStage(k));
   Sound.music('map');
   $('#btnRamen').classList.toggle('on', Save.data.ramen !== false);
   const path = $('#mapPath');
@@ -154,14 +155,14 @@ function openMap(advanceFrom = null) {
     n.className = 'node' + (locked ? ' locked' : '') + (boss ? ' boss' : '') + (i === cur ? ' current' : '');
     n.style.left = pts[i].x + 'px';
     n.style.top = pts[i].y + 'px';
-    const s = mapStars()[i] || 0;
+    const s = routeStars(i) || 0;
     n.innerHTML = `${locked ? '🔒' : boss ? '👹' : i + 1}<span class="nname">${st.name}</span>` +
-      (st.icon && !locked ? `<img class="nicon" src="${ITEM(st.icon)}">` : '') +
+      (locked ? '' : `<img class="nicon" src="${st.icon ? ITEM(st.icon) : MONSTERS[st.waves[st.waves.length - 1].m].img}">`) +
       (s ? `<span class="nstars">${'★'.repeat(s)}${'☆'.repeat(3 - s)}</span>` : '');
     n.onclick = () => {
       if (locked) { Sound.play('bad'); n.animate([{ transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' }, { transform: 'none' }], { duration: 200 }); return; }
       Sound.play('click');
-      go(() => (mapMode === 'life' ? Life.start(i) : openFormation(i)));
+      go(() => goRoute(i));
     };
     path.appendChild(n);
   });
@@ -191,12 +192,6 @@ function openMap(advanceFrom = null) {
     scroller.scrollTop = goal.y - scroller.clientHeight / 2;
   }
 }
-document.querySelectorAll('.map-tabs button').forEach(b => (b.onclick = () => {
-  if (mapMode === b.dataset.m) return;
-  Sound.play('pop', 1.2, 0.6);
-  mapMode = b.dataset.m;
-  openMap();
-}));
 $('#btnMapHome').onclick = () => { Sound.play('click'); go(() => show('title')); };
 
 // ---------- 스토리 ----------
@@ -239,6 +234,7 @@ function modal({ title, stars = null, char, img = null, photo = false, rows = []
   $('#modalTitle').textContent = title;
   $('#modalChar').src = img || art(char);
   $('#modalChar').classList.toggle('photo', photo);
+  $('#modalChar').classList.remove('icon');
   $('.modal-card').classList.toggle('has-photo', photo);
   $('#modalRows').innerHTML = rows.map(([k, v]) => `<div>${k}<b>${v}</b></div>`).join('');
   $('#modalText').textContent = text;
@@ -285,6 +281,14 @@ function layoutBoard() {
       d.style.top = `calc(var(--s) * ${r})`;
       boardEl.appendChild(d);
     }
+    // 구슬 위에 씌우는 층: 잡초가 반투명하게 덮임 (꿈의집 젤리처럼)
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      const d = document.createElement('div');
+      d.className = 'cellfg';
+      d.style.left = `calc(var(--s) * ${c})`;
+      d.style.top = `calc(var(--s) * ${r})`;
+      boardEl.appendChild(d);
+    }
   }
   renderFloor();
   if (B.grid) Board.each(B.grid, (t, r, c) => t.el && place(t, r, c));
@@ -292,15 +296,15 @@ function layoutBoard() {
 window.addEventListener('resize', () => { if ($('#battle').classList.contains('active')) layoutBoard(); });
 
 // 칸 바닥: 잡초 겹 수, 재료 나가는 곳
+function cellClass(r, c) {
+  const w = Board.floor?.[r][c] || 0, out = hole(r, c);
+  const exit = B.mode === 'life' && Life.hasIng() && !out && (r === ROWS - 1 || hole(r + 1, c));
+  return 'cellbg' + (out ? ' void' : '') + (w ? ' weed w' + w : '') + (Board.syrup?.[r][c] ? ' syrup' : '') + (exit ? ' exit' : '');
+}
+const fgClass = (r, c) => { const w = Board.floor?.[r][c] || 0; return 'cellfg' + (w ? ' w' + w : ''); };
 function renderFloor() {
-  const cells = boardEl.querySelectorAll('.cellbg');
-  const exit = B.mode === 'life' && Life.hasIng();
-  cells.forEach((d, i) => {
-    const [r, c] = unkey(i), w = Board.floor?.[r][c] || 0;
-    const out = hole(r, c);
-    const bottom = !out && (r === ROWS - 1 || hole(r + 1, c));
-    d.className = 'cellbg' + (out ? ' void' : '') + (w ? ' weed w' + w : '') + (exit && bottom ? ' exit' : '');
-  });
+  boardEl.querySelectorAll('.cellbg').forEach((d, i) => (d.className = cellClass(...unkey(i))));
+  boardEl.querySelectorAll('.cellfg').forEach((d, i) => (d.className = fgClass(...unkey(i))));
 }
 
 const tf = (r, c) => `translate(${c * B.S}px,${r * B.S}px)`;
@@ -343,21 +347,24 @@ function refreshTile(t) {
     inner.innerHTML = `<img src="${ITEM(t.ing)}" draggable="false">`;
     return;
   }
-  if (t.special === 'rainbow' || t.type < 0) {
-    inner.classList.add('rainbow');
-    inner.innerHTML = `<img src="${ITEM('rainbow')}" draggable="false">`;
+  // 아이템은 캐릭터 없이 아이콘 하나 (색이 없어서 매치에 안 끼고, 톡톡/쓱/조합으로 터짐)
+  if (t.special || t.type < 0) {
+    const sp = t.special || 'rainbow';
+    inner.classList.add('item', sp);
+    inner.innerHTML = `<img src="${ITEM(ITEM_ICON[sp] || sp)}" draggable="false">`;
     return;
   }
   const ch = teamCh(t.type);
   inner.style.setProperty('--ring', ch.ring);
-  inner.classList.toggle('special', !!t.special);
+  inner.classList.toggle('locked', !!t.lock);
   inner.innerHTML = `<img src="${TILE(ch.id)}" draggable="false">` +
-    (t.special ? `<img class="badge ${t.special}" src="${ITEM(t.special)}" draggable="false">` : '');
+    (t.lock ? `<i class="band"></i><img class="lockimg" src="${ITEM('ribbon')}" draggable="false">` : '');
 }
+const ITEM_ICON = { h: 'rocket', v: 'rocket' };
 
 function buildParty() {
   $('#party').innerHTML = B.team.map(i => CHARS[i]).map(c =>
-    `<div class="pm" style="--ring:${c.ring}"><img src="${FACE(c.id)}" draggable="false"><span class="at">${ATTR[c.attr].icon}</span><i class="g"></i></div>`).join('');
+    `<div class="pm" style="--ring:${c.ring}">${Meta.figure(c.id, FACE(c.id))}<span class="at">${ATTR[c.attr].icon}</span><i class="g"></i></div>`).join('');
   [...$('#party').children].forEach((el, k) => (el.onclick = () => useSkill(k)));
   updateGauges();
 }
@@ -412,6 +419,7 @@ async function startStage(i) {
   B.mode = 'battle';
   app.classList.remove('life-mode');
   Board.floor = null;
+  Board.syrup = null;
   Board.mask = null;
   Board.spawnIng = null;
   B.stage = i; B.wave = 0; B.over = false; B.busy = true; B.sel = null; B.pending = [];
@@ -424,7 +432,7 @@ async function startStage(i) {
   B.gauge = B.team.map(k => (Save.data.buff === 'gauge' ? Math.floor(CHARS[k].skill.need / 2) : 0));
   if (Save.data.buff) { Save.data.buff = null; Save.save(); }
   show('battle');
-  $('#stageName').textContent = `${i + 1}. ${STAGES[i].name}`;
+  $('#stageName').textContent = `${routeIdx('b', i) + 1}. ${STAGES[i].name}`;
   buildParty();
   layoutBoard();
   boardEl.querySelectorAll('.tile').forEach(e => e.remove());
@@ -615,6 +623,21 @@ function effectFx(ef) {
   if (ef.kind === 'h' || ef.kind === 'v') {
     Sound.play('line', 1.1, 0.7);
     const horiz = ef.kind === 'h', thick = S * 0.55;
+    // 로켓 두 개가 양쪽 끝으로 쓩
+    const o = tileCenter(ef.r, ef.c);
+    [-1, 1].forEach(dir => {
+      const im = new Image();
+      im.src = ITEM('rocket');
+      im.className = 'fximg';
+      Object.assign(im.style, { left: o.x + 'px', top: o.y + 'px', width: S * 0.8 + 'px', zIndex: 3 });
+      fx.appendChild(im);
+      const dist = (horiz ? app.clientWidth : app.clientHeight) * dir;
+      const rot = horiz ? (dir > 0 ? 45 : -135) : (dir > 0 ? 135 : -45);
+      im.animate([
+        { transform: `translate(-50%,-50%) rotate(${rot}deg) scale(.6)` },
+        { transform: `translate(calc(-50% + ${horiz ? dist : 0}px), calc(-50% + ${horiz ? 0 : dist}px)) rotate(${rot}deg) scale(1.1)` },
+      ], { duration: 420, easing: 'cubic-bezier(.4,0,.9,.5)' }).finished.then(() => im.remove());
+    });
     const beam = addFx('beam ' + ef.kind, 0, 0);
     Object.assign(beam.style, horiz
       ? { left: '0px', top: by + (ef.r + 0.5) * S - thick / 2 + 'px', width: app.clientWidth + 'px', height: thick + 'px' }
@@ -656,6 +679,13 @@ function effectFx(ef) {
 }
 
 function popTile(t, delay) {
+  if (t.el.isConnected && t.type >= 0) {
+    const r = t.el.getBoundingClientRect(), a = app.getBoundingClientRect();
+    const f = addFx('popflash', r.left - a.left + r.width / 2, r.top - a.top + r.height / 2);
+    f.style.width = f.style.height = r.width + 'px';
+    f.animate([{ transform: 'translate(-50%,-50%) scale(.4)', opacity: 0.95 }, { transform: 'translate(-50%,-50%) scale(1.25)', opacity: 0 }],
+      { duration: 260, delay: delay + 60, easing: 'ease-out', fill: 'backwards' }).finished.then(() => f.remove());
+  }
   return t.inner.animate([
     { transform: 'scale(1)', opacity: 1 },
     { transform: 'scale(1.3)', opacity: 1, offset: 0.35 },
@@ -663,38 +693,115 @@ function popTile(t, delay) {
   ], { duration: 200, delay, easing: 'ease-in', fill: 'forwards' }).finished.then(() => t.el.remove());
 }
 
-// 장애물이 맞거나 깨짐, 잡초가 뽑힘
+// 조각이 포물선으로 튀어 떨어짐 (상자 나무 조각, 포장지, 흙, 물방울)
+function shards(x, y, colors, n = 8, size = 10, round = false) {
+  for (let i = 0; i < n; i++) {
+    const el = addFx('shard' + (round ? ' round' : ''), x, y);
+    el.style.background = colors[i % colors.length];
+    el.style.width = size * (0.6 + Math.random() * 0.8) + 'px';
+    el.style.height = size * (round ? 1 : 0.5 + Math.random() * 0.5) + 'px';
+    const dx = (Math.random() - 0.5) * 120, up = 40 + Math.random() * 60, rot = (Math.random() - 0.5) * 720;
+    el.animate([
+      { transform: 'translate(-50%,-50%) rotate(0)', opacity: 1 },
+      { transform: `translate(calc(-50% + ${dx * 0.5}px), calc(-50% - ${up}px)) rotate(${rot / 2}deg)`, opacity: 1, offset: 0.4 },
+      { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${up * 0.8}px)) rotate(${rot}deg)`, opacity: 0 },
+    ], { duration: 650 + Math.random() * 250, easing: 'cubic-bezier(.2,.6,.5,1)' }).finished.then(() => el.remove());
+  }
+}
+function ringFx(x, y, size, color, dur = 380) {
+  const ring = addFx('ring', x, y);
+  ring.style.borderColor = color;
+  ring.animate([{ width: '0px', height: '0px', opacity: 1 }, { width: size + 'px', height: size + 'px', opacity: 0 }], { duration: dur, easing: 'ease-out' })
+    .finished.then(() => ring.remove());
+}
+// 그림 하나가 튀어 오르며 빙글 날아감 (리본, 선물 포장)
+function flyOff(img, x, y, size) {
+  const im = new Image();
+  im.src = img;
+  im.className = 'fximg';
+  Object.assign(im.style, { left: x + 'px', top: y + 'px', width: size + 'px' });
+  fx.appendChild(im);
+  const dx = (Math.random() < 0.5 ? -1 : 1) * (40 + Math.random() * 40);
+  im.animate([
+    { transform: 'translate(-50%,-50%) scale(1) rotate(0)', opacity: 1 },
+    { transform: `translate(calc(-50% + ${dx * 0.5}px), calc(-50% - 70px)) scale(1.25) rotate(${dx * 2}deg)`, opacity: 1, offset: 0.35 },
+    { transform: `translate(calc(-50% + ${dx}px), calc(-50% + 60px)) scale(.7) rotate(${dx * 5}deg)`, opacity: 0 },
+  ], { duration: 750, easing: 'ease-out' }).finished.then(() => im.remove());
+}
+function onoAt(x, y, text, color) {
+  const o = addFx('ono', x, y);
+  o.textContent = text;
+  o.style.setProperty('--c', color);
+  o.animate([
+    { transform: 'translate(-50%,-50%) rotate(-8deg) scale(.2)', opacity: 0 },
+    { transform: 'translate(-50%,-50%) rotate(-8deg) scale(1.2)', opacity: 1, offset: 0.25 },
+    { transform: 'translate(-50%,-90%) rotate(-4deg) scale(1)', opacity: 1, offset: 0.7 },
+    { transform: 'translate(-50%,-120%) rotate(-4deg) scale(.9)', opacity: 0 },
+  ], { duration: 650, easing: 'ease-out' }).finished.then(() => o.remove());
+}
+
+// 장애물이 맞거나 깨짐, 리본이 풀림, 잡초가 뽑힘, 시럽이 번짐
 function hitFx(res, late) {
-  res.hits.forEach(({ r, c, tile, gone }) => {
+  const at = (r, c) => (late.has(key(r, c)) ? 380 : 60);
+  const S = B.S;
+  res.unlocked.forEach(({ r, c, tile }) => setTimeout(() => {
     const p = tileCenter(r, c);
-    const delay = late.has(key(r, c)) ? 380 : 60;
-    setTimeout(() => {
-      const bubble = tile.block === 'bubble';
-      burst(p.x, p.y, bubble ? '#9fdcff' : '#c8955a', gone ? 8 : 4);
-      Sound.play(bubble ? 'pop' : 'land', bubble ? 1.5 : 1.6, 0.8);
-      if (gone) popTile(tile, 0);
-      else { refreshTile(tile); squish(tile); }
-    }, delay);
-  });
+    flyOff(ITEM('ribbon'), p.x, p.y, S * 0.9);
+    shards(p.x, p.y, ['#ff8ab8', '#ffc4dc', '#ff5d9e'], 8, 9);
+    ringFx(p.x, p.y, S * 1.6, '#ff8ab8');
+    refreshTile(tile);
+    squish(tile);
+    Sound.play('pop', 1.7, 0.8);
+    Sound.play('sparkle', 1.5, 0.4);
+  }, at(r, c)));
+  res.hits.forEach(({ r, c, tile, gone }) => setTimeout(() => {
+    const p = tileCenter(r, c);
+    if (tile.block === 'bubble') {
+      ringFx(p.x, p.y, S * 2, '#9fdcff', 320);
+      shards(p.x, p.y, ['#bfe9ff', '#e6f7ff', '#8fd3ff'], 10, 8, true);
+      Sound.play('pop', 1.9, 0.9);
+      Sound.play('sparkle', 1.8, 0.4);
+      onoAt(p.x, p.y - S * 0.3, '퐁!', '#4fa3ff');
+    } else if (gone) {
+      shards(p.x, p.y, ['#c8955a', '#e2b77d', '#9b6b3a', '#f1d6a8'], 12, 13);
+      ringFx(p.x, p.y, S * 1.8, '#e2b77d', 300);
+      Sound.play('hit2', 0.7, 0.9);
+      Sound.play('land', 0.8, 0.9);
+      onoAt(p.x, p.y - S * 0.3, '와장창!', '#b07a4a');
+      shake(4, 160);
+    } else {
+      // 선물 포장이 벗겨지고 상자가 남음
+      flyOff(ITEM('gift'), p.x, p.y, S);
+      shards(p.x, p.y, ['#ff6b6b', '#ffd84d', '#ff9f5a'], 10, 10);
+      Sound.play('hit1', 1.2, 0.8);
+      onoAt(p.x, p.y - S * 0.3, '찌익!', '#ef5a5a');
+    }
+    if (gone) popTile(tile, 0);
+    else { refreshTile(tile); squish(tile); }
+  }, at(r, c)));
   if (res.weeds.length) {
-    const cells = boardEl.querySelectorAll('.cellbg');
+    const cells = boardEl.querySelectorAll('.cellbg'), fgs = boardEl.querySelectorAll('.cellfg');
     res.weeds.forEach(({ r, c, left }, i) => setTimeout(() => {
-      const d = cells[key(r, c)];
-      d.className = 'cellbg' + (left ? ' weed w' + left : '') + (d.classList.contains('exit') ? ' exit' : '');
+      cells[key(r, c)].className = cellClass(r, c);
+      fgs[key(r, c)].className = fgClass(r, c);
       const p = tileCenter(r, c);
-      const leaf = new Image();
-      leaf.src = ITEM(left ? 'weed2' : 'weed1');
-      leaf.className = 'fximg';
-      Object.assign(leaf.style, { left: p.x + 'px', top: p.y + 'px', width: B.S * 0.7 + 'px' });
-      fx.appendChild(leaf);
-      const dx = (Math.random() - 0.5) * 60;
-      leaf.animate([
-        { transform: 'translate(-50%,-50%) scale(.6) rotate(0)', opacity: 1 },
-        { transform: `translate(calc(-50% + ${dx}px), calc(-50% - 50px)) scale(1) rotate(${dx * 3}deg)`, opacity: 1, offset: 0.5 },
-        { transform: `translate(calc(-50% + ${dx * 1.4}px), calc(-50% + 10px)) scale(.7) rotate(${dx * 5}deg)`, opacity: 0 },
-      ], { duration: 650, easing: 'ease-out' }).finished.then(() => leaf.remove());
-    }, 40 + Math.min(i * 15, 150)));
-    setTimeout(() => Sound.play('sparkle', 1.4, 0.4), 60);
+      flyOff(ITEM(left ? 'weed2' : 'weed1'), p.x, p.y + S * 0.2, S * 0.8);
+      shards(p.x, p.y + S * 0.3, ['#9b6b3a', '#7a5230', '#6dbf57'], 6, 7, true);
+      if (i % 4 === 0) onoAt(p.x, p.y - S * 0.2, '쑥!', '#3fae4f');
+    }, 40 + Math.min(i * 25, 250)));
+    setTimeout(() => Sound.play('sparkle', 1.4, 0.5), 60);
+    Sound.play('swap', 1.6, 0.5);
+  }
+  if (res.syrup.length) {
+    const cells = boardEl.querySelectorAll('.cellbg');
+    res.syrup.forEach(({ r, c }, i) => setTimeout(() => {
+      const d = cells[key(r, c)];
+      d.className = cellClass(r, c);
+      d.animate([{ transform: 'scale(.3)', filter: 'brightness(1.6)' }, { transform: 'scale(1.18)', offset: 0.6 }, { transform: 'scale(1)', filter: 'brightness(1)' }], { duration: 360, easing: 'ease-out' });
+      const p = tileCenter(r, c);
+      shards(p.x, p.y, ['#ffb347', '#ffd27a', '#e8912d'], 4, 8, true);
+    }, 80 + Math.min(i * 30, 300)));
+    setTimeout(() => Sound.play('heal', 1.6, 0.45), 80);
   }
 }
 
@@ -767,7 +874,7 @@ async function stepFx(res, combo) {
       B.gauge[type] += cells.length;
       $('#party').children[type]?.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-10px) scale(1.15)' }, { transform: 'translateY(0)' }], { duration: 260 });
       if (ch.heal) {
-        const amt = Math.round(cells.length * ch.heal * mult);
+        const amt = Math.round(cells.length * ch.heal * mult * Meta.mult(ch.id));
         B.teamHp = Math.min(B.teamMax, B.teamHp + amt);
         updateTeam();
         Sound.play('heal', 1.2, 0.6);
@@ -775,7 +882,7 @@ async function stepFx(res, combo) {
       } else if (B.monHp > 0) {
         const crit = ch.crit && Math.random() < ch.crit;
         const eff = attrMult(ch.attr, curWave().a);
-        const dmg = Math.round(cells.length * ch.dmg * mult * eff * (crit ? 2.5 : 1));
+        const dmg = Math.round(cells.length * ch.dmg * mult * eff * Meta.mult(ch.id) * (crit ? 2.5 : 1));
         hitMonster(dmg, ch, crit, k++, eff);
       }
       await sleep(110);
@@ -826,6 +933,20 @@ function hitMonster(dmg, ch, crit, k, eff = 1) {
   Sound.play('hit' + (1 + (k % 3)), 1 + Math.random() * 0.15, 0.8);
   const c = centerOf(m);
   const x = c.x + (Math.random() - 0.5) * c.w * 0.6, y = c.y - c.h * 0.1 + (Math.random() - 0.5) * 30;
+  // 캐릭터 색 베기 자국 + 충격 고리
+  const sl = addFx('slash', x, y);
+  sl.style.setProperty('--c', ch.ring);
+  const ang = -35 + (Math.random() - 0.5) * 50;
+  sl.animate([
+    { transform: `translate(-50%,-50%) rotate(${ang}deg) scaleX(0)`, opacity: 1 },
+    { transform: `translate(-50%,-50%) rotate(${ang}deg) scaleX(1)`, opacity: 1, offset: 0.4 },
+    { transform: `translate(-50%,-50%) rotate(${ang}deg) scaleX(1.1) scaleY(.2)`, opacity: 0 },
+  ], { duration: 260, easing: 'ease-out' }).finished.then(() => sl.remove());
+  ringFx(x, y, crit ? 150 : 90, crit ? '#ffd84d' : '#ffffff', 300);
+  if (crit || eff > 1) {
+    app.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.025)' }, { transform: 'scale(1)' }], { duration: 160, easing: 'ease-out' });
+    flash('#ffffff', 0.25);
+  }
   burst(x, y, ch.ring, 5);
   const mark = eff > 1 ? ' ▲' : eff < 1 ? ' ▼' : '';
   floatNum(x, y, (crit ? `${ch.line} ${dmg}` : `${dmg}`) + mark, ch.ring === '#ffd84d' ? '#d9a400' : ch.ring, crit || eff > 1 ? 'crit' : '');
@@ -895,6 +1016,37 @@ async function monsterAttack() {
   floatNum(c.x, c.y - 10, `-${atk}`, '#e2543f', 'crit');
   $('#party').animate([{ transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'none' }], { duration: 240 });
   await sleep(450);
+  if (curWave().m === 'mimic') await throwBoxes(curWave().boss ? 3 : 2);
+}
+
+// 미믹은 공격하면서 판에 상자를 던짐. 옆에서 터뜨리면 깨짐
+async function throwBoxes(n) {
+  const from = centerOf($('#monster'));
+  const drops = Board.dropBoxes(B.grid, n);
+  await Promise.all(drops.map(({ r, c, old, tile }, i) => {
+    const to = tileCenter(r, c);
+    const im = new Image();
+    im.src = ITEM('box');
+    im.className = 'fximg';
+    Object.assign(im.style, { left: from.x + 'px', top: from.y + 'px', width: B.S + 'px' });
+    fx.appendChild(im);
+    const dx = to.x - from.x, dy = to.y - from.y;
+    return im.animate([
+      { transform: 'translate(-50%,-50%) scale(.4) rotate(0)' },
+      { transform: `translate(calc(-50% + ${dx * 0.5}px), calc(-50% + ${dy * 0.5 - 90}px)) scale(1.2) rotate(200deg)`, offset: 0.5 },
+      { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(1) rotate(360deg)` },
+    ], { duration: 480, delay: i * 120, easing: 'ease-in', fill: 'backwards' }).finished.then(() => {
+      im.remove();
+      popTile(old, 0);
+      makeTile(tile);
+      place(tile, r, c);
+      squish(tile);
+      burst(to.x, to.y, '#c8955a', 6);
+      Sound.play('land', 1.2, 0.8);
+    });
+  }));
+  if (drops.length) floatNum(from.x, from.y, '상자 던지기!', '#c8955a', 'small');
+  if (!Board.hasMove(B.grid)) await cascade(null, []);
 }
 
 async function monsterDefeated() {
@@ -927,23 +1079,24 @@ async function win() {
   const ratio = B.teamHp / B.teamMax;
   const stars = ratio >= 0.7 ? 3 : ratio >= 0.35 ? 2 : 1;
   const firstClear = Save.data.stars[B.stage] == null;
+  const coins = Meta.reward(stars, firstClear);
   if (firstClear) Save.data.ramen = true;
   Save.data.stars[B.stage] = Math.max(Save.data.stars[B.stage] || 0, stars);
   Save.save();
   Sound.play('win', 1);
   await clearShow();
-  const isLast = B.stage === STAGES.length - 1;
-  if (isLast && firstClear) await playStory(STORY.end);
+  const k = routeIdx('b', B.stage), isLast = k === ROUTE.length - 1;
+  if (B.stage === STAGES.length - 1 && firstClear) await playStory(STORY.end);
   const pool = B.team.map(i => CHARS[i]);
   const ch = pool[Math.floor(Math.random() * pool.length)] || CHARS[0];
   Sound.music(null);
-  const from = B.stage;
+  const from = k;
   modal({
     title: '토벌 성공!', stars, char: ch.id, text: `${ch.name}: "${ch.line}"`,
-    rows: [['남은 체력', Math.round(ratio * 100) + '%'], ['최대 콤보', B.maxCombo || 1], ['라면', firstClear ? '+1그릇' : '-']],
+    rows: [['남은 체력', Math.round(ratio * 100) + '%'], ['코인', '+' + coins], ['라면', firstClear ? '+1그릇' : '-']],
     btn2: '지도', on2: () => go(() => openMap(firstClear ? from : null)),
     btn1: isLast ? '지도로' : '다음 스테이지',
-    on1: () => go(() => (isLast ? openMap(firstClear ? from : null) : openFormation(B.stage + 1))),
+    on1: () => go(() => (isLast ? openMap(firstClear ? from : null) : goRoute(k + 1))),
   });
 }
 
@@ -965,9 +1118,9 @@ let formStage = 0, formPick = [];
 function openFormation(i) {
   formStage = i;
   const saved = (Save.data.team || DEFAULT_TEAM).map(id => CHARS.findIndex(c => c.id === id)).filter(k => k >= 0);
-  formPick = saved.slice(0, TEAM_SIZE);
+  formPick = saved.filter(k => Meta.owned(CHARS[k].id)).slice(0, TEAM_SIZE);
   show('formation');
-  $('#formStage').textContent = `${i + 1}. ${STAGES[i].name}`;
+  $('#formStage').textContent = `${routeIdx('b', i) + 1}. ${STAGES[i].name}`;
   const seen = new Set();
   $('#formEnemies').innerHTML = STAGES[i].waves.filter(w => {
     const k = w.m + w.a + (w.hue || '');
@@ -983,22 +1136,40 @@ function renderFormation() {
   const foes = new Set(STAGES[formStage].waves.map(w => w.a));
   $('#formSlots').innerHTML = Array.from({ length: TEAM_SIZE }, (_, k) => {
     const c = CHARS[formPick[k]];
-    return `<div class="slot">${c ? `<img src="${FACE(c.id)}"><span class="at">${ATTR[c.attr].icon}</span>` : ''}</div>`;
+    return `<div class="slot" data-k="${k}">${c ? Meta.figure(c.id, FACE(c.id)) + `<span class="at">${ATTR[c.attr].icon}</span>` : ''}</div>`;
   }).join('');
+  $('#formSlots').querySelectorAll('.slot').forEach(el => (el.onclick = () => {
+    if (formPick[+el.dataset.k] == null) return;
+    formPick.splice(+el.dataset.k, 1);
+    Sound.play('pop', 0.9, 0.6);
+    renderFormation();
+  }));
   $('#formCount').textContent = `${formPick.length} / ${TEAM_SIZE}`;
+  // 친구 카드: 누르면 상세 창에서 넣고 빼기
   $('#formRoster').innerHTML = CHARS.map((c, k) => {
-    const good = [...foes].some(a => BEATS[c.attr] === a);
-    return `<button class="ccard${formPick.includes(k) ? ' on' : ''}" style="--ring:${c.ring}" data-k="${k}">
-      <img src="${art(c.id)}"><div><div class="nm">${c.name} ${attrTag(c.attr)}</div>
-      <div class="sk">${c.heal ? '회복' : '공격'} · ${c.skill.name}: ${c.skill.desc}</div></div>${good ? '<span class="good">유리!</span>' : ''}</button>`;
+    const own = Meta.owned(c.id), good = own && [...foes].some(a => BEATS[c.attr] === a);
+    return `<button class="ccard${formPick.includes(k) ? ' on' : ''}${own ? '' : ' locked'}" style="--ring:${c.ring}" data-k="${k}">
+      ${own ? Meta.figure(c.id, art(c.id)) : `<span class="fig"><img src="${art(c.id)}" class="shadow"></span>`}
+      <span class="nm">${own ? c.name : '???'}</span>
+      <span class="meta">${own ? `${ATTR[c.attr].icon} Lv${Meta.lv(c.id)}` : '뽑기에서 만나요'}</span>
+      ${good ? '<span class="good">유리!</span>' : ''}</button>`;
   }).join('');
   $('#formRoster').querySelectorAll('.ccard').forEach(el => (el.onclick = () => {
-    const k = +el.dataset.k, at = formPick.indexOf(k);
-    if (at >= 0) formPick.splice(at, 1);
-    else if (formPick.length < TEAM_SIZE) formPick.push(k);
-    else { Sound.play('bad'); return; }
-    Sound.play('pop', at >= 0 ? 0.9 : 1.3, 0.6);
-    renderFormation();
+    const k = +el.dataset.k, id = CHARS[k].id, at = formPick.indexOf(k);
+    Sound.play('click');
+    Sheet.open(id, {
+      action: {
+        label: at >= 0 ? '편성에서 빼기' : formPick.length < TEAM_SIZE ? '출격 멤버로!' : '자리가 꽉 찼어요',
+        run: () => {
+          if (at >= 0) formPick.splice(at, 1);
+          else if (formPick.length < TEAM_SIZE) { formPick.push(k); Sound.voice(id, 'pick'); }
+          else { Sound.play('bad'); return; }
+          Sound.play('pop', at >= 0 ? 0.9 : 1.3, 0.6);
+          renderFormation();
+        },
+      },
+      onChange: renderFormation,
+    });
   }));
   $('#btnSortie').disabled = formPick.length !== TEAM_SIZE;
 }
@@ -1023,6 +1194,7 @@ async function cutIn(ch) {
   app.appendChild(el);
   const [dim, band, body, say, sname, streak] = el.children;
   Sound.play('jingle_skill', 1, 0.9);
+  setTimeout(() => Sound.voice(ch.id, 'skill'), 200);
   dim.animate([{ opacity: 0 }, { opacity: 0.55 }], { duration: 120, fill: 'forwards' });
   band.animate([
     { transform: 'rotate(-6deg) translateX(-110%)' },
@@ -1150,7 +1322,7 @@ async function useSkill(k) {
       await sleep(130);
     }
     await sleep(260);
-    spots.forEach(([r, c]) => { const t = B.grid[r][c]; t.special = 'bomb'; refreshTile(t); });
+    spots.forEach(([r, c]) => { const t = B.grid[r][c]; t.special = 'bomb'; t.type = -1; refreshTile(t); });
     cells = spots;
   } else if (id === 'cols2') {
     const cs = [0, 1, 2, 3, 4, 5, 6].sort(() => Math.random() - 0.5).slice(0, 2);
@@ -1244,6 +1416,7 @@ async function clearShow(text = '토벌<br>성공!') {
   ], { duration: 320, easing: 'cubic-bezier(.6,0,.9,.6)', fill: 'forwards' }).finished;
   Sound.play('hit1', 0.7, 1);
   Sound.play('jingle_win', 1, 1);
+  setTimeout(() => Sound.voice(ch.id, 'win'), 500);
   shake(12, 320);
   flash('#ffffff', 0.4);
   const sc = centerOf(stamp);

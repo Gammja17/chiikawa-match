@@ -2,6 +2,7 @@
 // 타일: { id, type, special }
 //   type 0~: 캐릭터 구슬, -1: 무지개, -2: 재료(ing, 맨 밑으로 떨구면 모임), -3: 장애물(block: 'box'|'bubble', hp)
 //   special: null|'h'|'v'|'bomb'|'rainbow'|'plane'
+//   lock: 리본에 묶인 구슬. 못 움직이고, 한 번 터뜨리면 리본만 풀림
 const ROWS = 7, COLS = 7;
 let NTYPES = 7; // 편성 인원에 맞춰 출격 때 바뀜
 const ING = -2, BLOCK = -3;
@@ -13,7 +14,7 @@ const randType = () => Math.floor(Math.random() * NTYPES);
 const key = (r, c) => r * COLS + c;
 const unkey = k => [Math.floor(k / COLS), k % COLS];
 const inside = (r, c) => r >= 0 && r < ROWS && c >= 0 && c < COLS;
-const movable = t => !!t && !t.block;
+const movable = t => !!t && !t.block && !t.lock;
 const NEAR4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 // 판 모양: mask[r][c]가 false인 칸은 판에 없는 구멍
 const hole = (r, c) => !!Board.mask && !Board.mask[r][c];
@@ -21,9 +22,10 @@ const hole = (r, c) => !!Board.mask && !Board.mask[r][c];
 const Board = {
   mask: null,     // 판 모양 (없으면 7x7 꽉 찬 판)
   floor: null,    // 잡초: floor[r][c] = 남은 겹 수 (일상 퍼즐에서만)
+  syrup: null,    // 시럽: syrup[r][c] = 발렸는지. 시럽 칸이 낀 매치는 그 칸들에 시럽을 번지게 함
   spawnIng: null, // 새 칸을 채울 때 재료를 낼지: () => 재료 이름 | null
 
-  // spec: { blocks: [[r, c, 'box'|'bubble', hp]], ings: [[r, c, 이름]] }
+  // spec: { blocks: [[r, c, 'box'|'bubble', hp]], ings: [[r, c, 이름]], locks: [[r, c]] }
   create(spec = {}) {
     let g;
     do {
@@ -37,6 +39,7 @@ const Board = {
         while (Board.makesMatch(g, r, c, t) && ++tries < 40);
         g[r][c] = newTile(t);
       }
+      (spec.locks || []).forEach(([r, c]) => { if (g[r][c]?.type >= 0) g[r][c].lock = 1; });
     } while (!Board.hasMove(g) || Board.findRuns(g).length);
     return g;
   },
@@ -120,7 +123,12 @@ const Board = {
       const longest = (lines.length ? lines : grp.runs).reduce((a, b) => (b.cells.length > a.cells.length ? b : a));
       pos = longest.cells[Math.floor(longest.cells.length / 2)];
     }
-    return { pos, kind, type: kind === 'rainbow' ? -1 : grp.type };
+    // 리본 묶인 칸에는 아이템을 안 만듦 (풀린 구슬이 그대로 남으니까)
+    if (grp.locked?.has(key(pos[0], pos[1]))) {
+      pos = [...grp.keys].map(unkey).find(([r, c]) => !grp.locked.has(key(r, c)));
+      if (!pos) return null;
+    }
+    return { pos, kind, type: -1 }; // 아이템은 색이 없음
   },
 
   // avoid: 이미 지울 칸 (비행기가 그쪽으로는 안 날아감)
@@ -149,8 +157,8 @@ const Board = {
     const tiers = [[], [], [], []];
     Board.each(g, (t, r, c) => {
       if (avoid.has(key(r, c))) return;
-      if (t.block) tiers[0].push([r, c]);
-      else if (Board.floor?.[r][c] > 0 && t.type !== ING) tiers[1].push([r, c]);
+      if (t.block || t.lock) tiers[0].push([r, c]);
+      else if ((Board.floor?.[r][c] > 0 || (Board.syrup && !Board.syrup[r][c])) && t.type !== ING) tiers[1].push([r, c]);
       else if (t.type >= 0 && r > 0 && g[r - 1][c]?.type === ING) tiers[2].push([r, c]);
       else if (t.type >= 0) tiers[3].push([r, c]);
     });
@@ -183,10 +191,10 @@ const Board = {
       out.push(rpos);
       // 재료와 바꾸면 제일 많은 색을 지움
       const type = other.type >= 0 ? other.type : Board.commonType(g);
-      const conv = other.type >= 0 ? other.special : null;
+      const conv = other.special && other.special !== 'rainbow' ? other.special : null;
       Board.each(g, (t, r, c) => {
         if (t.type !== type) return;
-        if (conv && t !== other) t.special = conv === 'h' || conv === 'v' ? (Math.random() < 0.5 ? 'h' : 'v') : conv;
+        if (conv && t !== other && !t.lock) t.special = conv === 'h' || conv === 'v' ? (Math.random() < 0.5 ? 'h' : 'v') : conv;
         out.push([r, c]);
       });
       return { cells: out, kind: 'rainbow', at: rpos, type, converted: !!conv };
@@ -235,12 +243,18 @@ const Board = {
     const groups = Board.groupRuns(Board.findRuns(g));
     const clear = new Set(), matched = new Set();
     const creates = [];
+    const syrupKeys = new Set();
+    const hasSyrup = ks => Board.syrup && ks.some(k => { const [r, c] = unkey(k); return Board.syrup[r][c]; });
     groups.forEach(grp => {
       grp.keys.forEach(k => { clear.add(k); matched.add(k); });
+      grp.locked = new Set([...grp.keys].filter(k => { const [r, c] = unkey(k); return g[r][c]?.lock; }));
+      if (hasSyrup([...grp.keys])) grp.keys.forEach(k => syrupKeys.add(k));
       const sp = Board.specialFor(grp, swapped);
       if (sp) creates.push(sp);
     });
-    forced.forEach(([r, c]) => inside(r, c) && clear.add(key(r, c)));
+    const forcedKeys = forced.filter(([r, c]) => inside(r, c)).map(([r, c]) => key(r, c));
+    forcedKeys.forEach(k => clear.add(k));
+    if (hasSyrup(forcedKeys)) forcedKeys.forEach(k => syrupKeys.add(k));
     if (!clear.size) return null;
 
     const effects = [];
@@ -253,6 +267,7 @@ const Board = {
       fired.add(t.id);
       const cells = Board.effectCells(g, t, r, c, clear);
       effects.push({ kind: t.special, r, c, type: t.type, target: t.target });
+      if (Board.syrup?.[r][c] || syrupKeys.has(key(r, c))) cells.forEach(([rr, cc]) => syrupKeys.add(key(rr, cc)));
       cells.forEach(([rr, cc]) => {
         const k = key(rr, cc);
         if (!clear.has(k)) { clear.add(k); queue.push(k); }
@@ -266,7 +281,7 @@ const Board = {
     });
     clear.forEach(k => { const [r, c] = unkey(k); if (g[r][c]?.block) hitKeys.add(k); });
 
-    const cleared = [], hits = [], weeds = [];
+    const cleared = [], hits = [], weeds = [], unlocked = [], syrup = [];
     const pullWeed = (r, c) => {
       if (Board.floor?.[r][c] > 0) weeds.push({ r, c, left: --Board.floor[r][c] });
     };
@@ -274,6 +289,7 @@ const Board = {
       const [r, c] = unkey(k);
       const t = g[r][c];
       if (!t || t.block || t.type === ING) return;
+      if (t.lock) { t.lock = 0; unlocked.push({ r, c, tile: t }); pullWeed(r, c); return; }
       cleared.push({ r, c, tile: t });
       g[r][c] = null;
       pullWeed(r, c);
@@ -290,7 +306,11 @@ const Board = {
       g[sp.pos[0]][sp.pos[1]] = t;
       return { r: sp.pos[0], c: sp.pos[1], tile: t };
     });
-    return { cleared, created, effects, hits, weeds };
+    syrupKeys.forEach(k => {
+      const [r, c] = unkey(k);
+      if (Board.syrup && !hole(r, c) && !Board.syrup[r][c]) { Board.syrup[r][c] = true; syrup.push({ r, c }); }
+    });
+    return { cleared, created, effects, hits, weeds, unlocked, syrup };
   },
 
   // 빈칸 메우기. 한 칸씩 박자(tick)로 움직이고, 장애물 밑은 옆 위에서 비스듬히 채움
@@ -306,7 +326,7 @@ const Board = {
     // 새 구슬은 칸마다 맨 위 판 칸에서 나옴
     const top = Array.from({ length: COLS }, (_, c) => { let r = 0; while (r < ROWS && hole(r, c)) r++; return r; });
     const openAbove = (r, c) => {
-      for (let rr = r - 1; rr >= top[c]; rr--) if (g[rr][c]?.block || hole(rr, c)) return false;
+      for (let rr = r - 1; rr >= top[c]; rr--) if ((g[rr][c] && !movable(g[rr][c])) || hole(rr, c)) return false;
       return true;
     };
     const spawn = () => {
@@ -381,7 +401,7 @@ const Board = {
       if (t.block !== 'bubble') return;
       NEAR4.forEach(([dr, dc]) => {
         const n = inside(r + dr, c + dc) ? g[r + dr][c + dc] : null;
-        if (n && n.type >= 0 && !n.special) cand.push([r + dr, c + dc]);
+        if (n && n.type >= 0 && !n.special && !n.lock) cand.push([r + dr, c + dc]);
       });
     });
     if (!cand.length) return null;
@@ -414,6 +434,18 @@ const Board = {
       }
     }
     return false;
+  },
+
+  // 몬스터가 구슬 n개를 상자로 바꿈 (토벌 미믹)
+  dropBoxes(g, n) {
+    const cand = [];
+    Board.each(g, (t, r, c) => { if (t.type >= 0 && !t.special && !t.lock) cand.push([r, c]); });
+    const out = [];
+    for (let i = 0; i < n && cand.length; i++) {
+      const [r, c] = cand.splice(Math.floor(Math.random() * cand.length), 1)[0];
+      out.push({ r, c, old: g[r][c], tile: (g[r][c] = newBlock('box', 1)) });
+    }
+    return out;
   },
 
   // 섞기: 구슬끼리 위치만 바꿈 (장애물, 재료는 제자리)

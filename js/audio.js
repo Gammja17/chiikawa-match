@@ -42,6 +42,21 @@ const Sound = {
     }
   },
 
+  // 캐릭터 목소리: assets/voice/voices.json 에 적힌 파일만 재생 (없으면 false를 돌려줘서 효과음으로 대신함)
+  // 예: { "chiikawa": ["pick", "skill", "win"] } → assets/voice/chiikawa_pick.mp3 ...
+  voices: {},
+  voice(id, ev) {
+    if (this.muted || !this.voices[id]?.includes(ev)) return false;
+    const name = `voice_${id}_${ev}`;
+    if (!this.buffers[name] && this.ctx) {
+      fetch(`assets/voice/${id}_${ev}.mp3`).then(r => r.arrayBuffer()).then(b => this.ctx.decodeAudioData(b))
+        .then(buf => { this.buffers[name] = buf; this.play(name); }).catch(() => {});
+      return true;
+    }
+    this.play(name);
+    return true;
+  },
+
   // 뽀용: 콤보가 쌓일수록 음이 올라감 (도레미파솔라시도…)
   pop(combo, i = 0) {
     const scale = [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19];
@@ -49,6 +64,8 @@ const Sound = {
     this.play('pop', Math.pow(2, semi / 12) * 1.05, 0.9);
   },
 };
+
+fetch('assets/voice/voices.json').then(r => r.json()).then(v => (Sound.voices = v || {})).catch(() => {});
 
 // ---------- BGM: 코드로 연주하는 오리지널 루프 (마림바 + 오르골 + 통통 베이스) ----------
 // 음 번호는 C4=0 기준 반음. 한 칸 = 8분음표

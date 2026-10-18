@@ -1,9 +1,9 @@
 // 일상 퍼즐: 풀 뽑기, 요리, 거품 청소, 상자 뜯기, 제초 검정. 몬스터 없이 목표를 채우는 스테이지
 // 판 글자: # 판 밖(구멍)  . 빈칸  w 잡초  W 잡초 두 겹  b 상자  g 선물 상자(두 번)  x 상자+잡초  X 선물+잡초
-//          o 거품(번짐)  q 거품+잡초  i 재료
+//          o 거품(번짐)  q 거품+잡초  i 재료  l 리본 구슬  L 리본+잡초  s 처음부터 시럽 칸
 const LIFE_CHARS = ['chiikawa', 'hachiware', 'usagi', 'momonga', 'kurimanju', 'rakko'];
 
-// goals: weed 잡초 다 뽑기, box 상자 다 뜯기, bubble 거품 다 터뜨리기, ing 재료 n개 바닥까지, char 그 캐릭터 n개, score 점수
+// goals: lock 리본 다 풀기, syrup 시럽을 판 전체에 바르기, weed 잡초 다 뽑기, box 상자 다 뜯기, bubble 거품 다 터뜨리기, ing 재료 n개 바닥까지, char 그 캐릭터 n개, score 점수
 // moves 이동 수 또는 time 초(제한 시간), stars 별 점수 [1, 2, 3], host 화면 옆 응원 캐릭터
 const LIFE = [
   { name: '풀 뽑기 첫날', icon: 'weed1', types: 5, moves: 18, host: 'chiikawa', intro: '잡초를 모두 뽑자!',
@@ -45,8 +45,28 @@ const LIFE = [
   { name: '제초 검정 3급', icon: 'medal', types: 6, time: 90, host: 'usagi', exam: true, intro: '90초! 두 겹 잡초까지!',
     goals: [{ k: 'weed' }, { k: 'score', n: 10000 }], stars: [10000, 13000, 17000],
     map: ['##...##', '#.....#', '.WwWwW.', 'wWWWWWw', 'wWwWwWw', '#WWWWW#', '##www##'] },
+  { name: '선물 리본 풀기', icon: 'ribbon', types: 5, moves: 20, host: 'momonga', intro: '리본을 모두 풀자!',
+    goals: [{ k: 'lock' }], stars: [5000, 8000, 10000],
+    map: ['##...##', '#.....#', '.l.l.l.', '..lll..', '.l.l.l.', '#.....#', '##...##'] },
+  { name: '핫케이크 시럽', icon: 'pancake', types: 5, moves: 22, host: 'chiikawa', intro: '시럽을 판 전체에!',
+    goals: [{ k: 'syrup' }], stars: [5000, 8000, 10000],
+    map: ['##...##', '#.....#', '.......', '...s...', '.......', '#.....#', '##...##'] },
+  { name: '제초 검정 2급', icon: 'medal', types: 6, time: 100, host: 'usagi', exam: true, intro: '100초! 리본 사이 잡초!',
+    goals: [{ k: 'weed' }, { k: 'lock' }], stars: [9000, 12000, 15000],
+    map: ['.......', '.......', 'wLwwwLw', 'wwLwLww', 'WwwLwwW', 'wWwwwWw', '.wwwww.'] },
+  { name: '라멘 국물 내기', icon: 'pot', types: 5, moves: 29, host: 'shisa', intro: '국물을 바르고 재료도!',
+    goals: [{ k: 'syrup' }, { k: 'ing' }], stars: [8000, 12000, 15000], ing: { n: 3, max: 2, kinds: ['naruto', 'egg'] },
+    map: ['..i.i..', '.......', '.......', '.......', '#..s..#', '##...##', '###.###'] },
+  { name: '거품 목욕 대작전', icon: 'bath', types: 5, moves: 26, host: 'hachiware', intro: '거품도 리본도!',
+    goals: [{ k: 'bubble' }, { k: 'lock' }], stars: [7000, 11000, 14000],
+    map: ['.......', '.l...l.', '..l.l..', '.......', '.o...o.', '#oo.oo#', '##...##'] },
+  { name: '소풍 도시락', icon: 'bento', types: 5, moves: 31, host: 'kurimanju', intro: '도시락 재료 모으기!',
+    goals: [{ k: 'ing' }, { k: 'box' }, { k: 'weed' }], stars: [9000, 13000, 16000], ing: { n: 4, max: 2, kinds: ['onigiri', 'dango', 'donut'] },
+    map: ['.i...i.', '.......', '.......', 'x.....x', 'wx...xw', 'wwwwwww', '.wwwww.'] },
+  { name: '제초 검정 1급', icon: 'medal', types: 6, time: 120, host: 'usagi', exam: true, intro: '최종 시험! 120초!',
+    goals: [{ k: 'weed' }, { k: 'bubble' }, { k: 'score', n: 14000 }], stars: [14000, 18000, 22000],
+    map: ['#.....#', '.......', 'WWwWwWW', 'WwWWWwW', 'wWWqWWw', '#WwWwW#', '##qqq##'] },
 ];
-
 // 스테이지 시작 전 짧은 대사 (팬 창작)
 const LIFE_STORY = {
   0: [
@@ -71,6 +91,16 @@ const LIFE_STORY = {
     ['chiikawa', '(두근두근…)'],
     ['usagi', '하아?!'],
   ],
+  13: [['momonga', '선물에 리본이 칭칭… 묶인 구슬은 못 움직여. 한 번 터뜨리면 풀려!']],
+  14: [
+    ['chiikawa', '(핫케이크…!)'],
+    ['hachiware', '시럽 칸이 낀 매치를 하면 그 줄에 시럽이 쭉 번져. 판 전체에 발라 보자!'],
+  ],
+  19: [
+    ['usagi', '우라! 1급!!'],
+    ['hachiware', '마지막 시험이야. 거품, 두 겹 잡초, 점수까지 전부!'],
+    ['chiikawa', '…(꿀꺽)'],
+  ],
   12: [
     ['usagi', '우라! 3급이다~!'],
     ['chiikawa', '…(꿀꺽)'],
@@ -78,29 +108,39 @@ const LIFE_STORY = {
   ],
   end: [
     ['chiikawa', '…합격했다!'],
-    ['hachiware', '제초 검정 3급! 오늘은 라멘 곱빼기 먹자~'],
+    ['hachiware', '제초 검정 1급! 오늘은 라멘 곱빼기 먹자~'],
     ['shisa', '어서 오세요~!'],
   ],
 };
 
-const GOAL_ICON = { weed: () => ITEM('weed2'), box: () => ITEM('box'), bubble: () => ITEM('bubble'), ing: () => ITEM('ramen'),
+// 모험 루트: 일상 일을 하다 토벌 의뢰가 끼어드는 순서. 마지막은 토벌 대작전
+const ROUTE = [
+  ['l', 0], ['l', 1], ['b', 0], ['l', 2], ['l', 3], ['b', 1], ['l', 4], ['l', 5], ['b', 2], ['l', 6],
+  ['l', 7], ['b', 3], ['l', 8], ['b', 4], ['l', 9], ['l', 10], ['b', 5], ['l', 11], ['b', 6], ['l', 12],
+  ['l', 13], ['b', 7], ['l', 14], ['l', 15], ['b', 8], ['l', 16], ['l', 17], ['l', 18], ['l', 19], ['b', 9],
+];
+
+const GOAL_ICON = { lock: () => ITEM('ribbon'), syrup: () => ITEM('pancake'), weed: () => ITEM('weed2'), box: () => ITEM('box'), bubble: () => ITEM('bubble'), ing: () => ITEM('ramen'),
   char: g => FACE(g.id), score: () => ITEM('target') };
-const GOAL_NAME = { weed: () => '잡초', box: () => '상자', bubble: () => '거품', ing: () => '재료', char: g => CHAR_NAME[g.id], score: () => '점수' };
+const GOAL_NAME = { lock: () => '리본', syrup: () => '시럽', weed: () => '잡초', box: () => '상자', bubble: () => '거품', ing: () => '재료', char: g => CHAR_NAME[g.id], score: () => '점수' };
 
 function parseLayout(st) {
   const floor = Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
   const mask = st.map.map(row => [...row].map(ch => ch !== '#'));
-  const blocks = [], ings = [];
+  const blocks = [], ings = [], locks = [];
+  const syrup = st.goals.some(g => g.k === 'syrup') ? Array.from({ length: ROWS }, () => new Array(COLS).fill(false)) : null;
   let k = 0;
   st.map.forEach((row, r) => [...row].forEach((ch, c) => {
-    if ('wxXq'.includes(ch)) floor[r][c] = 1;
+    if ('wxXqL'.includes(ch)) floor[r][c] = 1;
+    if (ch === 'l' || ch === 'L') locks.push([r, c]);
+    if (ch === 's' && syrup) syrup[r][c] = true;
     if (ch === 'W') floor[r][c] = 2;
     if (ch === 'b' || ch === 'x') blocks.push([r, c, 'box', 1]);
     if (ch === 'g' || ch === 'X') blocks.push([r, c, 'box', 2]);
     if (ch === 'o' || ch === 'q') blocks.push([r, c, 'bubble', 1]);
     if (ch === 'i') ings.push([r, c, st.ing.kinds[k++ % st.ing.kinds.length]]);
   }));
-  return { floor, mask, blocks, ings };
+  return { floor, mask, blocks, ings, locks, syrup };
 }
 
 const L = { st: null, i: 0, moves: 0, time: 0, score: 0, ing: 0, spawned: 0, chars: {}, popped: false, extra: false, timer: null, goalsHtml: '' };
@@ -122,7 +162,6 @@ const Life = {
   async start(i) {
     const st = LIFE[i];
     Life.stopTimer();
-    mapMode = 'life';
     Object.assign(L, { ending: false, st, i, moves: st.moves || 0, time: st.time || 0, score: 0, ing: 0, chars: {}, popped: false, extra: false, goalsHtml: '' });
     Object.assign(B, { mode: 'life', stage: i, over: false, busy: true, sel: null, pending: [], maxCombo: 0, fever: 0 });
     B.team = LIFE_CHARS.slice(0, st.types).map(id => CHARS.findIndex(c => c.id === id));
@@ -130,13 +169,14 @@ const Life = {
     const lay = parseLayout(st);
     Board.floor = lay.floor;
     Board.mask = lay.mask;
+    Board.syrup = lay.syrup;
     L.spawned = lay.ings.length;
     Board.spawnIng = st.ing ? spawnIng : null;
     app.classList.add('life-mode');
     updateFever();
     Sound.music('map');
     show('battle');
-    $('#stageName').textContent = `${i + 1}. ${st.name}`;
+    $('#stageName').textContent = `${routeIdx('l', i) + 1}. ${st.name}`;
     $('#waveInfo').textContent = st.exam ? '검정 시험' : '일상 퍼즐';
     $('#lhChar').src = art(st.host);
     layoutBoard();
@@ -167,6 +207,8 @@ const Life = {
 
   count(k) {
     let n = 0;
+    if (k === 'syrup') { Board.syrup?.forEach((row, r) => row.forEach((v, c) => { if (!v && !hole(r, c)) n++; })); return n; }
+    if (k === 'lock') { Board.each(B.grid, t => { if (t.lock) n++; }); return n; }
     if (k === 'weed') { Board.floor?.forEach(row => row.forEach(w => { if (w > 0) n++; })); return n; }
     Board.each(B.grid, t => { if (t.block === k) n++; });
     return n;
@@ -203,7 +245,8 @@ const Life = {
   },
 
   onStep(res, combo) {
-    const pts = res.cleared.length * 20 * combo + res.created.length * 100 + res.hits.length * 50 + res.weeds.length * 60;
+    const pts = res.cleared.length * 20 * combo + res.created.length * 100 + res.hits.length * 50 + res.weeds.length * 60 +
+      res.unlocked.length * 60 + res.syrup.length * 40;
     res.cleared.forEach(({ tile }) => {
       if (tile.type < 0) return;
       const id = teamCh(tile.type).id;
@@ -211,7 +254,7 @@ const Life = {
     });
     if (res.hits.some(h => h.tile.block === 'bubble')) L.popped = true;
     L.score += pts;
-    const spots = [...res.cleared, ...res.hits];
+    const spots = [...res.cleared, ...res.hits, ...res.unlocked];
     if (spots.length && pts) {
       const ps = spots.map(({ r, c }) => tileCenter(r, c));
       const x = ps.reduce((a, p) => a + p.x, 0) / ps.length, y = ps.reduce((a, p) => a + p.y, 0) / ps.length;
@@ -293,6 +336,7 @@ const Life = {
     for (const [i, [r, c]] of cells.entries()) {
       const t = B.grid[r][c];
       t.special = Math.random() < 0.5 ? 'h' : 'v';
+      t.type = -1;
       refreshTile(t);
       squish(t);
       const p = tileCenter(r, c);
@@ -326,21 +370,22 @@ const Life = {
     const stars = L.score >= st.stars[2] ? 3 : L.score >= st.stars[1] ? 2 : 1;
     const list = (Save.data.life = Save.data.life || []);
     const first = list[i] == null;
+    const coins = Meta.reward(stars, first);
     list[i] = Math.max(list[i] || 0, stars);
     if (first) Save.data.ramen = true;
     Save.save();
     Sound.play('win', 1);
     await clearShow(st.exam ? '검정<br>합격!' : '일<br>끝!');
-    const last = i === LIFE.length - 1;
-    if (last && first) await playStory(LIFE_STORY.end);
+    const k = routeIdx('l', i), last = k === ROUTE.length - 1;
+    if (i === LIFE.length - 1 && first) await playStory(LIFE_STORY.end);
     Sound.music(null);
     const ch = CHARS.find(c => c.id === st.host) || CHARS[0];
     modal({
       title: st.exam ? '합격!' : '클리어!', stars, char: ch.id, text: `${ch.name}: "${ch.line}"`,
-      rows: [['점수', L.score], ['최대 콤보', B.maxCombo || 1], ['라면', first ? '+1그릇' : '-']],
-      btn2: '지도', on2: () => go(() => openMap(first ? i : null)),
+      rows: [['점수', L.score], ['코인', '+' + coins], ['라면', first ? '+1그릇' : '-']],
+      btn2: '지도', on2: () => go(() => openMap(first ? k : null)),
       btn1: last ? '지도로' : '다음 스테이지',
-      on1: () => go(() => (last ? openMap(first ? i : null) : Life.start(i + 1))),
+      on1: () => go(() => (last ? openMap(first ? k : null) : goRoute(k + 1))),
     });
   },
 
