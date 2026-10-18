@@ -974,7 +974,7 @@ const Combo = {
 };
 
 // ---------- 연쇄 ----------
-async function cascade(swapped, forced, origin = null) {
+async function cascade(swapped, forced, origin = null, depth = 0) {
   let combo = 0;
   for (;;) {
     const res = Board.resolve(B.grid, combo === 0 ? swapped : null, combo === 0 ? forced : []);
@@ -991,7 +991,15 @@ async function cascade(swapped, forced, origin = null) {
     await banner('섞는 중…', 400);
     Board.shuffle(B.grid);
     await settleAll(380);
-    if (Board.findRuns(B.grid).length) await cascade(null, []);
+    // 섞고 또 섞어도 끝이 안 나는 판(장애물이 너무 많을 때)이 멈추지 않게 몇 번까지만
+    if (Board.findRuns(B.grid).length && depth < 4) await cascade(null, [], null, depth + 1);
+    else if (!Board.hasMove(B.grid)) {
+      // 그래도 둘 곳이 없으면 경단 하나를 선물 (톡 누르면 터짐)
+      const spots = [];
+      Board.each(B.grid, t => { if (t.type >= 0 && !t.special && movable(t)) spots.push(t); });
+      const t = spots[Math.floor(Math.random() * spots.length)];
+      if (t) { t.special = 'rainbow'; t.type = -1; refreshTile(t); }
+    }
   }
 }
 
