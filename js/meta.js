@@ -20,15 +20,15 @@ const FURN = [
 const FURN_OLD = { plant: 'f_grass', candle: 'f_tissue', sunflower: 'f_cushion', clock: 'f_clock', teddy: 'f_rice', frame: 'f_board', mirror: 'f_fridge', sofa: 'f_table', tv: 'f_tv', bed: 'f_futon' };
 // 레벨이 오르면 열리는 짧은 이야기 (팬 창작)
 const CHAR_STORY = {
-  chiikawa: [[2, [['chiikawa', '(풀 뽑기 끝…)'], ['chiikawa', '(오늘 번 돈으로… 뭐 먹지…)'], ['hachiware', '저기~ 라멘 먹으러 가자!'], ['chiikawa', '…!! (끄덕끄덕)']]]],
+  chiikawa: [[2, [['chiikawa', '(풀 뽑기 끝! 땀을 닦는다)'], ['chiikawa', '(동전을 세어 본다) …!'], ['hachiware', '저기~ 라멘 먹으러 가자!'], ['chiikawa', '…!! (끄덕끄덕)']]]],
   hachiware: [[2, [['hachiware', '(기타 둥가둥가~) 흐흥~ ♪'], ['hachiware', '언젠가 노래 대회에 나가 보고 싶어. 조금 부끄럽지만…'], ['chiikawa', '…!! (박수)'], ['hachiware', '네가 들어 주면 어떻게든 될 것 같아!']]]],
   usagi: [[2, [['usagi', '우라!'], ['usagi', '(반짝이는 돌을 내민다)'], ['hachiware', '돌 모으는 게 취미라는 거야!? 이거 주는 거야!?'], ['usagi', '야하~!']]]],
   momonga: [[2, [['momonga', '모몽가 오늘 토벌 엄청 열심히 했어.'], ['momonga', '그러니까 칭찬해 줘! 많이! 지금!'], ['chiikawa', '…(쓰담쓰담)'], ['momonga', '에헤헤~ 더!']]]],
   rakko: [[2, [['rakko', '…검을 닦는 것도 수련이다.'], ['hachiware', '선생님 멋있다…!'], ['rakko', '…너희도 매일 하면 강해진다.'], ['rakko', '(단 과자를 한 입) (좋아… 맛있다…!)']]]],
-  kani: [[2, [['kani', '저, 저기… 어서 와. 헌책방이야…'], ['kani', '이 머리띠…? 으, 응… 모몽가가 줬어.'], ['momonga', '모몽가가 골라 준 거야! 칭찬해 줘!'], ['kani', '모몽가, 이거 먹을래…?'], ['chiikawa', '…!! (잘 어울린다…!)']]]],
-  kurimanju: [[2, [['kurimanju', '(꿀꺽꿀꺽)'], ['kurimanju', '……하아~~ 으어어…'], ['kurimanju', '(안주를 슥 내민다)'], ['chiikawa', '…!! (맛있다…!)']]]],
+  kani: [[2, [['kani', '(헌책방 문 앞에서 꾸벅 인사한다)'], ['kani', '(게 모자를 고쳐 쓰고, 책 한 권을 골라 준다)'], ['momonga', '모몽가 단짝이야! 부럽지? 칭찬해 줘!'], ['kani', '(모몽가에게 간식을 슬쩍 내민다)'], ['chiikawa', '…!! (반짝반짝)']]]],
+  kurimanju: [[2, [['kurimanju', '(꿀꺽꿀꺽)'], ['kurimanju', '……하아~~ 으어어…'], ['kurimanju', '(안주를 슥 내민다)'], ['chiikawa', '(모구모구…) …!!']]]],
   shisa: [[2, [['shisa', '오늘도 라멘 가게 수행이사!'], ['shisa', '스승님한테 국물 맛 칭찬받았사! 우레시사~!'], ['chiikawa', '…!! (박수)']]]],
-  shooting: [[2, [['shooting', '반짝!'], ['shooting', '소원을 하나 들어줄게. 뭐든지!'], ['chiikawa', '…(라멘 곱빼기…)']]]],
+  shooting: [[2, [['shooting', '반짝!'], ['shooting', '소원을 하나 들어줄게. 뭐든지!'], ['chiikawa', '…!! (라멘 그림을 가리킨다)']]]],
   darkstar: [[2, [['darkstar', '오늘이 계속되면 좋겠다며? 들어줬잖아~'], ['darkstar', '아~아, 들켰네~ 칫, 재미없어!'], ['hachiware', '이번엔 장난치면 안 돼!']]]],
   goblin: [[2, [['goblin', '옴 빰 빰~ 예 예 예~'], ['goblin', '제야! 야요!'], ['usagi', '이얏하!']]]],
   beetle: [[2, [['beetle', '냐하~'], ['beetle', '(숙제를 구기고 나서… 춤춘다)'], ['chiikawa', '…!! (꼬옥 안아 준다)']]]],
@@ -42,7 +42,7 @@ const RECRUIT = {
   // 모험을 하다 보면 차례로 합류
   hachiware: { stage: ['l', 0], story: [['hachiware', '같이 하니까 금방 끝났다!'], ['hachiware', '앞으로도 같이 일하자. 둘이면 어떻게든 될 거야~!'], ['chiikawa', '…!! (끄덕끄덕)']] },
   usagi: { stage: ['l', 1], story: [['usagi', '우라!'], ['hachiware', '너도 같이 다니고 싶다는 거야!?'], ['usagi', '야하~!!']] },
-  kani: { stage: ['b', 0], story: [['kani', '저, 저기… 토벌 다녀왔어? 고, 고생했어…'], ['kani', '쉬는 동안 읽을 책… 골라 줄까…? 으, 응… 같이 가도 괜찮다면…'], ['chiikawa', '…!! (끄덕끄덕)']] },
+  kani: { stage: ['b', 0], story: [['kani', '(토벌에서 돌아온 걸 보고 꾸벅 인사한다)'], ['kani', '(책 한 권을 골라 살며시 내민다)'], ['hachiware', '쉬는 동안 읽으라는 거야!? …같이 와 준대!'], ['chiikawa', '…!! (끄덕끄덕)']] },
   rakko: { stage: ['b', 1], story: [['rakko', '…강해졌구나.'], ['rakko', '다음 토벌, 같이 간다. 기세를 타라.'], ['hachiware', '선생님이랑 같이…!?'], ['chiikawa', '…!!!']] },
   shisa: { stage: ['l', 8], story: [['shisa', '도와줘서 고맙사~!'], ['shisa', '스승님이 밖에서도 수행하고 오래사. 토벌 따라가도 될까사!?'], ['hachiware', '물론이지~! 같이 가자!'], ['shisa', '열심히 할 거사! 치바리요~!']] },
 };

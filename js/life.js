@@ -114,7 +114,7 @@ const LIFE_STORY = {
     ['hachiware', '리본 묶인 구슬은 못 움직여. 한 번 터뜨리면 풀려!'],
   ],
   14: [
-    ['chiikawa', '(핫케이크…!)'],
+    ['chiikawa', '…!! (핫케이크를 보고 눈이 반짝)'],
     ['hachiware', '시럽 칸이 낀 매치를 하면 그 줄로 시럽이 쭉 번져. 판 전체에 듬뿍~!'],
   ],
   19: [
@@ -611,7 +611,7 @@ Life.contestEnd = async function () {
   Net.submit();
   if (isBest) confetti(20);
   modal({
-    title: isBest ? '최고 기록!' : '제초 대회 끝!', char: 'usagi', text: isBest ? '우사기: "우라~!!"' : '우사기: "하아?! 한 번 더!"',
+    title: isBest ? '최고 기록!' : '제초 대회 끝!', char: 'usagi', text: isBest ? '우사기: "우라~!!"' : '우사기: "하아?! 푸루야!!"',
     rows: [['점수', L.score], ['최고', Save.data.contestBest], [`<img class="row-ic" src="${ITEM('coin')}">`, '+' + coins]],
     btn2: '나가기', on2: () => go(openChallenge),
     btn1: '다시 도전', on1: () => go(() => Life.begin(CONTEST, { kind: 'contest' })),
