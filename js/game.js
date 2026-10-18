@@ -2021,7 +2021,7 @@ async function useSkill(k) {
   } else if (id === 'heal40') {
     const hp = centerOf($('#teamHp'));
     await actor(ch, [hp, { x: hp.x + B.S, y: hp.y }], { hop: 0.7, dur: 220, size: 1.2 }); // 카니: 체력바 위에서 통통
-    const amt = Math.round(B.teamMax * 0.4);
+    const amt = Math.round(B.teamMax * 0.25); // 회복이 너무 세면 토벌이 '안 다치거나 두 방에 끝'이 돼서 25%로
     B.teamHp = Math.min(B.teamMax, B.teamHp + amt);
     updateTeam();
     Sound.play('heal', 1, 0.9);

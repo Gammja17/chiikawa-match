@@ -11,8 +11,8 @@ const CHARS = [
     skill: { id: 'convert6', name: '전부 내 거!', desc: '구슬 6개를 모몽가로 바꿈', need: 12, say: '여기도 저기도 다 내 거야! 불만 있어?' } },
   { id: 'rakko',     name: '랏코',     ring: '#8a8a96', attr: 'brave', dmg: 17, crit: 0.2, line: '…간다.',
     skill: { id: 'cross',    name: '기세를 타라!', desc: '대검으로 십자 3줄을 베고 괴물에게 큰 한 방, 공격 2턴 늦춤', need: 16, say: '…간다. 기세를 타라!' } },
-  { id: 'kani',      name: '카니',     ring: '#ff5a4a', attr: 'cry',   heal: 4, line: '(꾸벅)',
-    skill: { id: 'heal40',   name: '조용한 책 시간', desc: '좋아하는 책을 읽어 주며 체력 40% 회복', need: 14, say: '(좋아하는 책을 펼쳐 조용히 보여 준다)' } },
+  { id: 'kani',      name: '카니',     ring: '#ff5a4a', attr: 'cry',   heal: 2, line: '(꾸벅)',
+    skill: { id: 'heal40',   name: '조용한 책 시간', desc: '좋아하는 책을 읽어 주며 체력 25% 회복', need: 14, say: '(좋아하는 책을 펼쳐 조용히 보여 준다)' } },
   { id: 'kurimanju', name: '쿠리만쥬', ring: '#79bf3f', attr: 'odd',   dmg: 12, line: '하아~~ 으어어…',
     skill: { id: 'rainbow',  name: '한잔 하아~', desc: '판에 경단 하나', need: 15, say: '(꿀꺽꿀꺽) ……하아~~ 으어어…' } },
   { id: 'shisa',     name: '시사',     ring: '#ff8a33', attr: 'odd',   dmg: 11, line: '어서 와사~!',
@@ -93,17 +93,18 @@ const MONSTERS = {
 };
 
 // a: 속성, m: 몬스터 종류, hp, atk: 공격력, cd: 몇 턴마다 공격, hue: 색 변형, title: 이름 앞말, boss
+// 토벌 hp·atk: 자동 플레이 봇으로 맞춤 (처음 100% → 보통 80~95% → HARD 50% 안팎 깸). 카니 회복을 줄인 뒤 기준
 const STAGES = [
-  { name: '풀숲 토벌',      waves: [{ a: 'odd', m: 'chimera', hp: 250, atk: 18, cd: 3 }] },
-  { name: '두 마리 출몰',   waves: [{ a: 'odd', m: 'chimera', hp: 280, atk: 18, cd: 3 }, { a: 'cry', m: 'chimera', hp: 320, atk: 22, cd: 3, hue: 200, title: '푸른' }] },
-  { name: '수상한 상자',    waves: [{ a: 'brave', m: 'mimic', hp: 520, atk: 27, cd: 3 }] },
-  { name: '숲 속 순찰',     waves: [{ a: 'odd', m: 'chimera', hp: 400, atk: 22, cd: 3 }, { a: 'brave', m: 'mimic', hp: 550, atk: 29, cd: 3 }] },
-  { name: '데카츠요 습격',  waves: [{ a: 'brave', m: 'dekatsuyo', hp: 1190, atk: 40, cd: 4, boss: true }] },
-  { name: '푸른 무리',      waves: [{ a: 'cry', m: 'chimera', hp: 600, atk: 25, cd: 3, hue: 200, title: '푸른' }, { a: 'cry', m: 'chimera', hp: 650, atk: 25, cd: 3, hue: 200, title: '푸른' }] },
-  { name: '붉은 미믹',      waves: [{ a: 'brave', m: 'mimic', hp: 650, atk: 32, cd: 3 }, { a: 'light', m: 'mimic', hp: 780, atk: 36, cd: 3, hue: 320, title: '붉은' }] },
-  { name: '연속 토벌',      waves: [{ a: 'odd', m: 'chimera', hp: 600, atk: 27, cd: 3 }, { a: 'brave', m: 'mimic', hp: 720, atk: 32, cd: 3 }, { a: 'brave', m: 'chimera', hp: 810, atk: 32, cd: 3, hue: 100, title: '초록' }] },
-  { name: '성급한 녀석',    waves: [{ a: 'dark', m: 'chimera', hp: 1190, atk: 29, cd: 2, hue: 250, title: '보라' }] },
-  { name: '토벌 대작전',    waves: [{ a: 'brave', m: 'mimic', hp: 850, atk: 36, cd: 3 }, { a: 'cry', m: 'chimera', hp: 950, atk: 36, cd: 3, hue: 200, title: '푸른' }, { a: 'dark', m: 'dekatsuyo', hp: 1690, atk: 43, cd: 4, hue: 30, title: '진·', boss: true }] },
+  { name: '풀숲 토벌',      waves: [{ a: 'odd', m: 'chimera', hp: 880, atk: 26, cd: 3 }] },
+  { name: '두 마리 출몰',   waves: [{ a: 'odd', m: 'chimera', hp: 570, atk: 39, cd: 3 }, { a: 'cry', m: 'chimera', hp: 650, atk: 48, cd: 3, hue: 200, title: '푸른' }] },
+  { name: '수상한 상자',    waves: [{ a: 'brave', m: 'mimic', hp: 2260, atk: 48, cd: 3 }] },
+  { name: '숲 속 순찰',     waves: [{ a: 'odd', m: 'chimera', hp: 1090, atk: 52, cd: 3 }, { a: 'brave', m: 'mimic', hp: 1500, atk: 68, cd: 3 }] },
+  { name: '데카츠요 습격',  waves: [{ a: 'brave', m: 'dekatsuyo', hp: 3820, atk: 76, cd: 4, boss: true }] },
+  { name: '푸른 무리',      waves: [{ a: 'cry', m: 'chimera', hp: 1500, atk: 51, cd: 3, hue: 200, title: '푸른' }, { a: 'cry', m: 'chimera', hp: 1620, atk: 51, cd: 3, hue: 200, title: '푸른' }] },
+  { name: '붉은 미믹',      waves: [{ a: 'brave', m: 'mimic', hp: 1760, atk: 54, cd: 3 }, { a: 'light', m: 'mimic', hp: 2110, atk: 60, cd: 3, hue: 320, title: '붉은' }] },
+  { name: '연속 토벌',      waves: [{ a: 'odd', m: 'chimera', hp: 1450, atk: 56, cd: 3 }, { a: 'brave', m: 'mimic', hp: 1740, atk: 66, cd: 3 }, { a: 'brave', m: 'chimera', hp: 1960, atk: 66, cd: 3, hue: 100, title: '초록' }] },
+  { name: '성급한 녀석',    waves: [{ a: 'dark', m: 'chimera', hp: 5340, atk: 50, cd: 2, hue: 250, title: '보라' }] },
+  { name: '토벌 대작전',    waves: [{ a: 'brave', m: 'mimic', hp: 1360, atk: 80, cd: 3 }, { a: 'cry', m: 'chimera', hp: 1520, atk: 80, cd: 3, hue: 200, title: '푸른' }, { a: 'dark', m: 'dekatsuyo', hp: 2700, atk: 95, cd: 4, hue: 30, title: '진·', boss: true }] },
 ];
 
 // 스테이지 시작 전 짧은 대사 (팬 창작)
