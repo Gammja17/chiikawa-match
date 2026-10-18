@@ -1,7 +1,7 @@
 {
   // 배포는 tools/build_dist.py 로 만든 dist/ 폴더만 (유료 원본·원본 다운로드는 빠짐)
   "$schema": "https://unpkg.com/wrangler/config-schema.json",
-  "name": "chiikawa-match",
+  "name": "chiikawa",
   "compatibility_date": "2026-10-12",
   // 버전별 미리보기 주소를 끔 (예전 버전이 따로 열리지 않게)
   "preview_urls": false,

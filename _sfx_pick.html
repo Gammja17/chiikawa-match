@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>효과음 고르기</title>
+<style>
+  :root { --bg: #fff7fb; --card: #fff; --ink: #4a4262; --sub: #8a83a3; --pink: #f27aa5; --line: #f1dbe6; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, sans-serif; padding: 16px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  p.hint { color: var(--sub); margin: 0 0 14px; font-size: 13px; }
+  .slot { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px; margin-bottom: 12px; }
+  .slot h2 { font-size: 16px; margin: 0; }
+  .slot small { color: var(--sub); display: block; margin-bottom: 8px; }
+  .opt { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 10px; cursor: pointer; }
+  .opt:hover { background: #fdf0f6; }
+  .opt.on { background: #ffe1ee; }
+  .opt button { flex: none; width: 34px; height: 34px; border-radius: 50%; border: 0; background: var(--pink); color: #fff; font-size: 14px; cursor: pointer; }
+  .opt .nm { flex: 1; }
+  .opt .meta { color: var(--sub); font-size: 12px; white-space: nowrap; }
+  .opt.cur button { background: #b9b2cc; }
+  #out { position: sticky; bottom: 0; background: var(--ink); color: #fff; border-radius: 12px; padding: 10px 12px; font-size: 13px; }
+</style>
+</head>
+<body>
+<h1>효과음 고르기</h1>
+<p class="hint">▶를 눌러 들어 보고, 마음에 드는 줄을 누르면 골라져요. 회색 ▶는 지금 게임 소리(Kenney 파일)예요. 고른 건 이 브라우저에 저장되니 다 고르면 채팅에 "다 골랐어"라고 말해 주세요.</p>
+<div id="list"></div>
+<div id="out"></div>
+<script>
+const PB = p => 'https://cdn.pixabay.com/audio/' + p;
+const MK = id => `https://assets.mixkit.co/active_storage/sfx/${id}/${id}-preview.mp3`;
+const OGA = f => 'https://opengameart.org/sites/default/files/' + f;
+const CUR = n => `assets/sfx/${n}.mp3`;
+const SLOTS = [
+  ['star', '별 (클리어 후 별이 하나씩 뜰 때, 음이 점점 올라감)', [
+    ['마림바 뽁 (floraphonic)', PB('2024/01/25/audio_6824ecd38b.mp3'), '2.0s'],
+    ['크리스털 차임 (Mixkit)', MK(3108), '2.0s'],
+    ['마법 반짝 (Universfield)', PB('2024/09/27/audio_13e824e22a.mp3'), '2.8s']]],
+  ['heal', '회복 (카니, 라멘 등)', [
+    ['하프 올라가는 소리 (floraphonic, 앞부분만 씀)', PB('2024/01/16/audio_596b88f0a3.mp3'), '5.4s'],
+    ['부드러운 물 회복 (Mixkit)', MK(878), '2s'],
+    ['하프 회복 (OpenGameArt)', OGA('health_restore.mp3'), '3.0s']]],
+  ['open', '시작 버튼, 기능 열림, 친구 데려오기', [
+    ['귀여운 레벨업 (floraphonic)', PB('2024/02/06/audio_315f50cf01.mp3'), '2.0s'],
+    ['새 아이템 열림 (Mixkit)', MK(254), '2s'],
+    ['만화 긍정 소리 (Mixkit)', MK(2255), '2s']]],
+  ['win', '퍼즐 판을 깬 순간', [
+    ['마림바 승리 F2 (floraphonic)', PB('2024/05/16/audio_1389727d3a.mp3'), '2.5s'],
+    ['마림바 승리 B3 (floraphonic)', PB('2024/05/16/audio_4f740d21da.mp3'), '2.5s'],
+    ['승리 알림 (Mixkit)', MK(2018), '1.8s'],
+    ['마법 마림바 (Mixkit)', MK(2820), '3s']]],
+  ['jingle_win', '승리 결과 화면 징글', [
+    ['You Win 시퀀스 (floraphonic, 4초쯤에서 끊음)', PB('2024/01/02/audio_bba05ac859.mp3'), '5.2s'],
+    ['레벨업 보너스 2 (floraphonic)', PB('2024/01/18/audio_eb5851f8cb.mp3'), '2.1s'],
+    ['레벨 완료 (Mixkit)', MK(2059), '3.5s'],
+    ['승리 징글 (OpenGameArt, Fupi)', OGA('winfretless_0.ogg'), '3.8s']]],
+  ['jingle_lose', '실패 화면 징글', [
+    ['바이올린 실패 (floraphonic)', PB('2023/11/09/audio_f62cfd6167.mp3'), '3.0s'],
+    ['마림바 실패 (Mixkit)', MK(2025), '4.0s'],
+    ['만화 피아노 실패 (Mixkit)', MK(473), '2s']]],
+  ['jingle_start', '토벌 시작', [
+    ['레벨업 보너스 1 (floraphonic)', PB('2024/01/18/audio_59431ce9eb.mp3'), '1.6s'],
+    ['음악 등장 (Mixkit)', MK(961), '2.5s'],
+    ['판타지 피리 (Coghezzi)', PB('2026/09/27/audio_9337dc94f4.mp3'), '3.0s']]],
+  ['jingle_skill', '스킬 컷인 (새 후보)', [
+    ['마법 알림 링 (Mixkit 2344)', MK(2344), '?'],
+    ['요정 마법 반짝 (Mixkit 871)', MK(871), '?'],
+    ['마법 전환 스윕 (Mixkit 2638)', MK(2638), '?'],
+    ['판타지 성공 알림 (Mixkit 270)', MK(270), '?'],
+    ['반짝 스윕 인트로 (Mixkit 2633)', MK(2633), '?'],
+    ['마법 지팡이 반짝 (Mixkit 3062)', MK(3062), '?'],
+    ['아케이드 마법 알림 (Mixkit 2342)', MK(2342), '?'],
+    ['마법 거품 주문 (Mixkit 2999)', MK(2999), '?'],
+    ['게임 피리 보너스 (Mixkit 2313)', MK(2313), '?'],
+    ['요정 아케이드 반짝 (Mixkit 866)', MK(866), '?']]],
+  ['enemy', '괴물이 공격할 때', [
+    ['만화 찰싹 2 (floraphonic)', PB('2024/02/06/audio_a35aec4cb2.mp3'), '1.3s'],
+    ['보잉 콩 (Mixkit)', MK(2894), '1.2s'],
+    ['만화 충격 (Universfield)', PB('2024/12/20/audio_c35e2bae71.mp3'), '1.8s']]],
+  ['wave', '다음 괴물 등장', [
+    ['슬라이드 휘슬 위로 (floraphonic)', PB('2023/11/16/audio_f850d1161e.mp3'), '1.3s'],
+    ['휙 1 (floraphonic)', PB('2024/01/17/audio_009e568069.mp3'), '1.5s'],
+    ['판타지 알림 (Mixkit)', MK(255), '3s']]],
+  ['defeat', '괴물 토벌', [
+    ['마법 펑 반짝 (Mixkit)', MK(3082), '3.2s'],
+    ['연기 펑 (floraphonic)', PB('2024/01/03/audio_28766ff9bd.mp3'), '1.5s'],
+    ['스프링 보잉 (Universfield)', PB('2023/02/23/audio_be301496db.mp3'), '2.2s']]],
+  ['pop', '구슬 터짐 (제일 자주 들림, 콤보마다 음이 올라감)', [
+    ['멀티 팝 (floraphonic)', PB('2024/01/25/audio_0a383a4c11.mp3'), '0.2s'],
+    ['거품 팝 (OpenGameArt)', OGA('pop.ogg'), '0.3s'],
+    ['해피 팝 (floraphonic)', PB('2024/01/11/audio_1818bba51e.mp3'), '1.0s']]],
+  ['swap', '구슬 자리 바꾸기', [
+    ['휙 3 (floraphonic)', PB('2024/01/17/audio_1227ff899a.mp3'), '1.0s'],
+    ['가벼운 팝 휙 (Mixkit)', MK(3005), '0.2s']]],
+  ['bad', '못 바꾸는 칸 / 실패 (새 후보, 자주 들림)', [
+    ['실패 드럼과 실로폰 (Mixkit 568)', MK(568), '?'],
+    ['실패 드럼과 벨 (Mixkit 571)', MK(571), '?'],
+    ['플레이어 실패 (Mixkit 2042)', MK(2042), '?'],
+    ['게임쇼 오답 (Mixkit 3219)', MK(3219), '?'],
+    ['기계식 오답 (Mixkit 3159)', MK(3159), '?'],
+    ['아케이드 실패 알림 (Mixkit 240)', MK(240), '?'],
+    ['만화 슬픈 파티 나팔 (Mixkit 527)', MK(527), '?'],
+    ['부정 기타 톤 (Mixkit 2324)', MK(2324), '?'],
+    ['만화 장난감 휘슬 (Mixkit 616)', MK(616), '?'],
+    ['딱딱한 팝 클릭 (Mixkit 2364)', MK(2364), '?']]],
+  ['click', '버튼 누를 때', [
+    ['캐주얼 클릭 팝 (floraphonic)', PB('2024/11/09/audio_77a7dba18c.mp3'), '0.4s'],
+    ['플라스틱 버블 클릭 (Mixkit)', MK(1124), '0.2s']]],
+  ['land', '구슬 떨어져 착지 / 친구 내려놓기', [
+    ['UI 팝업 (floraphonic)', PB('2024/03/24/audio_facff98b27.mp3'), '0.6s'],
+    ['공 톡 (Mixkit)', MK(2073), '?']]],
+  ['line', '로켓 줄 지우기 (새 후보)', [
+    ['빠른 작은 스윕 (Mixkit 166)', MK(166), '?'],
+    ['빠른 스윕 (Mixkit 174)', MK(174), '?'],
+    ['짧은 스윕 (Mixkit 175)', MK(175), '?'],
+    ['빠른 휙 (Mixkit 3115)', MK(3115), '?'],
+    ['짧은 바람 휙 (Mixkit 1461)', MK(1461), '?'],
+    ['빠르게 날아가는 휙 (Mixkit 1469)', MK(1469), '?'],
+    ['요정 반짝 휙 (Mixkit 869)', MK(869), '?'],
+    ['웃긴 게임 미끄럼 (Mixkit 2888)', MK(2888), '?'],
+    ['화살 휙 (Mixkit 1491)', MK(1491), '?'],
+    ['빠른 쓸기 (Mixkit 164)', MK(164), '?']]],
+  ['special', '아이템 생길 때', [
+    ['귀여운 레벨업 3 (floraphonic)', PB('2024/02/06/audio_4d73e45600.mp3'), '2.0s'],
+    ['마법 아이템 열림 (Mixkit)', MK(2349), '?']]],
+  ['sparkle', '반짝 (옷 갈아입기 등)', [
+    ['마법 반짝 터치 (Mixkit)', MK(3083), '2s'],
+    ['요정 반짝 (humordome)', PB('2025/12/14/audio_0057b0a77b.mp3'), '1.9s']]],
+  ['hit', '친구가 괴물을 때릴 때', [
+    ['만화 찰싹 1 (floraphonic)', PB('2024/02/06/audio_29e65233eb.mp3'), '1.6s'],
+    ['게임 작은 타격 (Mixkit)', MK(2072), '?']]],
+  ['rainbow', '무지개 폭탄', [
+    ['요정 가루 반짝 (floraphonic, 앞부분만 씀)', PB('2023/11/09/audio_1bd3dee973.mp3'), '6.5s'],
+    ['마법 반짝이 발사 (Mixkit)', MK(2353), '4s']]],
+];
+const KEY = 'sfxPick.v1';
+let pick = {};
+try { pick = JSON.parse(localStorage.getItem(KEY)) || {}; } catch {}
+if (!pick._v2) { delete pick.jingle_skill; delete pick.line; delete pick.bad; pick._v2 = 1; }
+let cur = null;
+const play = url => { if (cur) cur.pause(); cur = new Audio(url); cur.play().catch(() => {}); };
+const list = document.getElementById('list');
+SLOTS.forEach(([id, desc, opts]) => {
+  const box = document.createElement('div');
+  box.className = 'slot';
+  box.innerHTML = `<h2>${id}</h2><small>${desc}</small>`;
+  const rows = [...opts];
+  const hasCur = true;
+  if (hasCur) rows.unshift(['지금 소리', CUR(id === 'hit' ? 'hit1' : id), '', true]);
+  rows.forEach(([nm, url, dur, isCur], k) => {
+    const o = document.createElement('div');
+    o.className = 'opt' + (isCur ? ' cur' : '') + (pick[id] === k - (hasCur ? 1 : 0) && !isCur ? ' on' : '');
+    o.innerHTML = `<button>▶</button><span class="nm">${nm}</span><span class="meta">${dur}</span>`;
+    o.querySelector('button').onclick = e => { e.stopPropagation(); play(url); };
+    if (!isCur) o.onclick = () => {
+      pick[id] = k - (hasCur ? 1 : 0);
+      try { localStorage.setItem(KEY, JSON.stringify(pick)); } catch {}
+      box.querySelectorAll('.opt').forEach(x => x.classList.remove('on'));
+      o.classList.add('on');
+      play(url);
+      show();
+    };
+    box.appendChild(o);
+  });
+  list.appendChild(box);
+});
+const show = () => {
+  const n = Object.keys(pick).filter(k => k[0] !== '_').length;
+  document.getElementById('out').textContent = `${n} / ${SLOTS.length}개 골랐어요` + (n < SLOTS.length ? ` · 남은 것: ${SLOTS.filter(s => !(s[0] in pick)).map(s => s[0]).join(', ')}` : ' · 다 골랐어요!');
+};
+show();
+</script>
+</body>
+</html>
