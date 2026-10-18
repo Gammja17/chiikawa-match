@@ -466,16 +466,17 @@ img.shadow { filter: brightness(0) opacity(.15); }
 #app.tower-mode { background-color: #e6f6ff; background-image: radial-gradient(circle, #c9e9fb 1.2px, transparent 1.6px); }
 
 /* ---------- 도전 ---------- */
-.ch-body { flex: 1; display: flex; flex-direction: column; gap: 14px; padding: 8px 14px 20px; }
-.ch-card { display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 18px; background: #fff; box-shadow: var(--sh); text-align: left; }
+.ch-body { flex: 1; display: flex; flex-direction: column; gap: 14px; padding: 6px 14px 20px; min-height: 0; }
+/* 모드 카드: 그림을 꽉 채우고 왼쪽 아래에 흰 이름표 */
+.ch-card { position: relative; flex: 1; min-height: 120px; max-height: 190px; border-radius: 18px; overflow: hidden; background: #ddd center / cover no-repeat; box-shadow: var(--sh); text-align: left; }
 .ch-card:active { transform: scale(.97); }
-.ch-card > img { width: 64px; height: 64px; flex: none; }
-.ch-card b { display: block; font-family: var(--head); font-size: 28px; line-height: 1.1; }
-.ch-card small { display: block; color: var(--ink2); font-size: 14px; }
-.ch-card span { display: inline-block; margin-top: 4px; padding: 1px 10px; border-radius: 9px; background: var(--pink-l); color: var(--pink); font-size: 14px; }
-.ch-card.tower { background: #e9f7ff; }
-.ch-card.contest { background: #eefae6; }
-.ch-card.rank { background: #fff7dc; }
+.ch-card.tower { background-image: url(../assets/img/art/ch_tower.jpg); background-position: center 30%; }
+.ch-card.contest { background-image: url(../assets/img/art/ch_contest.jpg); background-position: center 40%; }
+.ch-card.rank { background-image: url(../assets/img/art/ch_rank.jpg); background-position: center 60%; }
+.ch-label { position: absolute; left: 10px; bottom: 10px; padding: 6px 12px 7px; border-radius: 12px; background: rgba(255, 255, 255, .92); }
+.ch-label b { display: block; font-family: var(--head); font-size: 24px; line-height: 1.1; }
+.ch-label small { display: block; color: var(--ink2); font-size: 13px; }
+.ch-label span { display: inline-block; margin-top: 3px; padding: 0 9px; border-radius: 8px; background: var(--pink); color: #fff; font-size: 13px; }
 
 /* ---------- 랭킹 ---------- */
 .rank-tabs { display: flex; gap: 6px; margin: 0 14px 10px; padding: 4px; border-radius: 14px; background: #fff; box-shadow: var(--sh); }

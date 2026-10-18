@@ -70,6 +70,7 @@ python -m http.server 8770
 ## 저작권과 출처
 
 - 캐릭터, 몬스터 이미지: © nagano / chiikawa committee. 퍼즐 얼굴은 인터넷에서 모은 이미지, 전신·포즈 일러스트와 몬스터는 [Chiikawa Wiki (Fandom)](https://chiikawa.fandom.com/)에서 가져왔습니다. 이미지의 권리는 원저작자에게 있으며, 이 저장소의 라이선스 대상이 아닙니다.
+- 도전 화면 그림(인어섬, 제초 검정, 랏코), 타이틀 풀밭 그림: 원작 애니메이션·게임 이미지 (© nagano / chiikawa committee, 「映画ちいかわ」製作委員会, Applibot)
 - 배경, 터짐 조각: [VARCO](https://3d.varco.ai)로 생성
 - 효과음: 구슬 터짐, 로켓, 타격 같은 퍼즐 소리는 코드(`js/audio.js`)로 직접 합성. 징글과 일부 효과음은 [Kenney](https://kenney.nl) Interface Sounds, Digital Audio, Impact Sounds, Music Jingles (CC0). 라이선스 원문은 `assets/sfx/LICENSE-kenney*.txt` (아이폰 재생을 위해 mp3로 변환)
 - 파티클 이펙트: [Kenney Particle Pack](https://kenney.nl/assets/particle-pack) (CC0). 라이선스 원문은 `assets/img/fx/k/LICENSE-kenney-particles.txt`
