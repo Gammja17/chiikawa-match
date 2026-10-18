@@ -191,7 +191,6 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 #party .pm:active { transform: scale(.94); }
 #party .pm-face { width: 100%; height: 100%; border-radius: 50%; display: grid; place-items: center; overflow: hidden; }
 #party .pm .fig { width: 92%; height: 92%; margin-top: 8%; }
-#party .pm .fig .acc { top: -4%; }
 #party .pm > .ai { position: absolute; left: -5px; top: -5px; }
 #party .pm .g { display: none; }
 #party .pm .up { display: none; position: absolute; right: -5px; top: -5px; width: 20px; height: 20px; border-radius: 50%; background: var(--red); border: 2px solid #fff; }
@@ -259,7 +258,6 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 .p.spr { width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 0; background: center / contain no-repeat; }
 .p.spr.big { width: 34px; height: 34px; margin: -17px 0 0 -17px; }
 .kp { position: absolute; pointer-events: none; -webkit-mask: var(--m) center / contain no-repeat; mask: var(--m) center / contain no-repeat; background: var(--c, #fff); }
-.proj { position: absolute; width: 38px; height: 38px; margin: -19px 0 0 -19px; background: center / contain no-repeat; }
 .num { position: absolute; font-size: 32px; line-height: 1.15; color: #fff; -webkit-text-stroke: 7px var(--ink); paint-order: stroke fill; white-space: nowrap; transform: translate(-50%, -50%); }
 .num.crit { font-size: 43px; color: var(--gold); }
 .num.small { font-size: 24px; }
@@ -268,7 +266,6 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 .beam { position: absolute; border-radius: 99px; background: #fff; box-shadow: 0 0 0 4px #bfe9ff, 0 0 18px 8px #9fdcff; }
 .blast { position: absolute; border-radius: 50%; transform: translate(-50%, -50%); background: #fff; box-shadow: 0 0 0 8px #ffe48a; }
 .ring { position: absolute; border-radius: 50%; border: 5px solid #fff; transform: translate(-50%, -50%); }
-.popflash { position: absolute; pointer-events: none; -webkit-mask: url(../assets/img/fx/k/light_02.png) center / contain no-repeat; mask: url(../assets/img/fx/k/light_02.png) center / contain no-repeat; background: #fff; }
 .slash { position: absolute; width: 170px; height: 60px; -webkit-mask: url(../assets/img/fx/k/slash_03.png) center / contain no-repeat; mask: url(../assets/img/fx/k/slash_03.png) center / contain no-repeat; background: var(--c); }
 .plane-fly { position: absolute; width: 50px; height: 50px; z-index: 2; }
 .plane-fly img { width: 100%; height: 100%; filter: drop-shadow(0 3px 0 #4a426240); }
@@ -377,9 +374,6 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 /* ---------- 그림 + 액세서리 ---------- */
 .fig { position: relative; display: inline-block; line-height: 0; }
 .fig > img:first-child { width: 100%; height: 100%; object-fit: contain; }
-.fig .acc { position: absolute; left: 50%; top: -14%; width: 44%; transform: translateX(-50%) rotate(-8deg); pointer-events: none; }
-.fig .acc.eyes { top: 26%; width: 50%; transform: translateX(-50%); }
-.fig.big .acc { width: 36%; top: -6%; }
 img.shadow { filter: brightness(0) opacity(.15); }
 
 /* ---------- 친구 상세 ---------- */
@@ -449,7 +443,22 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .resident { position: absolute; width: 17%; transform: translate(-50%, -100%); cursor: grab; touch-action: none; }
 .resident .fig { animation: hop 1.2s ease-in-out infinite; transform-origin: 50% 100%; }
 .resident.held { cursor: grabbing; }
-.resident.held .fig { animation: none; transform: translateY(-14px) scale(1.12) rotate(-6deg); filter: drop-shadow(0 12px 6px rgba(74, 66, 98, .25)); }
+.resident.press .fig { animation: none; transform: scale(1.1, .88); transition: transform .08s; }
+.resident.held { transform-origin: 50% 0; } /* 머리를 잡고 든 것처럼 위를 축으로 흔들림 */
+.resident.held .fig { animation: flail var(--flail, .2s) ease-in-out infinite alternate; filter: drop-shadow(0 12px 6px rgba(74, 66, 98, .25)); }
+.resident.wail .fig { animation-duration: .08s; }
+@keyframes flail { from { transform: translateY(-14px) scale(1.12) rotate(-8deg); } to { transform: translateY(-20px) scale(1.08, 1.16) rotate(8deg); } }
+.rfx { position: absolute; inset: 0; pointer-events: none; }
+/* 눈물: 양쪽 눈에서 방울이 떨어짐 */
+.resident.tears .rfx::before, .resident.tears .rfx::after { content: ''; position: absolute; top: var(--eye, 40%); left: 33%; width: 8%; aspect-ratio: 3 / 4; background: #8fd3ff; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; animation: tear .45s ease-in infinite; }
+.resident.tears .rfx::after { left: auto; right: 33%; animation-delay: .22s; --tx: 8px; }
+.resident.wail .rfx::before, .resident.wail .rfx::after { width: 11%; animation-duration: .25s; }
+@keyframes tear { from { transform: translate(0, 0) scale(.5); opacity: 1; } to { transform: translate(var(--tx, -8px), 36px) scale(1); opacity: 0; } }
+/* 땀: 머리 옆에 한 방울 */
+.resident.sweat .rfx::before { content: ''; position: absolute; top: 6%; right: 8%; width: 10%; aspect-ratio: 3 / 4; background: #bfe6ff; border: 2px solid #6aaee0; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; animation: bob .6s ease-in-out infinite; }
+/* 반짝: 기존 twinkle 그림 재사용 */
+.resident.sparkle .rfx::before, .resident.sparkle .rfx::after { content: ''; position: absolute; top: 0; left: -6%; width: 22%; aspect-ratio: 1; background: url(../assets/img/fx/twinkle1.png) center / contain no-repeat; animation: pulse .5s ease-in-out infinite; }
+.resident.sparkle .rfx::after { top: 22%; left: auto; right: -8%; animation-delay: .25s; }
 .resident .fig { width: 100%; }
 .resident.flip .fig > img:first-child { transform: scaleX(-1); }
 .rsay { box-shadow: var(--sh); position: absolute; left: 50%; bottom: 100%; white-space: nowrap; background: var(--paper); border-radius: 10px; padding: 2px 8px; font-family: var(--hand); font-weight: 700; font-size: 16px; opacity: 0; transform: translateX(-50%); pointer-events: none; }
@@ -661,7 +670,16 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .cine-logo b { display: block; font-family: var(--head); font-weight: 400; font-size: 58px; line-height: 1.05; color: var(--pink); -webkit-text-stroke: .14em #fff; paint-order: stroke fill; white-space: nowrap; }
 
 /* 깨진 구슬 조각 */
-.tshard { position: absolute; pointer-events: none; background-size: 100% 100%; will-change: transform, opacity; }
 .rtrail { position: absolute; pointer-events: none; z-index: 2; border-radius: 99px; background: linear-gradient(0deg, #9fdcff, #fff 35% 65%, #9fdcff); box-shadow: 0 0 14px 4px rgba(159, 220, 255, .8); }
 .rtrail.v { background: linear-gradient(90deg, #9fdcff, #fff 35% 65%, #9fdcff); }
 .p-reset { display: block; margin: 0 auto 14px; padding: 4px 10px; background: none; color: var(--ink2); font-family: var(--head); font-size: 15px; text-decoration: underline; }
+
+/* 얼굴 출동: 날아가는 스티커 */
+.fly-tile { position: absolute; z-index: 6; pointer-events: none; filter: drop-shadow(0 3px 2px #4a3a7a40); will-change: transform; }
+/* 목표 하나 끝: 초록 체크 도장 */
+.goal-check { position: absolute; z-index: 8; font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 44px; color: #fff; -webkit-text-stroke: 9px #3fbf7f; paint-order: stroke fill; pointer-events: none; }
+/* 모든 목표 완료 띠 */
+.goal-strip { position: absolute; left: -6%; right: -6%; top: 34%; height: 104px; z-index: 27; display: flex; align-items: center; gap: 8px; padding-left: 12%; background: #ff6fa5; box-shadow: 0 0 0 6px #fff, 0 10px 0 6px #0002; pointer-events: none;
+  background-image: radial-gradient(circle, #ffffff40 0 3px, transparent 4px); background-size: 22px 22px; }
+.goal-strip img { height: 150px; margin-top: -40px; filter: drop-shadow(0 0 0 #fff) drop-shadow(3px 0 0 #fff) drop-shadow(-3px 0 0 #fff) drop-shadow(0 -3px 0 #fff); }
+.goal-strip span { font-size: 34px; color: #fff; -webkit-text-stroke: 7px #d94a86; paint-order: stroke fill; transform: skewX(8deg); white-space: nowrap; }

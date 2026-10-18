@@ -1,0 +1,29 @@
+rules_version = '2';
+// 진행 저장(users)은 본인만 읽고 씀. 랭킹(scores)은 누구나 읽고, 본인 기록만 '올리는' 쪽으로만 바꿀 수 있음
+service cloud.firestore {
+  match /databases/{db}/documents {
+    match /users/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['data', 'at'])
+        && request.resource.data.data is string && request.resource.data.data.size() < 200000
+        && request.resource.data.at is number;
+    }
+    match /scores/{uid} {
+      allow read: if true;
+      allow create: if request.auth != null && request.auth.uid == uid && valid(request.resource.data);
+      allow update: if request.auth != null && request.auth.uid == uid && valid(request.resource.data)
+        && request.resource.data.cleared >= resource.data.cleared
+        && request.resource.data.tower >= resource.data.tower
+        && request.resource.data.contest >= resource.data.contest;
+    }
+  }
+  function valid(d) {
+    return d.keys().hasOnly(['name', 'cleared', 'tower', 'contest', 'updated'])
+      && d.name is string && d.name.size() > 0 && d.name.size() <= 12
+      && d.cleared is int && d.cleared >= 0 && d.cleared <= 40
+      && d.tower is int && d.tower >= 0 && d.tower <= 999
+      && d.contest is int && d.contest >= 0 && d.contest <= 300000
+      && d.updated == request.time;
+  }
+}

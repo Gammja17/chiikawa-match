@@ -266,13 +266,18 @@ const Life = {
     $('.lh-limit').classList.toggle('danger', st.time ? L.time <= 10 : L.moves <= 3);
     const html = st.contest ? `<div class="gchip best"><img src="${ITEM('medal')}"><b>${Save.data.contestBest || 0}</b></div>` : st.goals.map(g => {
       const n = Life.remain(g);
-      return `<div class="gchip ${g.k}${n ? '' : ' done'}"><img src="${GOAL_ICON[g.k](g)}"><b>${n || '✓'}</b></div>`;
+      return `<div class="gchip ${g.k}${n ? '' : ' done'}" data-id="${g.id || ''}"><img src="${GOAL_ICON[g.k](g)}"><b>${n || '✓'}</b></div>`;
     }).join('');
     if (html !== L.goalsHtml) {
       const was = L.goalsHtml;
       $('#lhGoals').innerHTML = L.goalsHtml = html;
       if (was) $('#lhHelper').animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-10px) rotate(-4deg)' }, { transform: 'none' }], { duration: 300 });
+      if (!st.contest) st.goals.forEach((g, k) => {
+        const n = Life.remain(g), before = (L.prevRemain || [])[k];
+        if (n === 0 && before > 0) Life.goalDone($('#lhGoals').children[k]);
+      });
     }
+    if (!st.contest) L.prevRemain = st.goals.map(g => Life.remain(g));
     const top = st.stars[2] * 1.12;
     $('#lhScore .fill').style.width = Math.min(1, L.score / top) * 100 + '%';
     [...$('#lhScore .bar').querySelectorAll('i')].forEach((m, k) => {
@@ -385,6 +390,39 @@ const Life = {
     if (L.st.time ? L.time <= 0 : L.moves <= 0) return Life.fail();
   },
 
+  // 목표 하나 끝: 칩이 통 부풀고 초록 체크가 쾅 + 반짝
+  goalDone(chip) {
+    if (!chip) return;
+    const c = centerOf(chip);
+    chip.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.5) rotate(-8deg)', filter: 'brightness(1.4)', offset: 0.45 }, { transform: 'scale(.92)', offset: 0.75 }, { transform: 'scale(1)' }], { duration: 520, easing: 'ease-out' });
+    const ck = addFx('goal-check', c.x, c.y);
+    ck.textContent = '✓';
+    ck.animate([{ transform: 'translate(-50%,-50%) scale(2.6) rotate(-20deg)', opacity: 0 }, { transform: 'translate(-50%,-50%) scale(.9) rotate(0)', opacity: 1, offset: 0.55 }, { transform: 'translate(-50%,-50%) scale(1)', opacity: 1, offset: 0.8 }, { transform: 'translate(-50%,-70%) scale(1)', opacity: 0 }],
+      { duration: 900, easing: 'ease-out' }).finished.then(() => ck.remove());
+    kx('explosion01', 'star_09', c.x, c.y, B.S * 2.4, '#7be0a0', [{ transform: 'scale(.2)', opacity: 1 }, { transform: 'scale(1.1) rotate(30deg)', opacity: 0 }], { duration: 420, easing: 'ease-out' });
+    burst(c.x, c.y, '#7be0a0', 12);
+    Sound.play('star', 1.25, 0.9);
+    Sound.play('sparkle', 1.3, 0.6);
+    Haptic.tap(25);
+  },
+
+  // 모든 목표 완료: 띠가 쓱 들어오고 이번 판 친구가 반가워함
+  async allDone() {
+    const el = document.createElement('div');
+    el.className = 'goal-strip';
+    el.innerHTML = `<img src="${art(L.st.host || 'chiikawa')}"><span>${L.st.exam ? '합격 점수!' : '모든 목표 완료!'}</span>`;
+    app.appendChild(el);
+    Sound.play('jingle_win', 1.1, 0.8);
+    Haptic.tap(30);
+    const [img] = el.children;
+    el.animate([{ transform: 'translateX(-110%) skewX(-8deg)' }, { transform: 'translateX(3%) skewX(-8deg)', offset: 0.7 }, { transform: 'translateX(0) skewX(-8deg)' }], { duration: 360, easing: 'ease-out', fill: 'backwards' });
+    img.animate([{ transform: 'translateY(40%) rotate(-10deg)' }, { transform: 'translateY(-8%) rotate(4deg)', offset: 0.7 }, { transform: 'none' }], { duration: 420, delay: 180, easing: 'ease-out', fill: 'backwards' });
+    confetti(12);
+    await sleep(1150);
+    await el.animate([{ transform: 'translateX(0) skewX(-8deg)', opacity: 1 }, { transform: 'translateX(110%) skewX(-8deg)', opacity: 0 }], { duration: 260, easing: 'ease-in', fill: 'forwards' }).finished;
+    el.remove();
+  },
+
   // 남은 이동(시간 3초마다)을 줄폭탄으로 바꿔 한꺼번에 터뜨림
   async bonus() {
     const left = () => (L.st.time ? Math.floor(L.time / 3) : L.moves);
@@ -392,7 +430,10 @@ const Life = {
     banner('보너스 타임!', 500);
     await sleep(600);
     const cells = pickTiles(Math.min(left(), 12));
+    const from = centerOf($('.lh-limit'));
     for (const [i, [r, c]] of cells.entries()) {
+      flyTile(ITEM('rocket'), from, tileCenter(r, c), 0, '#bfe9ff');
+      await sleep(330);
       const t = B.grid[r][c];
       t.special = Math.random() < 0.5 ? 'h' : 'v';
       t.type = -1;
@@ -422,7 +463,7 @@ const Life = {
     B.busy = true;
     Life.stopTimer();
     clearSel();
-    await banner(L.st.exam ? '합격 점수!' : '목표 달성!', 500);
+    await Life.allDone();
     await Life.bonus();
     B.over = true;
     if (L.run.kind === 'tower') return Tower.cleared();

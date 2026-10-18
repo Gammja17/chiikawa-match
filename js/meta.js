@@ -1,26 +1,23 @@
-// 모으기와 꾸미기: 코인, 캡슐 뽑기(친구, 액세서리), 친구 레벨, 집 꾸미기, 매일 용돈, 친구 이야기, 목소리 칸
+// 모으기와 꾸미기: 코인, 캡슐 뽑기(친구, 옷), 친구 레벨, 집 꾸미기, 매일 용돈, 친구 이야기, 목소리 칸
 const STARTERS = ['chiikawa']; // 처음엔 치이카와 혼자. 나머지는 스테이지, 간식, 라멘 가게, 뽑기로 한 명씩
 const LV_MAX = 10;
 const GACHA_COST = 100;
-// at: 붙는 자리 (head 머리 위, eyes 눈)
-const ACCS = [
-  { id: 'ribbon', name: '분홍 리본' }, { id: 'crown', name: '왕관' }, { id: 'tophat', name: '실크햇' },
-  { id: 'cap', name: '야구 모자' }, { id: 'shades', name: '선글라스', at: 'eyes' }, { id: 'sakura', name: '벚꽃 핀' },
-  { id: 'gradcap', name: '학사모' }, { id: 'berry', name: '딸기 핀' }, { id: 'star', name: '별 핀' }, { id: 'phones', name: '헤드폰' },
-];
 // x, y: 방 안 위치(%), w: 너비(%)
+// 치이카와네 원룸에 있을 법한 살림 (VARCO로 원작 느낌 그림)
 const FURN = [
-  { id: 'plant', name: '화분', price: 80, x: 8, y: 58, w: 15 },
-  { id: 'candle', name: '촛불', price: 60, x: 40, y: 47, w: 8 },
-  { id: 'sunflower', name: '해바라기', price: 70, x: 91, y: 60, w: 14 },
-  { id: 'clock', name: '벽시계', price: 90, x: 72, y: 16, w: 12 },
-  { id: 'teddy', name: '곰 인형', price: 100, x: 50, y: 80, w: 13 },
-  { id: 'frame', name: '그림 액자', price: 120, x: 30, y: 18, w: 17 },
-  { id: 'mirror', name: '거울', price: 150, x: 90, y: 34, w: 13 },
-  { id: 'sofa', name: '소파', price: 200, x: 22, y: 74, w: 30 },
-  { id: 'tv', name: 'TV', price: 250, x: 55, y: 48, w: 19 },
-  { id: 'bed', name: '침대', price: 300, x: 76, y: 76, w: 32 },
+  { id: 'f_tissue', name: '휴지 상자', price: 50, x: 46, y: 60, w: 10 },
+  { id: 'f_grass', name: '풀 화분', price: 60, x: 92, y: 62, w: 13 },
+  { id: 'f_cushion', name: '방석', price: 70, x: 26, y: 86, w: 18 },
+  { id: 'f_clock', name: '자명종', price: 90, x: 72, y: 16, w: 13 },
+  { id: 'f_board', name: '스티커 게시판', price: 110, x: 32, y: 18, w: 20 },
+  { id: 'f_rice', name: '밥솥', price: 130, x: 10, y: 84, w: 15 },
+  { id: 'f_table', name: '밥상', price: 150, x: 46, y: 74, w: 24 },
+  { id: 'f_fridge', name: '작은 냉장고', price: 200, x: 9, y: 60, w: 17 },
+  { id: 'f_tv', name: '옛날 TV', price: 240, x: 62, y: 60, w: 17 },
+  { id: 'f_futon', name: '이불', price: 300, x: 78, y: 78, w: 30 },
 ];
+// 예전 가구를 산 사람은 새 살림으로 바꿔 줌
+const FURN_OLD = { plant: 'f_grass', candle: 'f_tissue', sunflower: 'f_cushion', clock: 'f_clock', teddy: 'f_rice', frame: 'f_board', mirror: 'f_fridge', sofa: 'f_table', tv: 'f_tv', bed: 'f_futon' };
 // 레벨이 오르면 열리는 짧은 이야기 (팬 창작)
 const CHAR_STORY = {
   chiikawa: [[2, [['chiikawa', '(풀 뽑기 끝…)'], ['chiikawa', '(오늘 번 돈으로… 뭐 먹지…)'], ['hachiware', '치이카와~ 라멘 먹으러 가자!'], ['chiikawa', '…!! (끄덕끄덕)']]]],
@@ -61,8 +58,10 @@ const Meta = {
     if (d.coins == null) d.coins = 300; // 처음 시작 선물: 뽑기 3번
     d.own = d.own || {};
     [...STARTERS, ...(d.team || [])].forEach(id => { if (!d.own[id]) d.own[id] = 1; });
-    d.acc = d.acc || [];
-    d.wear = d.wear || {};
+    // 예전 액세서리는 하나에 40코인으로 돌려주고 정리 (옷 갈아입기로 바뀜)
+    if (d.acc) { d.coins += d.acc.length * 40; delete d.acc; delete d.wear; }
+    d.skins = d.skins || {};   // 가진 옷 { 친구id: [옷id] }
+    d.outfit = d.outfit || {}; // 입은 옷 { 친구id: 옷id }
     d.furn = d.furn || [];
     d.treats = d.treats || {};
     Save.save();
@@ -146,11 +145,18 @@ const Meta = {
     Meta.addCoins(n);
     return n;
   },
-  // 액세서리를 얹은 그림 (face: 얼굴 그림이면 true)
+  // 친구 그림. 전신 그림이면 입힌 옷 그림으로 통째로 바꿔 끼움 (퍼즐 얼굴은 그대로)
   figure(id, src, cls = '') {
-    const a = ACCS.find(x => x.id === Save.data.wear[id]);
-    return `<span class="fig ${cls}"><img src="${src}" draggable="false">` +
-      (a ? `<img class="acc ${a.at || 'head'}" src="${ITEM(a.id)}" draggable="false">` : '') + '</span>';
+    const s = Save.data.outfit[id];
+    if (s && src === art(id) && SKINS[id]?.[s]) src = SKIN(id, s);
+    return `<span class="fig ${cls}"><img src="${src}" draggable="false"></span>`;
+  },
+  // 표정 바꾸기: 기본 옷이고 그 표정 그림이 있으면 바꿔 끼움. m을 비우면 원래대로 (바꿨으면 true)
+  mood(fig, id, m) {
+    const img = fig.querySelector('img'), f = m && !Save.data.outfit[id] && MOODS[id]?.[m];
+    img.dataset.src = img.dataset.src || img.getAttribute('src');
+    img.src = f ? `assets/img/skins/${id}/${f}` : img.dataset.src;
+    return !!f;
   },
   checkDaily() {
     if (Save.data.daily === today()) return;
@@ -249,8 +255,8 @@ const Sheet = {
       ${own ? `<div class="sheet-lv"><b>Lv ${lv}</b><div class="lvbar"><i style="width:${(lv / LV_MAX) * 100}%"></i></div><small>${lv >= LV_MAX ? 'MAX' : '뽑기에서 또 만나면 레벨 업'}</small></div>` : Sheet.recruitHtml(id)}
       <div class="sheet-rows"><div>${ch.heal ? '회복' : '공격'}<b>${stat.split(' ')[1]}</b></div><div>속성<b>${ATTR[ch.attr].icon}${ATTR[ch.attr].name}</b></div><div>스킬 게이지<b>${ch.skill.need}</b></div></div>
       <div class="sheet-skill"><b>${ch.skill.name}</b> ${ch.skill.desc}</div>
-      ${own ? `<div class="sheet-label">액세서리</div><div class="sheet-accs"><button data-a="" class="${Save.data.wear[id] ? '' : 'on'}">없음</button>${Save.data.acc.map(a => `<button data-a="${a}" class="${Save.data.wear[id] === a ? 'on' : ''}"><img src="${ITEM(a)}"></button>`).join('') || ''}</div>
-        ${Save.data.acc.length ? '' : '<small class="sheet-hint">캡슐 뽑기에서 액세서리를 모아 보세요</small>'}` : ''}
+      ${own && SKINS[id] ? `<div class="sheet-label">옷</div><div class="sheet-accs"><button data-s="" class="${Save.data.outfit[id] ? '' : 'on'}">기본</button>${(Save.data.skins[id] || []).map(s => `<button data-s="${s}" class="${Save.data.outfit[id] === s ? 'on' : ''}"><img src="${SKIN(id, s)}"></button>`).join('')}</div>
+        ${(Save.data.skins[id] || []).length ? '' : '<small class="sheet-hint">캡슐 뽑기에서 옷을 모아 보세요</small>'}` : ''}
       <div class="sheet-stories">${own ? stories : ''}</div>
       <div class="sheet-btns"><button class="big-btn ghost" data-close>닫기</button>${opts.action && own ? `<button class="big-btn" data-act>${opts.action.label}</button>` : ''}</div>`;
     const say = () => {
@@ -262,7 +268,7 @@ const Sheet = {
     };
     card.querySelector('.sheet-art').onclick = () => own && say();
     card.querySelectorAll('.sheet-accs button').forEach(b => (b.onclick = () => {
-      if (b.dataset.a) Save.data.wear[id] = b.dataset.a; else delete Save.data.wear[id];
+      if (b.dataset.s) Save.data.outfit[id] = b.dataset.s; else delete Save.data.outfit[id];
       Save.save();
       Sound.play('sparkle', 1.3, 0.6);
       Sheet.open(id, opts);
@@ -315,9 +321,15 @@ async function pullGacha() {
   if (Save.data.coins < GACHA_COST || wiping) return;
   Meta.addCoins(-GACHA_COST);
   $('#btnPull').disabled = true;
-  // 뽑기: 친구 60%, 액세서리 40%
+  // 뽑기: 아직 없는 옷이 남아 있으면 40%로 옷, 아니면 친구 (내가 가진 친구의 옷만 나옴)
   let prize;
-  if (Math.random() < 0.6) {
+  const left = Object.entries(SKINS).flatMap(([cid, ss]) => Meta.owned(cid)
+    ? Object.keys(ss).filter(s => !(Save.data.skins[cid] || []).includes(s)).map(s => [cid, s]) : []);
+  if (left.length && Math.random() < 0.4) {
+    const [cid, s] = left[Math.floor(Math.random() * left.length)];
+    (Save.data.skins[cid] = Save.data.skins[cid] || []).push(s);
+    prize = { kind: 'skin', id: cid, skin: s };
+  } else {
     // 간식·스테이지로 데려오는 친구는 처음엔 뽑기에서 안 나옴
     const pool = CHARS.filter(c => !RECRUIT[c.id] || Meta.owned(c.id));
     const c = pool[Math.floor(Math.random() * pool.length)];
@@ -325,10 +337,6 @@ async function pullGacha() {
     if (!lv) { Save.data.own[c.id] = 1; prize = { kind: 'new', id: c.id }; }
     else if (lv < LV_MAX) { Save.data.own[c.id] = lv + 1; prize = { kind: 'up', id: c.id, lv: lv + 1 }; }
     else { Save.data.coins += 50; prize = { kind: 'max', id: c.id }; }
-  } else {
-    const a = ACCS[Math.floor(Math.random() * ACCS.length)];
-    if (Save.data.acc.includes(a.id)) { Save.data.coins += 40; prize = { kind: 'accdup', acc: a }; }
-    else { Save.data.acc.push(a.id); prize = { kind: 'acc', acc: a }; }
   }
   Save.save();
   // 캡슐이 덜컹덜컹 굴러 나와 톡 열림
@@ -336,7 +344,7 @@ async function pullGacha() {
   Sound.play('click', 0.8, 0.9);
   await m.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(-6deg)' }, { transform: 'rotate(6deg)' }, { transform: 'rotate(-4deg)' }, { transform: 'rotate(0)' }], { duration: 500 }).finished;
   const cap = $('#capsule');
-  const hue = prize.kind === 'new' ? '#ff8ab8' : prize.kind.startsWith('acc') ? '#8fd3ff' : '#ffd84d';
+  const hue = prize.kind === 'new' ? '#ff8ab8' : prize.kind === 'skin' ? '#8fd3ff' : '#ffd84d';
   cap.style.setProperty('--cap', hue);
   cap.className = 'capsule show';
   Sound.play('land', 1.2, 0.8);
@@ -360,13 +368,12 @@ async function pullGacha() {
     new: () => ({ title: '새 친구!', char: prize.id, text: `${ch.name}: "${lineOf(ch.id)}"`, rows: [['친구', ch.name], ['레벨', 'Lv1']] }),
     up: () => ({ title: '레벨 업!', char: prize.id, text: `${ch.name}이(가) 더 강해졌어요!`, rows: [['친구', ch.name], ['레벨', `Lv${prize.lv}`], ['공격·회복', `+${Math.round((Meta.mult(prize.id) - 1) * 100)}%`]] }),
     max: () => ({ title: '이미 최고 레벨', char: prize.id, text: '대신 코인 50개를 돌려받았어요.', rows: [['코인', '+50']] }),
-    acc: () => ({ title: '새 액세서리!', img: ITEM(prize.acc.id), text: `${prize.acc.name}! 친구 상세에서 씌워 줄 수 있어요.`, rows: [] }),
-    accdup: () => ({ title: '이미 있는 액세서리', img: ITEM(prize.acc.id), text: '대신 코인 40개를 돌려받았어요.', rows: [['코인', '+40']] }),
+    skin: () => ({ title: '새 옷!', img: SKIN(prize.id, prize.skin), text: `${ch.name}의 ${SKINS[prize.id][prize.skin].name}! 친구 상세에서 갈아입힐 수 있어요.`, rows: [] }),
   }[prize.kind]();
   if (prize.kind === 'new' || prize.kind === 'up') Sound.voice(prize.id, 'pick');
   Meta.coinUI();
   modal({ ...info, btn1: '좋아!', on1: () => { cap.className = 'capsule'; openGacha(); } });
-  $('#modalChar').classList.toggle('icon', !!info.img);
+  $('#modalChar').classList.toggle('icon', !!info.img && prize.kind !== 'skin');
 }
 
 // ---------- 친구네 집: 친구마다 자기 집이 있고, 가구를 놓고, 같이 살 친구를 정함 ----------
@@ -378,6 +385,10 @@ const homes = () => {
   if (!d.homes) {
     d.homes = {};
     if (d.furn && d.furn.length) d.homes.chiikawa = { furn: d.furn.slice(), mates: [] }; // 예전 '우리 집' 가구는 치이카와네로
+  }
+  if (!d.furnV2) {
+    Object.values(d.homes).forEach(h => (h.furn = [...new Set((h.furn || []).map(f => FURN_OLD[f] || f))]));
+    d.furnV2 = 1;
   }
   return d.homes;
 };
@@ -415,33 +426,82 @@ function openHouse(id = homeOf) {
     const [x, y] = h.pos[cid] || [[50, 26, 74][k], [80, 74, 74][k]];
     const put = (nx, ny) => Object.assign(el.style, { left: nx + '%', top: ny + '%', zIndex: Math.round(ny) });
     put(x, y);
-    el.querySelector('.fig').style.animationDelay = k * 0.2 + 's';
-    const say = () => {
+    const R = REACT[c.id] || REACT._, pick = a => a[Math.floor(Math.random() * a.length)];
+    const fig = el.querySelector('.fig');
+    fig.style.animationDelay = k * 0.2 + 's';
+    fig.insertAdjacentHTML('beforeend', '<i class="rfx"></i>');
+    el.style.setProperty('--flail', R.flail + 's');
+    // 표정 바꾸기 (표정 그림일 때는 눈물 위치도 그 그림 눈에 맞춤)
+    let moodT = 0;
+    const mood = (m, ms) => {
+      clearTimeout(moodT);
+      const ok = Meta.mood(fig, c.id, m);
+      if (R.eye) el.style.setProperty('--eye', (ok && R.moodEye || R.eye) + '%');
+      if (ms) moodT = setTimeout(() => mood(), ms);
+    };
+    mood();
+    const say = (line = lineOf(c.id)) => {
       const s = el.querySelector('.rsay');
-      s.textContent = lineOf(c.id);
+      s.textContent = line;
       s.animate([{ opacity: 0, transform: 'translate(-50%, 6px) scale(.6)' }, { opacity: 1, transform: 'translate(-50%, 0) scale(1)', offset: 0.2 }, { opacity: 1, offset: 0.85 }, { opacity: 0 }], { duration: 1600 });
       Sound.voice(c.id, 'pick') || Sound.play('pop', 1.2 + Math.random() * 0.3, 0.6);
       Haptic.tap(15);
     };
-    // 톡: 한마디 / 끌기: 들어 올려 옮기기 (바닥 안에서만)
+    // 쫄깃: 누른 쪽으로 찌그러졌다가 젤리처럼 튕겨 돌아옴 (side: -1 왼쪽 ~ 1 오른쪽)
+    const jelly = side => fig.animate([
+      { transform: `scale(1.16, .82) skewX(${side * -10}deg)` },
+      { transform: `scale(.9, 1.12) skewX(${side * 5}deg)` },
+      { transform: 'scale(1.05, .96)' }, { transform: 'scale(.98, 1.02)' }, { transform: 'none' }],
+      { duration: 560, easing: 'ease-out' });
+    let pokes = [];
+    // 톡: 쫄깃 + 한마디 / 끌기: 들어 올리면 바둥바둥, 성격대로 반응 (바닥 안에서만)
     el.onpointerdown = e => {
       e.preventDefault();
       el.setPointerCapture(e.pointerId);
       const rr = room.getBoundingClientRect();
       const sx = e.clientX, sy = e.clientY, ox = parseFloat(el.style.left), oy = parseFloat(el.style.top);
-      let moved = false;
+      let moved = false, tilt = 0, lastX = sx, raf = 0, reacted = false;
+      const timers = [];
+      el.classList.add('press'); // 누르는 순간 납작
+      // 들고 흔들면 머리를 잡힌 것처럼 반대쪽으로 기울었다가 천천히 돌아옴
+      const swing = () => { tilt *= 0.88; el.style.rotate = tilt.toFixed(1) + 'deg'; raf = requestAnimationFrame(swing); };
       el.onpointermove = ev => {
         const dx = ((ev.clientX - sx) / rr.width) * 100, dy = ((ev.clientY - sy) / rr.height) * 100;
         if (!moved && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 8) return;
-        if (!moved) { moved = true; el.classList.add('held'); Sound.play('swap', 1.4, 0.5); Haptic.tap(10); }
+        if (!moved) {
+          moved = true; el.classList.remove('press'); el.classList.add('held'); swing();
+          Sound.play('swap', 1.4, 0.5); Haptic.tap(10);
+          timers.push(setTimeout(() => { reacted = true; el.classList.add(R.fx); mood(R.mood || 'happy'); say(pick(R.held)); }, 600));
+          if (R.cry) timers.push(setTimeout(() => { el.classList.add('wail'); say(pick(R.cry)); Haptic.tap(25); }, 2200));
+        }
+        tilt = Math.max(-25, Math.min(25, tilt - (ev.clientX - lastX) * 1.2));
+        lastX = ev.clientX;
         put(Math.max(10, Math.min(90, ox + dx)), Math.max(64, Math.min(97, oy + dy)));
         el.classList.toggle('flip', ev.clientX < sx);
       };
-      el.onpointerup = el.onpointercancel = () => {
+      el.onpointerup = el.onpointercancel = ev => {
         el.onpointermove = el.onpointerup = el.onpointercancel = null;
-        if (!moved) return say();
-        el.classList.remove('held');
-        el.querySelector('.fig').animate([{ transform: 'scale(1.15, .85)' }, { transform: 'scale(.95, 1.05)' }, { transform: 'none' }], { duration: 260, easing: 'ease-out' });
+        el.classList.remove('press');
+        if (!moved) {
+          // 1.5초 안에 세 번 찌르면 성격대로 반응 (치이카와는 울먹)
+          const r = el.getBoundingClientRect(), now = performance.now();
+          jelly(Math.max(-1, Math.min(1, (ev.clientX - r.left - r.width / 2) / (r.width / 2))));
+          pokes = pokes.filter(t => now - t < 1500).concat(now);
+          if (pokes.length < 3) { mood('happy', 1400); return say(); }
+          pokes = [];
+          el.classList.add(R.fx);
+          setTimeout(() => el.classList.remove(R.fx), 1400);
+          mood(R.mood || 'happy', 1400);
+          return say(pick(R.cry || R.held));
+        }
+        timers.forEach(clearTimeout);
+        cancelAnimationFrame(raf);
+        el.classList.remove('held', R.fx, 'wail');
+        el.style.rotate = '';
+        mood();
+        if (reacted) say(pick(R.drop));
+        if (R.spin) fig.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(360deg)' }], { duration: 420, easing: 'ease-out' });
+        else fig.animate([{ transform: 'scale(1.15, .85)' }, { transform: 'scale(.95, 1.05)' }, { transform: 'none' }], { duration: 260, easing: 'ease-out' });
         Sound.play('land', 1.2, 0.6);
         h.pos[cid] = [Math.round(parseFloat(el.style.left)), Math.round(parseFloat(el.style.top))];
         Save.save();

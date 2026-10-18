@@ -97,6 +97,110 @@ function kp(name, x, y, size, color, frames, opts) {
   el.style.setProperty('--c', color);
   return el.animate(frames, opts).finished.then(() => el.remove());
 }
+// KING(유료) 이펙트: 있으면 쓰고, 없으면(깃허브 배포판) Kenney 그림으로 대신함
+let KING = false;
+{ const im = new Image(); im.onload = () => (KING = true); im.src = 'assets/king/punch02.png'; }
+const KXU = n => `url(${new URL(`assets/king/${n}.png`, location.href).href})`;
+function kx(name, alt, x, y, size, color, frames, opts) {
+  if (!KING) return kp(alt, x, y, size, color, frames, opts);
+  const el = addFx('kp', x, y);
+  Object.assign(el.style, { width: size + 'px', height: size + 'px', marginLeft: -size / 2 + 'px', marginTop: -size / 2 + 'px' });
+  el.style.setProperty('--m', KXU(name));
+  el.style.setProperty('--c', color);
+  return el.animate(frames, opts).finished.then(() => el.remove());
+}
+
+// 박치기 자국: 날아온 쪽을 향한 만화 효과선 + 별 모양 번쩍 (너무 잦으면 건너뜀)
+let impactAt = 0;
+function impact(x, y, color, ang = 0, big = false) {
+  const now = performance.now();
+  if (!big && now - impactAt < 30) return;
+  impactAt = now;
+  const S = B.S;
+  kx(`punch0${1 + Math.floor(Math.random() * 5)}`, 'spark_05', x, y, S * (big ? 2.6 : 1.6), '#ffffff',
+    [{ transform: `rotate(${ang}deg) scale(.5)`, opacity: 1 }, { transform: `rotate(${ang}deg) scale(1.2)`, opacity: 0 }], { duration: 210, easing: 'ease-out' });
+  kx('explosion02', 'star_09', x, y, S * (big ? 1.7 : 1.05), color,
+    [{ transform: 'scale(.3) rotate(0)', opacity: 0.95 }, { transform: 'scale(1) rotate(25deg)', opacity: 0 }], { duration: 250, easing: 'ease-out' });
+}
+
+// 얼굴 스티커가 포물선을 그리며 날아가 박치기. 도착하면 onHit
+let flyCount = 0;
+function flyTile(src, from, to, delay, color, onHit) {
+  const S = B.S, im = new Image();
+  im.src = src;
+  im.className = 'fly-tile';
+  Object.assign(im.style, { left: from.x + 'px', top: from.y + 'px', width: S + 'px', height: S + 'px' });
+  fx.appendChild(im);
+  const dx = to.x - from.x, dy = to.y - from.y;
+  const side = (Math.random() - 0.5) * S * 2.2, lift = S * (0.9 + Math.random() * 0.7), spin = Math.sign(side || 1) * (20 + Math.random() * 30);
+  const frames = [];
+  for (let k = 0; k <= 10; k++) {
+    const u = k / 10, arc = Math.sin(Math.PI * u);
+    const x = dx * u + side * arc * 0.6, y = dy * u - lift * arc;
+    const sc = u < 0.2 ? 1 + u * 1.3 : 1.26 - (u - 0.2) * 0.75;
+    frames.push({ transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) rotate(${spin * u}deg) scale(${sc})`, offset: u });
+  }
+  const dur = 330 + Math.min(260, Math.hypot(dx, dy) * 0.28);
+  flyCount++;
+  return im.animate(frames, { duration: dur, delay, easing: 'cubic-bezier(.4,0,.85,.6)', fill: 'backwards' }).finished.then(() => {
+    flyCount--;
+    im.remove();
+    impact(to.x, to.y, color, Math.atan2(dy, dx) * 180 / Math.PI + 180);
+    onHit?.();
+  });
+}
+
+// 아이템에 맞은 얼굴: 깨지지 않고 통째로 데굴데굴 튕겨 나감
+function knockTile(t, x, y, push, delay) {
+  const S = B.S, src = t.inner.querySelector('img')?.src;
+  return sleep(delay).then(() => {
+    if (!t.el.isConnected) return;
+    t.el.remove();
+    if (!src) return;
+    const im = new Image();
+    im.src = src;
+    im.className = 'fly-tile';
+    Object.assign(im.style, { left: x + 'px', top: y + 'px', width: S + 'px', height: S + 'px' });
+    fx.appendChild(im);
+    const ddx = x - push.x, ddy = y - push.y, d = Math.hypot(ddx, ddy) || 1;
+    const vx = (ddx / d || (Math.random() - 0.5)) * S * (1.1 + Math.random() * 0.9) * push.power, vy = (ddy / d) * S * 0.7 * push.power;
+    const up = S * (0.7 + Math.random() * 0.6), fall = S * 3.2, rot = (vx < 0 ? -1 : 1) * (220 + Math.random() * 280);
+    const frames = [];
+    for (let k = 0; k <= 8; k++) {
+      const u = k / 8;
+      const px = vx * u, py = vy * u * 0.6 - up * 4 * u * (1 - u) + fall * u * u;
+      frames.push({ transform: `translate(calc(-50% + ${px}px), calc(-50% + ${py}px)) rotate(${rot * u}deg) scale(${1 + 0.18 * Math.sin(Math.PI * u) - u * 0.3})`, opacity: u < 0.7 ? 1 : 1 - (u - 0.7) / 0.3, offset: u });
+    }
+    im.animate(frames, { duration: 600, easing: 'linear' }).finished.then(() => im.remove());
+  });
+}
+
+// 괴물이 얼굴 박치기를 맞을 때마다 움찔 + 톡 (너무 잦으면 건너뜀)
+let peckAt = 0, peckN = 0;
+function monsterPeck() {
+  const now = performance.now();
+  if (now - peckAt < 45) return;
+  peckN = now - peckAt > 600 ? 0 : peckN + 1;
+  peckAt = now;
+  $('#monster').animate([{ transform: 'scale(1)' }, { transform: `scale(.93,1.06) translate(${(Math.random() - 0.5) * 10}px, 2px)`, filter: 'brightness(1.8)' }, { transform: 'scale(1)' }], { duration: 120 });
+  Sound.play('hit' + (1 + (peckN % 3)), 1.15 + Math.min(peckN, 8) * 0.05, 0.35);
+  Haptic.tap(6);
+}
+function chipBump(el) {
+  el?.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.28)', filter: 'brightness(1.3)' }, { transform: 'scale(1)' }], { duration: 220, easing: 'ease-out' });
+  Sound.play('pop', 1.8, 0.35);
+}
+// 일상 퍼즐: 목표 칩 (k: weed, box, char …, id: 캐릭터)
+function goalChip(k, id) {
+  if (B.mode !== 'life') return null;
+  return $(`#lhGoals .gchip.${k}${id ? `[data-id="${id}"]` : ''}`);
+}
+// 그림 하나(장애물 아이콘)를 목표 칩으로 날려 보냄
+function flyToGoal(src, p, chip, color = '#ffd84d') {
+  if (!chip || flyCount > 18) return;
+  flyTile(src, p, centerOf(chip), 0, color, () => chipBump(chip));
+}
+
 // 반짝이 별과 불똥이 사방으로 튐
 function burst(x, y, color, n = 6) {
   for (let i = 0; i < n; i++) {
@@ -711,13 +815,13 @@ async function trySwap(a, b) {
   if (combo) { await mergeFx(ta, tb, b); await comboFx(combo); }
   await cascade([a, b], combo ? combo.cells : items, combo);
   await endTurn();
-  if (!B.over) { B.busy = false; setTimeout(autoSkill, 300); }
+  if (!B.over) { B.busy = false; if (!Tutor.lesson()) setTimeout(autoSkill, 300); }
 }
 
 // 아이템 하나를 제자리에서 터뜨림 (한 턴 씀)
 async function activate([r, c]) {
   const t = B.grid[r][c];
-  if (B.busy || B.over || !t?.special || Tutor.guide) return;
+  if (B.busy || B.over || !t?.special || (Tutor.guide && !Tutor.allowItem([r, c]))) return;
   Haptic.tap(25);
   B.busy = true;
   B.played = true;
@@ -726,7 +830,7 @@ async function activate([r, c]) {
   await t.inner.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.35)' }, { transform: 'scale(1.1)' }], { duration: 140, easing: 'ease-out' }).finished;
   await cascade(null, [[r, c]]);
   await endTurn();
-  if (!B.over) { B.busy = false; setTimeout(autoSkill, 300); }
+  if (!B.over) { B.busy = false; if (!Tutor.lesson()) setTimeout(autoSkill, 300); }
 }
 
 const settleAll = dur => {
@@ -774,8 +878,8 @@ async function mergeFx(ta, tb, at) {
 async function comboFx(combo) {
   const [r, c] = combo.at;
   const p = tileCenter(r, c);
-  const names = { rainbow: '무지개 폭탄!', rainbow2: '무지개 대폭발!!', 'bomb+bomb': '대폭발!', 'bomb+h': '크로스 폭발!', 'bomb+v': '크로스 폭발!',
-    'plane+plane': '비행기 편대!', 'bomb+plane': '폭탄 배달!', 'h+plane': '줄폭탄 배달!', 'plane+v': '줄폭탄 배달!' };
+  const names = { rainbow: '경단 대잔치!', rainbow2: '경단 대폭발!!', 'bomb+bomb': '뚜껑 대폭발!', 'bomb+h': '크로스 쾅!', 'bomb+v': '크로스 쾅!',
+    'plane+plane': '종이비행기 편대!', 'bomb+plane': '뚜껑 배달!', 'h+plane': '막대 배달!', 'plane+v': '막대 배달!' };
   const label = names[combo.kind] || '크로스!';
   Juice.zoom(p.x, p.y, combo.kind.startsWith('rainbow') || combo.kind === 'bomb+bomb' ? 1.12 : 1.07);
   if (combo.converted) Board.each(B.grid, t => t.special && refreshTile(t));
@@ -862,6 +966,8 @@ function effectFx(ef) {
     setTimeout(() => {
       Sound.play('line', 1.1, 0.8);
       kp('flare_01', o.x, o.y, S * 2.8, '#ffffff', [{ transform: 'scale(.3)', opacity: 1 }, { transform: 'scale(1.2)', opacity: 0 }], { duration: 300, easing: 'ease-out' });
+      kx('poof2', 'circle_05', o.x, o.y, S * 2.4, '#bfe9ff', [{ transform: 'scale(.3)', opacity: 1 }, { transform: 'scale(1.15)', opacity: 0 }], { duration: 260, easing: 'ease-out' });
+      Juice.stop(40);
       const cells = horiz ? COLS : ROWS, from = horiz ? ef.c : ef.r;
       [-1, 1].forEach(dir => {
         const im = new Image();
@@ -907,6 +1013,8 @@ function effectFx(ef) {
       Sound.play('thwack', 0.6, 1);
       Sound.play('line', 0.6, 0.9);
       kp('light_02', o.x, o.y, S * 5, '#fff6c8', [{ transform: 'scale(.2)', opacity: 1 }, { transform: 'scale(1)', opacity: 0 }], { duration: 320, easing: 'ease-out' });
+      kx('explosion01', 'star_09', o.x, o.y, S * 4.2, '#ffd25a', [{ transform: 'scale(.2) rotate(0)', opacity: 1 }, { transform: 'scale(1.05) rotate(20deg)', opacity: 0 }], { duration: 380, easing: 'cubic-bezier(.2,.9,.3,1)' });
+      kx('glowlines', 'spark_05', o.x, o.y, S * 6, '#ffffff', [{ transform: 'scale(.4)', opacity: 1 }, { transform: 'scale(1.2)', opacity: 0 }], { duration: 320 });
       kp('magic_02', o.x, o.y, S * 5, '#ffb347', [{ transform: 'scale(.2) rotate(0)', opacity: 1 }, { transform: 'scale(1) rotate(60deg)', opacity: 0 }], { duration: 520, easing: 'ease-out' });
       kp('smoke_04', o.x, o.y, S * 3.4, '#e8dccb', [{ transform: 'scale(.3)', opacity: 0.9 }, { transform: 'scale(1.3)', opacity: 0 }], { duration: 800, easing: 'ease-out' });
       kp('circle_03', o.x, o.y, S * 5.5, '#ffe066', [{ transform: 'scale(.1)', opacity: 1 }, { transform: 'scale(1)', opacity: 0 }], { duration: 420, easing: 'cubic-bezier(.2,.8,.3,1)' });
@@ -949,62 +1057,33 @@ function effectFx(ef) {
   }
 }
 
-// 구슬이 깨짐: 번쩍 → 구슬 그림이 조각나서 후두둑 튀었다가 떨어짐
-// push: 아이템이 터진 자리 {x, y, power}. 그 반대쪽으로 세게 날아감
-const SHARD_CUTS = [
-  c => `polygon(0 0, 56% 0, ${c[0]}% ${c[1]}%, 0 44%)`,
-  c => `polygon(56% 0, 100% 0, 100% 52%, ${c[0]}% ${c[1]}%)`,
-  c => `polygon(100% 52%, 100% 100%, 44% 100%, ${c[0]}% ${c[1]}%)`,
-  c => `polygon(44% 100%, 0 100%, 0 44%, ${c[0]}% ${c[1]}%)`,
-];
-const SHARD_DIR = [[-1, -1], [1, -1], [1, 1], [-1, 1]];
-let shardBudget = 0; // 한꺼번에 너무 많이 깨지면 조각 수를 줄임
-function shatter(t, x, y, push, delay) {
-  const S = B.S, src = t.inner.querySelector('img')?.src;
-  if (!src) return;
-  const many = shardBudget > 24;
-  shardBudget++;
-  setTimeout(() => shardBudget--, delay + 200);
-  const cen = [44 + Math.random() * 12, 44 + Math.random() * 12];
-  let ax = 0, ay = 0, pw = 1;
-  if (push) {
-    const dx = x - push.x, dy = y - push.y, d = Math.hypot(dx, dy) || 1;
-    ax = (dx / d) * S * 1.1 * push.power;
-    ay = (dy / d) * S * 0.9 * push.power;
-    pw = push.power;
-  }
-  SHARD_CUTS.forEach((cut, k) => {
-    if (many && k % 2) return;
-    const el = addFx('tshard', x, y);
-    Object.assign(el.style, { width: S + 'px', height: S + 'px', backgroundImage: `url(${src})`, clipPath: cut(cen) });
-    const [sx, sy] = SHARD_DIR[k];
-    const vx = sx * S * (0.35 + Math.random() * 0.45) * pw + ax, up = S * (0.55 + Math.random() * 0.5) * (push ? 0.7 : 1) - ay * 0.5;
-    const fall = S * (2.2 + Math.random() * 1.2), rot = sx * (90 + Math.random() * 200);
-    const frames = [];
-    for (let f = 0; f <= 6; f++) {
-      const u = f / 6;
-      // 포물선: 위로 톡 튀었다가 중력으로 뚝
-      const px = vx * u, py = -up * 4 * u * (1 - u) * 0.6 + fall * u * u + sy * S * 0.18 * u;
-      frames.push({ transform: `translate(calc(-50% + ${px}px), calc(-50% + ${py}px)) rotate(${rot * u}deg) scale(${1 - u * 0.35})`, opacity: u < 0.65 ? 1 : 1 - (u - 0.65) / 0.35, offset: u });
-    }
-    el.animate(frames, { duration: 520 + Math.random() * 160, delay, easing: 'linear', fill: 'backwards' }).finished.then(() => el.remove());
-  });
-}
-function popTile(t, delay, push = null) {
+// 얼굴은 깨지지 않음: 꾹 눌렸다가 쭈욱 기지개 → 뿅 연기 → 괴물(또는 목표)에게 날아가 박치기
+// to: { at: {x, y}, hit } 날아갈 곳. 없으면 하트나 별로 뿅 사라짐. push: 아이템에 맞으면 통째로 튕겨 나감
+function popTile(t, delay, push = null, to = null) {
   const r = t.el.getBoundingClientRect(), a = app.getBoundingClientRect();
   const x = r.left - a.left + r.width / 2, y = r.top - a.top + r.height / 2;
   if (t.el.isConnected && t.type >= 0) {
-    const f = addFx('popflash', x, y);
-    f.style.width = f.style.height = r.width * 1.3 + 'px';
-    f.animate([{ transform: 'translate(-50%,-50%) scale(.4)', opacity: 1 }, { transform: 'translate(-50%,-50%) scale(1.3)', opacity: 0 }],
-      { duration: 240, delay: delay + 70, easing: 'ease-out', fill: 'backwards' }).finished.then(() => f.remove());
-    shatter(t, x, y, push, delay + 70);
-    // 하얗게 번쩍하며 통 부풀었다가 → 그 순간 조각으로 갈라짐
-    return t.inner.animate([
-      { transform: 'scale(1)', filter: 'brightness(1)', opacity: 1 },
-      { transform: 'scale(1.2, .85)', filter: 'brightness(2.4)', opacity: 1, offset: 0.6 },
-      { transform: 'scale(1.25)', filter: 'brightness(3)', opacity: 0 },
-    ], { duration: 80, delay, easing: 'ease-out', fill: 'forwards' }).finished.then(() => t.el.remove());
+    if (push && !to) return knockTile(t, x, y, push, delay);
+    const S = B.S, src = t.inner.querySelector('img')?.src, color = teamCh(t.type)?.ring || '#ffd84d';
+    const fly = to && flyCount < 16;
+    t.el.style.zIndex = 3;
+    t.inner.animate([
+      { transform: 'scale(1)', filter: 'brightness(1)' },
+      { transform: 'scale(1.3,.68)', filter: 'brightness(1.25)', offset: 0.38 },
+      { transform: 'scale(.84,1.26) translateY(-10%)', offset: 0.72 },
+      fly ? { transform: 'scale(1.1) translateY(-16%)' } : { transform: 'scale(0) translateY(-20%) rotate(25deg)' },
+    ], { duration: fly ? 140 : 230, delay, easing: 'ease-out', fill: 'forwards' });
+    return sleep(delay + (fly ? 140 : 150)).then(() => {
+      kx('poof2', 'circle_05', x, y, S * 1.75, color, [{ transform: 'scale(.3) rotate(0)', opacity: 0.85 }, { transform: 'scale(1.1) rotate(30deg)', opacity: 0 }], { duration: 300, easing: 'ease-out' });
+      if (fly) {
+        t.el.remove();
+        flyTile(src, { x, y: y - S * 0.16 }, to.at, 0, color, to.hit);
+      } else {
+        kx(Math.random() < 0.5 ? 'heart' : 'star', 'star_06', x, y - S * 0.2, S * 0.62, color,
+          [{ transform: 'translateY(0) scale(.4)', opacity: 1 }, { transform: `translateY(${-S * 0.9}px) scale(1)`, opacity: 0 }], { duration: 520, easing: 'ease-out' });
+        setTimeout(() => t.el.remove(), 90);
+      }
+    });
   }
   return t.inner.animate([
     { transform: 'scale(1)', opacity: 1, filter: 'brightness(1)' },
@@ -1057,6 +1136,7 @@ function hitFx(res, T) {
     ringFx(p.x, p.y, S * 1.6, '#ff8ab8');
     refreshTile(tile);
     squish(tile);
+    flyToGoal(ITEM('ribbon'), p, goalChip('lock'), '#ff8ab8');
     Sound.play('pop', 1.7, 0.8);
     Sound.play('sparkle', 1.5, 0.4);
   }, at(r, c)));
@@ -1086,6 +1166,8 @@ function hitFx(res, T) {
       shards(p.x, p.y, ['#ff6b6b', '#ffd84d', '#ff9f5a'], 10, 10);
       Sound.play('hit1', 1.2, 0.8);
     }
+    const k = tile.block === 'weed' ? 'weed' : tile.block === 'bubble' ? 'bubble' : 'box';
+    if (gone || k !== 'box') flyToGoal(ITEM(tile.block === 'weed' ? 'weed1' : tile.block === 'bubble' ? 'bubble' : 'box'), p, goalChip(k), '#ffd84d');
     if (gone) popTile(tile, 0);
     else { refreshTile(tile); squish(tile); }
   }, at(r, c)));
@@ -1095,7 +1177,8 @@ function hitFx(res, T) {
       cells[key(r, c)].className = cellClass(r, c);
       fgs[key(r, c)].className = fgClass(r, c);
       const p = tileCenter(r, c);
-      flyOff(ITEM(left ? 'weed2' : 'weed1'), p.x, p.y + S * 0.2, S * 0.8);
+      if (goalChip('weed')) flyToGoal(ITEM('weed1'), p, goalChip('weed'), '#8fd06a');
+      else flyOff(ITEM(left ? 'weed2' : 'weed1'), p.x, p.y + S * 0.2, S * 0.8);
       shards(p.x, p.y + S * 0.3, ['#9b6b3a', '#7a5230', '#6dbf57'], 6, 7, true);
     }, 40 + Math.min(i * 25, 250)));
     setTimeout(() => Sound.play('sparkle', 1.4, 0.5), 60);
@@ -1112,17 +1195,6 @@ function hitFx(res, T) {
     }, 80 + Math.min(i * 30, 300)));
     setTimeout(() => Sound.play('heal', 1.6, 0.45), 80);
   }
-}
-
-function projectile(from, to, img, ring, delay) {
-  const p = addFx('proj', from.x, from.y);
-  p.style.backgroundImage = `url(${img})`;
-  const dx = to.x - from.x, dy = to.y - from.y, side = (Math.random() - 0.5) * 140;
-  return p.animate([
-    { transform: 'translate(0,0) scale(.5)', opacity: 0 },
-    { transform: `translate(${dx * 0.25 + side}px,${dy * 0.25 + 20}px) scale(1.15)`, opacity: 1, offset: 0.3 },
-    { transform: `translate(${dx}px,${dy}px) scale(.55)`, opacity: 1 },
-  ], { duration: 460, delay, easing: 'cubic-bezier(.5,0,.85,.55)', fill: 'both' }).finished.then(() => p.remove());
 }
 
 // 아이템마다 터지는 순서: 칸마다 '언제 터질지(ms)'를 정해 두고 그 시각에 터뜨림
@@ -1189,6 +1261,15 @@ async function stepFx(res, combo, from = null) {
   });
   const n = res.cleared.length;
   let i = 0, last = 0;
+  // 얼굴이 날아갈 곳: 토벌이면 괴물(회복 친구는 체력바), 일상 퍼즐이면 그 캐릭터 목표 칩
+  const monC = B.mode === 'battle' ? centerOf($('#monster')) : null, teamC = B.mode === 'battle' ? centerOf($('#teamHp')) : null;
+  const targetOf = tile => {
+    if (tile.type < 0) return null;
+    const ch = teamCh(tile.type);
+    if (B.mode === 'battle') return ch.heal ? { at: teamC, hit: () => $('#teamHp').animate([{ transform: 'scale(1)' }, { transform: 'scale(1.05)' }, { transform: 'scale(1)' }], { duration: 140 }) } : { at: monC, hit: monsterPeck };
+    const chip = goalChip('char', ch.id);
+    return chip ? { at: centerOf(chip), hit: () => chipBump(chip) } : null;
+  };
   // 아이템에 맞아 깨지는 칸은 터진 자리 반대쪽으로 날아감
   const pushAt = new Map(), POWER = { bomb: 1.7, h: 1.3, v: 1.3, plane: 1.2, rainbow: 0.8 };
   res.effects.forEach(ef => { const o = tileCenter(ef.r, ef.c); ef.times.forEach((_, k) => !pushAt.has(k) && pushAt.set(k, { ...o, power: POWER[ef.kind] || 1 })); });
@@ -1204,7 +1285,7 @@ async function stepFx(res, combo, from = null) {
       burst(p.x, p.y, color, n > 15 ? 3 : 5);
       shards(p.x, p.y, [color, '#ffffff'], n > 12 ? 2 : 4, 9, true);
     }, delay + 50);
-    popTile(tile, delay, pushAt.get(key(r, c)));
+    popTile(tile, delay, pushAt.get(key(r, c)), targetOf(tile));
   });
   // 많이 터질수록 판이 통 울림
   if (n >= 4) setTimeout(() => boardEl.animate([{ transform: 'scale(1)' }, { transform: `scale(${1 + Math.min(0.03, n * 0.002)})` }, { transform: 'scale(1)' }], { duration: 160, easing: 'ease-out' }), 60);
@@ -1243,17 +1324,9 @@ async function stepFx(res, combo, from = null) {
     if (!tally.has(tile.type)) tally.set(tile.type, []);
     tally.get(tile.type).push([r, c]);
   });
-  const monC = centerOf($('#monster'));
-  const teamC = centerOf($('#teamHp'));
-  let d = 0;
-  tally.forEach((cells, type) => {
-    const ch = teamCh(type);
-    const to = ch.heal ? teamC : monC;
-    cells.slice(0, 4).forEach(([r, c]) => projectile(tileCenter(r, c), to, TILE(ch.id), ch.ring, (d++) * 35));
-  });
   const mult = (1 + 0.25 * (combo - 1)) * (B.fever ? 1.5 : 1);
   B.pending.push((async () => {
-    await sleep(440);
+    await sleep(Math.min(1100, last + 560));
     let k = 0;
     for (const [type, cells] of tally) {
       const ch = teamCh(type), cheer = type >= B.real;
@@ -1827,7 +1900,7 @@ async function useSkill(k) {
   await Promise.all(B.pending);
   B.pending = [];
   if (life) { Life.hud(); await Life.check(); } else if (B.monHp <= 0) await monsterDefeated();
-  if (!B.over) { B.busy = false; setTimeout(autoSkill, 300); }
+  if (!B.over) { B.busy = false; if (!Tutor.lesson()) setTimeout(autoSkill, 300); }
 }
 
 // 오토: 게이지가 꽉 찬 친구가 있으면 알아서 스킬

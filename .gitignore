@@ -1,3 +1,6 @@
 # 원본 다운로드 파일 (게임 실행에 필요 없음)
 assets/raw/
 .claude/
+
+# 유료 에셋 (KING 동아리 Unity 에셋에서 가져온 이펙트). 저장소에는 올리지 않음
+assets/king/

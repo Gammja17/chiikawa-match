@@ -6,11 +6,18 @@ const OPENING = [
   ['chiikawa', '…!! (두근두근)'],
   ['hachiware', '좋아, 어떻게든 되겠지~! 가자!'],
 ];
+// 아이템을 처음 만들었을 때 따라 하기 한 줄
+const LESSON = {
+  h: '토벌 막대다! 아무 쪽으로 쓱 밀면 한 줄을 싹 쓸어버려~',
+  bomb: '냄비 뚜껑이야! 쓱 밀면 주변이 쾅!',
+  plane: '종이비행기야! 쓱 밀면 목표 쪽으로 날아가서 콕!',
+  rainbow: '경단이다! 옆 얼굴이랑 바꾸면 그 얼굴이 전부 사라져',
+};
 // 처음 볼 때 한 번만 뜨는 안내: [아이콘, 한 줄]
 const TIPS = {
   item: ['rocket', '아이템은 톡톡 두 번 누르거나, 아무 쪽으로 쓱 밀면 터져요'],
-  plane: ['plane', '비행기는 목표 쪽으로 날아가요'],
-  rainbow: ['rainbow', '무지개는 바꾼 얼굴을 전부 지워요'],
+  plane: ['plane', '종이비행기는 목표 쪽으로 날아가요'],
+  rainbow: ['rainbow', '경단은 바꾼 얼굴을 전부 지워요'],
   skill: ['sparkle', '동그라미가 꽉 차면 얼굴을 톡! 스킬을 써요'],
   battle: ['boom', '같은 얼굴을 맞추면 그 친구가 공격해요. 숫자는 괴물이 공격할 때까지 남은 턴'],
   box: ['box', '상자는 바로 옆에서 맞추면 깨져요'],
@@ -67,6 +74,16 @@ const Tutor = {
       }
       return;
     }
+    if (L.st?.icon === 'plane' && !Tutor.seen('makePlane')) {
+      const mv = Tutor.findMove(false, 'plane');
+      if (mv) {
+        Tutor.mark('makePlane');
+        Tutor.guide = mv;
+        Tutor.showHand(mv, true);
+        Spot.show(mv.slice(0, 2).map(([r, c]) => B.grid[r][c].el), '같은 얼굴 넷을 네모로 모으면 종이비행기가 생겨! 여기를 쓱 밀어 봐', { tap: 'external', pad: 4 });
+        return;
+      }
+    }
     const kinds = new Set();
     Board.each(B.grid, t => { if (t.block) kinds.add(t.block); if (t.lock) kinds.add('lock'); if (t.type === ING) kinds.add('ing'); });
     if (Board.syrup) kinds.add('syrup');
@@ -94,21 +111,49 @@ const Tutor = {
     return true;
   },
   onCreate(kind) {
+    const k = kind === 'v' ? 'h' : kind;
+    if (!Tutor.seen('lesson_' + k) && LESSON[k]) { Tutor.wait = k; return; }
     if (kind === 'plane') Tutor.tip(Tutor.seen('item') ? 'plane' : 'item');
     else if (kind === 'rainbow') Tutor.tip(Tutor.seen('item') ? 'rainbow' : 'item');
     else Tutor.tip('item');
+  },
+  // 꿈의집처럼: 새 아이템이 처음 생기면 그것만 밝게 비추고, 손가락으로 쓰는 법을 보여 주고, 그 수만 둘 수 있게
+  lesson() {
+    const k = Tutor.wait;
+    if (!k || B.over || B.busy) return false;
+    Tutor.wait = null;
+    let at = null;
+    Board.each(B.grid, (t, r, c) => { if (!at && t.special && (t.special === k || (k === 'h' && t.special === 'v'))) at = [r, c]; });
+    if (!at) return false;
+    const nb = NEAR4.map(([dr, dc]) => [at[0] + dr, at[1] + dc]).find(([r, c]) => inside(r, c) && movable(B.grid[r][c]) && !B.grid[r][c].special);
+    if (!nb) return false;
+    Tutor.mark('lesson_' + k);
+    Tutor.guide = [at, nb];
+    Tutor.guideItem = at;
+    Tutor.showHand([at, nb], true);
+    Spot.show([B.grid[at[0]][at[1]].el, B.grid[nb[0]][nb[1]].el], LESSON[k], { tap: 'external', pad: 4, who: k === 'rainbow' ? 'kurimanju' : 'hachiware' });
+    return true;
+  },
+  // 아이템 배우기 중에는 그 아이템을 톡톡 눌러 쓰는 것도 허락
+  allowItem([r, c]) {
+    const g = Tutor.guideItem;
+    if (!g || g[0] !== r || g[1] !== c) return false;
+    Tutor.guide = Tutor.guideItem = null;
+    Tutor.hideHand();
+    Spot.close();
+    return true;
   },
   // 첫 수 따라 하기 중이면 그 수만 허락
   allow(a, b) {
     const g = Tutor.guide;
     if (!g) return true;
     const ok = (a[0] === g[0][0] && a[1] === g[0][1] && b[0] === g[1][0] && b[1] === g[1][1]) || (a[0] === g[1][0] && a[1] === g[1][1] && b[0] === g[0][0] && b[1] === g[0][1]);
-    if (ok) { Tutor.guide = null; Tutor.mark('firstMove'); Tutor.hideHand(); Spot.close(); }
+    if (ok) { if (!Tutor.guideItem) Tutor.mark('firstMove'); Tutor.guide = Tutor.guideItem = null; Tutor.hideHand(); Spot.close(); }
     return ok;
   },
 
   // 매치되는 수 하나 찾기 (잡초 옆이면 더 좋음)
-  findMove(preferBlocks = false) {
+  findMove(preferBlocks = false, makes = null) {
     const g = B.grid, moves = [];
     for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) for (const [dr, dc] of [[0, 1], [1, 0]]) {
       const r2 = r + dr, c2 = c + dc;
@@ -117,6 +162,12 @@ const Tutor = {
       const runs = Board.findRuns(g);
       Board.swap(g, [r, c], [r2, c2]);
       if (!runs.length) continue;
+      if (makes) {
+        Board.swap(g, [r, c], [r2, c2]);
+        const kinds = Board.groupRuns(Board.findRuns(g)).map(grp => Board.specialFor(grp, [[r, c], [r2, c2]])?.kind);
+        Board.swap(g, [r, c], [r2, c2]);
+        if (!kinds.includes(makes)) continue;
+      }
       let score = runs.reduce((a, x) => a + x.cells.length, 0);
       if (preferBlocks) runs.forEach(x => x.cells.forEach(([rr, cc]) => NEAR4.forEach(([a, b]) => { if (g[rr + a]?.[cc + b]?.block) score += 3; })));
       moves.push([[r, c], [r2, c2], score]);

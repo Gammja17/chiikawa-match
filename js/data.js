@@ -72,7 +72,9 @@ const attrMult = (atk, def) => ((atk === 'light' && def === 'dark') || (atk === 
 const FACE = id => `assets/img/faces/${id}.png`;
 const BODY = id => `assets/img/chars/${id}.png`;
 const TILE = id => `assets/img/tiles/${id}.png`;
-const ITEM = name => `assets/img/items/${name}.png`;
+// 아이템은 치이카와 원작 도구로: 줄폭탄=토벌 막대, 폭탄=냄비 뚜껑, 무지개=경단, 비행기=종이비행기 (VARCO로 그림)
+const ITEM_ALIAS = { rocket: 'stick', bomb: 'lid', rainbow: 'dango3', plane: 'paperplane' };
+const ITEM = name => `assets/img/items/${ITEM_ALIAS[name] || name}.png`;
 // 전신 그림이 없는 캐릭터는 얼굴로
 const NO_BODY = new Set(['kani', 'shooting', 'darkstar', 'goblin', 'beetle']);
 const FXI = n => `assets/img/fx/${n}.png`;
@@ -148,5 +150,24 @@ const LINES = {
   darkstar: ['……', '……반짝.', '…….'],
 };
 const lineOf = id => { const p = LINES[id]; return p ? p[Math.floor(Math.random() * p.length)] : (CHARS.find(c => c.id === id) || {}).line || '…!'; };
+// 옷 갈아입기: assets/img/skins/<친구>/<파일> 그림으로 통째로 바꿔 끼움 (gif·apng·webp면 그대로 움직임)
+const SKINS = {
+  chiikawa:  { outing: { name: '나들이 모자', img: 'outing.png' } },
+  hachiware: { outing: { name: '나들이 카메라', img: 'outing.png' } },
+  usagi:     { outing: { name: '나들이 모자', img: 'outing.png' } },
+  kurimanju: { chef: { name: '요리사 옷', img: 'chef.png' } },
+  shisa:     { chef: { name: '요리사 옷', img: 'chef.png' } },
+};
+const SKIN = (id, s) => `assets/img/skins/${id}/${SKINS[id][s].img}`;
+// 표정: 기본 옷일 때만 잠깐 바꿔 끼움
+const MOODS = { chiikawa: { cry: 'cry.png', happy: 'dance.gif' } };
+// 집에서 들어 올렸을 때 반응: held=들고 있을 때 말, cry=오래 들면, drop=내려놨을 때 말, mood=들고 있을 때 표정
+// fx=효과(tears 눈물 / sweat 땀 / sparkle 반짝), flail=바둥거리는 빠르기(초), eye=눈 높이(%, moodEye는 표정 그림일 때), spin=내려놓으면 한 바퀴
+const REACT = {
+  chiikawa:  { held: ['으앗…!', '히잉…', '(바둥바둥)'], cry: ['으에에엥…!', '(훌쩍훌쩍…)'], drop: ['(훌쩍…)', '…!'], mood: 'cry', fx: 'tears', flail: 0.14, eye: 36, moodEye: 64 },
+  hachiware: { held: ['와아~ 높다~!', '흐흥~ ♪'], drop: ['고마워~!'], fx: 'sparkle', flail: 0.3 },
+  usagi:     { held: ['야하~!!', '우라!'], drop: ['우라~!!'], fx: 'sparkle', flail: 0.1, spin: true },
+  _:         { held: ['!?', '…!'], drop: ['…휴.'], fx: 'sweat', flail: 0.2 },
+};
 const CHAR_NAME = { shisa: '시사' };
 CHARS.forEach(c => (CHAR_NAME[c.id] = c.name));
