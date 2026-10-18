@@ -4,3 +4,6 @@ assets/raw/
 
 # 유료 에셋 (KING 동아리 Unity 에셋에서 가져온 이펙트). 저장소에는 올리지 않음
 assets/king/
+js/king-pack.js
+dist/
+.wrangler/

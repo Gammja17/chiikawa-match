@@ -97,10 +97,36 @@ function kp(name, x, y, size, color, frames, opts) {
   el.style.setProperty('--c', color);
   return el.animate(frames, opts).finished.then(() => el.remove());
 }
-// KING(유료) 이펙트: 있으면 쓰고, 없으면(깃허브 배포판) Kenney 그림으로 대신함
+// 유료 이펙트: js/king-pack.js(뒤섞은 팩)가 있으면 풀어서 메모리 안에서만 씀. 없으면(깃허브판) Kenney 그림으로 대신함
 let KING = false;
-{ const im = new Image(); im.onload = () => (KING = true); im.src = 'assets/king/punch02.png'; }
-const KXU = n => `url(${new URL(`assets/king/${n}.png`, location.href).href})`;
+const KMASK = {};
+{
+  const sc = document.createElement('script');
+  sc.src = 'js/king-pack.js';
+  sc.onload = async () => {
+    try {
+      const P = window.KING_PACK;
+      delete window.KING_PACK;
+      const d = Uint8Array.from(atob(P.d), ch => ch.charCodeAt(0));
+      let s = P.k;
+      for (let i = 0; i < d.length; i++) { s = (Math.imul(s, 1103515245) + 12345) >>> 0; d[i] ^= s >>> 24; }
+      const a = new Uint8Array(await new Response(new Blob([d]).stream().pipeThrough(new DecompressionStream('deflate'))).arrayBuffer());
+      const W = P.w, n = W * W, cv = document.createElement('canvas');
+      cv.width = cv.height = W;
+      const ctx = cv.getContext('2d'), img = ctx.createImageData(W, W);
+      for (let k = 0; k < P.n.length; k++) {
+        for (let i = 0; i < n; i++) { const o = i * 4; img.data[o] = img.data[o + 1] = img.data[o + 2] = 255; img.data[o + 3] = a[k * n + i]; }
+        ctx.putImageData(img, 0, 0);
+        const b = await new Promise(r => cv.toBlob(r));
+        KMASK[P.n[k]] = `url(${URL.createObjectURL(b)})`;
+      }
+      KING = true;
+    } catch (e) { console.warn('이펙트 팩을 못 풀었어요', e); }
+  };
+  sc.onerror = () => sc.remove();
+  document.head.appendChild(sc);
+}
+const KXU = n => KMASK[n];
 function kx(name, alt, x, y, size, color, frames, opts) {
   if (!KING) return kp(alt, x, y, size, color, frames, opts);
   const el = addFx('kp', x, y);
