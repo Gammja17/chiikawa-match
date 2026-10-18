@@ -1231,6 +1231,21 @@ $('#btnSortie').onclick = () => {
   Save.save();
   go(() => startStage(formStage));
 };
+// 자동 편성: 이번 적에게 강한 친구 + 레벨 높은 친구, 회복 담당 한 명
+$('#btnAuto').onclick = () => {
+  const foes = STAGES[formStage].waves.map(w => w.a);
+  const score = c => {
+    const m = foes.reduce((a, f) => a + attrMult(c.attr, f), 0) / foes.length;
+    return (c.heal ? 10 : c.dmg) * m * Meta.mult(c.id);
+  };
+  const owned = CHARS.map((c, k) => [c, k]).filter(([c]) => Meta.owned(c.id));
+  const healer = owned.filter(([c]) => c.heal).sort((a, b) => score(b[0]) - score(a[0]))[0];
+  const rest = owned.filter(([c]) => !c.heal).sort((a, b) => score(b[0]) - score(a[0]));
+  formPick = [...(healer ? [healer] : []), ...rest].slice(0, TEAM_SIZE).map(([, k]) => k);
+  Sound.play('sparkle', 1.2, 0.8);
+  renderFormation();
+  $('#formSlots').animate([{ transform: 'scale(1)' }, { transform: 'scale(1.04)' }, { transform: 'scale(1)' }], { duration: 260 });
+};
 $('#btnFormBack').onclick = () => { Sound.play('click'); go(openMap); };
 
 // ---------- 스킬 ----------
@@ -1495,24 +1510,45 @@ async function clearShow(text = '토벌<br>성공!') {
 // ---------- 5콤보 응원 피버: 파자마 파티즈 등장 ----------
 function updateFever() {
   $('#feverTag').classList.toggle('on', B.fever > 0);
+  app.classList.toggle('fever', B.fever > 0);
 }
 async function feverShow() {
   B.fever = 3;
   updateFever();
+  // 우후~! 빛줄기가 돌고, 파자마 파티즈가 통통 튀어 올라 춤추고, 하트·별이 쏟아짐
   const el = document.createElement('div');
   el.className = 'fever-show';
-  el.innerHTML = `<img src="assets/img/art/pajama_uwawa.png"><div class="fever-txt">응원 피버! 공격 ×1.5</div>`;
+  el.innerHTML = `<div class="rays"></div><img src="assets/img/art/pajama_uwawa.png"><div class="fever-txt">피버 타임!</div><div class="fever-sub">공격 ×1.5</div>`;
   app.appendChild(el);
-  const [img, txt] = el.children;
-  img.animate([{ transform: 'translate(-50%,110%) rotate(4deg)' }, { transform: 'translate(-50%,-6%) rotate(-2deg)', offset: 0.7 }, { transform: 'translate(-50%,0) rotate(0)' }],
-    { duration: 320, easing: 'ease-out', fill: 'forwards' });
-  txt.animate([{ transform: 'translateX(-50%) scale(0)' }, { transform: 'translateX(-50%) scale(1.15)', offset: 0.7 }, { transform: 'translateX(-50%) scale(1)' }],
-    { duration: 260, delay: 160, fill: 'backwards' });
-  for (let i = 0; i < 4; i++) setTimeout(() => Sound.pop(4 + i), 120 + i * 90);
-  confetti(8);
-  await sleep(850);
-  img.animate([{ transform: 'translate(-50%,0)' }, { transform: 'translate(-50%,115%)' }], { duration: 220, easing: 'ease-in', fill: 'forwards' });
-  await txt.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, fill: 'forwards' }).finished;
+  const [rays, img, txt, sub] = el.children;
+  Sound.play('rainbow', 1.1, 1);
+  Sound.play('jingle_skill', 1.25, 0.8);
+  [0, 4, 7, 12, 16, 19, 24].forEach((s, i) => setTimeout(() => Sound.play('pop', Math.pow(2, s / 12), 0.7), 80 + i * 70));
+  flash('#ff9ec4', 0.55);
+  Haptic.tap(60);
+  setTimeout(() => Haptic.tap(40), 250);
+  rays.animate([{ opacity: 0, transform: 'translate(-50%,-50%) scale(.3) rotate(0)' }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1) rotate(60deg)', offset: 0.3 },
+    { opacity: 1, transform: 'translate(-50%,-50%) scale(1.1) rotate(160deg)', offset: 0.8 }, { opacity: 0, transform: 'translate(-50%,-50%) scale(1.2) rotate(200deg)' }], { duration: 1500, fill: 'forwards' });
+  img.animate([
+    { transform: 'translate(-50%,110%) rotate(6deg)' },
+    { transform: 'translate(-50%,-10%) rotate(-3deg)', offset: 0.25 },
+    { transform: 'translate(-50%,0) scale(1.04,.96)', offset: 0.35 },
+    { transform: 'translate(-50%,-6%) rotate(3deg)', offset: 0.5 },
+    { transform: 'translate(-50%,0) scale(1.04,.96)', offset: 0.62 },
+    { transform: 'translate(-50%,-6%) rotate(-3deg)', offset: 0.75 },
+    { transform: 'translate(-50%,0)', offset: 0.85 },
+    { transform: 'translate(-50%,115%)' },
+  ], { duration: 1500, easing: 'ease-in-out', fill: 'forwards' });
+  txt.animate([{ transform: 'translateX(-50%) scale(0) rotate(-12deg)' }, { transform: 'translateX(-50%) scale(1.35) rotate(4deg)', offset: 0.5 }, { transform: 'translateX(-50%) scale(1) rotate(-3deg)' }],
+    { duration: 420, delay: 120, easing: 'ease-out', fill: 'backwards' });
+  sub.animate([{ opacity: 0, transform: 'translateX(-50%) translateY(10px)' }, { opacity: 1, transform: 'translateX(-50%)' }], { duration: 260, delay: 380, fill: 'backwards' });
+  confetti(22);
+  setTimeout(() => confetti(16), 350);
+  const W = app.clientWidth, H = app.clientHeight;
+  for (let i = 0; i < 6; i++) setTimeout(() => burst(W * (0.15 + Math.random() * 0.7), H * (0.2 + Math.random() * 0.5), ['#ff8ab8', '#ffd84d', '#9be7ff', '#b99cf0'][i % 4], 10), 150 + i * 140);
+  shake(6, 300);
+  await sleep(1300);
+  await el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, fill: 'forwards' }).finished;
   el.remove();
 }
 

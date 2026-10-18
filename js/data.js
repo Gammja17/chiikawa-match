@@ -47,8 +47,9 @@ const ATTR_SVG = {
 };
 // 상성 그림: 세 속성 삼각형(화살표 쪽이 약함) + 빛⇄어둠
 function matchupSVG() {
-  const node = (a, x, y) => `<g transform="translate(${x - 15} ${y - 15})"><circle cx="15" cy="15" r="14" fill="${ATTR[a].color}" stroke="#4b3f3a" stroke-width="2.5"/>` +
-    `<g transform="translate(4.5 4.5) scale(.875)" fill="#fff">${ATTR_SVG[a]}</g></g>`;
+  const node = (a, x, y, below = true) => `<g transform="translate(${x - 15} ${y - 15})"><circle cx="15" cy="15" r="14" fill="${ATTR[a].color}" stroke="#4a4262" stroke-width="2.5"/>` +
+    `<g transform="translate(4.5 4.5) scale(.875)" fill="#fff">${ATTR_SVG[a]}</g>` +
+    `<text x="15" y="${below ? 44 : -6}" text-anchor="middle" font-family="Poor Story, sans-serif" font-size="14" fill="#4a4262">${ATTR[a].name}</text></g>`;
   const arrow = (x1, y1, x2, y2) => {
     const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L;
     const sx = x1 + ux * 20, sy = y1 + uy * 20, ex = x2 - ux * 22, ey = y2 - uy * 22;
@@ -56,12 +57,12 @@ function matchupSVG() {
     return `<path d="M${sx} ${sy}L${hx} ${hy}" stroke="#4b3f3a" stroke-width="3" stroke-linecap="round"/>` +
       `<path d="M${ex} ${ey}L${hx + px} ${hy + py}L${hx - px} ${hy - py}Z" fill="#4b3f3a" stroke="#4b3f3a" stroke-width="2" stroke-linejoin="round"/>`;
   };
-  const A = [60, 18], Bp = [100, 86], C = [20, 86];
-  return `<svg class="matchup" viewBox="0 0 220 104">` +
+  const A = [60, 34], Bp = [100, 100], C = [20, 100];
+  return `<svg class="matchup" viewBox="0 0 220 136">` +
     arrow(...A, ...Bp) + arrow(...Bp, ...C) + arrow(...C, ...A) +
-    node('brave', ...A) + node('odd', ...Bp) + node('cry', ...C) +
-    `<path d="M164 52H186M164 52l7-5M164 52l7 5M186 52l-7-5M186 52l-7 5" stroke="#4b3f3a" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>` +
-    node('light', 146, 52) + node('dark', 204, 52) + `</svg>`;
+    node('brave', ...A, false) + node('odd', ...Bp) + node('cry', ...C) +
+    `<path d="M164 68H186M164 68l7-5M164 68l7 5M186 68l-7-5M186 68l-7 5" stroke="#4a4262" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>` +
+    node('light', 146, 68) + node('dark', 204, 68) + `</svg>`;
 }
 const attrIcon = a => `<i class="ai" style="--ac:${ATTR[a].color}"><svg viewBox="0 0 24 24">${ATTR_SVG[a]}</svg></i>`;
 // 세 속성은 가위바위보, 빛과 어둠은 서로에게 강함
