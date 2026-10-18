@@ -353,9 +353,9 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 .fever-show { position: absolute; inset: 0; z-index: 26; pointer-events: none; overflow: hidden; }
 .fever-show .rays { position: absolute; left: 50%; top: 45%; width: 180vmax; height: 180vmax; opacity: 0;
   background: repeating-conic-gradient(from 0deg, #ffd6e8cc 0 8deg, #ffffff00 8deg 14deg, #fff5c8cc 14deg 22deg, #ffffff00 22deg 28deg, #d9f1ffcc 28deg 36deg, #ffffff00 36deg 42deg); border-radius: 50%; }
-.fever-show img { position: absolute; left: 50%; bottom: 0; width: 82%; transform: translate(-50%, 110%); filter: drop-shadow(0 6px 0 rgba(74, 66, 98, .2)); }
-.fever-show .fever-txt { position: absolute; left: 50%; top: 22%; transform: translateX(-50%); white-space: nowrap; font-family: var(--head); font-weight: 700; font-size: 58px; line-height: 1.1; color: #fff; -webkit-text-stroke: 9px var(--pink); paint-order: stroke fill; }
-.fever-show .fever-sub { position: absolute; left: 50%; top: calc(22% + 66px); transform: translateX(-50%); padding: 2px 14px; border-radius: 12px; background: var(--gold); font-family: var(--head); font-size: 22px; color: var(--ink); }
+.fever-show img { position: absolute; left: 50%; top: 55%; width: 86%; transform: translate(-50%, -50%) scale(0); }
+.fever-show .fever-txt { position: absolute; left: 50%; top: 12%; transform: translateX(-50%); white-space: nowrap; font-family: var(--head); font-weight: 700; font-size: 58px; line-height: 1.1; color: #fff; -webkit-text-stroke: 9px var(--pink); paint-order: stroke fill; }
+.fever-show .fever-sub { position: absolute; left: 50%; top: calc(12% + 66px); transform: translateX(-50%); padding: 2px 14px; border-radius: 12px; background: var(--gold); font-family: var(--head); font-size: 22px; color: var(--ink); }
 /* 피버 중: 판 테두리가 무지갯빛으로 반짝 */
 @keyframes feverGlow { 0% { box-shadow: 0 0 0 4px #ff8ab8, 0 0 18px 6px #ff8ab8; } 33% { box-shadow: 0 0 0 4px #ffd84d, 0 0 18px 6px #ffd84d; } 66% { box-shadow: 0 0 0 4px #7cc4ec, 0 0 18px 6px #7cc4ec; } 100% { box-shadow: 0 0 0 4px #ff8ab8, 0 0 18px 6px #ff8ab8; } }
 #app.fever #board { animation: feverGlow 1.2s linear infinite; }
@@ -456,3 +456,44 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .recruit img { width: 34px; height: 34px; }
 .recruit span { flex: 1; }
 .recruit .big-btn { min-width: 0; height: 42px; padding: 3px 14px 0; font-size: 26px; }
+
+/* ---------- 빤딱빤딱: 구슬 광택, 아이템 반짝임 ---------- */
+.tile .inner:not(.item):not(.block):not(.ing)::after { content: ''; position: absolute; left: 20%; top: 12%; width: 26%; height: 14%; border-radius: 50%; background: rgba(255, 255, 255, .75); transform: rotate(-30deg); pointer-events: none; }
+@keyframes glint { 0%, 70%, 100% { filter: drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 1.5px #fff) brightness(1); } 80% { filter: drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 6px #fff) brightness(1.35); } }
+.tile .inner.item img { animation: glint 2.4s ease-in-out infinite; }
+
+/* ---------- 인어섬: 바다빛 ---------- */
+#app.tower-mode { background-color: #e6f6ff; background-image: radial-gradient(circle, #c9e9fb 1.2px, transparent 1.6px); }
+
+/* ---------- 도전 ---------- */
+.ch-body { flex: 1; display: flex; flex-direction: column; gap: 14px; padding: 8px 14px 20px; }
+.ch-card { display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 18px; background: #fff; box-shadow: var(--sh); text-align: left; }
+.ch-card:active { transform: scale(.97); }
+.ch-card > img { width: 64px; height: 64px; flex: none; }
+.ch-card b { display: block; font-family: var(--head); font-size: 28px; line-height: 1.1; }
+.ch-card small { display: block; color: var(--ink2); font-size: 14px; }
+.ch-card span { display: inline-block; margin-top: 4px; padding: 1px 10px; border-radius: 9px; background: var(--pink-l); color: var(--pink); font-size: 14px; }
+.ch-card.tower { background: #e9f7ff; }
+.ch-card.contest { background: #eefae6; }
+.ch-card.rank { background: #fff7dc; }
+
+/* ---------- 랭킹 ---------- */
+.rank-tabs { display: flex; gap: 6px; margin: 0 14px 10px; padding: 4px; border-radius: 14px; background: #fff; box-shadow: var(--sh); }
+.rank-tabs button { flex: 1; height: 38px; border-radius: 10px; font-family: var(--head); font-size: 18px; color: var(--ink2); }
+.rank-tabs button.on { background: var(--pink); color: #fff; }
+#rankMe { margin: 0 14px 8px; }
+.rank-note { padding: 10px; text-align: center; color: var(--ink2); font-size: 14px; list-style: none; }
+.login-btns { display: flex; gap: 8px; }
+.login-btns .big-btn { flex: 1; min-width: 0; height: 46px; font-size: 18px; padding: 0 8px; }
+.me-row { display: flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 12px; background: #fff; box-shadow: var(--sh); }
+.me-row .nm { flex: 1; font-family: var(--head); font-size: 20px; }
+.me-row .mini-btn { float: none; }
+#rankList { flex: 1; overflow-y: auto; touch-action: pan-y; margin: 0; padding: 0 14px 20px; list-style: none; }
+#rankList li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin-bottom: 6px; border-radius: 12px; background: #fff; }
+#rankList li.mine { background: var(--pink-l); }
+#rankList .rk { width: 30px; height: 30px; flex: none; display: grid; place-items: center; border-radius: 50%; background: #f1eaf8; font-family: var(--head); font-size: 16px; }
+#rankList .rk.top1 { background: var(--gold); color: #fff; }
+#rankList .rk.top2 { background: #c9c9d6; color: #fff; }
+#rankList .rk.top3 { background: #e0a46a; color: #fff; }
+#rankList .nm { flex: 1; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#rankList b { font-family: var(--head); font-size: 20px; }

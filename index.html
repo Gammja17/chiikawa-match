@@ -6,7 +6,7 @@
 <title>먼작귀 퍼즐 토벌 대작전! (팬게임)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poor+Story&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=16">
+<link rel="stylesheet" href="css/style.css?v=17">
 </head>
 <body>
 <div id="app">
@@ -37,6 +37,7 @@
       <button id="btnHouse"><img src="assets/img/items/house.png" alt=""><span>집</span></button>
       <button id="btnGacha"><img src="assets/img/items/gift.png" alt=""><span>캡슐 뽑기</span></button>
       <button id="btnFriends"><img src="assets/img/faces/chiikawa.png" alt=""><span>친구들</span></button>
+      <button id="btnChallenge"><img src="assets/img/items/medal.png" alt=""><span>도전</span></button>
       <button id="btnRamen" class="ramen-btn"><img src="assets/img/npc/armor.png" alt=""><span>라면 가게</span><i class="dot"></i></button>
     </nav>
   </section>
@@ -65,6 +66,30 @@
       <div id="capsule" class="capsule"><i class="top"></i><i class="bottom"></i></div>
       <button id="btnPull" class="big-btn"><img src="assets/img/items/coin.png" alt="">100 · 한 번 뽑기</button>
     </div>
+  </section>
+
+  <section id="challenge" class="screen">
+    <header class="bar">
+      <button class="icon-btn btn-tomap">◀</button>
+      <div class="bar-title">도전</div>
+      <div class="coins"><img src="assets/img/items/coin.png" alt=""><b>0</b></div>
+    </header>
+    <div class="ch-body">
+      <button id="btnTower" class="ch-card tower"><img src="assets/img/items/bubble.png" alt=""><div><b>인어섬 탐험</b><small>끝없이 올라가는 층</small><span id="towerBest"></span></div></button>
+      <button id="btnContest" class="ch-card contest"><img src="assets/img/items/weed2.png" alt=""><div><b>제초 대회</b><small>60초 동안 최고 점수</small><span id="contestBest"></span></div></button>
+      <button id="btnRanking" class="ch-card rank"><img src="assets/img/items/medal.png" alt=""><div><b>랭킹</b><small>깬 스테이지 · 인어섬 · 제초 대회</small></div></button>
+    </div>
+  </section>
+
+  <section id="ranking" class="screen">
+    <header class="bar">
+      <button class="icon-btn btn-tochallenge">◀</button>
+      <div class="bar-title">랭킹</div>
+      <div style="width:40px"></div>
+    </header>
+    <div class="rank-tabs"><button data-t="cleared">스테이지</button><button data-t="tower">인어섬</button><button data-t="contest">제초 대회</button></div>
+    <div id="rankMe"></div>
+    <ol id="rankList"></ol>
   </section>
 
   <section id="friends" class="screen">
@@ -155,11 +180,13 @@
   <div id="fx"></div>
   <div id="flash"></div>
 </div>
-<script src="js/data.js?v=16"></script>
-<script src="js/audio.js?v=16"></script>
-<script src="js/board.js?v=16"></script>
-<script src="js/game.js?v=16"></script>
-<script src="js/life.js?v=16"></script>
-<script src="js/meta.js?v=16"></script>
+<script src="js/data.js?v=17"></script>
+<script src="js/audio.js?v=17"></script>
+<script src="js/board.js?v=17"></script>
+<script src="js/game.js?v=17"></script>
+<script src="js/life.js?v=17"></script>
+<script src="js/meta.js?v=17"></script>
+<script src="js/firebase-config.js?v=17"></script>
+<script src="js/net.js?v=17"></script>
 </body>
 </html>

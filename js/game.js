@@ -467,7 +467,7 @@ function spawnMonster(animated) {
 
 async function startStage(i) {
   B.mode = 'battle';
-  app.classList.remove('life-mode');
+  app.classList.remove('life-mode', 'tower-mode');
   Board.floor = null;
   Board.syrup = null;
   Board.mask = null;
@@ -495,6 +495,19 @@ async function startStage(i) {
   B.busy = false;
 }
 
+// 반짝반짝: 가만히 있을 때 판 위 구슬에 가끔 별빛이 스침
+setInterval(() => {
+  if (!$('#battle').classList.contains('active') || B.busy || B.over || !B.grid || document.hidden) return;
+  const all = [];
+  Board.each(B.grid, (t, r, c) => t.el && t.type >= 0 && all.push([r, c]));
+  const [r, c] = all[Math.floor(Math.random() * all.length)] || [];
+  if (r == null) return;
+  const p = tileCenter(r, c);
+  kp('star_06', p.x - B.S * 0.22, p.y - B.S * 0.24, B.S * 0.55, '#ffffff', [
+    { transform: 'scale(0) rotate(0)', opacity: 0 }, { transform: 'scale(1) rotate(45deg)', opacity: 1, offset: 0.4 }, { transform: 'scale(0) rotate(90deg)', opacity: 0 },
+  ], { duration: 700, easing: 'ease-in-out' });
+}, 900);
+
 // 판 떨어지며 등장
 async function dropIn(text) {
   const ps = [];
@@ -508,7 +521,12 @@ async function dropIn(text) {
   Sound.play('jingle_start', 1, 0.8);
   await Promise.all(ps);
 }
-$('#btnBack').onclick = () => { if (B.busy && !B.over) return; Sound.play('click'); go(openMap); };
+$('#btnBack').onclick = () => {
+  if (B.busy && !B.over) return;
+  Sound.play('click');
+  Life.stopTimer();
+  go(B.mode === 'life' && L.run && L.run.kind !== 'route' ? openChallenge : openMap);
+};
 
 // ---------- 입력 ----------
 let down = null;
@@ -1111,6 +1129,7 @@ async function win() {
   const coins = Meta.reward(stars, firstClear), treat = Meta.treat('b', B.stage, stars, firstClear);
   if (firstClear) Save.data.ramen = true;
   Save.data.stars[B.stage] = Math.max(Save.data.stars[B.stage] || 0, stars);
+  setTimeout(() => Net.submit(), 0);
   Save.save();
   Sound.play('win', 1);
   await clearShow();
@@ -1529,15 +1548,16 @@ async function feverShow() {
   setTimeout(() => Haptic.tap(40), 250);
   rays.animate([{ opacity: 0, transform: 'translate(-50%,-50%) scale(.3) rotate(0)' }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1) rotate(60deg)', offset: 0.3 },
     { opacity: 1, transform: 'translate(-50%,-50%) scale(1.1) rotate(160deg)', offset: 0.8 }, { opacity: 0, transform: 'translate(-50%,-50%) scale(1.2) rotate(200deg)' }], { duration: 1500, fill: 'forwards' });
+  // 화면 한가운데로 쏙 튀어나와 들썩들썩
   img.animate([
-    { transform: 'translate(-50%,110%) rotate(6deg)' },
-    { transform: 'translate(-50%,-10%) rotate(-3deg)', offset: 0.25 },
-    { transform: 'translate(-50%,0) scale(1.04,.96)', offset: 0.35 },
-    { transform: 'translate(-50%,-6%) rotate(3deg)', offset: 0.5 },
-    { transform: 'translate(-50%,0) scale(1.04,.96)', offset: 0.62 },
-    { transform: 'translate(-50%,-6%) rotate(-3deg)', offset: 0.75 },
-    { transform: 'translate(-50%,0)', offset: 0.85 },
-    { transform: 'translate(-50%,115%)' },
+    { transform: 'translate(-50%,-50%) scale(0) rotate(-20deg)', opacity: 0 },
+    { transform: 'translate(-50%,-50%) scale(1.15) rotate(4deg)', opacity: 1, offset: 0.2 },
+    { transform: 'translate(-50%,-50%) scale(1.04,.94)', offset: 0.32 },
+    { transform: 'translate(-50%,-56%) scale(.98,1.04) rotate(4deg)', offset: 0.45 },
+    { transform: 'translate(-50%,-50%) scale(1.04,.94)', offset: 0.57 },
+    { transform: 'translate(-50%,-56%) scale(.98,1.04) rotate(-4deg)', offset: 0.7 },
+    { transform: 'translate(-50%,-50%) scale(1)', opacity: 1, offset: 0.85 },
+    { transform: 'translate(-50%,-50%) scale(1.3)', opacity: 0 },
   ], { duration: 1500, easing: 'ease-in-out', fill: 'forwards' });
   txt.animate([{ transform: 'translateX(-50%) scale(0) rotate(-12deg)' }, { transform: 'translateX(-50%) scale(1.35) rotate(4deg)', offset: 0.5 }, { transform: 'translateX(-50%) scale(1) rotate(-3deg)' }],
     { duration: 420, delay: 120, easing: 'ease-out', fill: 'backwards' });

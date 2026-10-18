@@ -51,6 +51,12 @@
 - 캐릭터 목소리: `assets/voice/`에 직접 넣는 칸만 있습니다 (README 참고)
 - 진동: 구슬이 터질 때 폰이 톡톡 울림 (안드로이드, iOS 18 이상 사파리). 지도 위 버튼으로 끄고 켬
 
+### 도전 (지도 아래 「도전」)
+
+- 인어섬 탐험: 층마다 일상 퍼즐이 나오고 올라갈수록 이동 수가 줄어드는 무한 모드. 실패하면 거기까지 (층마다 +5번 한 번)
+- 제초 대회: 60초 동안 최대한 높은 점수. 판 전체 잡초를 다 뽑으면 +2000점과 함께 다시 자람
+- 랭킹: 깬 스테이지 수, 인어섬 최고 층, 제초 대회 최고 점수 (구글 로그인 또는 게스트)
+
 ## 실행
 
 정적 파일만 있어서 아무 웹 서버로 열면 됩니다.
@@ -71,3 +77,34 @@ python -m http.server 8770
 - 아이템, 장애물, 재료, 가구, 액세서리 아이콘: [Noto Emoji](https://github.com/googlefonts/noto-emoji) (Google, Apache License 2.0). 라이선스 원문은 `assets/img/items/LICENSE-noto.txt`
 - 글꼴: [Dongle](https://fonts.google.com/specimen/Dongle), [Gowun Dodum](https://fonts.google.com/specimen/Gowun+Dodum), [Gaegu](https://fonts.google.com/specimen/Gaegu) (Google Fonts, SIL Open Font License)
 - 게임 코드(`js/`, `css/`, `index.html`): 팬 창작물
+
+## 랭킹 서버 (Firebase)
+
+설정 전에는 랭킹 없이 기기 안 기록만 씁니다. 켜려면:
+
+1. [Firebase 콘솔](https://console.firebase.google.com)에서 프로젝트를 만들고 **웹 앱**을 추가합니다.
+2. **Authentication → 로그인 방법**에서 `Google`과 `익명`을 켭니다.
+3. **Authentication → 설정 → 승인된 도메인**에 `gammja17.github.io`를 추가합니다.
+4. **Firestore Database**를 만들고 **규칙**에 아래를 붙여 넣습니다.
+5. 웹 앱 설정값(`apiKey`, `authDomain`, `projectId`, `appId`)을 `js/firebase-config.js`의 `window.FIREBASE_CONFIG`에 넣습니다. 이 값은 공개되어도 되는 값이고, 실제 보호는 아래 규칙이 맡습니다.
+
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+    match /scores/{uid} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['name', 'cleared', 'tower', 'contest', 'updated'])
+        && request.resource.data.name is string && request.resource.data.name.size() <= 12
+        && request.resource.data.cleared is int && request.resource.data.cleared <= 30
+        && request.resource.data.tower is int && request.resource.data.tower <= 999
+        && request.resource.data.contest is int && request.resource.data.contest <= 300000;
+    }
+  }
+}
+```
+
+점수는 브라우저에서 올리는 값이라 마음먹고 조작하면 막을 수 없습니다. 규칙은 말도 안 되는 값만 걸러 냅니다.
+
+Firebase SDK(Apache License 2.0)는 `assets/vendor/`에 넣어 두었습니다.

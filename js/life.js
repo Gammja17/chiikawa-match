@@ -160,10 +160,13 @@ const Life = {
   hasIng: () => !!L.st?.ing,
   stopTimer() { clearInterval(L.timer); L.timer = null; },
 
-  async start(i) {
-    const st = LIFE[i];
+  start(i) { return Life.begin(LIFE[i], { kind: 'route', i }); },
+
+  // run: { kind: 'route', i } 모험 지도 / { kind: 'tower', floor } 인어섬 탐험 / { kind: 'contest' } 제초 대회
+  async begin(st, run) {
+    const i = run.i ?? -1;
     Life.stopTimer();
-    Object.assign(L, { ending: false, st, i, moves: st.moves || 0, time: st.time || 0, score: 0, ing: 0, chars: {}, popped: false, extra: false, goalsHtml: '' });
+    Object.assign(L, { run, ending: false, st, i, moves: st.moves || 0, time: st.time || 0, score: 0, ing: 0, chars: {}, popped: false, extra: false, goalsHtml: '' });
     Object.assign(B, { mode: 'life', stage: i, over: false, busy: true, sel: null, pending: [], maxCombo: 0, fever: 0 });
     B.team = LIFE_CHARS.slice(0, st.types).map(id => CHARS.findIndex(c => c.id === id));
     NTYPES = st.types;
@@ -174,10 +177,11 @@ const Life = {
     L.spawned = lay.ings.length;
     Board.spawnIng = st.ing ? spawnIng : null;
     app.classList.add('life-mode');
+    app.classList.toggle('tower-mode', run.kind === 'tower');
     updateFever();
     Sound.music('map');
     show('battle');
-    $('#stageName').textContent = `${routeIdx('l', i) + 1}. ${st.name}`;
+    $('#stageName').textContent = run.kind === 'route' ? `${routeIdx('l', i) + 1}. ${st.name}` : st.name;
     $('#waveInfo').innerHTML = '';
     $('#lhChar').src = art(st.host);
     layoutBoard();
@@ -186,7 +190,7 @@ const Life = {
     B.grid = Board.create(lay);
     renderFloor();
     Life.hud();
-    if (LIFE_STORY[i] && (Save.data.life || [])[i] == null) await playStory(LIFE_STORY[i]);
+    if (run.kind === 'route' && LIFE_STORY[i] && (Save.data.life || [])[i] == null) await playStory(LIFE_STORY[i]);
     await dropIn(st.intro);
     B.busy = false;
     if (st.time) Life.runTimer();
@@ -220,14 +224,14 @@ const Life = {
     if (g.k === 'score') return Math.max(0, g.n - L.score);
     return Life.count(g.k);
   },
-  done: () => L.st.goals.every(g => Life.remain(g) === 0),
+  done: () => !L.st.contest && L.st.goals.every(g => Life.remain(g) === 0),
 
   hud() {
     const st = L.st;
     $('#lhLimitLabel').innerHTML = st.time ? `<img src="${ITEM('timer')}">` : MOVE_SVG;
     $('#lhLimit').textContent = st.time ? Math.ceil(L.time) : L.moves;
     $('.lh-limit').classList.toggle('danger', st.time ? L.time <= 10 : L.moves <= 3);
-    const html = st.goals.map(g => {
+    const html = st.contest ? `<div class="gchip best"><img src="${ITEM('medal')}"><b>${Save.data.contestBest || 0}</b></div>` : st.goals.map(g => {
       const n = Life.remain(g);
       return `<div class="gchip ${g.k}${n ? '' : ' done'}"><img src="${GOAL_ICON[g.k](g)}"><b>${n || '✓'}</b></div>`;
     }).join('');
@@ -309,12 +313,25 @@ const Life = {
       }
     }
     L.popped = false;
+    if (L.st.contest && !Life.count('weed')) await Life.regrow();
     Life.hud();
     await Life.check();
   },
 
+  // 제초 대회: 잡초를 다 뽑으면 보너스와 함께 다시 자람
+  async regrow() {
+    L.score += 2000;
+    Sound.play('special', 1, 0.9);
+    banner('다시 자랐다! +2000', 450);
+    Board.floor = Board.floor.map((row, r) => row.map((_, c) => (hole(r, c) ? 0 : 1)));
+    renderFloor();
+    boardEl.querySelectorAll('.cellfg').forEach((d, k) => d.animate([{ opacity: 0, transform: 'scale(.4)' }, { opacity: 1, transform: 'scale(1)' }], { duration: 300, delay: (k % 7) * 30 }));
+    await sleep(400);
+  },
+
   async check() {
     if (B.over || L.ending) return;
+    if (L.st.contest) { if (L.time <= 0) return Life.contestEnd(); return; }
     if (Life.done()) { L.ending = true; return Life.win(); }
     if (L.st.time ? L.time <= 0 : L.moves <= 0) return Life.fail();
   },
@@ -359,12 +376,14 @@ const Life = {
     await banner(L.st.exam ? '합격 점수!' : '목표 달성!', 500);
     await Life.bonus();
     B.over = true;
+    if (L.run.kind === 'tower') return Tower.cleared();
     const st = L.st, i = L.i;
     const stars = L.score >= st.stars[2] ? 3 : L.score >= st.stars[1] ? 2 : 1;
     const list = (Save.data.life = Save.data.life || []);
     const first = list[i] == null;
     const coins = Meta.reward(stars, first), treat = Meta.treat('l', i, stars, first);
     list[i] = Math.max(list[i] || 0, stars);
+    setTimeout(() => Net.submit(), 0);
     if (first) Save.data.ramen = true;
     Save.save();
     Sound.play('win', 1);
@@ -391,8 +410,9 @@ const Life = {
     Sound.music(null);
     Sound.play('jingle_lose', 1, 0.9);
     await banner(L.st.time ? '시간 끝…' : '이동 끝…', 600);
+    if (L.run.kind === 'tower' && L.extra) return Tower.over();
     const left = L.st.goals.filter(g => Life.remain(g) > 0).map(g => `${GOAL_NAME[g.k](g)} ${Life.remain(g)}`).join(', ');
-    const retry = () => go(() => Life.start(L.i));
+    const retry = () => go(() => (L.run.kind === 'tower' ? Tower.over() : Life.start(L.i)));
     const card = { title: '아쉬워…', img: 'assets/img/art/scene_crying.jpg', photo: true, text: `남은 목표: ${left}` };
     if (!L.extra) {
       modal({
@@ -407,10 +427,79 @@ const Life = {
           Sound.music('map');
           if (L.st.time) Life.runTimer();
         },
-        btn2: '다시 하기', on2: retry,
+        btn2: L.run.kind === 'tower' ? '여기까지' : '다시 하기', on2: retry,
       });
     } else {
       modal({ ...card, btn1: '다시 하기', on1: retry, btn2: '지도', on2: () => go(openMap) });
     }
   },
+};
+
+// ---------- 인어섬 탐험: 끝없이 올라가는 층 (무한 모드) ----------
+// 층마다 일상 퍼즐 하나를 골라 이동 수를 줄여 가며 어렵게. 실패하면 거기까지 (+5번은 층마다 한 번)
+const Tower = {
+  stage(floor) {
+    const pool = LIFE.filter(s => !s.exam && !s.contest);
+    const base = pool[Math.floor(Math.random() * pool.length)];
+    const st = JSON.parse(JSON.stringify(base));
+    st.name = `인어섬 ${floor}층`;
+    st.intro = `${floor}층!`;
+    st.types = floor >= 12 ? 6 : 5;
+    st.moves = Math.max(12, Math.round(base.moves * (1 - Math.min(0.35, floor * 0.02))));
+    return st;
+  },
+  start(floor = 1) {
+    if (floor === 1) Tower.coins = 0;
+    return Life.begin(Tower.stage(floor), { kind: 'tower', floor });
+  },
+  async cleared() {
+    const f = L.run.floor;
+    const c = 20 + f * 2;
+    Tower.coins += c;
+    Meta.addCoins(c);
+    Save.data.towerBest = Math.max(Save.data.towerBest || 0, f);
+    Save.save();
+    Net.submit();
+    Sound.play('win', 1.1);
+    confetti(14);
+    await banner(`${f}층 클리어!`, 700);
+    go(() => Tower.start(f + 1));
+  },
+  over() {
+    const f = L.run.floor - 1;
+    Sound.music(null);
+    Net.submit();
+    modal({
+      title: '탐험 끝!', char: 'hachiware', text: f ? `하치와레: "${f}층까지 왔어! 대단해!"` : '하치와레: "다음엔 더 높이 가 보자!"',
+      rows: [['오른 층', f], ['최고 기록', Save.data.towerBest || 0], [`<img class="row-ic" src="${ITEM('coin')}">`, '+' + (Tower.coins || 0)]],
+      btn2: '나가기', on2: () => go(openChallenge),
+      btn1: '다시 도전', on1: () => go(() => Tower.start(1)),
+    });
+  },
+};
+
+// ---------- 제초 대회: 60초 동안 최대한 높은 점수 ----------
+const CONTEST = { name: '제초 대회', icon: 'medal', types: 5, time: 60, host: 'usagi', contest: true, intro: '60초! 최대한 많이!',
+  goals: [], stars: [8000, 15000, 25000], map: ['wwwwwww', 'wwwwwww', 'wwwwwww', 'wwwwwww', 'wwwwwww', 'wwwwwww', 'wwwwwww'] };
+Life.contestEnd = async function () {
+  B.over = true;
+  B.busy = true;
+  Life.stopTimer();
+  clearSel();
+  Sound.music(null);
+  Sound.play('jingle_win', 1, 0.9);
+  await banner('끝!', 600);
+  const best = Save.data.contestBest || 0, isBest = L.score > best;
+  Save.data.contestBest = Math.max(best, L.score);
+  const coins = Math.floor(L.score / 250);
+  Meta.addCoins(coins);
+  Save.save();
+  Net.submit();
+  if (isBest) confetti(20);
+  modal({
+    title: isBest ? '최고 기록!' : '제초 대회 끝!', char: 'usagi', text: isBest ? '우사기: "우라~!!"' : '우사기: "하아?! 한 번 더!"',
+    rows: [['점수', L.score], ['최고', Save.data.contestBest], [`<img class="row-ic" src="${ITEM('coin')}">`, '+' + coins]],
+    btn2: '나가기', on2: () => go(openChallenge),
+    btn1: '다시 도전', on1: () => go(() => Life.begin(CONTEST, { kind: 'contest' })),
+  });
 };
