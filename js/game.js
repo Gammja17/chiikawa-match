@@ -57,13 +57,14 @@ function addFx(cls, x, y) {
 
 function burst(x, y, color, n = 6) {
   for (let i = 0; i < n; i++) {
-    const star = Math.random() < 0.35;
-    const p = addFx(star ? 'p star' : 'p', x, y);
-    if (star) { p.textContent = '★'; p.style.color = color; } else p.style.background = color;
-    const ang = Math.random() * Math.PI * 2, d = 26 + Math.random() * 42;
+    const spr = Math.random() < 0.45;
+    const p = addFx(spr ? 'p spr' : 'p', x, y);
+    if (spr) p.style.backgroundImage = `url(${FXI(FX_SPRITES[Math.floor(Math.random() * FX_SPRITES.length)])})`;
+    else p.style.background = color;
+    const ang = Math.random() * Math.PI * 2, d = 26 + Math.random() * 42, rot = (Math.random() - 0.5) * 240;
     p.animate([
-      { transform: 'translate(0,0) scale(1)', opacity: 1 },
-      { transform: `translate(${Math.cos(ang) * d}px,${Math.sin(ang) * d}px) scale(0)`, opacity: 0.6 },
+      { transform: 'translate(0,0) scale(1) rotate(0)', opacity: 1 },
+      { transform: `translate(${Math.cos(ang) * d}px,${Math.sin(ang) * d}px) scale(0) rotate(${rot}deg)`, opacity: 0.6 },
     ], { duration: 420 + Math.random() * 200, easing: 'cubic-bezier(.2,.8,.4,1)' }).finished.then(() => p.remove());
   }
 }
@@ -114,7 +115,7 @@ function flash(color = '#ff4d6d', peak = 0.45) {
   im.style.animationDelay = i * 0.12 + 's';
   $('#titleParty').appendChild(im);
 });
-$('#btnStart').onclick = () => { Sound.play('open'); openMap(); };
+$('#btnStart').onclick = () => { Sound.play('open'); go(openMap); };
 
 // ---------- 지도 ----------
 const NODE_GAP = 108, NODE_TOP = 160;
@@ -122,6 +123,7 @@ const nodePos = (i, W) => ({ x: (0.5 + Math.sin(i * 1.15) * 0.28) * W, y: NODE_T
 
 function openMap(advanceFrom = null) {
   show('map');
+  $('#btnRamen').classList.toggle('on', Save.data.ramen !== false);
   const path = $('#mapPath');
   path.innerHTML = '';
   path.style.height = NODE_TOP + STAGES.length * NODE_GAP + 40 + 'px';
@@ -149,7 +151,7 @@ function openMap(advanceFrom = null) {
     n.onclick = () => {
       if (locked) { Sound.play('bad'); n.animate([{ transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' }, { transform: 'none' }], { duration: 200 }); return; }
       Sound.play('click');
-      openFormation(i);
+      go(() => openFormation(i));
     };
     path.appendChild(n);
   });
@@ -179,7 +181,7 @@ function openMap(advanceFrom = null) {
     scroller.scrollTop = goal.y - scroller.clientHeight / 2;
   }
 }
-$('#btnMapHome').onclick = () => { Sound.play('click'); show('title'); };
+$('#btnMapHome').onclick = () => { Sound.play('click'); go(() => show('title')); };
 
 // ---------- 스토리 ----------
 function playStory(lines) {
@@ -217,9 +219,9 @@ function playStory(lines) {
 }
 
 // ---------- 모달 ----------
-function modal({ title, stars = null, char, text, btn1, on1, btn2 = '', on2 = null }) {
+function modal({ title, stars = null, char, img = null, text, btn1, on1, btn2 = '', on2 = null }) {
   $('#modalTitle').textContent = title;
-  $('#modalChar').src = BODY(char);
+  $('#modalChar').src = img || portrait(char);
   $('#modalText').textContent = text;
   const st = $('#modalStars');
   st.innerHTML = stars == null ? '' : '<span>★</span><span>★</span><span>★</span>';
@@ -366,9 +368,12 @@ function spawnMonster(animated) {
 
 async function startStage(i) {
   B.stage = i; B.wave = 0; B.over = false; B.busy = true; B.sel = null; B.pending = [];
-  B.teamHp = B.teamMax = 120;
+  B.teamHp = B.teamMax = Save.data.buff === 'hp' ? 150 : 120;
+  B.fever = 0;
+  updateFever();
   NTYPES = B.team.length;
-  B.gauge = B.team.map(() => 0);
+  B.gauge = B.team.map(k => (Save.data.buff === 'gauge' ? Math.floor(CHARS[k].skill.need / 2) : 0));
+  if (Save.data.buff) { Save.data.buff = null; Save.save(); }
   show('battle');
   $('#stageName').textContent = `${i + 1}. ${STAGES[i].name}`;
   buildParty();
@@ -392,7 +397,7 @@ async function startStage(i) {
   await Promise.all(ps);
   B.busy = false;
 }
-$('#btnBack').onclick = () => { if (B.busy && !B.over) return; Sound.play('click'); openMap(); };
+$('#btnBack').onclick = () => { if (B.busy && !B.over) return; Sound.play('click'); go(openMap); };
 
 // ---------- 입력 ----------
 let down = null;
@@ -474,6 +479,7 @@ async function cascade(swapped, forced) {
     const res = Board.resolve(B.grid, combo === 0 ? swapped : null, combo === 0 ? forced : []);
     if (!res) break;
     combo++;
+    if (combo === 5 && !B.fever) await feverShow();
     await stepFx(res, combo);
     await fall(Board.gravity(B.grid));
   }
@@ -604,7 +610,7 @@ async function stepFx(res, combo) {
     const to = ch.heal ? teamC : monC;
     cells.slice(0, 4).forEach(([r, c]) => projectile(tileCenter(r, c), to, FACE(ch.id), ch.ring, (d++) * 35));
   });
-  const mult = 1 + 0.25 * (combo - 1);
+  const mult = (1 + 0.25 * (combo - 1)) * (B.fever ? 1.5 : 1);
   B.pending.push((async () => {
     await sleep(440);
     let k = 0;
@@ -694,6 +700,7 @@ async function endTurn() {
   await Promise.all(B.pending);
   B.pending = [];
   if (B.monHp <= 0) { await monsterDefeated(); return; }
+  if (B.fever) { B.fever--; updateFever(); }
   B.cd--;
   updateCd();
   if (B.cd <= 0) {
@@ -756,10 +763,11 @@ async function win() {
   const ratio = B.teamHp / B.teamMax;
   const stars = ratio >= 0.7 ? 3 : ratio >= 0.35 ? 2 : 1;
   const firstClear = Save.data.stars[B.stage] == null;
+  if (firstClear) Save.data.ramen = true;
   Save.data.stars[B.stage] = Math.max(Save.data.stars[B.stage] || 0, stars);
   Save.save();
   Sound.play('win', 1);
-  await banner('토벌 성공!', 700);
+  await clearShow();
   const isLast = B.stage === STAGES.length - 1;
   if (isLast && firstClear) await playStory(STORY.end);
   const pool = B.team.map(i => CHARS[i]).filter(c => !NO_BODY.has(c.id));
@@ -767,9 +775,9 @@ async function win() {
   const from = B.stage;
   modal({
     title: '토벌 성공!', stars, char: ch.id, text: `${ch.name}: "${ch.line}"`,
-    btn2: '지도', on2: () => openMap(firstClear ? from : null),
+    btn2: '지도', on2: () => go(() => openMap(firstClear ? from : null)),
     btn1: isLast ? '지도로' : '다음 스테이지',
-    on1: () => (isLast ? openMap(firstClear ? from : null) : openFormation(B.stage + 1)),
+    on1: () => go(() => (isLast ? openMap(firstClear ? from : null) : openFormation(B.stage + 1))),
   });
 }
 
@@ -780,8 +788,8 @@ async function lose() {
   await banner('후퇴…', 600);
   modal({
     title: '후퇴…', char: 'chiikawa', text: '치이카와: (훌쩍…) 다시 해볼까?',
-    btn2: '지도', on2: () => openMap(),
-    btn1: '다시 하기', on1: () => startStage(B.stage),
+    btn2: '지도', on2: () => go(openMap),
+    btn1: '다시 하기', on1: () => go(() => startStage(B.stage)),
   });
 }
 
@@ -833,9 +841,9 @@ $('#btnSortie').onclick = () => {
   B.team = formPick.slice();
   Save.data.team = B.team.map(k => CHARS[k].id);
   Save.save();
-  startStage(formStage);
+  go(() => startStage(formStage));
 };
-$('#btnFormBack').onclick = () => { Sound.play('click'); openMap(); };
+$('#btnFormBack').onclick = () => { Sound.play('click'); go(openMap); };
 
 // ---------- 스킬 ----------
 // 캐릭터 색 스티커 띠가 찰싹 붙고, 그림이 튀어나와 대사, 빛줄기 남기고 빠짐 (약 1초)
@@ -950,6 +958,50 @@ async function useSkill(k) {
     burst(p.x, p.y, '#7fd17a', 14);
     floatNum(p.x, p.y - 10, `+${amt}`, '#3fae4f', 'crit');
     await sleep(400);
+  } else if (id === 'ramen') {
+    const amt = Math.round(B.teamMax * 0.2);
+    B.teamHp = Math.min(B.teamMax, B.teamHp + amt);
+    updateTeam();
+    B.gauge = B.gauge.map(g => g + 3);
+    updateGauges();
+    Sound.play('heal', 1.1, 0.9);
+    const p = centerOf($('#teamHp'));
+    burst(p.x, p.y, '#ff9f5a', 14);
+    floatNum(p.x, p.y - 10, `+${amt}`, '#3fae4f', 'crit');
+    await sleep(400);
+  } else if (id === 'meteor') {
+    const spots = pickTiles(3);
+    for (const [r, c] of spots) {
+      const p = tileCenter(r, c);
+      const s = new Image();
+      s.src = FXI('star_y');
+      s.className = 'fximg';
+      Object.assign(s.style, { left: p.x + 'px', top: p.y + 'px', width: B.S * 1.2 + 'px' });
+      fx.appendChild(s);
+      s.animate([{ transform: 'translate(-50%,-50%) translate(140px,-420px) rotate(-200deg)' }, { transform: 'translate(-50%,-50%) rotate(0)' }],
+        { duration: 380, easing: 'cubic-bezier(.5,0,1,1)' }).finished.then(() => s.remove());
+      await sleep(130);
+    }
+    await sleep(260);
+    spots.forEach(([r, c]) => { const t = B.grid[r][c]; t.special = 'bomb'; refreshTile(t); });
+    cells = spots;
+  } else if (id === 'cols2') {
+    const cs = [0, 1, 2, 3, 4, 5, 6].sort(() => Math.random() - 0.5).slice(0, 2);
+    cs.forEach(c => { for (let r = 0; r < ROWS; r++) cells.push([r, c]); });
+  } else if (id === 'stall') {
+    B.cd += 3;
+    updateCd();
+    const p = centerOf($('#countdown'));
+    floatNum(p.x, p.y - 16, '+3턴', '#4fbf8f');
+    const eff = attrMult(ch.attr, curWave().a);
+    hitMonster(Math.round(ch.dmg * 4 * eff), ch, false, 0, eff);
+    await sleep(400);
+  } else if (id === 'cheer') {
+    Board.shuffle(B.grid);
+    await Promise.all(B.grid.flatMap((row, r) => row.map((t, c) => slide(t, r, c, 420, 'cubic-bezier(.3,1.4,.6,1)'))));
+    B.gauge = B.gauge.map((g, j) => (j === k ? g : g + 4));
+    updateGauges();
+    Sound.play('sparkle', 1.1, 0.8);
   } else if (id === 'rainbow') {
     const [rc] = pickTiles(1);
     if (rc) {
@@ -970,3 +1022,123 @@ async function useSkill(k) {
   if (B.monHp <= 0) await monsterDefeated();
   if (!B.over) B.busy = false;
 }
+
+// ---------- 화면 전환: 크레용 종이가 쓱 덮었다 걷힘 ----------
+let wiping = false;
+async function go(fn) {
+  if (wiping) return;
+  wiping = true;
+  const w = document.createElement('div');
+  w.className = 'wipe';
+  w.innerHTML = `<img src="${FXI(FX_SPRITES[Math.floor(Math.random() * 4)])}">`;
+  app.appendChild(w);
+  await w.animate([{ transform: 'translateX(-105%) rotate(-4deg)' }, { transform: 'translateX(0) rotate(-4deg)' }],
+    { duration: 240, easing: 'cubic-bezier(.3,.8,.4,1)', fill: 'forwards' }).finished;
+  fn();
+  await sleep(60);
+  await w.animate([{ transform: 'translateX(0) rotate(-4deg)' }, { transform: 'translateX(105%) rotate(-4deg)' }],
+    { duration: 260, easing: 'cubic-bezier(.6,0,.7,.2)', fill: 'forwards' }).finished;
+  w.remove();
+  wiping = false;
+}
+
+// ---------- 클리어 연출: 폭죽 → 도장 쾅 → 칭찬 ----------
+function confetti(n = 14) {
+  const W = app.clientWidth;
+  for (let i = 0; i < n; i++) {
+    const s = addFx('p spr big', Math.random() * W, -30);
+    s.style.backgroundImage = `url(${FXI(FX_SPRITES[Math.floor(Math.random() * FX_SPRITES.length)])})`;
+    const dx = (Math.random() - 0.5) * 120, dy = app.clientHeight * (0.6 + Math.random() * 0.5), rot = (Math.random() - 0.5) * 720;
+    s.animate([
+      { transform: 'translate(0,0) rotate(0) scale(.6)', opacity: 1 },
+      { transform: `translate(${dx}px,${dy}px) rotate(${rot}deg) scale(1)`, opacity: 0.9 },
+    ], { duration: 1300 + Math.random() * 700, delay: Math.random() * 300, easing: 'cubic-bezier(.3,.2,.6,1)', fill: 'backwards' }).finished.then(() => s.remove());
+  }
+}
+
+async function clearShow() {
+  const el = document.createElement('div');
+  el.className = 'clear-show';
+  const pool = B.team.map(i => CHARS[i]);
+  const ch = pool[Math.floor(Math.random() * pool.length)];
+  el.innerHTML = `<div class="dim"></div>
+    <div class="stamp"><img src="${UI('stamp')}"><span>토벌<br>성공</span></div>
+    <img class="hero" src="${portrait(ch.id)}"><div class="hero-say">${ch.line}</div>`;
+  app.appendChild(el);
+  const [dim, stamp, hero, say] = el.children;
+  dim.animate([{ opacity: 0 }, { opacity: 0.35 }], { duration: 200, fill: 'forwards' });
+  confetti(); setTimeout(() => confetti(10), 250);
+  await sleep(250);
+  // 도장: 크게 떠 있다가 쾅
+  await stamp.animate([
+    { transform: 'translate(-50%,-50%) scale(2.6) rotate(-24deg)', opacity: 0 },
+    { transform: 'translate(-50%,-50%) scale(.88) rotate(-10deg)', opacity: 1, offset: 0.7 },
+    { transform: 'translate(-50%,-50%) scale(1) rotate(-12deg)', opacity: 1 },
+  ], { duration: 320, easing: 'cubic-bezier(.6,0,.9,.6)', fill: 'forwards' }).finished;
+  Sound.play('hit1', 0.7, 1);
+  Sound.play('win', 1);
+  shake(12, 320);
+  flash('#ffffff', 0.4);
+  const sc = centerOf(stamp);
+  burst(sc.x, sc.y, '#e2543f', 16);
+  await sleep(420);
+  hero.animate([
+    { transform: 'translateY(120%) rotate(-8deg)' },
+    { transform: 'translateY(-6%) rotate(3deg)', offset: 0.7 },
+    { transform: 'translateY(0) rotate(0)' },
+  ], { duration: 380, easing: 'ease-out', fill: 'forwards' });
+  say.animate([{ transform: 'scale(0)', opacity: 0 }, { transform: 'scale(1.12)', opacity: 1, offset: 0.7 }, { transform: 'scale(1)', opacity: 1 }],
+    { duration: 260, delay: 280, fill: 'backwards' });
+  setTimeout(() => Sound.play('pop', 1.3, 0.8), 300);
+  await sleep(1300);
+  await el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, fill: 'forwards' }).finished;
+  el.remove();
+}
+
+// ---------- 5콤보 응원 피버: 파자마 파티즈 등장 ----------
+function updateFever() {
+  $('#feverTag').classList.toggle('on', B.fever > 0);
+}
+async function feverShow() {
+  B.fever = 3;
+  updateFever();
+  const el = document.createElement('div');
+  el.className = 'fever-show';
+  el.innerHTML = `<img src="assets/img/npc/pajama.png"><div class="fever-txt">응원 피버! 공격 ×1.5</div>`;
+  app.appendChild(el);
+  const [img, txt] = el.children;
+  img.animate([{ transform: 'translate(-50%,110%) rotate(4deg)' }, { transform: 'translate(-50%,-6%) rotate(-2deg)', offset: 0.7 }, { transform: 'translate(-50%,0) rotate(0)' }],
+    { duration: 320, easing: 'ease-out', fill: 'forwards' });
+  txt.animate([{ transform: 'translateX(-50%) scale(0)' }, { transform: 'translateX(-50%) scale(1.15)', offset: 0.7 }, { transform: 'translateX(-50%) scale(1)' }],
+    { duration: 260, delay: 160, fill: 'backwards' });
+  for (let i = 0; i < 4; i++) setTimeout(() => Sound.pop(4 + i), 120 + i * 90);
+  confetti(8);
+  await sleep(850);
+  img.animate([{ transform: 'translate(-50%,0)' }, { transform: 'translate(-50%,115%)' }], { duration: 220, easing: 'ease-in', fill: 'forwards' });
+  await txt.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, fill: 'forwards' }).finished;
+  el.remove();
+}
+
+// ---------- 라면 가게: 토벌을 새로 깰 때마다 한 그릇 ----------
+$('#btnRamen').onclick = () => {
+  Sound.play('click');
+  if (Save.data.ramen === false) {
+    modal({ title: '라면 가게', img: 'assets/img/npc/armor.png', text: '갑옷 아저씨: 오늘 국물은 다 떨어졌어. 토벌 하나 더 하고 와.', btn1: '알겠어요', on1: () => {} });
+    return;
+  }
+  const take = buff => {
+    Save.data.buff = buff;
+    Save.data.ramen = false;
+    Save.save();
+    Sound.play('heal', 1, 0.9);
+    $('#btnRamen').classList.remove('on');
+    const c = centerOf($('#btnRamen'));
+    burst(c.x, c.y, '#ff9f5a', 14);
+    floatNum(c.x, c.y - 30, buff === 'hp' ? '다음 토벌 체력 150!' : '다음 토벌 게이지 반!', '#e07b39');
+  };
+  modal({
+    title: '라면 가게', img: 'assets/img/npc/armor.png', text: '갑옷 아저씨: 한 그릇 먹고 가. 다음 토벌에 힘이 날 거야.',
+    btn2: '진한 국물 (게이지 반)', on2: () => take('gauge'),
+    btn1: '곱빼기 (체력 150)', on1: () => take('hp'),
+  });
+};

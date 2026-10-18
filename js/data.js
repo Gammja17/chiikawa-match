@@ -11,10 +11,20 @@ const CHARS = [
     skill: { id: 'convert6', name: '칭찬해줘!', desc: '구슬 6개를 모몽가로 바꿈', need: 12, say: '나를 칭찬해!' } },
   { id: 'rakko',     name: '랏코',     ring: '#a9a9a9', attr: 'brave', dmg: 13, line: '…간다.',
     skill: { id: 'cross',    name: '…간다.', desc: '십자로 지우고 몬스터 공격 2턴 늦춤', need: 18, say: '…간다.' } },
-  { id: 'kani',      name: '카니',     ring: '#ff9f5a', attr: 'cry',   heal: 4, line: '힘내!',
+  { id: 'kani',      name: '카니',     ring: '#ff6f61', attr: 'cry',   heal: 4, line: '힘내!',
     skill: { id: 'heal40',   name: '힘내!', desc: '체력 40% 회복', need: 14, say: '다들 힘내!' } },
   { id: 'kurimanju', name: '쿠리만쥬', ring: '#a6d96a', attr: 'odd',   dmg: 12, line: '……(캬아)',
     skill: { id: 'rainbow',  name: '캬아', desc: '판에 무지개 폭탄 하나', need: 15, say: '……캬아.' } },
+  { id: 'shisa',     name: '시사',     ring: '#ff9f5a', attr: 'odd',   dmg: 11, line: '어서 오세요!',
+    skill: { id: 'ramen',    name: '라멘 배달', desc: '체력 20% 회복, 모두 게이지 +3', need: 15, say: '라멘 나왔어요~!' } },
+  { id: 'shooting',  name: '별똥별',   ring: '#f5d90a', attr: 'brave', dmg: 11, line: '반짝!',
+    skill: { id: 'meteor',   name: '소원 별똥별', desc: '무작위 3곳에 폭탄이 떨어짐', need: 17, say: '소원을 빌어!' } },
+  { id: 'darkstar',  name: '까만별',   ring: '#5d5d72', attr: 'cry',   dmg: 12, line: '……',
+    skill: { id: 'cols2',    name: '어둠의 별빛', desc: '세로줄 2줄 지움', need: 16, say: '……반짝.' } },
+  { id: 'goblin',    name: '고블린',   ring: '#4fbf8f', attr: 'brave', dmg: 11, line: '킥킥',
+    skill: { id: 'stall',    name: '고블린 장난', desc: '몬스터 공격 3턴 늦춤, 작은 피해', need: 14, say: '킥킥, 이쪽이다~' } },
+  { id: 'beetle',    name: '풍뎅이',   ring: '#b07a4a', attr: 'cry',   dmg: 10, line: '부웅~',
+    skill: { id: 'cheer',    name: '데굴데굴', desc: '판 섞고 다른 멤버 게이지 +4', need: 13, say: '데굴데굴~' } },
 ];
 const TEAM_SIZE = 5;
 const DEFAULT_TEAM = ['chiikawa', 'hachiware', 'usagi', 'rakko', 'kani'];
@@ -32,7 +42,10 @@ const BODY = id => `assets/img/chars/${id}.png`;
 const TILE = id => `assets/img/tiles/${id}.png`;
 const ITEM = name => `assets/img/items/${name}.png`;
 // 전신 그림이 없는 캐릭터는 얼굴로
-const NO_BODY = new Set(['kani']);
+const NO_BODY = new Set(['kani', 'shooting', 'darkstar', 'goblin', 'beetle']);
+const FXI = n => `assets/img/fx/${n}.png`;
+const UI = n => `assets/img/ui/${n}.png`;
+const FX_SPRITES = ['star_y', 'star_p', 'star_b', 'star_m', 'heart_p', 'heart_r', 'heart_l', 'heart_o', 'twinkle1', 'twinkle2', 'twinkle3', 'twinkle4'];
 const portrait = id => (NO_BODY.has(id) ? FACE(id) : BODY(id));
 
 const MONSTERS = {
