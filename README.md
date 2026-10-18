@@ -89,7 +89,7 @@ python -m http.server 8770
 
 ## 배포 (Cloudflare)
 
-공개 주소: https://chiikawa-match.kazu809ha.workers.dev
+공개 주소: https://chiikawa-match.3match.workers.dev
 
 ```bash
 python tools/build_dist.py
@@ -106,7 +106,7 @@ npx wrangler deploy
 
 1. [Firebase 콘솔](https://console.firebase.google.com)에서 프로젝트를 만들고 **웹 앱**을 추가합니다.
 2. **Authentication → 로그인 방법**에서 `Google`과 `익명`을 켭니다. 게스트로 하다가 구글을 연결하면 그 기록이 그대로 이어지고, 로그인하면 진행이 계정에 저장되어 다른 기기에서도 이어서 할 수 있습니다.
-3. **Authentication → 설정 → 승인된 도메인**에 `chiikawa-match.kazu809ha.workers.dev`(와 `gammja17.github.io`)를 추가합니다.
+3. **Authentication → 설정 → 승인된 도메인**에 `chiikawa-match.3match.workers.dev`(와 `gammja17.github.io`)를 추가합니다.
 4. **Firestore Database**를 만들고 **규칙**에 아래를 붙여 넣습니다.
 5. 웹 앱 설정값(`apiKey`, `authDomain`, `projectId`, `appId`)을 `js/firebase-config.js`의 `window.FIREBASE_CONFIG`에 넣습니다. 이 값은 공개되어도 되는 값이고, 실제 보호는 아래 규칙이 맡습니다.
 
