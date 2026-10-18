@@ -15,6 +15,7 @@ const Save = {
     } catch {}
   },
   save() {
+    if (this.wiped) return; // 초기화 중에는 다시 저장하지 않음
     this.data.savedAt = Date.now();
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(this.data)); } catch {}
     if (typeof Net !== 'undefined') Net.cloudSave();
@@ -598,6 +599,26 @@ $('#btnBack').onclick = () => {
   };
   el.querySelector('[data-p=sound]').onclick = () => { Sound.muted = !Sound.muted; updateMute(); Sound.play('click'); sync(); };
   el.querySelector('[data-p=vib]').onclick = () => { Haptic.toggle(); updateVib(); Sound.play('click'); sync(); };
+  // 게임 초기화: 한 번 더 물어보고, 이 기기 기록(계정에 연결돼 있으면 계정 기록도)을 지우고 처음부터
+  el.querySelector('[data-p=reset]').onclick = () => {
+    Sound.play('click');
+    close();
+    modal({
+      title: '처음부터 할까요?', char: 'chiikawa', text: '친구, 코인, 깬 스테이지, 집까지 전부 사라져요. 되돌릴 수 없어요.',
+      btn2: '취소', on2: () => $('#btnBack').onclick(),
+      btn1: '초기화',
+      on1: async () => {
+        Save.wiped = true;
+        Life.stopTimer();
+        try { localStorage.removeItem(SAVE_KEY); } catch {}
+        if (typeof Net !== 'undefined' && Net.on && Net.user) {
+          clearTimeout(Net.saveTimer);
+          await Net.db.collection('users').doc(Net.user.uid).delete().catch(() => {});
+        }
+        location.reload();
+      },
+    });
+  };
   el.querySelector('[data-p=quit]').onclick = () => {
     Sound.play('click');
     close();
