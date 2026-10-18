@@ -11,6 +11,15 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DIST = os.path.join(ROOT, 'dist')
 SKIP_DIRS = {os.path.join('assets', 'raw'), os.path.join('assets', 'king')}
 
+# 커밋 안 된 변경(다른 작업 중인 파일)이 섞여 배포되지 않게: 게임 파일에 변경이 있으면 멈춤
+if '--dirty' not in sys.argv:
+    st = subprocess.run(['git', 'status', '--porcelain', '--', 'index.html', 'css', 'js', 'assets'], cwd=ROOT, capture_output=True, text=True).stdout
+    st = '
+'.join(l for l in st.splitlines() if 'js/king-pack.js' not in l)
+    if st.strip():
+        sys.exit('커밋 안 된 변경이 있어서 멈췄어요 (일부러 그대로 올리려면 --dirty):
+' + st)
+
 if os.path.isdir(os.path.join(ROOT, 'assets', 'king')):
     subprocess.run([sys.executable, os.path.join(ROOT, 'tools', 'make_king_pack.py')], check=True)
 
