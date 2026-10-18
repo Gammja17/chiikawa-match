@@ -128,7 +128,7 @@ const STORY = {
     ['usagi', '하아?!'],
   ],
   end: [
-    ['chiikawa', '…해냈다!'],
+    ['chiikawa', '…!! (해냈다…!)'],
     ['hachiware', '토벌 대성공! 보수로 맛있는 거 먹자~'],
     ['kurimanju', '……(건배)'],
   ],

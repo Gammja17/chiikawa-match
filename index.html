@@ -6,7 +6,7 @@
 <title>먼작귀 퍼즐 토벌 대작전! (팬게임)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poor+Story&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=18">
+<link rel="stylesheet" href="css/style.css?v=20">
 </head>
 <body>
 <div id="app">
@@ -45,11 +45,12 @@
   <section id="house" class="screen">
     <header class="bar">
       <button class="icon-btn btn-tomap">◀</button>
-      <div class="bar-title">우리 집</div>
+      <div class="bar-title" id="houseTitle">친구네 집</div>
       <div class="coins"><img src="assets/img/items/coin.png" alt=""><b>0</b></div>
     </header>
-    <div id="room"><div class="wall"></div><div class="floor"></div></div>
-    <div class="shop-wrap"><div class="shop-label">가구 가게</div><div id="shop"></div></div>
+    <div id="homeTabs"></div>
+    <div id="room"><div class="wall"></div><div class="floor"></div><button id="btnMates" class="mini-btn">같이 살 친구</button></div>
+    <div class="shop-wrap"><div class="shop-label">가구</div><div id="shop"></div></div>
   </section>
 
   <section id="gacha" class="screen">
@@ -180,13 +181,14 @@
   <div id="fx"></div>
   <div id="flash"></div>
 </div>
-<script src="js/data.js?v=18"></script>
-<script src="js/audio.js?v=18"></script>
-<script src="js/board.js?v=18"></script>
-<script src="js/game.js?v=18"></script>
-<script src="js/life.js?v=18"></script>
-<script src="js/meta.js?v=18"></script>
-<script src="js/firebase-config.js?v=18"></script>
-<script src="js/net.js?v=18"></script>
+<script src="js/data.js?v=20"></script>
+<script src="js/audio.js?v=20"></script>
+<script src="js/board.js?v=20"></script>
+<script src="js/game.js?v=20"></script>
+<script src="js/life.js?v=20"></script>
+<script src="js/tutor.js?v=20"></script>
+<script src="js/meta.js?v=20"></script>
+<script src="js/firebase-config.js?v=20"></script>
+<script src="js/net.js?v=20"></script>
 </body>
 </html>

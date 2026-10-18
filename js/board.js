@@ -436,14 +436,14 @@ const Board = {
     return false;
   },
 
-  // 몬스터가 구슬 n개를 상자로 바꿈 (토벌 미믹)
-  dropBoxes(g, n) {
+  // 구슬 n개를 장애물로 바꿈 (미믹이 던진 상자, 제초 대회에서 새로 돋는 잡초)
+  dropBlocks(g, n, kind = 'box', hp = 1) {
     const cand = [];
     Board.each(g, (t, r, c) => { if (t.type >= 0 && !t.special && !t.lock) cand.push([r, c]); });
     const out = [];
     for (let i = 0; i < n && cand.length; i++) {
       const [r, c] = cand.splice(Math.floor(Math.random() * cand.length), 1)[0];
-      out.push({ r, c, old: g[r][c], tile: (g[r][c] = newBlock('box', 1)) });
+      out.push({ r, c, old: g[r][c], tile: (g[r][c] = newBlock(kind, hp)) });
     }
     return out;
   },

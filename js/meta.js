@@ -23,7 +23,7 @@ const FURN = [
 ];
 // 레벨이 오르면 열리는 짧은 이야기 (팬 창작)
 const CHAR_STORY = {
-  chiikawa: [[2, [['chiikawa', '(풀 뽑기 일 끝…)'], ['chiikawa', '…오늘 번 돈으로 뭐 먹지…'], ['hachiware', '치이카와~ 같이 라멘 먹으러 가자!'], ['chiikawa', '…!! (끄덕끄덕)']]]],
+  chiikawa: [[2, [['chiikawa', '(풀 뽑기 일 끝…)'], ['chiikawa', '(오늘 번 돈으로… 뭐 먹지…)'], ['hachiware', '치이카와~ 같이 라멘 먹으러 가자!'], ['chiikawa', '…!! (끄덕끄덕)']]]],
   hachiware: [[2, [['hachiware', '언젠가 노래 대회에 나가 보고 싶어.'], ['chiikawa', '…!'], ['hachiware', '치이카와가 응원해 주면 할 수 있을 것 같아!']]]],
   usagi: [[2, [['usagi', '우라!'], ['usagi', '하아~?'], ['hachiware', '우사기가 오늘 번 돈으로 다 같이 간식 산대!'], ['usagi', '야하!']]]],
   momonga: [[2, [['momonga', '나 오늘 토벌 열심히 했어.'], ['momonga', '그러니까 칭찬해 줘! 지금 당장!'], ['chiikawa', '…(쓰담쓰담)']]]],
@@ -276,50 +276,74 @@ async function pullGacha() {
   $('#modalChar').classList.toggle('icon', !!info.img);
 }
 
-// ---------- 집 꾸미기 ----------
-function openHouse() {
+// ---------- 친구네 집: 친구마다 자기 집이 있고, 가구를 놓고, 같이 살 친구를 정함 ----------
+// Save.data.homes = { 친구id: { furn: [가구id], mates: [같이 사는 친구id] } }
+const MATES_MAX = 2;
+let homeOf = null;
+const homes = () => {
+  const d = Save.data;
+  if (!d.homes) {
+    d.homes = {};
+    if (d.furn && d.furn.length) d.homes.chiikawa = { furn: d.furn.slice(), mates: [] }; // 예전 '우리 집' 가구는 치이카와네로
+  }
+  return d.homes;
+};
+const home = id => (homes()[id] = homes()[id] || { furn: [], mates: [] });
+
+function openHouse(id = homeOf) {
+  const owned = CHARS.filter(c => Meta.owned(c.id));
+  if (!id || !Meta.owned(id)) id = owned[0].id;
+  homeOf = id;
+  const ch = CHARS[charIdx(id)], h = home(id);
   show('house');
   Meta.coinUI();
+  $('#houseTitle').textContent = `${ch.name}네 집`;
+  // 위쪽: 누구네 집으로 갈지
+  $('#homeTabs').innerHTML = owned.map(c => `<button class="${c.id === id ? 'on' : ''}" data-id="${c.id}" style="--ring:${c.ring}"><img src="${FACE(c.id)}"></button>`).join('');
+  $('#homeTabs').querySelectorAll('button').forEach(b => (b.onclick = () => { Sound.play('pop', 1.2, 0.5); openHouse(b.dataset.id); }));
+  $('#homeTabs .on')?.scrollIntoView({ inline: 'center', block: 'nearest' });
   const room = $('#room');
+  room.style.setProperty('--ring', ch.ring);
   room.querySelectorAll('.furn, .resident').forEach(e => e.remove());
-  FURN.filter(f => Save.data.furn.includes(f.id)).forEach(f => {
+  FURN.filter(f => h.furn.includes(f.id)).forEach(f => {
     const im = new Image();
     im.src = ITEM(f.id);
     im.className = 'furn';
     Object.assign(im.style, { left: f.x + '%', top: f.y + '%', width: f.w + '%' });
     room.appendChild(im);
   });
-  // 모은 친구들이 방 안을 통통 돌아다님 (눌러 보면 한마디)
-  const friends = CHARS.filter(c => Meta.owned(c.id)).slice(0, 8);
-  friends.forEach((c, k) => {
+  // 집주인 + 같이 사는 친구들
+  [id, ...h.mates.filter(m => Meta.owned(m))].forEach((cid, k) => {
+    const c = CHARS[charIdx(cid)];
     const el = document.createElement('div');
-    el.className = 'resident';
+    el.className = 'resident' + (k === 0 ? ' owner' : '');
     el.innerHTML = Meta.figure(c.id, art(c.id)) + '<span class="rsay"></span>';
-    const x = 10 + ((k * 37) % 80), y = 62 + ((k * 13) % 22);
+    const x = [50, 26, 74][k], y = [84, 78, 78][k];
     Object.assign(el.style, { left: x + '%', top: y + '%', zIndex: Math.round(y) });
-    el.style.animationDelay = k * 0.17 + 's';
+    el.style.animationDelay = k * 0.2 + 's';
     el.onclick = () => {
       const s = el.querySelector('.rsay');
       s.textContent = c.line;
       s.animate([{ opacity: 0, transform: 'translate(-50%, 6px) scale(.6)' }, { opacity: 1, transform: 'translate(-50%, 0) scale(1)', offset: 0.2 }, { opacity: 1, offset: 0.85 }, { opacity: 0 }], { duration: 1600 });
       Sound.voice(c.id, 'pick') || Sound.play('pop', 1.2 + Math.random() * 0.3, 0.6);
+      Haptic.tap(15);
     };
-    // 가끔 옆으로 걸어감
     const wander = () => {
       if (!el.isConnected) return;
-      const nx = Math.max(6, Math.min(88, parseFloat(el.style.left) + (Math.random() - 0.5) * 30));
+      const nx = Math.max(12, Math.min(86, parseFloat(el.style.left) + (Math.random() - 0.5) * 24));
       el.animate([{ left: el.style.left }, { left: nx + '%' }], { duration: 1600, easing: 'ease-in-out' });
       el.style.left = nx + '%';
       el.classList.toggle('flip', Math.random() < 0.5);
-      setTimeout(wander, 2500 + Math.random() * 3000);
+      setTimeout(wander, 3000 + Math.random() * 3000);
     };
-    setTimeout(wander, 1500 + Math.random() * 2000);
+    setTimeout(wander, 2000 + Math.random() * 2000);
     room.appendChild(el);
   });
+  // 아래쪽: 이 집 가구 가게
   $('#shop').innerHTML = FURN.map(f => {
-    const have = Save.data.furn.includes(f.id);
+    const have = h.furn.includes(f.id);
     return `<button class="shop-item${have ? ' have' : ''}" data-id="${f.id}" ${have ? 'disabled' : ''}>
-      <img src="${ITEM(f.id)}"><span>${f.name}</span><b>${have ? '놓았어요' : `<img src="${ITEM('coin')}">${f.price}`}</b></button>`;
+      <img src="${ITEM(f.id)}"><span>${f.name}</span><b>${have ? '✓' : `<img src="${ITEM('coin')}">${f.price}`}</b></button>`;
   }).join('');
   $('#shop').querySelectorAll('.shop-item').forEach(b => (b.onclick = () => {
     const f = FURN.find(x => x.id === b.dataset.id);
@@ -328,16 +352,42 @@ function openHouse() {
       b.animate([{ transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' }, { transform: 'none' }], { duration: 200 });
       return;
     }
-    Save.data.furn.push(f.id);
+    h.furn.push(f.id);
     Meta.addCoins(-f.price);
     Sound.play('star', 1.2, 0.8);
-    openHouse();
+    openHouse(id);
     const r = room.getBoundingClientRect(), a = app.getBoundingClientRect();
     burst(r.left - a.left + (r.width * f.x) / 100, r.top - a.top + (r.height * f.y) / 100, '#ffd84d', 14);
   }));
+  $('#btnMates').onclick = () => pickMates(id);
 }
 
-$('#btnHouse').onclick = () => { Sound.play('click'); go(openHouse); };
+// 같이 살 친구 고르기 (최대 2명)
+function pickMates(id) {
+  const h = home(id), ch = CHARS[charIdx(id)];
+  const list = CHARS.filter(c => Meta.owned(c.id) && c.id !== id);
+  const card = $('#charSheet .sheet-card');
+  card.style.setProperty('--ring', ch.ring);
+  const draw = () => {
+    card.innerHTML = `<div class="mates-title">${ch.name}네 집에 같이 살 친구 <small>${h.mates.length} / ${MATES_MAX}</small></div>
+      <div class="mates-grid">${list.map(c => `<button class="${h.mates.includes(c.id) ? 'on' : ''}" data-id="${c.id}" style="--ring:${c.ring}"><img src="${FACE(c.id)}"><span>${c.name}</span></button>`).join('')}</div>
+      <div class="sheet-btns"><button class="big-btn" data-close>다 골랐어</button></div>`;
+    card.querySelectorAll('.mates-grid button').forEach(b => (b.onclick = () => {
+      const k = h.mates.indexOf(b.dataset.id);
+      if (k >= 0) h.mates.splice(k, 1);
+      else if (h.mates.length < MATES_MAX) h.mates.push(b.dataset.id);
+      else { Sound.play('bad', 1.2, 0.5); return; }
+      Sound.play('pop', 1.2, 0.5);
+      Save.save();
+      draw();
+    }));
+    card.querySelector('[data-close]').onclick = () => { $('#charSheet').classList.remove('show'); openHouse(id); };
+  };
+  draw();
+  $('#charSheet').classList.add('show');
+}
+
+$('#btnHouse').onclick = () => { Sound.play('click'); go(() => openHouse()); };
 $('#btnGacha').onclick = () => { Sound.play('click'); go(openGacha); };
 $('#btnFriends').onclick = () => { Sound.play('click'); go(openFriends); };
 $('#btnPull').onclick = pullGacha;

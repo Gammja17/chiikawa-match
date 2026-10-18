@@ -14,13 +14,42 @@ const Net = {
       Net.db = firebase.firestore();
       Net.on = true;
       Net.auth.getRedirectResult().catch(() => {});
-      Net.auth.onAuthStateChanged(u => { Net.user = u; Net.listeners.forEach(f => f()); if (u) Net.submit(); });
+      Net.auth.onAuthStateChanged(async u => { Net.user = u; Net.listeners.forEach(f => f()); if (u) { await Net.cloudLoad(); Net.submit(); } });
     } catch (e) { console.warn('랭킹 서버를 켜지 못했어요', e); }
   },
   onChange(f) { Net.listeners.push(f); },
+  // 구글 로그인. 게스트로 하던 중이면 그 기록 그대로 구글 계정에 연결
   async google() {
     const p = new firebase.auth.GoogleAuthProvider();
-    try { await Net.auth.signInWithPopup(p); } catch { await Net.auth.signInWithRedirect(p); }
+    const u = Net.auth.currentUser;
+    try {
+      if (u && u.isAnonymous) await u.linkWithPopup(p);
+      else await Net.auth.signInWithPopup(p);
+    } catch (e) {
+      if (e.code === 'auth/credential-already-in-use' && e.credential) await Net.auth.signInWithCredential(e.credential);
+      else if (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment') await (u?.isAnonymous ? u.linkWithRedirect(p) : Net.auth.signInWithRedirect(p));
+    }
+    Net.listeners.forEach(f => f());
+  },
+  // 진행 저장을 계정에: users/{uid} = { data(JSON), at }. 더 최근 쪽을 씀
+  cloudSave() {
+    if (!Net.on || !Net.user) return;
+    clearTimeout(Net.saveTimer);
+    Net.saveTimer = setTimeout(() => {
+      Net.db.collection('users').doc(Net.user.uid).set({ data: JSON.stringify(Save.data), at: Save.data.savedAt || Date.now() }).catch(() => {});
+    }, 2500);
+  },
+  async cloudLoad() {
+    try {
+      const d = (await Net.db.collection('users').doc(Net.user.uid).get()).data();
+      if (d && d.at > (Save.data.savedAt || 0) + 1000) {
+        modal({
+          title: '기록 불러오기', char: 'hachiware', text: '다른 기기에서 한 기록이 있어요. 불러올까요?',
+          btn2: '이 기기 기록', on2: () => Net.cloudSave(),
+          btn1: '불러오기', on1: () => { localStorage.setItem(SAVE_KEY, d.data); location.reload(); },
+        });
+      } else Net.cloudSave();
+    } catch {}
   },
   guest() { return Net.auth.signInAnonymously(); },
   logout() { return Net.auth.signOut(); },
@@ -73,11 +102,13 @@ async function openRanking(tab = rankTab) {
     list.innerHTML = `<li class="mine"><span class="rk">나</span><span class="nm">${Net.name()}</span><b>${mine}${BOARDS[tab].unit}</b></li>`;
     return;
   }
-  if (!Net.user) {
-    me.innerHTML = `<div class="rank-note">로그인하면 내 기록이 랭킹에 올라가요</div>
-      <div class="login-btns"><button class="big-btn" id="btnGoogle">구글로 로그인</button><button class="big-btn ghost" id="btnGuest">게스트로 시작</button></div>`;
+  if (!Net.user || Net.user.isAnonymous) {
+    const guest = !!Net.user;
+    me.innerHTML = `<div class="rank-note">${guest ? `게스트 ${Net.name()} · 구글 계정을 연결하면 다른 기기에서도 이어서 해요` : '로그인하면 기록이 저장되고 랭킹에 올라가요'}</div>
+      <div class="login-btns"><button class="big-btn" id="btnGoogle">${guest ? '구글 계정 연결' : '구글로 로그인'}</button>${guest ? '<button class="big-btn ghost" id="btnNick2">이름 바꾸기</button>' : '<button class="big-btn ghost" id="btnGuest">게스트로 시작</button>'}</div>`;
     $('#btnGoogle').onclick = () => Net.google();
-    $('#btnGuest').onclick = () => Net.guest();
+    if (guest) $('#btnNick2').onclick = async () => { const n = prompt('랭킹에 보일 이름 (12자까지)', Net.name()); if (n && n.trim()) { Save.data.nick = n.trim().slice(0, 12); Save.save(); await Net.submit(); openRanking(); } };
+    else $('#btnGuest').onclick = () => Net.guest();
   } else {
     me.innerHTML = `<div class="me-row"><span class="nm">${Net.name()}</span><button class="mini-btn" id="btnNick">이름 바꾸기</button><button class="mini-btn" id="btnLogout">로그아웃</button></div>`;
     $('#btnNick').onclick = async () => {

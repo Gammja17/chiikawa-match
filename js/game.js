@@ -14,7 +14,11 @@ const Save = {
       Sound.muted = localStorage.getItem(SAVE_KEY + '.mute') === '1';
     } catch {}
   },
-  save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(this.data)); } catch {} },
+  save() {
+    this.data.savedAt = Date.now();
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(this.data)); } catch {}
+    if (typeof Net !== 'undefined') Net.cloudSave();
+  },
 };
 Save.load();
 // 지도는 한 줄 루트: 토벌(b)과 일상(l) 스테이지가 정해진 순서로 섞여 있음 (ROUTE는 life.js)
@@ -156,7 +160,7 @@ function flash(color = '#ff4d6d', peak = 0.45) {
   im.onload = () => { $('.title-sky').style.setProperty('--title-bg', `url(${im.src})`); $('.title-sky').classList.add('has-art'); };
   im.src = 'assets/img/art/title.jpg';
 }
-$('#btnStart').onclick = () => { Sound.play('open'); go(openMap); };
+$('#btnStart').onclick = async () => { Sound.play('open'); await Tutor.opening(); go(openMap); };
 
 // ---------- 지도 ----------
 const NODE_GAP = 112, NODE_TOP = 150;
@@ -378,7 +382,8 @@ function refreshTile(t) {
   inner.className = 'inner';
   if (t.block) {
     inner.classList.add('block', t.block);
-    inner.innerHTML = `<img src="${ITEM(t.block === 'bubble' ? 'bubble' : t.hp >= 2 ? 'gift' : 'box')}" draggable="false">`;
+    const img = t.block === 'bubble' ? 'bubble' : t.block === 'weed' ? (t.hp >= 2 ? 'weed2' : 'weed1') : t.hp >= 2 ? 'gift' : 'box';
+    inner.innerHTML = `<img src="${ITEM(img)}" draggable="false">`;
     return;
   }
   if (t.type === ING) {
@@ -412,6 +417,7 @@ function updateGauges() {
     const need = teamCh(k).skill.need;
     el.style.setProperty('--g', Math.min(1, B.gauge[k] / need));
     el.classList.toggle('ready', B.gauge[k] >= need);
+    if (B.gauge[k] >= need) Tutor.tip('skill');
   });
 }
 // 지금 몬스터에게 유리한 친구는 ▲ 표시
@@ -493,6 +499,8 @@ async function startStage(i) {
   if (STORY[i] && Save.data.stars[i] == null) await playStory(STORY[i]);
   await dropIn('토벌 시작!');
   B.busy = false;
+  Tutor.onStart();
+  Tutor.poke();
 }
 
 // 반짝반짝: 가만히 있을 때 판 위 구슬에 가끔 별빛이 스침
@@ -547,6 +555,7 @@ function clearSel() {
   B.sel = null;
 }
 boardEl.addEventListener('pointerdown', e => {
+  Tutor.poke();
   if (B.busy || B.over) return;
   const cell = cellAt(e);
   if (!cell) return;
@@ -587,6 +596,8 @@ async function trySwap(a, b) {
   const g = B.grid;
   const ta = g[a[0]][a[1]], tb = g[b[0]][b[1]];
   if (!movable(ta) || !movable(tb)) return;
+  if (!Tutor.allow(a, b)) { Sound.play('bad', 1.2, 0.5); return; }
+  Haptic.tap(15); // 손가락이 닿아 있는 동안 울려야 아이폰에서도 느껴짐
   B.busy = true;
   Sound.play('swap', 1.15);
   Board.swap(g, a, b);
@@ -613,7 +624,8 @@ async function trySwap(a, b) {
 // 아이템 하나를 제자리에서 터뜨림 (한 턴 씀)
 async function activate([r, c]) {
   const t = B.grid[r][c];
-  if (B.busy || B.over || !t?.special) return;
+  if (B.busy || B.over || !t?.special || Tutor.guide) return;
+  Haptic.tap(25);
   B.busy = true;
   clearSel();
   Sound.play('click', 1.6, 0.5);
@@ -692,8 +704,13 @@ function effectFx(ef) {
   if (ef.kind === 'h' || ef.kind === 'v') {
     Sound.play('line', 1.1, 0.7);
     const horiz = ef.kind === 'h', thick = S * 0.55;
-    // 로켓 두 개가 양쪽 끝으로 쓩
+    // 로켓 두 개가 양쪽 끝으로 쓩, 출발점은 하얗게 번쩍
     const o = tileCenter(ef.r, ef.c);
+    kp('flare_01', o.x, o.y, S * 2.6, '#ffffff', [{ transform: 'scale(.3)', opacity: 1 }, { transform: 'scale(1.2)', opacity: 0 }], { duration: 300, easing: 'ease-out' });
+    for (let k = 1; k < 7; k++) [-1, 1].forEach(d => setTimeout(() => {
+      const x = o.x + (horiz ? d * k * S : 0), y = o.y + (horiz ? 0 : d * k * S);
+      kp('spark_05', x, y, S * 0.9, '#bfe9ff', [{ transform: `scale(.4) rotate(${horiz ? 90 : 0}deg)`, opacity: 1 }, { transform: `scale(1.1) rotate(${horiz ? 90 : 0}deg)`, opacity: 0 }], { duration: 240 });
+    }, k * 28));
     [-1, 1].forEach(dir => {
       const im = new Image();
       im.src = ITEM('rocket');
@@ -759,11 +776,13 @@ function popTile(t, delay) {
     f.animate([{ transform: 'translate(-50%,-50%) scale(.4)', opacity: 0.95 }, { transform: 'translate(-50%,-50%) scale(1.25)', opacity: 0 }],
       { duration: 260, delay: delay + 60, easing: 'ease-out', fill: 'backwards' }).finished.then(() => f.remove());
   }
+  // 하얗게 번쩍 → 통 부풀었다가 → 쏙 사라짐
   return t.inner.animate([
-    { transform: 'scale(1)', opacity: 1 },
-    { transform: 'scale(1.3)', opacity: 1, offset: 0.35 },
-    { transform: 'scale(0) rotate(40deg)', opacity: 0 },
-  ], { duration: 200, delay, easing: 'ease-in', fill: 'forwards' }).finished.then(() => t.el.remove());
+    { transform: 'scale(1)', opacity: 1, filter: 'brightness(1)' },
+    { transform: 'scale(1.18,.86)', opacity: 1, filter: 'brightness(2.2)', offset: 0.2 },
+    { transform: 'scale(1.38)', opacity: 1, filter: 'brightness(1.6)', offset: 0.45 },
+    { transform: 'scale(0) rotate(30deg)', opacity: 0, filter: 'brightness(1)' },
+  ], { duration: 260, delay, easing: 'ease-in', fill: 'forwards' }).finished.then(() => t.el.remove());
 }
 
 // 조각이 포물선으로 튀어 떨어짐 (상자 나무 조각, 포장지, 흙, 물방울)
@@ -814,7 +833,14 @@ function hitFx(res, late) {
   }, at(r, c)));
   res.hits.forEach(({ r, c, tile, gone }) => setTimeout(() => {
     const p = tileCenter(r, c);
-    if (tile.block === 'bubble') {
+    if (tile.block === 'weed') {
+      // 잡초 쑥: 잎이 튀어 오르고 흙이 흩어짐
+      flyOff(ITEM(gone ? 'weed1' : 'weed2'), p.x, p.y, S * 0.9);
+      shards(p.x, p.y + S * 0.2, ['#9b6b3a', '#7a5230', '#6dbf57', '#8fd06a'], 10, 8, true);
+      ringFx(p.x, p.y, S * 1.6, '#8fd06a', 300);
+      Sound.play('swap', 1.5, 0.7);
+      Sound.play('pop', 1.2, 0.6);
+    } else if (tile.block === 'bubble') {
       ringFx(p.x, p.y, S * 2, '#9fdcff', 320);
       shards(p.x, p.y, ['#bfe9ff', '#e6f7ff', '#8fd3ff'], 10, 8, true);
       Sound.play('pop', 1.9, 0.9);
@@ -881,9 +907,17 @@ async function stepFx(res, combo) {
     const p = tileCenter(r, c);
     const color = tile.type >= 0 ? teamCh(tile.type).ring : '#ffd84d';
     const delay = late.has(key(r, c)) ? 380 : Math.min(i * 10, 150);
-    setTimeout(() => burst(p.x, p.y, color, n > 15 ? 3 : 6), delay);
+    setTimeout(() => {
+      // 캐릭터 색 고리 + 반짝이 + 같은 색 방울이 포물선으로 톡톡
+      if (i < 14) ringFx(p.x, p.y, B.S * 1.5, color, 300);
+      burst(p.x, p.y, color, n > 15 ? 3 : 5);
+      if (i < 20) shards(p.x, p.y, [color, '#ffffff'], n > 12 ? 2 : 4, 9, true);
+    }, delay + 50);
     popTile(tile, delay);
   });
+  // 많이 터질수록 판이 통 울림
+  if (n >= 4) setTimeout(() => boardEl.animate([{ transform: 'scale(1)' }, { transform: `scale(${1 + Math.min(0.03, n * 0.002)})` }, { transform: 'scale(1)' }], { duration: 160, easing: 'ease-out' }), 60);
+  if (combo >= 3) setTimeout(() => shake(2 + combo, 160), 60);
   hitFx(res, late);
   if (B.mode === 'life') Life.onStep(res, combo);
   for (let i = 0; i < Math.min(3, Math.ceil(n / 3)); i++) setTimeout(() => Sound.pop(combo - 1 + i), i * 70);
@@ -947,6 +981,7 @@ async function stepFx(res, combo) {
   await sleep(Math.min(n * 10, 150) + 170);
 
   res.created.forEach(({ r, c, tile }) => {
+    setTimeout(() => Tutor.onCreate(tile.special), 500);
     makeTile(tile);
     place(tile, r, c);
     tile.inner.animate([{ transform: 'scale(0) rotate(-90deg)' }, { transform: 'scale(1.35) rotate(10deg)', offset: 0.6 }, { transform: 'scale(1)' }],
@@ -1065,7 +1100,7 @@ async function monsterAttack() {
 // 미믹은 공격하면서 판에 상자를 던짐. 옆에서 터뜨리면 깨짐
 async function throwBoxes(n) {
   const from = centerOf($('#monster'));
-  const drops = Board.dropBoxes(B.grid, n);
+  const drops = Board.dropBlocks(B.grid, n);
   await Promise.all(drops.map(({ r, c, old, tile }, i) => {
     const to = tileCenter(r, c);
     const im = new Image();

@@ -163,19 +163,20 @@ const Haptic = {
     const now = performance.now();
     if (now - this.last < 40) return;
     this.last = now;
-    if (navigator.vibrate) { navigator.vibrate(ms); return; }
-    if (!this.lbl) {
+    if (navigator.vibrate) { navigator.vibrate(Math.max(20, ms)); return; }
+    // 아이폰(iOS 18+): 숨긴 스위치를 누르면 탭틱이 울림. 손가락으로 누르는 순간에 불러야 잘 됨
+    try {
+      const l = document.createElement('label');
+      l.ariaHidden = 'true';
+      l.style.display = 'none';
       const i = document.createElement('input');
       i.type = 'checkbox';
       i.setAttribute('switch', '');
-      i.id = 'hapticSwitch';
-      const l = document.createElement('label');
-      l.htmlFor = 'hapticSwitch';
-      i.style.cssText = l.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;pointer-events:none';
-      document.body.append(i, l);
-      this.lbl = l;
-    }
-    this.lbl.click();
+      l.appendChild(i);
+      document.head.appendChild(l);
+      l.click();
+      l.remove();
+    } catch {}
   },
   toggle() {
     this.on = !this.on;

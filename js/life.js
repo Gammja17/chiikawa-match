@@ -1,79 +1,87 @@
 // 일상 퍼즐: 풀 뽑기, 요리, 거품 청소, 상자 뜯기, 제초 검정. 몬스터 없이 목표를 채우는 스테이지
-// 판 글자: # 판 밖(구멍)  . 빈칸  w 잡초  W 잡초 두 겹  b 상자  g 선물 상자(두 번)  x 상자+잡초  X 선물+잡초
-//          o 거품(번짐)  q 거품+잡초  i 재료  l 리본 구슬  L 리본+잡초  s 처음부터 시럽 칸
+// 판 글자: # 판 밖(구멍)  . 구슬  w 잡초  W 큰 잡초(두 번)  b 상자  g 선물 상자(두 번)
+//          o 거품(번짐)  i 재료  l 리본 구슬  s 처음부터 시럽 칸
+// 잡초, 상자, 거품은 칸을 차지하는 장애물: 바로 옆에서 매치하거나 아이템으로 맞히면 깨짐
 const LIFE_CHARS = ['chiikawa', 'hachiware', 'usagi', 'momonga', 'kurimanju', 'rakko'];
 
 // goals: lock 리본 다 풀기, syrup 시럽을 판 전체에 바르기, weed 잡초 다 뽑기, box 상자 다 뜯기, bubble 거품 다 터뜨리기, ing 재료 n개 바닥까지, char 그 캐릭터 n개, score 점수
 // moves 이동 수 또는 time 초(제한 시간), stars 별 점수 [1, 2, 3], host 화면 옆 응원 캐릭터
 const LIFE = [
-  { name: '풀 뽑기 첫날', icon: 'weed1', types: 5, moves: 18, host: 'chiikawa', intro: '잡초를 모두 뽑자!',
-    goals: [{ k: 'weed' }], stars: [4000, 7000, 9500],
-    map: ['#.....#', '.......', '..www..', '.wwwww.', '.wwwww.', '..www..', '#.....#'] },
-  { name: '비행기 연습', icon: 'plane', types: 5, moves: 20, host: 'hachiware', intro: '네모로 모아 비행기!',
-    goals: [{ k: 'weed' }], stars: [5000, 8000, 10000],
-    map: ['ww...ww', 'ww...ww', '#.....#', '##...##', '#.....#', 'ww...ww', 'ww...ww'] },
-  { name: '라멘 재료 나르기', icon: 'ramen', types: 5, moves: 20, host: 'shisa', intro: '재료를 맨 아래로!',
-    goals: [{ k: 'ing' }], stars: [6000, 9000, 11500], ing: { n: 3, max: 2, kinds: ['naruto', 'egg'] },
+  // 1장: 하나씩 배우기 (4색으로 쉽게)
+  { name: '풀 뽑기 첫날', icon: 'weed1', types: 4, moves: 20, host: 'chiikawa', intro: '잡초 옆에서 터뜨리기!',
+    goals: [{ k: 'weed' }], stars: [2500, 4500, 6500],
+    map: ['.......', '.......', '.......', '.......', '.......', '.w...w.', 'ww...ww'] },
+  { name: '비행기 연습', icon: 'plane', types: 4, moves: 18, host: 'hachiware', intro: '네모로 모으면 비행기!',
+    goals: [{ k: 'weed' }], stars: [3000, 5000, 7000],
+    map: ['w.....w', 'ww...ww', '.......', '.......', '.......', '.......', '.......'] },
+  { name: '라멘 재료 나르기', icon: 'ramen', types: 5, moves: 22, host: 'shisa', intro: '재료를 맨 아래로!',
+    goals: [{ k: 'ing' }], stars: [4000, 6500, 9000], ing: { n: 2, max: 2, kinds: ['naruto', 'egg'] },
     map: ['..i.i..', '.......', '.......', '.......', '#.....#', '##...##', '###.###'] },
   { name: '택배 상자 뜯기', icon: 'box', types: 5, moves: 20, host: 'momonga', intro: '상자를 모두 뜯자!',
-    goals: [{ k: 'box' }], stars: [4500, 7500, 9500],
-    map: ['#.....#', '.......', 'bb...bb', 'bb...bb', '.......', '..bbb..', '#.....#'] },
-  { name: '목욕탕 거품 청소', icon: 'bubble', types: 5, moves: 22, host: 'hachiware', intro: '거품을 다 터뜨리자!',
-    goals: [{ k: 'bubble' }], stars: [5000, 9000, 11000],
+    goals: [{ k: 'box' }], stars: [4000, 6500, 9000],
+    map: ['#.....#', '.......', '.b...b.', 'bb...bb', '.......', '..bbb..', '#.....#'] },
+  { name: '목욕탕 거품 청소', icon: 'bubble', types: 5, moves: 26, host: 'hachiware', intro: '거품이 번지기 전에!',
+    goals: [{ k: 'bubble' }], stars: [4500, 7500, 10000],
     map: ['.......', '.......', '.......', '.......', '...o...', '#.o.o.#', '##o.o##'] },
   { name: '하치와레 노래 연습', icon: 'target', types: 5, moves: 18, host: 'hachiware', intro: '하치와레를 모아 줘!',
-    goals: [{ k: 'char', id: 'hachiware', n: 26 }], stars: [5000, 8000, 10000],
+    goals: [{ k: 'char', id: 'hachiware', n: 20 }], stars: [4500, 7500, 10000],
     map: ['#..#..#', '.......', '.......', '.......', '#.....#', '##...##', '###.###'] },
   { name: '제초 검정 5급', icon: 'medal', types: 5, time: 60, host: 'usagi', exam: true, intro: '60초 안에 점수!',
-    goals: [{ k: 'score', n: 6000 }], stars: [6000, 9000, 12000],
+    goals: [{ k: 'score', n: 5000 }], stars: [5000, 8000, 11000],
     map: ['.......', '.......', '.......', '..###..', '.......', '.......', '.......'] },
-  { name: '선물 상자 정리', icon: 'gift', types: 5, moves: 24, host: 'momonga', intro: '선물 상자와 잡초!',
-    goals: [{ k: 'box' }, { k: 'weed' }], stars: [6000, 10000, 12000],
-    map: ['##.#.##', '.......', '.X...X.', '.wwwww.', '.wXwXw.', '.wwwww.', '.......'] },
-  { name: '시사의 라멘 가게', icon: 'ramen', types: 5, moves: 26, host: 'shisa', intro: '재료 4개를 맨 아래로!',
-    goals: [{ k: 'ing' }], stars: [7000, 11000, 14000], ing: { n: 4, max: 2, kinds: ['naruto', 'egg'] },
+  // 2장: 섞어 보기
+  { name: '선물 상자 정리', icon: 'gift', types: 5, moves: 22, host: 'momonga', intro: '선물 상자는 두 번!',
+    goals: [{ k: 'box' }, { k: 'weed' }], stars: [5500, 9000, 12000],
+    map: ['##.#.##', '.......', '.g...g.', '.w.w.w.', 'w.g.g.w', '.......', '.......'] },
+  { name: '시사의 라멘 가게', icon: 'ramen', types: 5, moves: 28, host: 'shisa', intro: '재료 3개를 맨 아래로!',
+    goals: [{ k: 'ing' }], stars: [6000, 9500, 12500], ing: { n: 3, max: 2, kinds: ['naruto', 'egg'] },
     map: ['#.i.i.#', '.......', '.......', '.b...b.', '.bb.bb.', '.......', '.......'] },
   { name: '제초 검정 4급', icon: 'medal', types: 5, time: 75, host: 'usagi', exam: true, intro: '75초 안에 잡초 전부!',
-    goals: [{ k: 'weed' }], stars: [8000, 13000, 17000],
-    map: ['##...##', '#.....#', '.......', 'wwwwwww', 'wwwwwww', 'wwwwwww', 'wwwwwww'] },
+    goals: [{ k: 'weed' }], stars: [6000, 10000, 14000],
+    map: ['##...##', '#.....#', '.......', 'w.w.w.w', '.w.w.w.', 'w.w.w.w', '.w.w.w.'] },
   { name: '거품 대소동', icon: 'bubble', types: 5, moves: 27, host: 'chiikawa', intro: '거품과 잡초를 한꺼번에!',
-    goals: [{ k: 'bubble' }, { k: 'weed' }], stars: [7000, 11000, 13500],
-    map: ['#.....#', '.......', '.www.w.', '.wwwww.', '..www..', '.qq.qq.', 'qq...qq'] },
-  { name: '쿠리만쥬의 안주', icon: 'dango', types: 5, moves: 29, host: 'kurimanju', intro: '경단, 주먹밥 내리고 상자도!',
-    goals: [{ k: 'ing' }, { k: 'box' }], stars: [8000, 13000, 15000], ing: { n: 4, max: 2, kinds: ['dango', 'onigiri'] },
+    goals: [{ k: 'bubble' }, { k: 'weed' }], stars: [6500, 10500, 13500],
+    map: ['#.....#', '.......', '.w...w.', '..w.w..', '.......', '.o...o.', 'oo...oo'] },
+  { name: '쿠리만쥬의 안주', icon: 'dango', types: 5, moves: 30, host: 'kurimanju', intro: '경단, 주먹밥 내리고 상자도!',
+    goals: [{ k: 'ing' }, { k: 'box' }], stars: [7500, 12000, 15000], ing: { n: 3, max: 2, kinds: ['dango', 'onigiri'] },
     map: ['..i.i..', '.......', '.......', 'g.....g', 'gg...gg', '#.....#', '##...##'] },
-  { name: '제초 검정 3급', icon: 'medal', types: 6, time: 90, host: 'usagi', exam: true, intro: '90초! 두 겹 잡초까지!',
-    goals: [{ k: 'weed' }, { k: 'score', n: 10000 }], stars: [10000, 13000, 17000],
-    map: ['##...##', '#.....#', '.WwWwW.', 'wWWWWWw', 'wWwWwWw', '#WWWWW#', '##www##'] },
+  { name: '제초 검정 3급', icon: 'medal', types: 5, time: 90, host: 'usagi', exam: true, intro: '큰 잡초는 두 번!',
+    goals: [{ k: 'weed' }, { k: 'score', n: 8000 }], stars: [8000, 12000, 16000],
+    map: ['##...##', '#.....#', '.W...W.', '..W.W..', 'w..W..w', '.w...w.', '..www..'] },
+  // 3장: 새 기믹과 어려운 조합
   { name: '선물 리본 풀기', icon: 'ribbon', types: 5, moves: 20, host: 'momonga', intro: '리본을 모두 풀자!',
-    goals: [{ k: 'lock' }], stars: [5000, 8000, 10000],
+    goals: [{ k: 'lock' }], stars: [5000, 8000, 10500],
     map: ['##...##', '#.....#', '.l.l.l.', '..lll..', '.l.l.l.', '#.....#', '##...##'] },
-  { name: '핫케이크 시럽', icon: 'pancake', types: 5, moves: 22, host: 'chiikawa', intro: '시럽을 판 전체에!',
-    goals: [{ k: 'syrup' }], stars: [5000, 8000, 10000],
+  { name: '핫케이크 시럽', icon: 'pancake', types: 5, moves: 25, host: 'chiikawa', intro: '시럽을 판 전체에!',
+    goals: [{ k: 'syrup' }], stars: [5000, 8000, 10500],
     map: ['##...##', '#.....#', '.......', '...s...', '.......', '#.....#', '##...##'] },
-  { name: '제초 검정 2급', icon: 'medal', types: 6, time: 100, host: 'usagi', exam: true, intro: '100초! 리본 사이 잡초!',
-    goals: [{ k: 'weed' }, { k: 'lock' }], stars: [9000, 12000, 15000],
-    map: ['.......', '.......', 'wLwwwLw', 'wwLwLww', 'WwwLwwW', 'wWwwwWw', '.wwwww.'] },
-  { name: '라멘 국물 내기', icon: 'pot', types: 5, moves: 29, host: 'shisa', intro: '국물을 바르고 재료도!',
+  { name: '제초 검정 2급', icon: 'medal', types: 6, time: 100, host: 'usagi', exam: true, intro: '리본 사이 잡초!',
+    goals: [{ k: 'weed' }, { k: 'lock' }], stars: [8000, 12000, 16000],
+    map: ['.......', '.l...l.', 'w.l.l.w', '.w.l.w.', 'W.w.w.W', '.W...W.', '..www..'] },
+  { name: '라멘 국물 내기', icon: 'pot', types: 5, moves: 32, host: 'shisa', intro: '국물을 바르고 재료도!',
     goals: [{ k: 'syrup' }, { k: 'ing' }], stars: [8000, 12000, 15000], ing: { n: 3, max: 2, kinds: ['naruto', 'egg'] },
     map: ['..i.i..', '.......', '.......', '.......', '#..s..#', '##...##', '###.###'] },
-  { name: '거품 목욕 대작전', icon: 'bath', types: 5, moves: 26, host: 'hachiware', intro: '거품도 리본도!',
+  { name: '거품 목욕 대작전', icon: 'bath', types: 5, moves: 28, host: 'hachiware', intro: '거품도 리본도!',
     goals: [{ k: 'bubble' }, { k: 'lock' }], stars: [7000, 11000, 14000],
     map: ['.......', '.l...l.', '..l.l..', '.......', '.o...o.', '#oo.oo#', '##...##'] },
-  { name: '소풍 도시락', icon: 'bento', types: 5, moves: 31, host: 'kurimanju', intro: '도시락 재료 모으기!',
-    goals: [{ k: 'ing' }, { k: 'box' }, { k: 'weed' }], stars: [9000, 13000, 16000], ing: { n: 4, max: 2, kinds: ['onigiri', 'dango', 'donut'] },
-    map: ['.i...i.', '.......', '.......', 'x.....x', 'wx...xw', 'wwwwwww', '.wwwww.'] },
-  { name: '제초 검정 1급', icon: 'medal', types: 6, time: 120, host: 'usagi', exam: true, intro: '최종 시험! 120초!',
-    goals: [{ k: 'weed' }, { k: 'bubble' }, { k: 'score', n: 14000 }], stars: [14000, 18000, 22000],
-    map: ['#.....#', '.......', 'WWwWwWW', 'WwWWWwW', 'wWWqWWw', '#WwWwW#', '##qqq##'] },
+  { name: '소풍 도시락', icon: 'bento', types: 5, moves: 33, host: 'kurimanju', intro: '도시락 재료 모으기!',
+    goals: [{ k: 'ing' }, { k: 'box' }, { k: 'weed' }], stars: [9000, 13000, 16000], ing: { n: 3, max: 2, kinds: ['onigiri', 'dango', 'donut'] },
+    map: ['.i...i.', '.......', '.......', 'b.....b', 'wb...bw', '.w.w.w.', '..www..'] },
+  { name: '제초 검정 1급', icon: 'medal', types: 6, time: 130, host: 'usagi', exam: true, intro: '최종 시험! 130초!',
+    goals: [{ k: 'weed' }, { k: 'bubble' }, { k: 'score', n: 12000 }], stars: [12000, 16000, 20000],
+    map: ['#.....#', '.......', 'W.W.W.W', '.w.w.w.', 'w.WoW.w', '#.w.w.#', '##ooo##'] },
 ];
 // 스테이지 시작 전 짧은 대사 (팬 창작)
 const LIFE_STORY = {
   0: [
-    ['hachiware', '오늘은 풀 뽑기 일이야! 초록 칸 위에서 구슬을 터뜨리면 잡초가 뽑혀.'],
+    ['hachiware', '오늘은 풀 뽑기 일이야! 잡초 바로 옆에서 같은 얼굴 셋을 맞추면 쑥 뽑혀.'],
     ['chiikawa', '(끄덕끄덕)'],
-    ['hachiware', '같은 얼굴 넷을 네모로 모으면 ✈️비행기가 생겨. 잡초 쪽으로 날아가!'],
-    ['usagi', '아이템은 톡톡 두 번 누르거나, 아무 쪽으로 쓱 밀어도 터져~ 우라!'],
+    ['usagi', '우라!'],
+  ],
+  1: [
+    ['hachiware', '같은 얼굴 넷을 네모로 모으면 비행기가 생겨!'],
+    ['hachiware', '비행기는 잡초 쪽으로 슝 날아가서 뽑아 줘.'],
+    ['chiikawa', '…!'],
   ],
   2: [
     ['shisa', '라멘 재료가 모자라요~! 나루토랑 달걀을 맨 아래까지 내려 주세요!'],
@@ -97,17 +105,17 @@ const LIFE_STORY = {
     ['hachiware', '시럽 칸이 낀 매치를 하면 그 줄에 시럽이 쭉 번져. 판 전체에 발라 보자!'],
   ],
   19: [
-    ['usagi', '우라! 1급!!'],
+    ['usagi', '우라!!'],
     ['hachiware', '마지막 시험이야. 거품, 두 겹 잡초, 점수까지 전부!'],
     ['chiikawa', '…(꿀꺽)'],
   ],
   12: [
-    ['usagi', '우라! 3급이다~!'],
+    ['usagi', '야하!'],
     ['chiikawa', '…(꿀꺽)'],
     ['hachiware', '두 겹짜리 잡초는 두 번 뽑아야 해. 할 수 있어!'],
   ],
   end: [
-    ['chiikawa', '…합격했다!'],
+    ['chiikawa', '…!! (와아…!)'],
     ['hachiware', '제초 검정 1급! 오늘은 라멘 곱빼기 먹자~'],
     ['shisa', '어서 오세요~!'],
   ],
@@ -131,13 +139,13 @@ function parseLayout(st) {
   const syrup = st.goals.some(g => g.k === 'syrup') ? Array.from({ length: ROWS }, () => new Array(COLS).fill(false)) : null;
   let k = 0;
   st.map.forEach((row, r) => [...row].forEach((ch, c) => {
-    if ('wxXqL'.includes(ch)) floor[r][c] = 1;
-    if (ch === 'l' || ch === 'L') locks.push([r, c]);
+    if (ch === 'l') locks.push([r, c]);
     if (ch === 's' && syrup) syrup[r][c] = true;
-    if (ch === 'W') floor[r][c] = 2;
-    if (ch === 'b' || ch === 'x') blocks.push([r, c, 'box', 1]);
-    if (ch === 'g' || ch === 'X') blocks.push([r, c, 'box', 2]);
-    if (ch === 'o' || ch === 'q') blocks.push([r, c, 'bubble', 1]);
+    if (ch === 'w') blocks.push([r, c, 'weed', 1]);
+    if (ch === 'W') blocks.push([r, c, 'weed', 2]);
+    if (ch === 'b') blocks.push([r, c, 'box', 1]);
+    if (ch === 'g') blocks.push([r, c, 'box', 2]);
+    if (ch === 'o') blocks.push([r, c, 'bubble', 1]);
     if (ch === 'i') ings.push([r, c, st.ing.kinds[k++ % st.ing.kinds.length]]);
   }));
   return { floor, mask, blocks, ings, locks, syrup };
@@ -193,6 +201,8 @@ const Life = {
     if (run.kind === 'route' && LIFE_STORY[i] && (Save.data.life || [])[i] == null) await playStory(LIFE_STORY[i]);
     await dropIn(st.intro);
     B.busy = false;
+    Tutor.onStart();
+    Tutor.poke();
     if (st.time) Life.runTimer();
   },
 
@@ -214,7 +224,6 @@ const Life = {
     let n = 0;
     if (k === 'syrup') { Board.syrup?.forEach((row, r) => row.forEach((v, c) => { if (!v && !hole(r, c)) n++; })); return n; }
     if (k === 'lock') { Board.each(B.grid, t => { if (t.lock) n++; }); return n; }
-    if (k === 'weed') { Board.floor?.forEach(row => row.forEach(w => { if (w > 0) n++; })); return n; }
     Board.each(B.grid, t => { if (t.block === k) n++; });
     return n;
   },
@@ -318,15 +327,20 @@ const Life = {
     await Life.check();
   },
 
-  // 제초 대회: 잡초를 다 뽑으면 보너스와 함께 다시 자람
+  // 제초 대회: 잡초를 다 뽑으면 보너스와 함께 여기저기 새로 돋아남
   async regrow() {
     L.score += 2000;
     Sound.play('special', 1, 0.9);
-    banner('다시 자랐다! +2000', 450);
-    Board.floor = Board.floor.map((row, r) => row.map((_, c) => (hole(r, c) ? 0 : 1)));
-    renderFloor();
-    boardEl.querySelectorAll('.cellfg').forEach((d, k) => d.animate([{ opacity: 0, transform: 'scale(.4)' }, { opacity: 1, transform: 'scale(1)' }], { duration: 300, delay: (k % 7) * 30 }));
-    await sleep(400);
+    banner('+2000', 450);
+    const sprouts = Board.dropBlocks(B.grid, 8, 'weed', Math.random() < 0.3 ? 2 : 1);
+    sprouts.forEach(({ r, c, old, tile }, k) => setTimeout(() => {
+      popTile(old, 0);
+      makeTile(tile);
+      place(tile, r, c);
+      tile.inner.animate([{ transform: 'scale(0) translateY(30%)' }, { transform: 'scale(1.2)', offset: 0.6 }, { transform: 'scale(1)' }], { duration: 320, easing: 'ease-out' });
+    }, k * 50));
+    await sleep(500);
+    if (!Board.hasMove(B.grid)) await cascade(null, []);
   },
 
   async check() {
@@ -480,7 +494,7 @@ const Tower = {
 
 // ---------- 제초 대회: 60초 동안 최대한 높은 점수 ----------
 const CONTEST = { name: '제초 대회', icon: 'medal', types: 5, time: 60, host: 'usagi', contest: true, intro: '60초! 최대한 많이!',
-  goals: [], stars: [8000, 15000, 25000], map: ['wwwwwww', 'wwwwwww', 'wwwwwww', 'wwwwwww', 'wwwwwww', 'wwwwwww', 'wwwwwww'] };
+  goals: [], stars: [8000, 15000, 25000], map: ['.......', '.w...w.', '...w...', '.w...w.', '...w...', '.w...w.', '.......'] };
 Life.contestEnd = async function () {
   B.over = true;
   B.busy = true;

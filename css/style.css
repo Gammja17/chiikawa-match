@@ -498,3 +498,29 @@ img.shadow { filter: brightness(0) opacity(.15); }
 #rankList .rk.top3 { background: #e0a46a; color: #fff; }
 #rankList .nm { flex: 1; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #rankList b { font-family: var(--head); font-size: 20px; }
+
+/* ---------- 처음 하는 사람 돕기 ---------- */
+.tip { position: absolute; left: 50%; top: 64px; z-index: 29; width: calc(100% - 32px); display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 14px; background: #fff; box-shadow: 0 6px 18px rgba(74, 66, 98, .22); transform: translateX(-50%); font-size: 15px; line-height: 1.35; }
+.tip img { width: 36px; height: 36px; flex: none; }
+.hint-hand { position: absolute; z-index: 4; pointer-events: none; filter: drop-shadow(0 3px 2px rgba(0, 0, 0, .25)); }
+@keyframes hintWiggle { 0%, 100% { transform: scale(1) rotate(0); } 25% { transform: scale(1.08) rotate(-6deg); } 75% { transform: scale(1.08) rotate(6deg); } }
+.tile.hinted .inner { animation: hintWiggle .8s ease-in-out infinite; }
+#board.guiding .tile:not(.hinted) { opacity: .35; transition: opacity .2s; }
+
+/* ---------- 친구네 집 ---------- */
+#homeTabs { display: flex; gap: 8px; overflow-x: auto; padding: 2px 14px 10px; touch-action: pan-x; flex: none; }
+#homeTabs button { flex: none; width: 48px; height: 48px; border-radius: 50%; background: #fff; box-shadow: var(--sh); padding: 4px; opacity: .55; }
+#homeTabs button img { width: 100%; height: 100%; object-fit: contain; }
+#homeTabs button.on { opacity: 1; box-shadow: 0 0 0 3px var(--ring), var(--sh); }
+#room .wall { background-color: color-mix(in srgb, var(--ring) 16%, #fff); background-image: repeating-linear-gradient(90deg, transparent 0 26px, color-mix(in srgb, var(--ring) 22%, #fff) 26px 28px); }
+#room .resident { width: 22%; }
+#room .resident.owner { width: 28%; }
+#btnMates { position: absolute; right: 10px; top: 10px; z-index: 100; float: none; background: #fff; box-shadow: var(--sh); }
+.mates-title { margin: 16px 0 10px; font-family: var(--head); font-size: 22px; }
+.mates-title small { color: var(--pink); }
+.mates-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.mates-grid button { display: flex; flex-direction: column; align-items: center; padding: 6px 2px; border-radius: 12px; background: #f6f1fb; font-size: 12px; }
+.mates-grid button img { width: 44px; height: 44px; object-fit: contain; }
+.mates-grid button.on { background: color-mix(in srgb, var(--ring) 30%, #fff); box-shadow: 0 0 0 2px var(--ring); }
+.tile .inner.block.weed { border-radius: 12px; background: #dff3d0; box-shadow: inset 0 -4px 0 #c3e6ad; }
+.tile .inner.block.weed img { transform: scale(.82) translateY(4%); }
