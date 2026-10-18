@@ -143,6 +143,7 @@ function parseLayout(st) {
   return { floor, mask, blocks, ings, locks, syrup };
 }
 
+const MOVE_SVG = '<svg viewBox="0 0 24 24"><ellipse cx="12" cy="15.5" rx="5" ry="4.2"/><circle cx="6" cy="9.5" r="2.1"/><circle cx="10" cy="6" r="2.1"/><circle cx="14" cy="6" r="2.1"/><circle cx="18" cy="9.5" r="2.1"/></svg>';
 const L = { st: null, i: 0, moves: 0, time: 0, score: 0, ing: 0, spawned: 0, chars: {}, popped: false, extra: false, timer: null, goalsHtml: '' };
 
 // 판에 재료가 모자라면 위에서 새로 내려보냄
@@ -177,7 +178,7 @@ const Life = {
     Sound.music('map');
     show('battle');
     $('#stageName').textContent = `${routeIdx('l', i) + 1}. ${st.name}`;
-    $('#waveInfo').textContent = st.exam ? '검정 시험' : '일상 퍼즐';
+    $('#waveInfo').innerHTML = '';
     $('#lhChar').src = art(st.host);
     layoutBoard();
     boardEl.querySelectorAll('.tile').forEach(e => e.remove());
@@ -223,7 +224,7 @@ const Life = {
 
   hud() {
     const st = L.st;
-    $('#lhLimitLabel').textContent = st.time ? '남은 시간' : '남은 이동';
+    $('#lhLimitLabel').innerHTML = st.time ? `<img src="${ITEM('timer')}">` : MOVE_SVG;
     $('#lhLimit').textContent = st.time ? Math.ceil(L.time) : L.moves;
     $('.lh-limit').classList.toggle('danger', st.time ? L.time <= 10 : L.moves <= 3);
     const html = st.goals.map(g => {
@@ -254,12 +255,6 @@ const Life = {
     });
     if (res.hits.some(h => h.tile.block === 'bubble')) L.popped = true;
     L.score += pts;
-    const spots = [...res.cleared, ...res.hits, ...res.unlocked];
-    if (spots.length && pts) {
-      const ps = spots.map(({ r, c }) => tileCenter(r, c));
-      const x = ps.reduce((a, p) => a + p.x, 0) / ps.length, y = ps.reduce((a, p) => a + p.y, 0) / ps.length;
-      setTimeout(() => floatNum(x, y, `+${pts}`, '#8f86c9', 'small'), 120);
-    }
     Life.hud();
   },
 
@@ -290,7 +285,6 @@ const Life = {
           L.score += 500;
           Life.hud();
           Sound.play('heal', 1.3, 0.7);
-          floatNum(to.x, to.y + 20, '+500', '#e07b39', 'small');
         });
       }));
       await fall(Board.gravity(B.grid));
@@ -310,7 +304,6 @@ const Life = {
         Sound.play('pop', 0.7, 0.8);
         const p = tileCenter(s.r, s.c);
         burst(p.x, p.y, '#9fdcff', 6);
-        floatNum(p.x, p.y - B.S * 0.4, '번졌다!', '#4fa3ff', 'small');
         await sleep(380);
         await cascade(null, []); // 수가 없어졌으면 섞기
       }

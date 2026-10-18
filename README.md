@@ -25,6 +25,7 @@
 ### 아이템
 
 - 4개 한 줄: 🚀로켓(한 줄), L·T 모양: 💣폭탄, 5개 한 줄: 🌈무지개, **2×2 네모: ✈️비행기** (목표 쪽으로 날아감)
+- 속성: 🔥씩씩 → ⭐엉뚱 → 💧울보 → 🔥씩씩 (화살표 쪽에 1.5배), ☀️빛 ⇄ 🌙어둠은 서로에게 1.5배
 - 아이템은 색이 없는 아이콘 하나. **두 번 톡톡 누르거나 아무 쪽으로 쓱 밀면** 바로 발동
 - 아이템끼리 바꾸면 더 큰 효과. 비행기는 상대 아이템을 싣고 날아감
 
@@ -46,6 +47,8 @@
 - 친구 상세: 레벨, 스탯, 스킬, 액세서리 씌우기, 레벨 2에 열리는 짧은 이야기
 - 우리 집: 가구를 사서 놓으면 모은 친구들이 방 안을 돌아다님 (눌러 보면 한마디)
 - 캐릭터 목소리: `assets/voice/`에 직접 넣는 칸만 있습니다 (README 참고)
+- 타이틀 그림: `assets/img/art/title.jpg`를 넣으면 타이틀 배경으로 씁니다
+- 진동: 구슬이 터질 때 폰이 톡톡 울림 (안드로이드, iOS 18 이상 사파리). 지도 위 버튼으로 끄고 켬
 
 ## 실행
 
@@ -61,8 +64,9 @@ python -m http.server 8770
 
 - 캐릭터, 몬스터 이미지: © nagano / chiikawa committee. 퍼즐 얼굴은 인터넷에서 모은 이미지, 전신·포즈 일러스트와 몬스터는 [Chiikawa Wiki (Fandom)](https://chiikawa.fandom.com/)에서 가져왔습니다. 이미지의 권리는 원저작자에게 있으며, 이 저장소의 라이선스 대상이 아닙니다.
 - 배경, 터짐 조각: [VARCO](https://3d.varco.ai)로 생성
-- 효과음: [Kenney](https://kenney.nl) Interface Sounds, Digital Audio, Impact Sounds, Music Jingles (CC0). 라이선스 원문은 `assets/sfx/LICENSE-kenney*.txt` (아이폰 재생을 위해 mp3로 변환)
+- 효과음: 구슬 터짐, 로켓, 타격 같은 퍼즐 소리는 코드(`js/audio.js`)로 직접 합성. 징글과 일부 효과음은 [Kenney](https://kenney.nl) Interface Sounds, Digital Audio, Impact Sounds, Music Jingles (CC0). 라이선스 원문은 `assets/sfx/LICENSE-kenney*.txt` (아이폰 재생을 위해 mp3로 변환)
+- 파티클 이펙트: [Kenney Particle Pack](https://kenney.nl/assets/particle-pack) (CC0). 라이선스 원문은 `assets/img/fx/k/LICENSE-kenney-particles.txt`
 - 배경 음악: 코드(`js/audio.js`)로 직접 연주하는 오리지널 곡
 - 아이템, 장애물, 재료, 가구, 액세서리 아이콘: [Noto Emoji](https://github.com/googlefonts/noto-emoji) (Google, Apache License 2.0). 라이선스 원문은 `assets/img/items/LICENSE-noto.txt`
-- 글꼴: [Jua](https://fonts.google.com/specimen/Jua), [Baloo 2](https://fonts.google.com/specimen/Baloo+2), [Gaegu](https://fonts.google.com/specimen/Gaegu) (Google Fonts, SIL Open Font License)
+- 글꼴: [Dongle](https://fonts.google.com/specimen/Dongle), [Gowun Dodum](https://fonts.google.com/specimen/Gowun+Dodum), [Gaegu](https://fonts.google.com/specimen/Gaegu) (Google Fonts, SIL Open Font License)
 - 게임 코드(`js/`, `css/`, `index.html`): 팬 창작물

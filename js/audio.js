@@ -21,9 +21,10 @@ const Sound = {
     });
   },
 
-  // rate: 재생 속도(음높이), vol: 볼륨
+  // rate: 재생 속도(음높이), vol: 볼륨. 퍼즐 손맛 소리는 직접 합성(SYN), 나머지는 Kenney 효과음
   play(name, rate = 1, vol = 1) {
     if (this.muted) return;
+    if (SYN[name] && this.ctx && this.ctx.state === 'running') { SYN[name](this.ctx, this.master, rate, vol); return; }
     const buf = this.buffers[name];
     if (buf && this.ctx) {
       const src = this.ctx.createBufferSource();
@@ -62,6 +63,124 @@ const Sound = {
     const scale = [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19];
     const semi = scale[Math.min(combo, scale.length - 1)] + (i % 2) * 0.3;
     this.play('pop', Math.pow(2, semi / 12) * 1.05, 0.9);
+    Haptic.tap(combo > 2 ? 18 : 12);
+  },
+};
+
+// ---------- 합성 효과음: 짧고 또렷하게 (뽁, 슉, 쾅) ----------
+let NOISE = null;
+function noiseBuf(ctx) {
+  if (NOISE) return NOISE;
+  NOISE = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+  const d = NOISE.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  return NOISE;
+}
+// 음 하나: 주파수가 f0→f1로 미끄러지며 짧게 울림
+function tone(ctx, out, { type = 'sine', f0, f1 = f0, t = 0, dur = 0.1, vol = 0.5, attack = 0.003 }) {
+  const now = ctx.currentTime + t;
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = type;
+  o.frequency.setValueAtTime(f0, now);
+  o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), now + dur);
+  g.gain.setValueAtTime(0.0001, now);
+  g.gain.exponentialRampToValueAtTime(vol, now + attack);
+  g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+  o.connect(g).connect(out);
+  o.start(now);
+  o.stop(now + dur + 0.02);
+}
+// 잡음 한 줌: 필터를 걸어 톡, 슉, 쿵을 만듦
+function hiss(ctx, out, { t = 0, dur = 0.05, vol = 0.3, type = 'bandpass', f0 = 3000, f1 = f0, q = 1 }) {
+  const now = ctx.currentTime + t;
+  const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+  s.buffer = noiseBuf(ctx);
+  f.type = type;
+  f.Q.value = q;
+  f.frequency.setValueAtTime(f0, now);
+  f.frequency.exponentialRampToValueAtTime(Math.max(40, f1), now + dur);
+  g.gain.setValueAtTime(vol, now);
+  g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+  s.connect(f).connect(g).connect(out);
+  s.start(now, Math.random() * 0.5);
+  s.stop(now + dur + 0.02);
+}
+const SYN = {
+  // 구슬 뽁: 동글한 음이 뚝 떨어지고 끝에 톡
+  pop(ctx, out, r, v) {
+    tone(ctx, out, { f0: 620 * r, f1: 240 * r, dur: 0.09, vol: 0.55 * v });
+    tone(ctx, out, { type: 'triangle', f0: 1240 * r, f1: 700 * r, dur: 0.05, vol: 0.18 * v });
+    hiss(ctx, out, { dur: 0.012, vol: 0.35 * v, type: 'highpass', f0: 2500 });
+  },
+  swap(ctx, out, r, v) {
+    hiss(ctx, out, { dur: 0.05, vol: 0.25 * v, f0: 1800 * r, f1: 3600 * r, q: 2 });
+    tone(ctx, out, { f0: 520 * r, f1: 760 * r, dur: 0.05, vol: 0.15 * v });
+  },
+  bad(ctx, out, r, v) {
+    tone(ctx, out, { type: 'triangle', f0: 260, f1: 240, dur: 0.09, vol: 0.35 * v });
+    tone(ctx, out, { type: 'triangle', f0: 200, f1: 170, t: 0.1, dur: 0.12, vol: 0.35 * v });
+  },
+  click(ctx, out, r, v) {
+    tone(ctx, out, { f0: 1500 * r, f1: 1100 * r, dur: 0.03, vol: 0.2 * v });
+  },
+  // 착지: 아주 작은 툭
+  land(ctx, out, r, v) {
+    tone(ctx, out, { f0: 220 * r, f1: 110 * r, dur: 0.05, vol: 0.18 * v });
+  },
+  // 로켓: 슈웅 하고 쓸고 지나감
+  line(ctx, out, r, v) {
+    hiss(ctx, out, { dur: 0.28, vol: 0.4 * v, f0: 500 * r, f1: 5000 * r, q: 1.4 });
+    tone(ctx, out, { type: 'sawtooth', f0: 1400 * r, f1: 260 * r, dur: 0.22, vol: 0.08 * v });
+  },
+  // 아이템 생김: 띠링
+  special(ctx, out, r, v) {
+    [0, 4, 7, 12].forEach((s, i) => tone(ctx, out, { f0: 880 * r * Math.pow(2, s / 12), t: i * 0.045, dur: 0.22, vol: 0.2 * v }));
+  },
+  sparkle(ctx, out, r, v) {
+    for (let i = 0; i < 3; i++) tone(ctx, out, { f0: (2000 + Math.random() * 1400) * r, t: i * 0.035, dur: 0.12, vol: 0.08 * v });
+  },
+  // 몬스터 맞음: 퍽
+  hit1(ctx, out, r, v) { SYN.thwack(ctx, out, r, v); },
+  hit2(ctx, out, r, v) { SYN.thwack(ctx, out, r * 1.1, v); },
+  hit3(ctx, out, r, v) { SYN.thwack(ctx, out, r * 0.9, v); },
+  thwack(ctx, out, r, v) {
+    hiss(ctx, out, { dur: 0.08, vol: 0.55 * v, type: 'lowpass', f0: 2600 * r, f1: 500 });
+    tone(ctx, out, { f0: 190 * r, f1: 55, dur: 0.14, vol: 0.6 * v });
+  },
+  // 무지개: 도레미솔라 쫙
+  rainbow(ctx, out, r, v) {
+    [0, 2, 4, 7, 9, 12, 14, 16, 19].forEach((s, i) => tone(ctx, out, { type: 'triangle', f0: 660 * Math.pow(2, s / 12), t: i * 0.035, dur: 0.18, vol: 0.14 * v }));
+    hiss(ctx, out, { dur: 0.4, vol: 0.12 * v, type: 'highpass', f0: 5000 });
+  },
+};
+
+// ---------- 진동: 구슬이 터질 때 폰이 톡톡 (안드로이드 vibrate, 아이폰은 스위치 햅틱) ----------
+const Haptic = {
+  on: localStorage.getItem('chiikawaMatch.v1.vib') !== '0',
+  last: 0,
+  tap(ms = 12) {
+    if (!this.on) return;
+    const now = performance.now();
+    if (now - this.last < 40) return;
+    this.last = now;
+    if (navigator.vibrate) { navigator.vibrate(ms); return; }
+    if (!this.lbl) {
+      const i = document.createElement('input');
+      i.type = 'checkbox';
+      i.setAttribute('switch', '');
+      i.id = 'hapticSwitch';
+      const l = document.createElement('label');
+      l.htmlFor = 'hapticSwitch';
+      i.style.cssText = l.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;pointer-events:none';
+      document.body.append(i, l);
+      this.lbl = l;
+    }
+    this.lbl.click();
+  },
+  toggle() {
+    this.on = !this.on;
+    try { localStorage.setItem('chiikawaMatch.v1.vib', this.on ? '1' : '0'); } catch {}
+    if (this.on) this.tap(30);
   },
 };
 

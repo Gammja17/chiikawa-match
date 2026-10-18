@@ -5,18 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>치이카와 토벌 퍼즐 (팬게임)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Jua&family=Baloo+2:wght@700;800&family=Gaegu:wght@700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=12">
+<link href="https://fonts.googleapis.com/css2?family=Dongle:wght@400;700&family=Gowun+Dodum&family=Gaegu:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=13">
 </head>
 <body>
 <div id="app">
 
   <section id="title" class="screen active">
     <div class="title-sky">
-      <h1>치이카와<br><span>토벌 퍼즐</span></h1>
-      <div id="titleParty" class="title-party"></div>
-      <button id="btnStart" class="big-btn">토벌 시작!</button>
-      <p class="credit">비공식 팬게임 · 캐릭터 © nagano / chiikawa committee<br>이미지 출처 Chiikawa Wiki · 효과음 Kenney (CC0)</p>
+      <div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div>
+      <div class="logo"><small>치이카와</small><h1>토벌 퍼즐</h1><span class="logo-tag">fan game</span></div>
+      <div class="hill"><div id="titleParty" class="title-party"></div></div>
+      <div class="title-foot">
+        <button id="btnStart" class="big-btn">시작하기</button>
+        <p class="credit">비공식 팬게임 · 캐릭터 © nagano / chiikawa committee</p>
+      </div>
     </div>
   </section>
 
@@ -25,6 +28,7 @@
       <button class="icon-btn" id="btnMapHome">⌂</button>
       <div class="bar-title" id="mapTitle">모험 지도</div>
       <div class="coins"><img src="assets/img/items/coin.png" alt=""><b>0</b></div>
+      <button class="icon-btn btn-vib"><svg viewBox="0 0 24 24" width="20" height="20"><rect x="8" y="3" width="8" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M4 8v8M20 8v8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
       <button class="icon-btn btn-mute">♪</button>
     </header>
     <div id="mapScroll"><div id="mapPath"></div></div>
@@ -39,7 +43,7 @@
   <section id="house" class="screen">
     <header class="bar">
       <button class="icon-btn btn-tomap">◀</button>
-      <div class="bar-title">우리 집<small>가구를 사서 꾸며요</small></div>
+      <div class="bar-title">우리 집</div>
       <div class="coins"><img src="assets/img/items/coin.png" alt=""><b>0</b></div>
     </header>
     <div id="room"><div class="wall"></div><div class="floor"></div></div>
@@ -49,7 +53,7 @@
   <section id="gacha" class="screen">
     <header class="bar">
       <button class="icon-btn btn-tomap">◀</button>
-      <div class="bar-title">캡슐 뽑기<small>친구 60% · 액세서리 40%</small></div>
+      <div class="bar-title">캡슐 뽑기</div>
       <div class="coins"><img src="assets/img/items/coin.png" alt=""><b>0</b></div>
     </header>
     <div class="gacha-body">
@@ -58,7 +62,6 @@
         <div class="base"><span class="slot"></span></div>
       </div>
       <div id="capsule" class="capsule"><i class="top"></i><i class="bottom"></i></div>
-      <p class="gacha-note">같은 친구를 또 만나면 레벨 업 (최대 Lv10)</p>
       <button id="btnPull" class="big-btn"><img src="assets/img/items/coin.png" alt="">100 · 한 번 뽑기</button>
     </div>
   </section>
@@ -80,12 +83,12 @@
     </header>
     <div class="form-body">
       <div class="form-card">
-        <div class="form-label">이번 적</div>
+        <div class="form-label">상대</div>
         <div id="formEnemies" class="form-enemies"></div>
-        <div class="attr-rule">💪씩씩 → 🌀엉뚱 → 💧울보 → 💪씩씩 <small>(화살표 쪽에 1.5배)</small></div>
+        <div class="attr-rule"></div>
       </div>
       <div class="form-card">
-        <div class="form-label">출격 멤버 <span id="formCount"></span></div>
+        <div class="form-label">출격 <span id="formCount"></span></div>
         <div id="formSlots" class="form-slots"></div>
       </div>
       <div id="formRoster" class="form-roster"></div>
@@ -113,8 +116,8 @@
       <div id="teamHp" class="hp"><div class="fill"></div><span></span></div>
     </div>
     <div id="lifeHud">
-      <div class="lh-card lh-limit"><small id="lhLimitLabel">남은 이동</small><b id="lhLimit">0</b></div>
-      <div class="lh-card lh-goals"><small>목표</small><div id="lhGoals"></div></div>
+      <div class="lh-card lh-limit"><span id="lhLimitLabel"></span><b id="lhLimit">0</b></div>
+      <div class="lh-card lh-goals"><div id="lhGoals"></div></div>
       <img id="lhChar" alt="">
     </div>
     <div id="lhScore"><div class="bar"><div class="fill"></div><i></i><i></i><i></i></div><b>0</b></div>
@@ -151,11 +154,11 @@
   <div id="fx"></div>
   <div id="flash"></div>
 </div>
-<script src="js/data.js?v=12"></script>
-<script src="js/audio.js?v=12"></script>
-<script src="js/board.js?v=12"></script>
-<script src="js/game.js?v=12"></script>
-<script src="js/life.js?v=12"></script>
-<script src="js/meta.js?v=12"></script>
+<script src="js/data.js?v=13"></script>
+<script src="js/audio.js?v=13"></script>
+<script src="js/board.js?v=13"></script>
+<script src="js/game.js?v=13"></script>
+<script src="js/life.js?v=13"></script>
+<script src="js/meta.js?v=13"></script>
 </body>
 </html>

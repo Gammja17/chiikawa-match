@@ -40,6 +40,9 @@ function updateMute() {
 }
 document.querySelectorAll('.btn-mute').forEach(b => (b.onclick = () => { Sound.muted = !Sound.muted; updateMute(); Sound.play('click'); }));
 updateMute();
+const updateVib = () => document.querySelectorAll('.btn-vib').forEach(b => b.classList.toggle('off', !Haptic.on));
+document.querySelectorAll('.btn-vib').forEach(b => (b.onclick = () => { Haptic.toggle(); updateVib(); Sound.play('click'); }));
+updateVib();
 window.addEventListener('pointerdown', () => Sound.unlock(), { capture: true });
 
 function rel(rect) {
@@ -60,17 +63,26 @@ function addFx(cls, x, y) {
   return el;
 }
 
+// Kenney 파티클(CC0) 그림을 원하는 색으로 칠해서 씀
+const KP = n => `url(assets/img/fx/k/${n}.png)`;
+function kp(name, x, y, size, color, frames, opts) {
+  const el = addFx('kp', x, y);
+  Object.assign(el.style, { width: size + 'px', height: size + 'px', marginLeft: -size / 2 + 'px', marginTop: -size / 2 + 'px' });
+  el.style.setProperty('--m', KP(name));
+  el.style.setProperty('--c', color);
+  return el.animate(frames, opts).finished.then(() => el.remove());
+}
+// 반짝이 별과 불똥이 사방으로 튐
 function burst(x, y, color, n = 6) {
   for (let i = 0; i < n; i++) {
-    const spr = Math.random() < 0.45;
-    const p = addFx(spr ? 'p spr' : 'p', x, y);
-    if (spr) p.style.backgroundImage = `url(${FXI(FX_SPRITES[Math.floor(Math.random() * FX_SPRITES.length)])})`;
-    else p.style.background = color;
-    const ang = Math.random() * Math.PI * 2, d = 26 + Math.random() * 42, rot = (Math.random() - 0.5) * 240;
-    p.animate([
-      { transform: 'translate(0,0) scale(1) rotate(0)', opacity: 1 },
-      { transform: `translate(${Math.cos(ang) * d}px,${Math.sin(ang) * d}px) scale(0) rotate(${rot}deg)`, opacity: 0.6 },
-    ], { duration: 420 + Math.random() * 200, easing: 'cubic-bezier(.2,.8,.4,1)' }).finished.then(() => p.remove());
+    const ang = Math.random() * Math.PI * 2, d = 24 + Math.random() * 44, rot = (Math.random() - 0.5) * 300;
+    const star = i % 3 !== 2;
+    const sz = star ? 14 + Math.random() * 14 : 10 + Math.random() * 8;
+    kp(star ? (i % 2 ? 'star_06' : 'star_04') : 'spark_05', x, y, sz, i % 2 ? color : '#ffffff', [
+      { transform: 'translate(0,0) scale(.4) rotate(0)', opacity: 1 },
+      { transform: `translate(${Math.cos(ang) * d * 0.7}px,${Math.sin(ang) * d * 0.7}px) scale(1.2) rotate(${rot / 2}deg)`, opacity: 1, offset: 0.35 },
+      { transform: `translate(${Math.cos(ang) * d}px,${Math.sin(ang) * d}px) scale(0) rotate(${rot}deg)`, opacity: 0 },
+    ], { duration: 420 + Math.random() * 220, easing: 'cubic-bezier(.2,.8,.4,1)' });
   }
 }
 
@@ -105,7 +117,24 @@ function shake(power = 6, dur = 300) {
   for (let i = 0; i < 6; i++) k.push({ transform: `translate(${(Math.random() - .5) * power * 2}px,${(Math.random() - .5) * power * 2}px)` });
   k.push({ transform: 'translate(0,0)' });
   app.animate(k, { duration: dur });
+  Haptic.tap(Math.min(60, power * 5));
 }
+// 손맛: 멈칫(히트스톱), 슬로모션, 클로즈업
+const Juice = {
+  stop(ms = 70) {
+    const anims = document.getAnimations();
+    anims.forEach(a => a.pause());
+    setTimeout(() => anims.forEach(a => { try { a.play(); } catch {} }), ms);
+  },
+  slow(ms = 450, rate = 0.3) {
+    document.getAnimations().forEach(a => a.updatePlaybackRate(rate));
+    setTimeout(() => document.getAnimations().forEach(a => a.updatePlaybackRate(1)), ms);
+  },
+  zoom(x, y, scale = 1.08, dur = 420) {
+    app.style.transformOrigin = `${x}px ${y}px`;
+    app.animate([{ transform: 'scale(1)' }, { transform: `scale(${scale})`, offset: 0.25 }, { transform: 'scale(1)' }], { duration: dur, easing: 'cubic-bezier(.2,.8,.3,1)' });
+  },
+};
 function flash(color = '#ff4d6d', peak = 0.45) {
   const f = $('#flash');
   f.style.background = color;
@@ -113,17 +142,24 @@ function flash(color = '#ff4d6d', peak = 0.45) {
 }
 
 // ---------- 타이틀 ----------
-['chiikawa', 'hachiware', 'usagi', 'momonga', 'kurimanju', 'rakko', 'shisa'].forEach((id, i) => {
+['kurimanju', 'usagi', 'hachiware', 'chiikawa', 'momonga', 'rakko', 'shisa'].forEach((id, i) => {
   const im = new Image();
   im.src = art(id);
   im.draggable = false;
   im.style.animationDelay = i * 0.12 + 's';
   $('#titleParty').appendChild(im);
 });
+// 타이틀 그림: assets/img/art/title.jpg 가 있으면 배경으로 씀 (공식 일러스트 등)
+{
+  const im = new Image();
+  im.onload = () => { $('.title-sky').style.setProperty('--title-bg', `url(${im.src})`); $('.title-sky').classList.add('has-art'); };
+  im.src = 'assets/img/art/title.jpg';
+}
 $('#btnStart').onclick = () => { Sound.play('open'); go(openMap); };
 
 // ---------- 지도 ----------
-const NODE_GAP = 108, NODE_TOP = 160;
+const NODE_GAP = 112, NODE_TOP = 150;
+const LOCK_SVG = '<svg class="lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" fill="none" stroke-width="2.4"/></svg>';
 const nodePos = (i, W) => ({ x: (0.5 + Math.sin(i * 1.15) * 0.28) * W, y: NODE_TOP + i * NODE_GAP });
 
 function openMap(advanceFrom = null) {
@@ -145,7 +181,7 @@ function openMap(advanceFrom = null) {
     d += ` C${p.x} ${p.y + NODE_GAP / 2} ${q.x} ${q.y - NODE_GAP / 2} ${q.x} ${q.y}`;
   }
   path.insertAdjacentHTML('beforeend',
-    `<svg><path d="${d}" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-dasharray="1 22"/></svg>`);
+    `<svg><path d="${d}" fill="none" stroke="#fffaf2" stroke-width="14" stroke-linecap="round" opacity=".9"/><path d="${d}" fill="none" stroke="#4b3f3a" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 12" opacity=".45"/></svg>`);
 
   const cur = unlockedIdx();
   STAGES.forEach((st, i) => {
@@ -156,9 +192,11 @@ function openMap(advanceFrom = null) {
     n.style.left = pts[i].x + 'px';
     n.style.top = pts[i].y + 'px';
     const s = routeStars(i) || 0;
-    n.innerHTML = `${locked ? '🔒' : boss ? '👹' : i + 1}<span class="nname">${st.name}</span>` +
-      (locked ? '' : `<img class="nicon" src="${st.icon ? ITEM(st.icon) : MONSTERS[st.waves[st.waves.length - 1].m].img}">`) +
-      (s ? `<span class="nstars">${'★'.repeat(s)}${'☆'.repeat(3 - s)}</span>` : '');
+    const icon = st.icon ? ITEM(st.icon) : MONSTERS[st.waves[st.waves.length - 1].m].img;
+    n.innerHTML = (locked ? LOCK_SVG : `<img class="nicon" src="${icon}"><span class="nnum">${i + 1}</span>`) +
+      (i === cur ? `<span class="nname">${st.name}</span>` : '') +
+      (s ? `<span class="nstars">${[0, 1, 2].map(k => `<i class="${k < s ? 'on' : ''}"></i>`).join('')}</span>` : '');
+    if (!st.icon) n.classList.add('battle');
     n.onclick = () => {
       if (locked) { Sound.play('bad'); n.animate([{ transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' }, { transform: 'none' }], { duration: 200 }); return; }
       Sound.play('click');
@@ -267,7 +305,7 @@ const B = { mode: 'battle', team: [], gauge: [], grid: null, stage: 0, wave: 0, 
 const curWave = () => STAGES[B.stage].waves[B.wave];
 // 구슬 type(편성 순번) → 캐릭터
 const teamCh = type => CHARS[B.team[type]];
-const attrTag = a => `<span class="attr-tag" style="--ac:${ATTR[a].color}">${ATTR[a].icon}${ATTR[a].name}</span>`;
+const attrTag = a => `<span class="attr-tag" style="--ac:${ATTR[a].color}">${attrIcon(a)}${ATTR[a].name}</span>`;
 
 function layoutBoard() {
   const w = $('#boardWrap');
@@ -364,7 +402,7 @@ const ITEM_ICON = { h: 'rocket', v: 'rocket' };
 
 function buildParty() {
   $('#party').innerHTML = B.team.map(i => CHARS[i]).map(c =>
-    `<div class="pm" style="--ring:${c.ring}">${Meta.figure(c.id, FACE(c.id))}<span class="at">${ATTR[c.attr].icon}</span><i class="g"></i></div>`).join('');
+    `<div class="pm" style="--ring:${c.ring}"><div class="pm-face">${Meta.figure(c.id, FACE(c.id))}</div>${attrIcon(c.attr)}<i class="up"></i><i class="g"><b></b></i></div>`).join('');
   [...$('#party').children].forEach((el, k) => (el.onclick = () => useSkill(k)));
   updateGauges();
 }
@@ -373,6 +411,15 @@ function updateGauges() {
     const need = teamCh(k).skill.need;
     el.style.setProperty('--g', Math.min(1, B.gauge[k] / need));
     el.classList.toggle('ready', B.gauge[k] >= need);
+  });
+}
+// 지금 몬스터에게 유리한 친구는 ▲ 표시
+function markMatchup() {
+  if (B.mode !== 'battle') return;
+  [...$('#party').children].forEach((el, k) => {
+    const m = attrMult(teamCh(k).attr, curWave().a);
+    el.classList.toggle('strong', m > 1);
+    el.classList.toggle('weak', m < 1);
   });
 }
 function updateTeam() {
@@ -385,7 +432,7 @@ function updateMon() {
 }
 function updateCd() {
   const el = $('#countdown');
-  el.innerHTML = `<b>${Math.max(B.cd, 0)}</b>${B.cd <= 1 ? '곧 공격!' : '턴 후 공격'}`;
+  el.innerHTML = `<b>${Math.max(B.cd, 0)}</b>`;
   el.classList.toggle('danger', B.cd <= 1);
 }
 
@@ -396,11 +443,13 @@ function spawnMonster(animated) {
   img.style.maxWidth = w.boss ? '86%' : '70%';
   $('#monSprite').style.filter = w.hue ? `hue-rotate(${w.hue}deg) saturate(1.3)` : '';
   const title = w.title ? (w.title.endsWith('·') ? w.title : w.title + ' ') : '';
-  $('#monName').innerHTML = (w.boss ? '👑 ' : '') + title + M.name + attrTag(w.a);
+  $('#monName').innerHTML = attrIcon(w.a) + (w.boss ? '👑 ' : '') + title + M.name;
   $('#monName').classList.toggle('boss', !!w.boss);
   B.monHp = B.monMax = w.hp;
   B.cd = w.cd;
-  $('#waveInfo').textContent = `WAVE ${B.wave + 1} / ${STAGES[B.stage].waves.length}`;
+  const nw = STAGES[B.stage].waves.length;
+  $('#waveInfo').innerHTML = nw > 1 ? Array.from({ length: nw }, (_, k) => `<i class="${k <= B.wave ? 'on' : ''}"></i>`).join('') : '';
+  markMatchup();
   updateMon();
   updateCd();
   img.style.opacity = 1;
@@ -588,6 +637,7 @@ async function comboFx(combo) {
   const names = { rainbow: '무지개 폭탄!', rainbow2: '무지개 대폭발!!', 'bomb+bomb': '대폭발!', 'bomb+h': '크로스 폭발!', 'bomb+v': '크로스 폭발!',
     'plane+plane': '비행기 편대!', 'bomb+plane': '폭탄 배달!', 'h+plane': '줄폭탄 배달!', 'plane+v': '줄폭탄 배달!' };
   const label = names[combo.kind] || '크로스!';
+  Juice.zoom(p.x, p.y, combo.kind.startsWith('rainbow') || combo.kind === 'bomb+bomb' ? 1.12 : 1.07);
   if (combo.converted) Board.each(B.grid, t => t.special && refreshTile(t));
   Sound.play(combo.kind.startsWith('rainbow') ? 'rainbow' : 'special', 1);
   flash('#fff6a8', 0.5);
@@ -657,15 +707,19 @@ function effectFx(ef) {
   } else if (ef.kind === 'bomb') {
     Sound.play('line', 0.7, 0.9);
     const p = tileCenter(ef.r, ef.c);
-    const blast = addFx('blast', p.x, p.y);
-    blast.animate([{ width: '0px', height: '0px', opacity: 1 }, { width: S * 3.5 + 'px', height: S * 3.5 + 'px', opacity: 0 }], { duration: 260, easing: 'ease-out' }).finished.then(() => blast.remove());
-    const ring = addFx('ring', p.x, p.y);
-    ring.animate([{ width: '0px', height: '0px', opacity: 1 }, { width: S * 5 + 'px', height: S * 5 + 'px', opacity: 0 }], { duration: 420, easing: 'ease-out' }).finished.then(() => ring.remove());
-    fxImage('boom', p.x, p.y, S * 2.4, 420);
+    kp('light_02', p.x, p.y, S * 4, '#fff6c8', [{ transform: 'scale(.2)', opacity: 1 }, { transform: 'scale(1)', opacity: 0 }], { duration: 300, easing: 'ease-out' });
+    kp('magic_02', p.x, p.y, S * 4.2, '#ffb347', [{ transform: 'scale(.2) rotate(0)', opacity: 1 }, { transform: 'scale(1) rotate(60deg)', opacity: 0 }], { duration: 480, easing: 'ease-out' });
+    kp('smoke_04', p.x, p.y, S * 3, '#e8dccb', [{ transform: 'scale(.3)', opacity: 0.9 }, { transform: 'scale(1.2)', opacity: 0 }], { duration: 700, easing: 'ease-out' });
+    ringFx(p.x, p.y, S * 5, '#ffd84d', 420);
+    burst(p.x, p.y, '#ffb347', 10);
+    Juice.stop(60);
     shake(7, 280);
     flash('#fff6a8', 0.3);
   } else if (ef.kind === 'rainbow') {
     Sound.play('rainbow', 1);
+    const p = tileCenter(ef.r, ef.c);
+    kp('twirl_01', p.x, p.y, S * 6, '#ffb3d1', [{ transform: 'scale(.2) rotate(0)', opacity: 1 }, { transform: 'scale(1) rotate(240deg)', opacity: 0 }], { duration: 650, easing: 'ease-out' });
+    burst(p.x, p.y, '#b99cf0', 14);
     flash('#ffffff', 0.5);
     shake(6, 300);
   } else if (ef.kind === 'plane') {
@@ -709,10 +763,7 @@ function shards(x, y, colors, n = 8, size = 10, round = false) {
   }
 }
 function ringFx(x, y, size, color, dur = 380) {
-  const ring = addFx('ring', x, y);
-  ring.style.borderColor = color;
-  ring.animate([{ width: '0px', height: '0px', opacity: 1 }, { width: size + 'px', height: size + 'px', opacity: 0 }], { duration: dur, easing: 'ease-out' })
-    .finished.then(() => ring.remove());
+  kp('circle_05', x, y, size, color, [{ transform: 'scale(.1)', opacity: 1 }, { transform: 'scale(1)', opacity: 0 }], { duration: dur, easing: 'ease-out' });
 }
 // 그림 하나가 튀어 오르며 빙글 날아감 (리본, 선물 포장)
 function flyOff(img, x, y, size) {
@@ -728,18 +779,6 @@ function flyOff(img, x, y, size) {
     { transform: `translate(calc(-50% + ${dx}px), calc(-50% + 60px)) scale(.7) rotate(${dx * 5}deg)`, opacity: 0 },
   ], { duration: 750, easing: 'ease-out' }).finished.then(() => im.remove());
 }
-function onoAt(x, y, text, color) {
-  const o = addFx('ono', x, y);
-  o.textContent = text;
-  o.style.setProperty('--c', color);
-  o.animate([
-    { transform: 'translate(-50%,-50%) rotate(-8deg) scale(.2)', opacity: 0 },
-    { transform: 'translate(-50%,-50%) rotate(-8deg) scale(1.2)', opacity: 1, offset: 0.25 },
-    { transform: 'translate(-50%,-90%) rotate(-4deg) scale(1)', opacity: 1, offset: 0.7 },
-    { transform: 'translate(-50%,-120%) rotate(-4deg) scale(.9)', opacity: 0 },
-  ], { duration: 650, easing: 'ease-out' }).finished.then(() => o.remove());
-}
-
 // 장애물이 맞거나 깨짐, 리본이 풀림, 잡초가 뽑힘, 시럽이 번짐
 function hitFx(res, late) {
   const at = (r, c) => (late.has(key(r, c)) ? 380 : 60);
@@ -761,20 +800,17 @@ function hitFx(res, late) {
       shards(p.x, p.y, ['#bfe9ff', '#e6f7ff', '#8fd3ff'], 10, 8, true);
       Sound.play('pop', 1.9, 0.9);
       Sound.play('sparkle', 1.8, 0.4);
-      onoAt(p.x, p.y - S * 0.3, '퐁!', '#4fa3ff');
     } else if (gone) {
       shards(p.x, p.y, ['#c8955a', '#e2b77d', '#9b6b3a', '#f1d6a8'], 12, 13);
       ringFx(p.x, p.y, S * 1.8, '#e2b77d', 300);
       Sound.play('hit2', 0.7, 0.9);
       Sound.play('land', 0.8, 0.9);
-      onoAt(p.x, p.y - S * 0.3, '와장창!', '#b07a4a');
       shake(4, 160);
     } else {
       // 선물 포장이 벗겨지고 상자가 남음
       flyOff(ITEM('gift'), p.x, p.y, S);
       shards(p.x, p.y, ['#ff6b6b', '#ffd84d', '#ff9f5a'], 10, 10);
       Sound.play('hit1', 1.2, 0.8);
-      onoAt(p.x, p.y - S * 0.3, '찌익!', '#ef5a5a');
     }
     if (gone) popTile(tile, 0);
     else { refreshTile(tile); squish(tile); }
@@ -787,7 +823,6 @@ function hitFx(res, late) {
       const p = tileCenter(r, c);
       flyOff(ITEM(left ? 'weed2' : 'weed1'), p.x, p.y + S * 0.2, S * 0.8);
       shards(p.x, p.y + S * 0.3, ['#9b6b3a', '#7a5230', '#6dbf57'], 6, 7, true);
-      if (i % 4 === 0) onoAt(p.x, p.y - S * 0.2, '쑥!', '#3fae4f');
     }, 40 + Math.min(i * 25, 250)));
     setTimeout(() => Sound.play('sparkle', 1.4, 0.5), 60);
     Sound.play('swap', 1.6, 0.5);
@@ -900,9 +935,7 @@ async function stepFx(res, combo) {
     const p = tileCenter(r, c);
     burst(p.x, p.y, '#ffffff', 10);
     Sound.play('special', 1.1, 0.8);
-    const LABEL = { h: '줄폭탄!', v: '줄폭탄!', bomb: '폭탄!', rainbow: '무지개 폭탄!' };
-    floatNum(p.x, p.y - B.S * 0.4, LABEL[tile.special], '#f07ea6');
-    fxImage('sparkle', p.x, p.y, B.S * 1.6, 500);
+    kp('star_09', p.x, p.y, B.S * 2.2, '#ffe680', [{ transform: 'scale(.2) rotate(0)', opacity: 1 }, { transform: 'scale(1) rotate(90deg)', opacity: 0 }], { duration: 520, easing: 'ease-out' });
   });
 }
 
@@ -931,6 +964,8 @@ function hitMonster(dmg, ch, crit, k, eff = 1) {
     { transform: 'translateX(0) scale(1)', filter: 'brightness(1)' },
   ], { duration: 280 });
   Sound.play('hit' + (1 + (k % 3)), 1 + Math.random() * 0.15, 0.8);
+  Haptic.tap(crit ? 30 : 15);
+  if (crit || eff > 1) Juice.stop(crit ? 90 : 50);
   const c = centerOf(m);
   const x = c.x + (Math.random() - 0.5) * c.w * 0.6, y = c.y - c.h * 0.1 + (Math.random() - 0.5) * 30;
   // 캐릭터 색 베기 자국 + 충격 고리
@@ -949,19 +984,8 @@ function hitMonster(dmg, ch, crit, k, eff = 1) {
   }
   burst(x, y, ch.ring, 5);
   const mark = eff > 1 ? ' ▲' : eff < 1 ? ' ▼' : '';
-  floatNum(x, y, (crit ? `${ch.line} ${dmg}` : `${dmg}`) + mark, ch.ring === '#ffd84d' ? '#d9a400' : ch.ring, crit || eff > 1 ? 'crit' : '');
+  floatNum(x, y, `${dmg}` + mark, ch.ring, crit || eff > 1 ? 'crit' : '');
   if (crit) shake(5, 200);
-  if (Math.random() < 0.55) {
-    const o = addFx('ono', x + (Math.random() - 0.5) * 60, y - 34);
-    o.textContent = ONO[Math.floor(Math.random() * ONO.length)];
-    o.style.setProperty('--c', ch.ring === '#ffd84d' || ch.ring === '#f5d90a' ? '#e8a600' : ch.ring);
-    o.animate([
-      { transform: 'translate(-50%,-50%) rotate(-10deg) scale(.2)', opacity: 0 },
-      { transform: 'translate(-50%,-50%) rotate(-10deg) scale(1.25)', opacity: 1, offset: 0.25 },
-      { transform: 'translate(-50%,-80%) rotate(-6deg) scale(1)', opacity: 1, offset: 0.7 },
-      { transform: 'translate(-50%,-110%) rotate(-6deg) scale(.9)', opacity: 0 },
-    ], { duration: 700, easing: 'ease-out' }).finished.then(() => o.remove());
-  }
 }
 
 // 이동 경로(박자 단위)를 따라 떨어뜨림. 장애물을 비켜 비스듬히 가는 것도 한 번에
@@ -1045,7 +1069,6 @@ async function throwBoxes(n) {
       Sound.play('land', 1.2, 0.8);
     });
   }));
-  if (drops.length) floatNum(from.x, from.y, '상자 던지기!', '#c8955a', 'small');
   if (!Board.hasMove(B.grid)) await cascade(null, []);
 }
 
@@ -1053,6 +1076,11 @@ async function monsterDefeated() {
   const m = $('#monster');
   Sound.play('defeat', 1);
   const c = centerOf(m);
+  Juice.stop(120);
+  await sleep(120);
+  Juice.zoom(c.x, c.y, 1.14, 900);
+  Juice.slow(500, 0.35);
+  shake(10, 320);
   burst(c.x, c.y, '#ffcf3f', 16);
   burst(c.x, c.y, '#ffffff', 12);
   const out = m.animate([
@@ -1122,6 +1150,7 @@ function openFormation(i) {
   show('formation');
   $('#formStage').textContent = `${routeIdx('b', i) + 1}. ${STAGES[i].name}`;
   const seen = new Set();
+  $('.attr-rule').innerHTML = matchupSVG();
   $('#formEnemies').innerHTML = STAGES[i].waves.filter(w => {
     const k = w.m + w.a + (w.hue || '');
     return !seen.has(k) && seen.add(k);
@@ -1136,7 +1165,7 @@ function renderFormation() {
   const foes = new Set(STAGES[formStage].waves.map(w => w.a));
   $('#formSlots').innerHTML = Array.from({ length: TEAM_SIZE }, (_, k) => {
     const c = CHARS[formPick[k]];
-    return `<div class="slot" data-k="${k}">${c ? Meta.figure(c.id, FACE(c.id)) + `<span class="at">${ATTR[c.attr].icon}</span>` : ''}</div>`;
+    return `<div class="slot" data-k="${k}" style="--ring:${c ? c.ring : 'transparent'}">${c ? Meta.figure(c.id, FACE(c.id)) + attrIcon(c.attr) : ''}</div>`;
   }).join('');
   $('#formSlots').querySelectorAll('.slot').forEach(el => (el.onclick = () => {
     if (formPick[+el.dataset.k] == null) return;
@@ -1151,7 +1180,7 @@ function renderFormation() {
     return `<button class="ccard${formPick.includes(k) ? ' on' : ''}${own ? '' : ' locked'}" style="--ring:${c.ring}" data-k="${k}">
       ${own ? Meta.figure(c.id, art(c.id)) : `<span class="fig"><img src="${art(c.id)}" class="shadow"></span>`}
       <span class="nm">${own ? c.name : '???'}</span>
-      <span class="meta">${own ? `${ATTR[c.attr].icon} Lv${Meta.lv(c.id)}` : '뽑기에서 만나요'}</span>
+      <span class="meta">${own ? `${attrIcon(c.attr)}Lv${Meta.lv(c.id)}` : LOCK_SVG}</span>
       ${good ? '<span class="good">유리!</span>' : ''}</button>`;
   }).join('');
   $('#formRoster').querySelectorAll('.ccard').forEach(el => (el.onclick = () => {
@@ -1244,7 +1273,7 @@ async function useSkill(k) {
   if (B.gauge[k] < ch.skill.need) {
     const p = centerOf($('#party').children[k]);
     Sound.play('bad', 1.2, 0.5);
-    floatNum(p.x, p.y - 20, `${ch.skill.need - B.gauge[k]}개 더!`, ch.ring);
+    $('#party').children[k].animate([{ transform: 'translateX(-4px)' }, { transform: 'translateX(4px)' }, { transform: 'none' }], { duration: 180 });
     return;
   }
   B.busy = true;
@@ -1266,7 +1295,7 @@ async function useSkill(k) {
     B.cd += 2;
     updateCd();
     const p = centerOf($('#countdown'));
-    floatNum(p.x, p.y - 16, '+2턴', '#7a7a7a');
+    $('#countdown').animate([{ transform: 'scale(1)' }, { transform: 'scale(1.3)' }, { transform: 'scale(1)' }], { duration: 300 });
   } else if (id === 'bighit') {
     const eff = attrMult(ch.attr, curWave().a);
     const m = centerOf($('#monster'));
@@ -1331,7 +1360,7 @@ async function useSkill(k) {
     B.cd += 3;
     updateCd();
     const p = centerOf($('#countdown'));
-    floatNum(p.x, p.y - 16, '+3턴', '#4fbf8f');
+    $('#countdown').animate([{ transform: 'scale(1)' }, { transform: 'scale(1.3)' }, { transform: 'scale(1)' }], { duration: 300 });
     const eff = attrMult(ch.attr, curWave().a);
     hitMonster(Math.round(ch.dmg * 4 * eff), ch, false, 0, eff);
     await sleep(400);
