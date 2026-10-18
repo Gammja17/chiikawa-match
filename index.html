@@ -6,7 +6,7 @@
 <title>치이카와 토벌 퍼즐 (팬게임)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=5">
+<link rel="stylesheet" href="css/style.css?v=6">
 </head>
 <body>
 <div id="app">
@@ -27,6 +27,27 @@
       <button class="icon-btn btn-mute">♪</button>
     </header>
     <div id="mapScroll"><div id="mapPath"></div></div>
+  </section>
+
+  <section id="formation" class="screen">
+    <header class="bar">
+      <button class="icon-btn" id="btnFormBack">◀</button>
+      <div class="bar-title">토벌대 편성<small id="formStage"></small></div>
+      <button class="icon-btn btn-mute">♪</button>
+    </header>
+    <div class="form-body">
+      <div class="form-card">
+        <div class="form-label">이번 적</div>
+        <div id="formEnemies" class="form-enemies"></div>
+        <div class="attr-rule">💪씩씩 → 🌀엉뚱 → 💧울보 → 💪씩씩 <small>(화살표 쪽에 1.5배)</small></div>
+      </div>
+      <div class="form-card">
+        <div class="form-label">출격 멤버 <span id="formCount"></span></div>
+        <div id="formSlots" class="form-slots"></div>
+      </div>
+      <div id="formRoster" class="form-roster"></div>
+    </div>
+    <div class="form-foot"><button id="btnSortie" class="big-btn">출격!</button></div>
   </section>
 
   <section id="battle" class="screen">
@@ -77,9 +98,9 @@
   <div id="fx"></div>
   <div id="flash"></div>
 </div>
-<script src="js/data.js?v=5"></script>
-<script src="js/audio.js?v=5"></script>
-<script src="js/board.js?v=5"></script>
-<script src="js/game.js?v=5"></script>
+<script src="js/data.js?v=6"></script>
+<script src="js/audio.js?v=6"></script>
+<script src="js/board.js?v=6"></script>
+<script src="js/game.js?v=6"></script>
 </body>
 </html>

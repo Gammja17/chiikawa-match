@@ -76,7 +76,10 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; }
 
 #team { padding: 6px 12px 4px; background: #fff; border-bottom: 3px solid #f6dbe5; }
 #party { display: flex; justify-content: space-between; margin-bottom: 5px; }
-#party .pm { position: relative; width: 13%; aspect-ratio: 1; border-radius: 50%; }
+#party .pm { position: relative; width: 16%; aspect-ratio: 1; border-radius: 50%; padding: 4px; background: conic-gradient(var(--ring) calc(var(--g, 0) * 1turn), #eee 0); cursor: pointer; }
+#party .pm .at { position: absolute; left: -4px; top: -6px; font-size: 15px; filter: drop-shadow(0 1px 0 #fff); }
+#party .pm.ready { animation: pulse .7s infinite; box-shadow: 0 0 0 3px #fff, 0 0 12px 4px var(--ring); }
+#party .pm.ready::after { content: '스킬!'; position: absolute; left: 50%; bottom: -12px; transform: translateX(-50%); font-size: 12px; background: var(--pink-d); color: #fff; padding: 0 6px; border-radius: 8px; white-space: nowrap; }
 #party .pm img { width: 100%; height: 100%; border-radius: 50%; border: 3px solid var(--ring); background: #fff; object-fit: contain; padding: 2px; }
 #party .pm.attack { animation: hop .35s ease-out; }
 #teamHp .fill { background: var(--team); }
@@ -132,3 +135,40 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; }
 .modal-btns { display: flex; gap: 10px; justify-content: center; }
 .modal-btns .big-btn { font-size: 19px; padding: 12px 20px; }
 .modal-btns .big-btn:empty { display: none; }
+
+/* 편성 */
+.form-body { flex: 1; overflow-y: auto; touch-action: pan-y; padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; background: linear-gradient(#fff6ee, #ffe6ef); }
+.form-card { background: #fff; border-radius: 18px; padding: 10px 12px; box-shadow: 0 3px 0 #f2c6d6; }
+.form-label { font-size: 17px; margin-bottom: 6px; color: #b06a85; }
+.form-enemies { display: flex; gap: 8px; flex-wrap: wrap; }
+.enemy-chip { display: flex; align-items: center; gap: 6px; background: #fff3f7; border-radius: 14px; padding: 4px 10px 4px 4px; font-size: 16px; }
+.enemy-chip img { width: 38px; height: 38px; object-fit: contain; }
+.attr-tag { display: inline-flex; align-items: center; gap: 2px; padding: 0 7px; border-radius: 10px; color: #fff; font-size: 14px; background: var(--ac); }
+.attr-rule { margin-top: 8px; font-size: 15px; color: #8a6b76; }
+.attr-rule small { font-size: 12px; }
+.form-slots { display: flex; gap: 6px; justify-content: space-between; }
+.slot { width: 18%; aspect-ratio: 1; border-radius: 50%; border: 3px dashed #f2c6d6; display: flex; align-items: center; justify-content: center; background: #fff8fb; position: relative; }
+.slot img { width: 100%; height: 100%; object-fit: contain; }
+.slot .at { position: absolute; left: -4px; top: -6px; font-size: 14px; }
+.form-roster { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.ccard { position: relative; display: flex; align-items: center; gap: 8px; background: #fff; border-radius: 16px; padding: 8px; border: 3px solid #fff; box-shadow: 0 3px 0 #f2c6d6; text-align: left; }
+.ccard img { width: 54px; height: 54px; object-fit: contain; flex: none; }
+.ccard .nm { font-size: 18px; line-height: 1.1; }
+.ccard .sk { font-size: 13px; color: #9b7d88; line-height: 1.2; }
+.ccard.on { border-color: var(--ring); background: #fffafc; }
+.ccard.on::after { content: '✓'; position: absolute; right: 8px; top: 4px; color: var(--ring); font-size: 20px; }
+.ccard .good { position: absolute; right: 6px; bottom: 4px; font-size: 12px; color: #e2543f; }
+.form-foot { padding: 10px 12px 14px; background: #fff; border-top: 3px solid #f6dbe5; display: flex; justify-content: center; }
+.form-foot .big-btn:disabled { opacity: .45; }
+#monName .attr-tag { margin-left: 4px; font-size: 13px; }
+
+/* 스킬 컷인: 캐릭터 색 스티커 띠 */
+.cutin { position: absolute; inset: 0; z-index: 25; pointer-events: none; overflow: hidden; }
+.cutin .dim { position: absolute; inset: 0; background: #2a1a2a; opacity: 0; }
+.cutin .band { position: absolute; left: -6%; right: -6%; top: 38%; height: 150px; transform: rotate(-6deg); background: var(--ring); border-radius: 14px 30px 18px 26px / 22px 12px 28px 16px; box-shadow: 0 0 0 5px #fff, 5px 8px 0 5px #0002; }
+.cutin .band::before { content: ''; position: absolute; inset: 8px; border: 3px dashed #fffb; border-radius: inherit; }
+.cutin .body { position: absolute; left: 6%; top: calc(38% - 70px); width: 190px; filter: drop-shadow(0 0 0 #fff) drop-shadow(3px 0 0 #fff) drop-shadow(-3px 0 0 #fff) drop-shadow(0 3px 0 #fff) drop-shadow(0 -3px 0 #fff) drop-shadow(4px 6px 0 #0003); }
+.cutin .say { position: absolute; left: 52%; top: calc(38% + 4px); max-width: 44%; background: #fff; border-radius: 18px; padding: 8px 14px; font-size: 24px; line-height: 1.15; box-shadow: 3px 4px 0 #0002; }
+.cutin .say::before { content: ''; position: absolute; left: -12px; top: 18px; border: 8px solid transparent; border-right: 12px solid #fff; }
+.cutin .sname { position: absolute; left: 52%; top: calc(38% + 82px); font-size: 22px; color: #fff; -webkit-text-stroke: 1.5px #0004; paint-order: stroke fill; }
+.cutin .streak { position: absolute; left: -10%; right: -10%; top: calc(38% + 72px); height: 4px; background: #fff; transform: rotate(-6deg); box-shadow: 0 0 12px 4px #fff; opacity: 0; }

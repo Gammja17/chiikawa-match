@@ -6,7 +6,7 @@ const app = $('#app'), fx = $('#fx'), boardEl = $('#board');
 // ---------- 저장 ----------
 const SAVE_KEY = 'chiikawaMatch.v1';
 const Save = {
-  data: { stars: [] },
+  data: { stars: [], team: null },
   load() {
     try {
       const d = JSON.parse(localStorage.getItem(SAVE_KEY));
@@ -149,7 +149,7 @@ function openMap(advanceFrom = null) {
     n.onclick = () => {
       if (locked) { Sound.play('bad'); n.animate([{ transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' }, { transform: 'none' }], { duration: 200 }); return; }
       Sound.play('click');
-      startStage(i);
+      openFormation(i);
     };
     path.appendChild(n);
   });
@@ -246,8 +246,11 @@ function modal({ title, stars = null, char, text, btn1, on1, btn2 = '', on2 = nu
 }
 
 // ---------- 전투 ----------
-const B = { grid: null, stage: 0, wave: 0, monHp: 0, monMax: 0, cd: 0, teamHp: 120, teamMax: 120, busy: true, over: false, sel: null, S: 56, pending: [] };
+const B = { team: [], gauge: [], grid: null, stage: 0, wave: 0, monHp: 0, monMax: 0, cd: 0, teamHp: 120, teamMax: 120, busy: true, over: false, sel: null, S: 56, pending: [] };
 const curWave = () => STAGES[B.stage].waves[B.wave];
+// 구슬 type(편성 순번) → 캐릭터
+const teamCh = type => CHARS[B.team[type]];
+const attrTag = a => `<span class="attr-tag" style="--ac:${ATTR[a].color}">${ATTR[a].icon}${ATTR[a].name}</span>`;
 
 function layoutBoard() {
   const w = $('#boardWrap');
@@ -301,7 +304,7 @@ function refreshTile(t) {
     inner.innerHTML = `<img src="${ITEM('rainbow')}" draggable="false">`;
     return;
   }
-  const ch = CHARS[t.type];
+  const ch = teamCh(t.type);
   inner.style.setProperty('--ring', ch.ring);
   inner.classList.toggle('special', !!t.special);
   inner.innerHTML = `<img src="${TILE(ch.id)}" draggable="false">` +
@@ -309,7 +312,17 @@ function refreshTile(t) {
 }
 
 function buildParty() {
-  $('#party').innerHTML = CHARS.map(c => `<div class="pm" style="--ring:${c.ring}"><img src="${FACE(c.id)}" draggable="false"></div>`).join('');
+  $('#party').innerHTML = B.team.map(i => CHARS[i]).map(c =>
+    `<div class="pm" style="--ring:${c.ring}"><img src="${FACE(c.id)}" draggable="false"><span class="at">${ATTR[c.attr].icon}</span></div>`).join('');
+  [...$('#party').children].forEach((el, k) => (el.onclick = () => useSkill(k)));
+  updateGauges();
+}
+function updateGauges() {
+  [...$('#party').children].forEach((el, k) => {
+    const need = teamCh(k).skill.need;
+    el.style.setProperty('--g', Math.min(1, B.gauge[k] / need));
+    el.classList.toggle('ready', B.gauge[k] >= need);
+  });
 }
 function updateTeam() {
   $('#teamHp .fill').style.width = (B.teamHp / B.teamMax) * 100 + '%';
@@ -332,7 +345,7 @@ function spawnMonster(animated) {
   img.style.maxWidth = w.boss ? '86%' : '70%';
   $('#monSprite').style.filter = w.hue ? `hue-rotate(${w.hue}deg) saturate(1.3)` : '';
   const title = w.title ? (w.title.endsWith('·') ? w.title : w.title + ' ') : '';
-  $('#monName').textContent = (w.boss ? '👑 ' : '') + title + M.name;
+  $('#monName').innerHTML = (w.boss ? '👑 ' : '') + title + M.name + attrTag(w.a);
   $('#monName').classList.toggle('boss', !!w.boss);
   B.monHp = B.monMax = w.hp;
   B.cd = w.cd;
@@ -354,6 +367,8 @@ function spawnMonster(animated) {
 async function startStage(i) {
   B.stage = i; B.wave = 0; B.over = false; B.busy = true; B.sel = null; B.pending = [];
   B.teamHp = B.teamMax = 120;
+  NTYPES = B.team.length;
+  B.gauge = B.team.map(() => 0);
   show('battle');
   $('#stageName').textContent = `${i + 1}. ${STAGES[i].name}`;
   buildParty();
@@ -552,7 +567,7 @@ async function stepFx(res, combo) {
   const n = res.cleared.length;
   res.cleared.forEach(({ r, c, tile }, i) => {
     const p = tileCenter(r, c);
-    const color = tile.type >= 0 ? CHARS[tile.type].ring : '#ffd84d';
+    const color = tile.type >= 0 ? teamCh(tile.type).ring : '#ffd84d';
     setTimeout(() => burst(p.x, p.y, color, n > 15 ? 3 : 6), Math.min(i * 10, 150));
     popTile(tile, Math.min(i * 10, 150));
   });
@@ -585,7 +600,7 @@ async function stepFx(res, combo) {
   const teamC = centerOf($('#teamHp'));
   let d = 0;
   tally.forEach((cells, type) => {
-    const ch = CHARS[type];
+    const ch = teamCh(type);
     const to = ch.heal ? teamC : monC;
     cells.slice(0, 4).forEach(([r, c]) => projectile(tileCenter(r, c), to, FACE(ch.id), ch.ring, (d++) * 35));
   });
@@ -594,7 +609,8 @@ async function stepFx(res, combo) {
     await sleep(440);
     let k = 0;
     for (const [type, cells] of tally) {
-      const ch = CHARS[type];
+      const ch = teamCh(type);
+      B.gauge[type] += cells.length;
       $('#party').children[type]?.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-10px) scale(1.15)' }, { transform: 'translateY(0)' }], { duration: 260 });
       if (ch.heal) {
         const amt = Math.round(cells.length * ch.heal * mult);
@@ -604,11 +620,13 @@ async function stepFx(res, combo) {
         floatNum(teamC.x, teamC.y - 10, `+${amt}`, '#3fae4f');
       } else if (B.monHp > 0) {
         const crit = ch.crit && Math.random() < ch.crit;
-        const dmg = Math.round(cells.length * ch.dmg * mult * (crit ? 2.5 : 1));
-        hitMonster(dmg, ch, crit, k++);
+        const eff = attrMult(ch.attr, curWave().a);
+        const dmg = Math.round(cells.length * ch.dmg * mult * eff * (crit ? 2.5 : 1));
+        hitMonster(dmg, ch, crit, k++, eff);
       }
       await sleep(110);
     }
+    updateGauges();
   })());
 
   await sleep(Math.min(n * 10, 150) + 170);
@@ -641,7 +659,7 @@ function fxImage(name, x, y, size, dur) {
   ], { duration: dur, easing: 'ease-out' }).finished.then(() => im.remove());
 }
 
-function hitMonster(dmg, ch, crit, k) {
+function hitMonster(dmg, ch, crit, k, eff = 1) {
   B.monHp = Math.max(0, B.monHp - dmg);
   updateMon();
   const m = $('#monster');
@@ -655,7 +673,8 @@ function hitMonster(dmg, ch, crit, k) {
   const c = centerOf(m);
   const x = c.x + (Math.random() - 0.5) * c.w * 0.6, y = c.y - c.h * 0.1 + (Math.random() - 0.5) * 30;
   burst(x, y, ch.ring, 5);
-  floatNum(x, y, crit ? `${ch.line} ${dmg}` : `${dmg}`, ch.ring === '#ffd84d' ? '#d9a400' : ch.ring, crit ? 'crit' : '');
+  const mark = eff > 1 ? ' ▲' : eff < 1 ? ' ▼' : '';
+  floatNum(x, y, (crit ? `${ch.line} ${dmg}` : `${dmg}`) + mark, ch.ring === '#ffd84d' ? '#d9a400' : ch.ring, crit || eff > 1 ? 'crit' : '');
   if (crit) shake(5, 200);
 }
 
@@ -743,13 +762,14 @@ async function win() {
   await banner('토벌 성공!', 700);
   const isLast = B.stage === STAGES.length - 1;
   if (isLast && firstClear) await playStory(STORY.end);
-  const ch = CHARS[Math.floor(Math.random() * 5)];
+  const pool = B.team.map(i => CHARS[i]).filter(c => !NO_BODY.has(c.id));
+  const ch = pool[Math.floor(Math.random() * pool.length)] || CHARS[0];
   const from = B.stage;
   modal({
     title: '토벌 성공!', stars, char: ch.id, text: `${ch.name}: "${ch.line}"`,
     btn2: '지도', on2: () => openMap(firstClear ? from : null),
     btn1: isLast ? '지도로' : '다음 스테이지',
-    on1: () => (isLast ? openMap(firstClear ? from : null) : startStage(B.stage + 1)),
+    on1: () => (isLast ? openMap(firstClear ? from : null) : openFormation(B.stage + 1)),
   });
 }
 
@@ -763,4 +783,190 @@ async function lose() {
     btn2: '지도', on2: () => openMap(),
     btn1: '다시 하기', on1: () => startStage(B.stage),
   });
+}
+
+// ---------- 편성 ----------
+let formStage = 0, formPick = [];
+function openFormation(i) {
+  formStage = i;
+  const saved = (Save.data.team || DEFAULT_TEAM).map(id => CHARS.findIndex(c => c.id === id)).filter(k => k >= 0);
+  formPick = saved.slice(0, TEAM_SIZE);
+  show('formation');
+  $('#formStage').textContent = `${i + 1}. ${STAGES[i].name}`;
+  const seen = new Set();
+  $('#formEnemies').innerHTML = STAGES[i].waves.filter(w => {
+    const k = w.m + w.a + (w.hue || '');
+    return !seen.has(k) && seen.add(k);
+  }).map(w => {
+    const title = w.title ? w.title + (w.title.endsWith('·') ? '' : ' ') : '';
+    const tint = w.hue ? `filter:hue-rotate(${w.hue}deg) saturate(1.3)` : '';
+    return `<div class="enemy-chip"><img src="${MONSTERS[w.m].img}" style="${tint}">${title}${MONSTERS[w.m].name}${attrTag(w.a)}</div>`;
+  }).join('');
+  renderFormation();
+}
+function renderFormation() {
+  const foes = new Set(STAGES[formStage].waves.map(w => w.a));
+  $('#formSlots').innerHTML = Array.from({ length: TEAM_SIZE }, (_, k) => {
+    const c = CHARS[formPick[k]];
+    return `<div class="slot">${c ? `<img src="${FACE(c.id)}"><span class="at">${ATTR[c.attr].icon}</span>` : ''}</div>`;
+  }).join('');
+  $('#formCount').textContent = `${formPick.length} / ${TEAM_SIZE}`;
+  $('#formRoster').innerHTML = CHARS.map((c, k) => {
+    const good = [...foes].some(a => BEATS[c.attr] === a);
+    return `<button class="ccard${formPick.includes(k) ? ' on' : ''}" style="--ring:${c.ring}" data-k="${k}">
+      <img src="${portrait(c.id)}"><div><div class="nm">${c.name} ${attrTag(c.attr)}</div>
+      <div class="sk">${c.heal ? '회복' : '공격'} · ${c.skill.name}: ${c.skill.desc}</div></div>${good ? '<span class="good">유리!</span>' : ''}</button>`;
+  }).join('');
+  $('#formRoster').querySelectorAll('.ccard').forEach(el => (el.onclick = () => {
+    const k = +el.dataset.k, at = formPick.indexOf(k);
+    if (at >= 0) formPick.splice(at, 1);
+    else if (formPick.length < TEAM_SIZE) formPick.push(k);
+    else { Sound.play('bad'); return; }
+    Sound.play('pop', at >= 0 ? 0.9 : 1.3, 0.6);
+    renderFormation();
+  }));
+  $('#btnSortie').disabled = formPick.length !== TEAM_SIZE;
+}
+$('#btnSortie').onclick = () => {
+  if (formPick.length !== TEAM_SIZE) return;
+  Sound.play('open');
+  B.team = formPick.slice();
+  Save.data.team = B.team.map(k => CHARS[k].id);
+  Save.save();
+  startStage(formStage);
+};
+$('#btnFormBack').onclick = () => { Sound.play('click'); openMap(); };
+
+// ---------- 스킬 ----------
+// 캐릭터 색 스티커 띠가 찰싹 붙고, 그림이 튀어나와 대사, 빛줄기 남기고 빠짐 (약 1초)
+async function cutIn(ch) {
+  const el = document.createElement('div');
+  el.className = 'cutin';
+  el.style.setProperty('--ring', ch.ring);
+  el.innerHTML = `<div class="dim"></div><div class="band"></div><img class="body" src="${portrait(ch.id)}">
+    <div class="say">${ch.skill.say}</div><div class="sname">${ch.skill.name}</div><div class="streak"></div>`;
+  app.appendChild(el);
+  const [dim, band, body, say, sname, streak] = el.children;
+  Sound.play('special', 0.9, 0.9);
+  dim.animate([{ opacity: 0 }, { opacity: 0.55 }], { duration: 120, fill: 'forwards' });
+  band.animate([
+    { transform: 'rotate(-6deg) translateX(-110%)' },
+    { transform: 'rotate(-6deg) translateX(4%)', offset: 0.75 },
+    { transform: 'rotate(-6deg) translateX(0)' },
+  ], { duration: 220, easing: 'cubic-bezier(.2,.9,.3,1)', fill: 'backwards' });
+  body.animate([
+    { transform: 'translateY(60px) scale(.6) rotate(-8deg)', opacity: 0 },
+    { transform: 'translateY(-8px) scale(1.08) rotate(3deg)', opacity: 1, offset: 0.7 },
+    { transform: 'none', opacity: 1 },
+  ], { duration: 300, delay: 90, easing: 'ease-out', fill: 'backwards' });
+  say.animate([
+    { transform: 'scale(0)', opacity: 0 },
+    { transform: 'scale(1.15)', opacity: 1, offset: 0.7 },
+    { transform: 'scale(1)', opacity: 1 },
+  ], { duration: 240, delay: 200, easing: 'ease-out', fill: 'backwards' });
+  sname.animate([{ opacity: 0, transform: 'translateX(-20px)' }, { opacity: 1, transform: 'none' }], { duration: 200, delay: 260, fill: 'backwards' });
+  setTimeout(() => Sound.play('pop', 1.4, 0.7), 220);
+  await sleep(760);
+  Sound.play('line', 1.3, 0.6);
+  streak.animate([
+    { opacity: 1, transform: 'rotate(-6deg) scaleX(0)' },
+    { opacity: 1, transform: 'rotate(-6deg) scaleX(1)', offset: 0.5 },
+    { opacity: 0, transform: 'rotate(-6deg) scaleX(1) scaleY(.2)' },
+  ], { duration: 260 });
+  const out = { duration: 200, easing: 'ease-in', fill: 'forwards' };
+  band.animate([{ transform: 'rotate(-6deg) translateX(0)' }, { transform: 'rotate(-6deg) translateX(115%)' }], out);
+  [body, say, sname].forEach(e => e.animate([{ transform: 'none', opacity: 1 }, { transform: 'translateX(140%)', opacity: 0 }], out));
+  await dim.animate([{ opacity: 0.55 }, { opacity: 0 }], { duration: 220, fill: 'forwards' }).finished;
+  el.remove();
+}
+
+function pickTiles(n, ok = t => !t.special && t.type >= 0) {
+  const all = [];
+  Board.each(B.grid, (t, r, c) => ok(t) && all.push([r, c]));
+  for (let i = all.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [all[i], all[j]] = [all[j], all[i]];
+  }
+  return all.slice(0, n);
+}
+
+// 게이지가 차면 파티 얼굴을 눌러 사용. 턴은 쓰지 않음
+async function useSkill(k) {
+  const ch = teamCh(k);
+  if (B.busy || B.over) return;
+  if (B.gauge[k] < ch.skill.need) {
+    const p = centerOf($('#party').children[k]);
+    Sound.play('bad', 1.2, 0.5);
+    floatNum(p.x, p.y - 20, `${ch.skill.need - B.gauge[k]}개 더!`, ch.ring);
+    return;
+  }
+  B.busy = true;
+  clearSel();
+  B.gauge[k] = 0;
+  updateGauges();
+  await cutIn(ch);
+  const id = ch.skill.id;
+  let cells = [];
+  if (id === 'random8') {
+    cells = pickTiles(8, () => true);
+  } else if (id === 'rows2') {
+    const rows = [0, 1, 2, 3, 4, 5, 6].sort(() => Math.random() - 0.5).slice(0, 2);
+    rows.forEach(r => { for (let c = 0; c < COLS; c++) cells.push([r, c]); });
+  } else if (id === 'cross') {
+    const r0 = 1 + Math.floor(Math.random() * 5), c0 = 1 + Math.floor(Math.random() * 5);
+    for (let i = 0; i < COLS; i++) cells.push([r0, i]);
+    for (let i = 0; i < ROWS; i++) if (i !== r0) cells.push([i, c0]);
+    B.cd += 2;
+    updateCd();
+    const p = centerOf($('#countdown'));
+    floatNum(p.x, p.y - 16, '+2턴', '#7a7a7a');
+  } else if (id === 'bighit') {
+    const eff = attrMult(ch.attr, curWave().a);
+    const m = centerOf($('#monster'));
+    fxImage('boom', m.x, m.y, B.S * 4, 500);
+    flash('#fff6a8', 0.5);
+    shake(14, 420);
+    hitMonster(Math.round(ch.dmg * 18 * eff), ch, true, 0, eff);
+    await sleep(500);
+  } else if (id === 'convert6') {
+    pickTiles(6, t => !t.special && t.type >= 0 && t.type !== k).forEach(([r, c], i) => {
+      const t = B.grid[r][c];
+      t.type = k;
+      setTimeout(() => {
+        refreshTile(t);
+        squish(t);
+        const p = tileCenter(r, c);
+        burst(p.x, p.y, ch.ring, 6);
+        Sound.pop(i);
+      }, i * 70);
+    });
+    await sleep(6 * 70 + 200);
+  } else if (id === 'heal40') {
+    const amt = Math.round(B.teamMax * 0.4);
+    B.teamHp = Math.min(B.teamMax, B.teamHp + amt);
+    updateTeam();
+    Sound.play('heal', 1, 0.9);
+    const p = centerOf($('#teamHp'));
+    burst(p.x, p.y, '#7fd17a', 14);
+    floatNum(p.x, p.y - 10, `+${amt}`, '#3fae4f', 'crit');
+    await sleep(400);
+  } else if (id === 'rainbow') {
+    const [rc] = pickTiles(1);
+    if (rc) {
+      const t = B.grid[rc[0]][rc[1]];
+      t.special = 'rainbow';
+      t.type = -1;
+      refreshTile(t);
+      t.inner.animate([{ transform: 'scale(0) rotate(-180deg)' }, { transform: 'scale(1.4)', offset: 0.6 }, { transform: 'scale(1)' }], { duration: 420 });
+      const p = tileCenter(rc[0], rc[1]);
+      fxImage('sparkle', p.x, p.y, B.S * 2, 500);
+      Sound.play('special', 1.2, 0.9);
+      await sleep(450);
+    }
+  }
+  await cascade(null, cells);
+  await Promise.all(B.pending);
+  B.pending = [];
+  if (B.monHp <= 0) await monsterDefeated();
+  if (!B.over) B.busy = false;
 }

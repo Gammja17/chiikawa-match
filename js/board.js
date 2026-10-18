@@ -1,5 +1,6 @@
 // 3매치 판 로직 (화면과 분리). 타일: { id, type(0~5, 무지개는 -1), special: null|'h'|'v'|'bomb'|'rainbow' }
-const ROWS = 7, COLS = 7, NTYPES = 7;
+const ROWS = 7, COLS = 7;
+let NTYPES = 7; // 편성 인원에 맞춰 출격 때 바뀜
 let nextTileId = 1;
 const newTile = (type, special = null) => ({ id: nextTileId++, type, special });
 const randType = () => Math.floor(Math.random() * NTYPES);

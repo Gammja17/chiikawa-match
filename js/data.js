@@ -1,17 +1,39 @@
 // 팬게임 데이터: 캐릭터, 몬스터, 스테이지, 스토리
+// attr: 속성, skill: 게이지(need)가 차면 쓰는 스킬
 const CHARS = [
-  { id: 'chiikawa',  name: '치이카와', ring: '#f7a8c4', dmg: 10, line: '…!' },
-  { id: 'hachiware', name: '하치와레', ring: '#6fa8dc', dmg: 10, line: '할 수 있어!' },
-  { id: 'usagi',     name: '우사기',   ring: '#ffd84d', dmg: 9,  crit: 0.3, line: '우라!' },
-  { id: 'momonga',   name: '모몽가',   ring: '#b99cf0', dmg: 11, line: '칭찬해줘!' },
-  { id: 'rakko',     name: '랏코',     ring: '#a9a9a9', dmg: 13, line: '…간다.' },
-  { id: 'kani',      name: '카니',     ring: '#ff9f5a', heal: 4, line: '힘내!' },
-  { id: 'kurimanju', name: '쿠리만쥬', ring: '#a6d96a', dmg: 12, line: '……(캬아)' },
+  { id: 'chiikawa',  name: '치이카와', ring: '#f7a8c4', attr: 'cry',   dmg: 10, line: '…!',
+    skill: { id: 'random8',  name: '울면서 휘두르기', desc: '무작위 구슬 8개 터뜨림', need: 14, say: '으앗…! 에잇!' } },
+  { id: 'hachiware', name: '하치와레', ring: '#6fa8dc', attr: 'brave', dmg: 10, line: '할 수 있어!',
+    skill: { id: 'rows2',    name: '할 수 있어!', desc: '가로줄 2줄 지움', need: 16, say: '할 수 있어!' } },
+  { id: 'usagi',     name: '우사기',   ring: '#ffd84d', attr: 'odd',   dmg: 9, crit: 0.3, line: '우라!',
+    skill: { id: 'bighit',   name: '우라!', desc: '몬스터에 큰 한 방', need: 16, say: '우라아아!!' } },
+  { id: 'momonga',   name: '모몽가',   ring: '#b99cf0', attr: 'odd',   dmg: 11, line: '칭찬해줘!',
+    skill: { id: 'convert6', name: '칭찬해줘!', desc: '구슬 6개를 모몽가로 바꿈', need: 12, say: '나를 칭찬해!' } },
+  { id: 'rakko',     name: '랏코',     ring: '#a9a9a9', attr: 'brave', dmg: 13, line: '…간다.',
+    skill: { id: 'cross',    name: '…간다.', desc: '십자로 지우고 몬스터 공격 2턴 늦춤', need: 18, say: '…간다.' } },
+  { id: 'kani',      name: '카니',     ring: '#ff9f5a', attr: 'cry',   heal: 4, line: '힘내!',
+    skill: { id: 'heal40',   name: '힘내!', desc: '체력 40% 회복', need: 14, say: '다들 힘내!' } },
+  { id: 'kurimanju', name: '쿠리만쥬', ring: '#a6d96a', attr: 'odd',   dmg: 12, line: '……(캬아)',
+    skill: { id: 'rainbow',  name: '캬아', desc: '판에 무지개 폭탄 하나', need: 15, say: '……캬아.' } },
 ];
+const TEAM_SIZE = 5;
+const DEFAULT_TEAM = ['chiikawa', 'hachiware', 'usagi', 'rakko', 'kani'];
+
+// 속성: 씩씩 > 엉뚱 > 울보 > 씩씩. 이기면 1.5배, 지면 0.5배
+const ATTR = {
+  brave: { name: '씩씩', icon: '💪', color: '#ff8a5c' },
+  odd:   { name: '엉뚱', icon: '🌀', color: '#9b7bff' },
+  cry:   { name: '울보', icon: '💧', color: '#4fa3ff' },
+};
+const BEATS = { brave: 'odd', odd: 'cry', cry: 'brave' };
+const attrMult = (atk, def) => (BEATS[atk] === def ? 1.5 : BEATS[def] === atk ? 0.5 : 1);
 const FACE = id => `assets/img/faces/${id}.png`;
 const BODY = id => `assets/img/chars/${id}.png`;
 const TILE = id => `assets/img/tiles/${id}.png`;
 const ITEM = name => `assets/img/items/${name}.png`;
+// 전신 그림이 없는 캐릭터는 얼굴로
+const NO_BODY = new Set(['kani']);
+const portrait = id => (NO_BODY.has(id) ? FACE(id) : BODY(id));
 
 const MONSTERS = {
   chimera:   { name: '키메라',   img: 'assets/img/monsters/chimera.png' },
@@ -19,18 +41,18 @@ const MONSTERS = {
   dekatsuyo: { name: '데카츠요', img: 'assets/img/monsters/dekatsuyo.png' },
 };
 
-// m: 몬스터 종류, hp, atk: 공격력, cd: 몇 턴마다 공격, hue: 색 변형, title: 이름 앞말, boss
+// a: 속성, m: 몬스터 종류, hp, atk: 공격력, cd: 몇 턴마다 공격, hue: 색 변형, title: 이름 앞말, boss
 const STAGES = [
-  { name: '풀숲 토벌',      waves: [{ m: 'chimera', hp: 200, atk: 10, cd: 3 }] },
-  { name: '두 마리 출몰',   waves: [{ m: 'chimera', hp: 220, atk: 10, cd: 3 }, { m: 'chimera', hp: 260, atk: 12, cd: 3, hue: 200, title: '푸른' }] },
-  { name: '수상한 상자',    waves: [{ m: 'mimic', hp: 420, atk: 15, cd: 3 }] },
-  { name: '숲 속 순찰',     waves: [{ m: 'chimera', hp: 320, atk: 12, cd: 3 }, { m: 'mimic', hp: 440, atk: 16, cd: 3 }] },
-  { name: '데카츠요 습격',  waves: [{ m: 'dekatsuyo', hp: 950, atk: 22, cd: 4, boss: true }] },
-  { name: '푸른 무리',      waves: [{ m: 'chimera', hp: 480, atk: 14, cd: 3, hue: 200, title: '푸른' }, { m: 'chimera', hp: 520, atk: 14, cd: 3, hue: 200, title: '푸른' }] },
-  { name: '붉은 미믹',      waves: [{ m: 'mimic', hp: 520, atk: 18, cd: 3 }, { m: 'mimic', hp: 620, atk: 20, cd: 3, hue: 320, title: '붉은' }] },
-  { name: '연속 토벌',      waves: [{ m: 'chimera', hp: 480, atk: 15, cd: 3 }, { m: 'mimic', hp: 580, atk: 18, cd: 3 }, { m: 'chimera', hp: 650, atk: 18, cd: 3, hue: 100, title: '초록' }] },
-  { name: '성급한 녀석',    waves: [{ m: 'chimera', hp: 950, atk: 16, cd: 2, hue: 250, title: '보라' }] },
-  { name: '토벌 대작전',    waves: [{ m: 'mimic', hp: 680, atk: 20, cd: 3 }, { m: 'chimera', hp: 760, atk: 20, cd: 3, hue: 200, title: '푸른' }, { m: 'dekatsuyo', hp: 1350, atk: 24, cd: 4, hue: 30, title: '진·', boss: true }] },
+  { name: '풀숲 토벌',      waves: [{ a: 'odd', m: 'chimera', hp: 250, atk: 18, cd: 3 }] },
+  { name: '두 마리 출몰',   waves: [{ a: 'odd', m: 'chimera', hp: 280, atk: 18, cd: 3 }, { a: 'cry', m: 'chimera', hp: 320, atk: 22, cd: 3, hue: 200, title: '푸른' }] },
+  { name: '수상한 상자',    waves: [{ a: 'brave', m: 'mimic', hp: 520, atk: 27, cd: 3 }] },
+  { name: '숲 속 순찰',     waves: [{ a: 'odd', m: 'chimera', hp: 400, atk: 22, cd: 3 }, { a: 'brave', m: 'mimic', hp: 550, atk: 29, cd: 3 }] },
+  { name: '데카츠요 습격',  waves: [{ a: 'brave', m: 'dekatsuyo', hp: 1190, atk: 40, cd: 4, boss: true }] },
+  { name: '푸른 무리',      waves: [{ a: 'cry', m: 'chimera', hp: 600, atk: 25, cd: 3, hue: 200, title: '푸른' }, { a: 'cry', m: 'chimera', hp: 650, atk: 25, cd: 3, hue: 200, title: '푸른' }] },
+  { name: '붉은 미믹',      waves: [{ a: 'brave', m: 'mimic', hp: 650, atk: 32, cd: 3 }, { a: 'brave', m: 'mimic', hp: 780, atk: 36, cd: 3, hue: 320, title: '붉은' }] },
+  { name: '연속 토벌',      waves: [{ a: 'odd', m: 'chimera', hp: 600, atk: 27, cd: 3 }, { a: 'brave', m: 'mimic', hp: 720, atk: 32, cd: 3 }, { a: 'brave', m: 'chimera', hp: 810, atk: 32, cd: 3, hue: 100, title: '초록' }] },
+  { name: '성급한 녀석',    waves: [{ a: 'odd', m: 'chimera', hp: 1190, atk: 29, cd: 2, hue: 250, title: '보라' }] },
+  { name: '토벌 대작전',    waves: [{ a: 'brave', m: 'mimic', hp: 850, atk: 36, cd: 3 }, { a: 'cry', m: 'chimera', hp: 950, atk: 36, cd: 3, hue: 200, title: '푸른' }, { a: 'cry', m: 'dekatsuyo', hp: 1690, atk: 43, cd: 4, hue: 30, title: '진·', boss: true }] },
 ];
 
 // 스테이지 시작 전 짧은 대사 (팬 창작)
