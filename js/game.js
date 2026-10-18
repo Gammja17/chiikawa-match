@@ -193,13 +193,15 @@ function openMap(advanceFrom = null) {
     const n = document.createElement('button');
     const locked = i > cur;
     const boss = st.waves?.some(w => w.boss);
-    n.className = 'node' + (locked ? ' locked' : '') + (boss ? ' boss' : '') + (i === cur ? ' current' : '');
+    const lv = routeLevel(i);
+    n.className = 'node' + (locked ? ' locked' : '') + (boss ? ' boss' : '') + (i === cur ? ' current' : '') + (lv ? ' ' + lv : '');
     n.style.left = pts[i].x + 'px';
     n.style.top = pts[i].y + 'px';
     const s = routeStars(i) || 0;
     const icon = st.icon ? ITEM(st.icon) : MONSTERS[st.waves[st.waves.length - 1].m].img;
     n.innerHTML = (locked ? LOCK_SVG : `<img class="nicon" src="${icon}"><span class="nnum">${i + 1}</span>`) +
       (i === cur ? `<span class="nname">${st.name}</span>` : '') +
+      (lv && !locked ? `<span class="ntag">${lv === 'hard' ? 'HARD' : '도전'}</span>` : '') +
       (s ? `<span class="nstars">${[0, 1, 2].map(k => `<i class="${k < s ? 'on' : ''}"></i>`).join('')}</span>` : '');
     if (!st.icon) n.classList.add('battle');
     n.onclick = () => {
@@ -488,7 +490,7 @@ async function startStage(i) {
   B.gauge = B.team.map(k => (Save.data.buff === 'gauge' ? Math.floor(CHARS[k].skill.need / 2) : 0));
   if (Save.data.buff) { Save.data.buff = null; Save.save(); }
   show('battle');
-  $('#stageName').textContent = `${routeIdx('b', i) + 1}. ${STAGES[i].name}`;
+  stageTitle(routeIdx('b', i), STAGES[i].name);
   buildParty();
   layoutBoard();
   boardEl.querySelectorAll('.tile').forEach(e => e.remove());
@@ -497,7 +499,7 @@ async function startStage(i) {
   spawnMonster(false);
   updateTeam();
   if (STORY[i] && Save.data.stars[i] == null) await playStory(STORY[i]);
-  await dropIn('토벌 시작!');
+  await dropIn(routeLevel(routeIdx('b', i)) === 'hard' ? 'HARD!' : '토벌 시작!');
   B.busy = false;
   Tutor.onStart();
   Tutor.poke();
@@ -515,6 +517,13 @@ setInterval(() => {
     { transform: 'scale(0) rotate(0)', opacity: 0 }, { transform: 'scale(1) rotate(45deg)', opacity: 1, offset: 0.4 }, { transform: 'scale(0) rotate(90deg)', opacity: 0 },
   ], { duration: 700, easing: 'ease-in-out' });
 }, 900);
+
+// 스테이지 제목 + 난이도 딱지
+function stageTitle(k, name) {
+  const lv = k >= 0 ? routeLevel(k) : '';
+  $('#stageName').innerHTML = (lv ? `<b class="lvtag ${lv}">${lv === 'hard' ? 'HARD' : '도전'}</b>` : '') + (k >= 0 ? `${k + 1}. ` : '') + name;
+  app.classList.toggle('hard-stage', lv === 'hard');
+}
 
 // 판 떨어지며 등장
 async function dropIn(text) {

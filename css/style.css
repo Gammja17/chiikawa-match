@@ -549,3 +549,13 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .helper-pick p { margin: 2px 0 0; font-size: 13px; color: var(--ink2); }
 .afterline { position: absolute; height: 10px; margin-top: -5px; border-radius: 5px; background: #fff; box-shadow: 0 0 12px 4px #9fdcff; pointer-events: none; }
 .afterline.v { width: 10px; height: auto; margin: 0 0 0 -5px; }
+
+/* ---------- 난이도 딱지 ---------- */
+.node.challenge { border-color: #ffb347; }
+.node.hard { border-color: #ff5a6e; background: #ffe3e7; }
+.node .ntag { position: absolute; left: 50%; bottom: calc(100% - 6px); transform: translateX(-50%) rotate(-6deg); padding: 1px 7px; border-radius: 7px; font-family: var(--head); font-size: 12px; line-height: 1.2; color: #fff; background: #ffb347; white-space: nowrap; }
+.node.hard .ntag { background: #ff5a6e; }
+.node.current .ntag { bottom: calc(100% + 34px); }
+.lvtag { display: inline-block; margin-right: 6px; padding: 1px 8px; border-radius: 8px; font-size: 14px; vertical-align: middle; color: #fff; background: #ffb347; }
+.lvtag.hard { background: #ff5a6e; }
+#app.hard-stage #board { box-shadow: 0 0 0 3px #ff5a6e, var(--sh); }

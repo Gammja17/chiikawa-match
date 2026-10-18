@@ -20,33 +20,33 @@ const LIFE = [
   { name: '택배 상자 뜯기', icon: 'box', types: 5, moves: 20, host: 'momonga', intro: '상자를 모두 뜯자!',
     goals: [{ k: 'box' }], stars: [4000, 6500, 9000],
     map: ['#.....#', '.......', '.b...b.', 'bb...bb', '.......', '..bbb..', '#.....#'] },
-  { name: '목욕탕 거품 청소', icon: 'bubble', types: 5, moves: 26, host: 'hachiware', intro: '거품이 번지기 전에!',
+  { name: '목욕탕 거품 청소', icon: 'bubble', types: 5, moves: 32, host: 'hachiware', intro: '거품이 번지기 전에!',
     goals: [{ k: 'bubble' }], stars: [4500, 7500, 10000],
     map: ['.......', '.......', '.......', '.......', '...o...', '#.o.o.#', '##o.o##'] },
   { name: '하치와레 노래 연습', icon: 'target', types: 5, moves: 18, host: 'hachiware', intro: '하치와레를 모아 줘!',
     goals: [{ k: 'char', id: 'hachiware', n: 20 }], stars: [4500, 7500, 10000],
     map: ['#..#..#', '.......', '.......', '.......', '#.....#', '##...##', '###.###'] },
   { name: '제초 검정 5급', icon: 'medal', types: 5, time: 60, host: 'usagi', exam: true, intro: '60초 안에 점수!',
-    goals: [{ k: 'score', n: 5000 }], stars: [5000, 8000, 11000],
+    goals: [{ k: 'score', n: 6500 }], stars: [6500, 9000, 12000],
     map: ['.......', '.......', '.......', '..###..', '.......', '.......', '.......'] },
   // 2장: 섞어 보기
   { name: '선물 상자 정리', icon: 'gift', types: 5, moves: 22, host: 'momonga', intro: '선물 상자는 두 번!',
     goals: [{ k: 'box' }, { k: 'weed' }], stars: [5500, 9000, 12000],
     map: ['##.#.##', '.......', '.g...g.', '.w.w.w.', 'w.g.g.w', '.......', '.......'] },
-  { name: '시사의 라멘 가게', icon: 'ramen', types: 5, moves: 28, host: 'shisa', intro: '재료 3개를 맨 아래로!',
+  { name: '시사의 라멘 가게', icon: 'ramen', types: 5, moves: 32, host: 'shisa', intro: '재료 3개를 맨 아래로!',
     goals: [{ k: 'ing' }], stars: [6000, 9500, 12500], ing: { n: 3, max: 2, kinds: ['naruto', 'egg'] },
     map: ['#.i.i.#', '.......', '.......', '.b...b.', '.bb.bb.', '.......', '.......'] },
   { name: '제초 검정 4급', icon: 'medal', types: 5, time: 75, host: 'usagi', exam: true, intro: '75초 안에 잡초 전부!',
     goals: [{ k: 'weed' }], stars: [6000, 10000, 14000],
     map: ['##...##', '#.....#', '.......', 'w.w.w.w', '.w.w.w.', 'w.w.w.w', '.w.w.w.'] },
-  { name: '거품 대소동', icon: 'bubble', types: 5, moves: 27, host: 'chiikawa', intro: '거품과 잡초를 한꺼번에!',
+  { name: '거품 대소동', icon: 'bubble', types: 5, moves: 32, host: 'chiikawa', intro: '거품과 잡초를 한꺼번에!',
     goals: [{ k: 'bubble' }, { k: 'weed' }], stars: [6500, 10500, 13500],
-    map: ['#.....#', '.......', '.w...w.', '..w.w..', '.......', '.o...o.', 'oo...oo'] },
-  { name: '쿠리만쥬의 안주', icon: 'dango', types: 5, moves: 30, host: 'kurimanju', intro: '경단, 주먹밥 내리고 상자도!',
+    map: ['#.....#', '.......', '.w...w.', '..w.w..', '.......', '.o...o.', '.o...o.'] },
+  { name: '쿠리만쥬의 안주', icon: 'dango', types: 5, moves: 32, host: 'kurimanju', intro: '경단, 주먹밥 내리고 상자도!',
     goals: [{ k: 'ing' }, { k: 'box' }], stars: [7500, 12000, 15000], ing: { n: 3, max: 2, kinds: ['dango', 'onigiri'] },
-    map: ['..i.i..', '.......', '.......', 'g.....g', 'gg...gg', '#.....#', '##...##'] },
-  { name: '제초 검정 3급', icon: 'medal', types: 5, time: 90, host: 'usagi', exam: true, intro: '큰 잡초는 두 번!',
-    goals: [{ k: 'weed' }, { k: 'score', n: 8000 }], stars: [8000, 12000, 16000],
+    map: ['..i.i..', '.......', '.......', 'b.....b', 'bg...gb', '#.....#', '##...##'] },
+  { name: '제초 검정 3급', icon: 'medal', types: 5, time: 60, host: 'usagi', exam: true, intro: '큰 잡초는 두 번!',
+    goals: [{ k: 'weed' }, { k: 'score', n: 9000 }], stars: [9000, 12500, 16000],
     map: ['##...##', '#.....#', '.W...W.', '..W.W..', 'w..W..w', '.w...w.', '..www..'] },
   // 3장: 새 기믹과 어려운 조합
   { name: '선물 리본 풀기', icon: 'ribbon', types: 5, moves: 20, host: 'momonga', intro: '리본을 모두 풀자!',
@@ -55,7 +55,7 @@ const LIFE = [
   { name: '핫케이크 시럽', icon: 'pancake', types: 5, moves: 25, host: 'chiikawa', intro: '시럽을 판 전체에!',
     goals: [{ k: 'syrup' }], stars: [5000, 8000, 10500],
     map: ['##...##', '#.....#', '.......', '...s...', '.......', '#.....#', '##...##'] },
-  { name: '제초 검정 2급', icon: 'medal', types: 6, time: 100, host: 'usagi', exam: true, intro: '리본 사이 잡초!',
+  { name: '제초 검정 2급', icon: 'medal', types: 6, time: 65, host: 'usagi', exam: true, intro: '리본 사이 잡초!',
     goals: [{ k: 'weed' }, { k: 'lock' }], stars: [8000, 12000, 16000],
     map: ['.......', '.l...l.', 'w.l.l.w', '.w.l.w.', 'W.w.w.W', '.W...W.', '..www..'] },
   { name: '라멘 국물 내기', icon: 'pot', types: 5, moves: 32, host: 'shisa', intro: '국물을 바르고 재료도!',
@@ -64,10 +64,10 @@ const LIFE = [
   { name: '거품 목욕 대작전', icon: 'bath', types: 5, moves: 28, host: 'hachiware', intro: '거품도 리본도!',
     goals: [{ k: 'bubble' }, { k: 'lock' }], stars: [7000, 11000, 14000],
     map: ['.......', '.l...l.', '..l.l..', '.......', '.o...o.', '#oo.oo#', '##...##'] },
-  { name: '소풍 도시락', icon: 'bento', types: 5, moves: 33, host: 'kurimanju', intro: '도시락 재료 모으기!',
+  { name: '소풍 도시락', icon: 'bento', types: 5, moves: 31, host: 'kurimanju', intro: '도시락 재료 모으기!',
     goals: [{ k: 'ing' }, { k: 'box' }, { k: 'weed' }], stars: [9000, 13000, 16000], ing: { n: 3, max: 2, kinds: ['onigiri', 'dango', 'donut'] },
     map: ['.i...i.', '.......', '.......', 'b.....b', 'wb...bw', '.w.w.w.', '..www..'] },
-  { name: '제초 검정 1급', icon: 'medal', types: 6, time: 130, host: 'usagi', exam: true, intro: '최종 시험! 130초!',
+  { name: '제초 검정 1급', icon: 'medal', types: 6, time: 130, host: 'usagi', exam: true, intro: '최종 시험!',
     goals: [{ k: 'weed' }, { k: 'bubble' }, { k: 'score', n: 12000 }], stars: [12000, 16000, 20000],
     map: ['#.....#', '.......', 'W.W.W.W', '.w.w.w.', 'w.WoW.w', '#.w.w.#', '##ooo##'] },
 ];
@@ -127,6 +127,11 @@ const ROUTE = [
   ['l', 7], ['b', 3], ['l', 8], ['b', 4], ['l', 9], ['l', 10], ['b', 5], ['l', 11], ['b', 6], ['l', 12],
   ['l', 13], ['b', 7], ['l', 14], ['l', 15], ['b', 8], ['l', 16], ['l', 17], ['l', 18], ['l', 19], ['b', 9],
 ];
+
+// 난이도: 1~19는 쉽게, 그 사이 도전 두 번(제초 검정 5급, 데카츠요). 20부터 HARD가 띄엄띄엄
+const CHALLENGE_AT = new Set([10, 14]);
+const HARD_AT = new Set([20, 24, 25, 28, 29, 30]);
+const routeLevel = k => (HARD_AT.has(k + 1) ? 'hard' : CHALLENGE_AT.has(k + 1) ? 'challenge' : '');
 
 const GOAL_ICON = { lock: () => ITEM('ribbon'), syrup: () => ITEM('pancake'), weed: () => ITEM('weed2'), box: () => ITEM('box'), bubble: () => ITEM('bubble'), ing: () => ITEM('ramen'),
   char: g => FACE(g.id), score: () => ITEM('target') };
@@ -192,7 +197,7 @@ const Life = {
     updateFever();
     Sound.music('map');
     show('battle');
-    $('#stageName').textContent = run.kind === 'route' ? `${routeIdx('l', i) + 1}. ${st.name}` : st.name;
+    stageTitle(run.kind === 'route' ? routeIdx('l', i) : -1, st.name);
     $('#waveInfo').innerHTML = '';
     const hc = CHARS[L.helper];
     $('#lhHelper').style.setProperty('--ring', hc.ring);
@@ -204,7 +209,7 @@ const Life = {
     renderFloor();
     Life.hud();
     if (run.kind === 'route' && LIFE_STORY[i] && (Save.data.life || [])[i] == null) await playStory(LIFE_STORY[i]);
-    await dropIn(st.intro);
+    await dropIn(run.kind === 'route' && routeLevel(routeIdx('l', i)) === 'hard' ? 'HARD!' : st.intro);
     B.busy = false;
     Tutor.onStart();
     Tutor.poke();
