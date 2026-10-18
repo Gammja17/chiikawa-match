@@ -1,33 +1,33 @@
-// 팬게임 데이터: 캐릭터, 몬스터, 스테이지, 스토리
+// 팬게임 데이터: 캐릭터, 괴물, 스테이지, 스토리
 // attr: 속성, skill: 게이지(need)가 차면 쓰는 스킬
 const CHARS = [
   { id: 'chiikawa',  name: '치이카와', ring: '#f27aa5', attr: 'cry',   dmg: 10, line: '…!',
     skill: { id: 'random8',  name: '울면서 휘두르기', desc: '무작위 구슬 8개 터뜨림', need: 14, say: '으앗…! 에잇!' } },
-  { id: 'hachiware', name: '하치와레', ring: '#4f93dc', attr: 'brave', dmg: 10, line: '할 수 있어!',
-    skill: { id: 'rows2',    name: '할 수 있어!', desc: '가로줄 2줄 지움', need: 16, say: '할 수 있어!' } },
+  { id: 'hachiware', name: '하치와레', ring: '#4f93dc', attr: 'brave', dmg: 10, line: '어떻게든 되겠지~!',
+    skill: { id: 'rows2',    name: '어떻게든 되라~!', desc: '가로줄 2줄 지움', need: 16, say: '어떻게든 되라앗~!!' } },
   { id: 'usagi',     name: '우사기',   ring: '#f0b90b', attr: 'odd',   dmg: 9, crit: 0.3, line: '우라!',
-    skill: { id: 'bighit',   name: '우라!', desc: '몬스터에 큰 한 방', need: 16, say: '우라아아!!' } },
-  { id: 'momonga',   name: '모몽가',   ring: '#9b7be8', attr: 'odd',   dmg: 11, line: '칭찬해줘!',
-    skill: { id: 'convert6', name: '칭찬해줘!', desc: '구슬 6개를 모몽가로 바꿈', need: 12, say: '나를 칭찬해!' } },
+    skill: { id: 'bighit',   name: '우라!', desc: '괴물에게 큰 한 방', need: 16, say: '우라아아!!' } },
+  { id: 'momonga',   name: '모몽가',   ring: '#9b7be8', attr: 'odd',   dmg: 11, line: '칭찬해 줘!',
+    skill: { id: 'convert6', name: '칭찬해 줘!', desc: '구슬 6개를 모몽가로 바꿈', need: 12, say: '모몽가 귀엽지? 칭찬해 줘~!' } },
   { id: 'rakko',     name: '랏코',     ring: '#8a8a96', attr: 'brave', dmg: 17, crit: 0.2, line: '…간다.',
-    skill: { id: 'cross',    name: '…간다.', desc: '십자 3줄을 베고 몬스터에 큰 한 방, 공격 2턴 늦춤', need: 16, say: '…간다.' } },
-  { id: 'kani',      name: '카니',     ring: '#ff5a4a', attr: 'cry',   heal: 4, line: '힘내!',
-    skill: { id: 'heal40',   name: '힘내!', desc: '체력 40% 회복', need: 14, say: '다들 힘내!' } },
-  { id: 'kurimanju', name: '쿠리만쥬', ring: '#79bf3f', attr: 'odd',   dmg: 12, line: '……(캬아)',
-    skill: { id: 'rainbow',  name: '캬아', desc: '판에 무지개 폭탄 하나', need: 15, say: '……캬아.' } },
-  { id: 'shisa',     name: '시사',     ring: '#ff8a33', attr: 'odd',   dmg: 11, line: '어서 오세요!',
+    skill: { id: 'cross',    name: '…간다.', desc: '십자 3줄을 베고 괴물에게 큰 한 방, 공격 2턴 늦춤', need: 16, say: '…간다.' } },
+  { id: 'kani',      name: '카니',     ring: '#ff5a4a', attr: 'cry',   heal: 4, line: '다친 데 없어?',
+    skill: { id: 'heal40',   name: '호~ 해 줄게', desc: '체력 40% 회복', need: 14, say: '호~ 해 줄게! 금방 나을 거야.' } },
+  { id: 'kurimanju', name: '쿠리만쥬', ring: '#79bf3f', attr: 'odd',   dmg: 12, line: '……프하~',
+    skill: { id: 'rainbow',  name: '프하~', desc: '판에 무지개 폭탄 하나', need: 15, say: '(꿀꺽꿀꺽) ……프하아~!' } },
+  { id: 'shisa',     name: '시사',     ring: '#ff8a33', attr: 'odd',   dmg: 11, line: '어서 오세요~!',
     skill: { id: 'ramen',    name: '라멘 배달', desc: '체력 20% 회복, 모두 게이지 +3', need: 15, say: '라멘 나왔어요~!' } },
   { id: 'shooting',  name: '별똥별',   ring: '#e5c100', attr: 'light', dmg: 11, line: '반짝!',
     skill: { id: 'meteor',   name: '소원 별똥별', desc: '무작위 3곳에 폭탄이 떨어짐', need: 17, say: '소원을 빌어!' } },
   { id: 'darkstar',  name: '까만별',   ring: '#4b4b66', attr: 'dark',   dmg: 12, line: '……',
     skill: { id: 'cols2',    name: '어둠의 별빛', desc: '세로줄 2줄 지움', need: 16, say: '……반짝.' } },
   { id: 'goblin',    name: '고블린',   ring: '#2fae7a', attr: 'brave', dmg: 11, line: '킥킥',
-    skill: { id: 'stall',    name: '고블린 장난', desc: '몬스터 공격 3턴 늦춤, 작은 피해', need: 14, say: '킥킥, 이쪽이다~' } },
+    skill: { id: 'stall',    name: '고블린 장난', desc: '괴물 공격 3턴 늦춤, 작은 피해', need: 14, say: '킥킥, 이쪽이다~' } },
   { id: 'beetle',    name: '풍뎅이',   ring: '#a5683a', attr: 'cry',   dmg: 10, line: '부웅~',
     skill: { id: 'cheer',    name: '데굴데굴', desc: '판 섞고 다른 멤버 게이지 +4', need: 13, say: '데굴데굴~' } },
 ];
 const TEAM_SIZE = 5;
-const DEFAULT_TEAM = ['chiikawa', 'hachiware', 'usagi', 'rakko', 'kani'];
+const DEFAULT_TEAM = ['chiikawa', 'hachiware', 'usagi', 'rakko', 'kani']; // 아직 없는 친구는 편성에서 빠짐
 
 // 속성: 씩씩 > 엉뚱 > 울보 > 씩씩. 이기면 1.5배, 지면 0.5배
 const ATTR = {
@@ -107,31 +107,46 @@ const STAGES = [
 // 스테이지 시작 전 짧은 대사 (팬 창작)
 const STORY = {
   0: [
-    ['hachiware', '토벌 게시판에 새 의뢰가 붙었어!'],
+    ['hachiware', '토벌 게시판에 새 의뢰가 붙었어! 괴물을 쓰러뜨리면 보수를 받을 수 있대.'],
     ['chiikawa', '(끄덕끄덕…)'],
     ['usagi', '우라~!'],
-    ['hachiware', '같은 얼굴을 셋 맞추면 그 친구가 공격해. 카니는 회복이야!'],
-    ['hachiware', '4개는 ↔줄폭탄, L이나 T 모양은 💣폭탄, 5개는 🌈무지개 폭탄이 생겨!'],
+    ['hachiware', '같은 얼굴 셋을 맞추면 그 친구가 공격해. 넷이면 줄폭탄, L이나 T는 폭탄, 다섯이면 무지개!'],
   ],
   2: [
-    ['momonga', '저 상자, 수상해. 내가 먼저 찾았으니까 칭찬해줘!'],
+    ['momonga', '저 상자 수상해! 모몽가가 먼저 찾았어. 칭찬해 줘!'],
     ['chiikawa', '…!!'],
   ],
   4: [
-    ['rakko', '이 근처에 큰 녀석이 나온다는 소문이 있어.'],
-    ['rakko', '방심하지 마. 네 개를 맞추면 줄을 날려버리는 구슬이 생겨.'],
-    ['kurimanju', '……(캬아)'],
+    ['rakko', '이 근처에 큰 놈이 나온다는 소문이다.'],
+    ['rakko', '…방심은 금물.'],
+    ['kurimanju', '……프하~'],
   ],
   9: [
     ['hachiware', '마지막 의뢰야. 다 같이 가자!'],
-    ['shisa', '끝나면 다 같이 라멘 먹으러 가요!'],
-    ['usagi', '하아?!'],
+    ['shisa', '끝나면 다 같이 라멘 드시러 오세요~!'],
+    ['usagi', '우라!!'],
   ],
   end: [
     ['chiikawa', '…!! (해냈다…!)'],
-    ['hachiware', '토벌 대성공! 보수로 맛있는 거 먹자~'],
-    ['kurimanju', '……(건배)'],
+    ['hachiware', '토벌 대성공이라는 거야!? 보수로 맛있는 거 먹자~!'],
+    ['kurimanju', '(건배) ……프하아~!'],
   ],
 };
+// 친구마다 하는 말 (끝나고 한마디, 집, 라멘 가게에서 톡 했을 때). 우사기는 말 대신 소리, 치이카와는 거의 말이 없음
+const LINES = {
+  chiikawa: ['…!', '…!!', '와아…!', '(끄덕끄덕)', '이야…!', '(두근두근…)', '으앗…!', '(헤헤…)'],
+  hachiware: ['어떻게든 되겠지~!', '치이카와~ 해냈다!', '이거 완전 대박이라는 거야!?', '흐흥~ ♪', '괜찮아 괜찮아, 천천히 하자.', '끝나면 라멘 먹으러 가자~', '오늘도 수고했어!'],
+  usagi: ['우라!', '우라~!!', '야하!', '하아?!', '후웅~', '푸루루루루', '이야앗!', '야하~!!'],
+  momonga: ['칭찬해 줘!', '모몽가 귀엽지?', '모몽가 오늘 엄청 착했어~ 칭찬해 줘!', '에헤헤~ 더 칭찬해 줘!', '이거 모몽가 주는 거지?', '흥! 모몽가가 제일 잘했어!'],
+  rakko: ['…간다.', '…좋은 마음가짐이다.', '방심은 금물.', '…나쁘지 않군.', '수련은 매일 하는 거다.'],
+  kani: ['다친 데 없어?', '호~ 해 줄게.', '천천히 해도 괜찮아.', '반창고 붙이자!'],
+  kurimanju: ['……', '……프하~', '(꿀꺽꿀꺽) 프하아~', '(안주를 슥 내민다)', '……(만족)'],
+  shisa: ['어서 오세요~!', '넵! 열심히 하겠습니다!', '마스터 라멘 최고예요~!', '오늘도 수행이에요!', '배달 다녀오겠습니다~!'],
+  goblin: ['킥킥', '킥킥, 이쪽이야~', '오늘은 장난 안 쳤어. …진짜로.'],
+  beetle: ['부웅~', '데굴데굴~', '부우웅!'],
+  shooting: ['반짝!', '반짝반짝~!', '소원 빌었어?'],
+  darkstar: ['……', '……반짝.', '…….'],
+};
+const lineOf = id => { const p = LINES[id]; return p ? p[Math.floor(Math.random() * p.length)] : (CHARS.find(c => c.id === id) || {}).line || '…!'; };
 const CHAR_NAME = { shisa: '시사' };
 CHARS.forEach(c => (CHAR_NAME[c.id] = c.name));

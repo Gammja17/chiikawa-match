@@ -1,5 +1,5 @@
 // 모으기와 꾸미기: 코인, 캡슐 뽑기(친구, 액세서리), 친구 레벨, 집 꾸미기, 매일 용돈, 친구 이야기, 목소리 칸
-const STARTERS = ['chiikawa', 'hachiware', 'usagi', 'rakko', 'kani'];
+const STARTERS = ['chiikawa']; // 처음엔 치이카와 혼자. 나머지는 스테이지, 간식, 라멘 가게, 뽑기로 한 명씩
 const LV_MAX = 10;
 const GACHA_COST = 100;
 // at: 붙는 자리 (head 머리 위, eyes 눈)
@@ -23,14 +23,14 @@ const FURN = [
 ];
 // 레벨이 오르면 열리는 짧은 이야기 (팬 창작)
 const CHAR_STORY = {
-  chiikawa: [[2, [['chiikawa', '(풀 뽑기 일 끝…)'], ['chiikawa', '(오늘 번 돈으로… 뭐 먹지…)'], ['hachiware', '치이카와~ 같이 라멘 먹으러 가자!'], ['chiikawa', '…!! (끄덕끄덕)']]]],
-  hachiware: [[2, [['hachiware', '언젠가 노래 대회에 나가 보고 싶어.'], ['chiikawa', '…!'], ['hachiware', '치이카와가 응원해 주면 할 수 있을 것 같아!']]]],
-  usagi: [[2, [['usagi', '우라!'], ['usagi', '하아~?'], ['hachiware', '우사기가 오늘 번 돈으로 다 같이 간식 산대!'], ['usagi', '야하!']]]],
-  momonga: [[2, [['momonga', '나 오늘 토벌 열심히 했어.'], ['momonga', '그러니까 칭찬해 줘! 지금 당장!'], ['chiikawa', '…(쓰담쓰담)']]]],
-  rakko: [[2, [['rakko', '…검을 닦는 것도 수련이야.'], ['hachiware', '랏코 선배 멋있어…!'], ['rakko', '…너희도 할 수 있어.']]]],
-  kani: [[2, [['kani', '다친 데 없어?'], ['chiikawa', '…(괜찮아)'], ['kani', '그래도 반창고는 붙이자. 힘내!']]]],
-  kurimanju: [[2, [['kurimanju', '……(캬아)'], ['kurimanju', '……(한 잔 더)'], ['hachiware', '쿠리만쥬 씨는 오늘도 행복해 보여.']]]],
-  shisa: [[2, [['shisa', '라멘 가게 일, 오늘도 열심히 할게요!'], ['shisa', '사장님한테 칭찬받았어요~!'], ['chiikawa', '…(박수)']]]],
+  chiikawa: [[2, [['chiikawa', '(풀 뽑기 끝…)'], ['chiikawa', '(오늘 번 돈으로… 뭐 먹지…)'], ['hachiware', '치이카와~ 라멘 먹으러 가자!'], ['chiikawa', '…!! (끄덕끄덕)']]]],
+  hachiware: [[2, [['hachiware', '흐흥~ ♪'], ['hachiware', '언젠가 노래 대회에 나가 보고 싶어. 조금 부끄럽지만…'], ['chiikawa', '…!! (박수)'], ['hachiware', '치이카와가 들어 주면 어떻게든 될 것 같아!']]]],
+  usagi: [[2, [['usagi', '우라!'], ['usagi', '푸루루루루…'], ['hachiware', '우사기가 오늘 번 돈으로 간식 사 왔대!'], ['usagi', '야하~!']]]],
+  momonga: [[2, [['momonga', '모몽가 오늘 토벌 엄청 열심히 했어.'], ['momonga', '그러니까 칭찬해 줘! 많이! 지금!'], ['chiikawa', '…(쓰담쓰담)'], ['momonga', '에헤헤~ 더!']]]],
+  rakko: [[2, [['rakko', '…검을 닦는 것도 수련이다.'], ['hachiware', '랏코 선배 멋있다…!'], ['rakko', '…너희도 매일 하면 된다.']]]],
+  kani: [[2, [['kani', '다친 데 없어?'], ['chiikawa', '…(도리도리)'], ['kani', '그래도 반창고는 붙이자. 호~']]]],
+  kurimanju: [[2, [['kurimanju', '(꿀꺽꿀꺽)'], ['kurimanju', '……프하아~'], ['kurimanju', '(안주를 슥 내민다)'], ['chiikawa', '…!! (맛있다…!)']]]],
+  shisa: [[2, [['shisa', '오늘도 라멘 가게 수행이에요!'], ['shisa', '마스터한테 국물 맛 칭찬받았어요~!'], ['chiikawa', '…!! (박수)']]]],
   shooting: [[2, [['shooting', '반짝!'], ['shooting', '소원을 하나 들어줄게. 뭐든지!'], ['chiikawa', '…(라멘 곱빼기…)']]]],
   darkstar: [[2, [['darkstar', '……'], ['darkstar', '…까만 별도 반짝일 수 있어.'], ['hachiware', '응, 엄청 예뻐!']]]],
   goblin: [[2, [['goblin', '킥킥, 오늘은 장난 안 쳐.'], ['goblin', '…진짜야. 같이 놀래?'], ['usagi', '우라~!']]]],
@@ -39,10 +39,15 @@ const CHAR_STORY = {
 // 몇몇 친구는 좋아하는 간식을 모아서 데려옴 (간식은 스테이지를 깨면 받음)
 const TREATS = { parfait: '딸기 파르페', dango: '경단', onigiri: '주먹밥' };
 const RECRUIT = {
-  momonga: { treat: 'parfait', n: 5, story: [['momonga', '딸기 파르페다! 그거 다 나 주는 거지?'], ['momonga', '…좋아, 오늘부터 같이 다녀 줄게. 대신 칭찬 많이 해 줘!'], ['chiikawa', '…!! (끄덕끄덕)']] },
-  kurimanju: { treat: 'dango', n: 5, story: [['kurimanju', '……(경단을 바라본다)'], ['kurimanju', '……(캬아)'], ['hachiware', '쿠리만쥬 씨도 같이 가 준대!']] },
+  momonga: { treat: 'parfait', n: 5, story: [['momonga', '딸기 파르페다! 그거 다 모몽가 주는 거지?'], ['momonga', '에헤헤~ 좋아, 오늘부터 같이 다녀 줄게. 대신 매일 칭찬해 줘야 해!'], ['chiikawa', '…!! (끄덕끄덕)']] },
+  kurimanju: { treat: 'dango', n: 5, story: [['kurimanju', '……(경단을 바라본다)'], ['kurimanju', '(한 입) ……프하~'], ['hachiware', '쿠리만쥬 씨도 같이 가 준다는 거야!?']] },
   goblin: { treat: 'onigiri', n: 4, story: [['goblin', '킥킥, 주먹밥 냄새가 나서 따라왔어.'], ['goblin', '…맛있다. 너희랑 다니면 이런 거 또 먹을 수 있어?'], ['usagi', '우라~!']] },
-  shisa: { stage: ['l', 8], story: [['shisa', '라멘 재료 나르는 거 도와줘서 고마워요!'], ['shisa', '이제 저도 토벌 따라갈게요~! 라멘 배달도 해 드릴게요!']] },
+  // 모험을 하다 보면 차례로 합류
+  hachiware: { stage: ['l', 0], story: [['hachiware', '치이카와~ 같이 하니까 금방 끝났다!'], ['hachiware', '앞으로도 같이 일하자. 둘이면 어떻게든 될 거야~!'], ['chiikawa', '…!! (끄덕끄덕)']] },
+  usagi: { stage: ['l', 1], story: [['usagi', '우라!'], ['hachiware', '우사기도 같이 다니고 싶다는 거야!?'], ['usagi', '야하~!!']] },
+  kani: { stage: ['b', 0], story: [['kani', '다들 다친 데 없어? 토벌하면 꼭 어디 까지더라.'], ['kani', '내가 따라가서 호~ 해 줄게!'], ['chiikawa', '…!']] },
+  rakko: { stage: ['b', 1], story: [['rakko', '…제법이군.'], ['rakko', '다음 토벌, 같이 간다.'], ['hachiware', '랏코 선배랑 같이…!?'], ['chiikawa', '…!!!']] },
+  shisa: { stage: ['l', 8], story: [['shisa', '도와주셔서 감사합니다~!'], ['shisa', '마스터가 밖에서 수행하고 오래요. 저도 토벌 따라가도 될까요!?'], ['hachiware', '물론이지~! 같이 가자!'], ['shisa', '넵! 열심히 하겠습니다!']] },
 };
 // 스테이지마다 주는 간식 (토벌은 딸기 파르페)
 const stageTreat = (t, i) => (t === 'b' ? 'parfait' : ['dango', 'parfait', 'onigiri'][i % 3]);
@@ -96,8 +101,7 @@ const Meta = {
     Save.data.own[id] = 1;
     Save.save();
     await playStory(r.story);
-    Sound.play('star', 1.2, 0.9);
-    confetti(16);
+    await Meta.joinShow(id);
   },
   // 스테이지를 깨서 합류하는 친구 (시사)
   async stageJoin(t, i) {
@@ -106,8 +110,36 @@ const Meta = {
         Save.data.own[id] = 1;
         Save.save();
         await playStory(r.story);
+        await Meta.joinShow(id);
       }
     }
+  },
+  // 새 친구 합류: 빛이 돌고 친구가 통 튀어나와 이름과 한마디
+  joinShow(id) {
+    const ch = CHARS[charIdx(id)];
+    const n = Object.keys(Save.data.own).length;
+    return new Promise(done => {
+      const el = document.createElement('div');
+      el.className = 'join-show';
+      el.style.setProperty('--ring', ch.ring);
+      el.innerHTML = `<div class="rays"></div><div class="jtag">새 친구!</div><img src="${art(id)}"><b>${ch.name}</b><p>${lineOf(id)}</p><small>친구 ${n}명 · 톡 눌러서 계속</small>`;
+      app.appendChild(el);
+      const [, tag, img, name] = el.children;
+      Sound.play('jingle_win', 1.1, 0.8);
+      setTimeout(() => Sound.voice(id, 'pick') || Sound.play('star', 1.3, 0.8), 350);
+      confetti(16);
+      el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200 });
+      img.animate([{ transform: 'translateY(60px) scale(.3)', opacity: 0 }, { transform: 'translateY(-14px) scale(1.12)', opacity: 1, offset: 0.6 }, { transform: 'none' }], { duration: 520, delay: 120, easing: 'ease-out', fill: 'backwards' });
+      tag.animate([{ transform: 'scale(2.4) rotate(-14deg)', opacity: 0 }, { transform: 'scale(1) rotate(-6deg)', opacity: 1 }], { duration: 300, delay: 400, easing: 'cubic-bezier(.6,0,.9,.6)', fill: 'backwards' });
+      name.animate([{ transform: 'translateY(16px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 300, delay: 560, fill: 'backwards' });
+      setTimeout(() => {
+        el.onclick = () => {
+          Sound.play('click');
+          el.onclick = null;
+          el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: 'forwards' }).finished.then(() => { el.remove(); done(); });
+        };
+      }, 700);
+    });
   },
   reward(stars, first) {
     const n = first ? 100 + stars * 30 : stars * 15;
@@ -125,11 +157,71 @@ const Meta = {
     Save.data.daily = today();
     Save.save();
     setTimeout(() => {
-      modal({ title: '오늘의 용돈', img: ITEM('coin'), text: '하치와레: 오늘도 와 줬구나! 용돈 50코인이야~', rows: [['코인', '+50']], btn1: '고마워!', on1: () => Meta.addCoins(50) });
+      modal({ title: '오늘의 용돈', img: ITEM('coin'), text: '하치와레: 오늘도 와 줬구나~ 용돈 50코인이야!', rows: [['코인', '+50']], btn1: '고마워!', on1: () => Meta.addCoins(50) });
       $('#modalChar').classList.add('icon');
     }, 700);
   },
 };
+
+// ---------- 하트: 5개까지, 20분마다 하나씩 참. 모험 지도 스테이지를 못 깨면 하나 줄어듦 ----------
+const HEART_MAX = 5, HEART_MS = 20 * 60 * 1000, HEART_REFILL = 150;
+const Hearts = {
+  sync() {
+    const d = Save.data;
+    if (d.hearts == null) d.hearts = HEART_MAX;
+    if (d.hearts >= HEART_MAX) { d.heartAt = Date.now(); return; }
+    const n = Math.floor((Date.now() - (d.heartAt || Date.now())) / HEART_MS);
+    if (n > 0) {
+      d.hearts = Math.min(HEART_MAX, d.hearts + n);
+      d.heartAt = d.hearts >= HEART_MAX ? Date.now() : d.heartAt + n * HEART_MS;
+      Save.save();
+    }
+  },
+  n() { Hearts.sync(); return Save.data.hearts; },
+  // 다음 하트까지 남은 시간 "12:30"
+  wait() {
+    const ms = Math.max(0, HEART_MS - (Date.now() - Save.data.heartAt));
+    const m = Math.floor(ms / 60000), sec = Math.floor((ms % 60000) / 1000);
+    return `${m}:${String(sec).padStart(2, '0')}`;
+  },
+  lose() {
+    Hearts.sync();
+    if (Save.data.hearts >= HEART_MAX) Save.data.heartAt = Date.now();
+    Save.data.hearts = Math.max(0, Save.data.hearts - 1);
+    Save.save();
+    Hearts.ui();
+  },
+  ui() {
+    const n = Hearts.n(), full = n >= HEART_MAX;
+    document.querySelectorAll('.hearts').forEach(el => {
+      el.querySelector('b').textContent = n;
+      el.querySelector('small').textContent = full ? 'MAX' : Hearts.wait();
+      el.classList.toggle('empty', !n);
+    });
+  },
+  // 하트가 있으면 바로 시작, 없으면 기다리거나 코인으로 채우기
+  need(go, no = () => {}) {
+    if (Hearts.n() > 0) return go();
+    Sound.play('bad', 1, 0.6);
+    modal({
+      title: '하트가 없어요', img: ITEM('heart'), text: `다음 하트까지 ${Hearts.wait()} · 코인 ${HEART_REFILL}개로 다 채울 수 있어요`,
+      btn2: '기다릴게', on2: no,
+      btn1: `채우기 ${HEART_REFILL}`,
+      on1: () => {
+        if (Save.data.coins < HEART_REFILL) { Sound.play('bad'); floatNum(app.clientWidth / 2, app.clientHeight / 2, '코인이 모자라요', '#e2543f'); no(); return; }
+        Meta.addCoins(-HEART_REFILL);
+        Save.data.hearts = HEART_MAX;
+        Save.data.heartAt = Date.now();
+        Save.save();
+        Hearts.ui();
+        Sound.play('heal', 1.2, 0.9);
+        go();
+      },
+    });
+    $('#modalChar').classList.add('icon');
+  },
+};
+setInterval(() => $('#map').classList.contains('active') && Hearts.ui(), 1000);
 
 // ---------- 친구 상세 (편성, 친구들, 집에서 열림) ----------
 const Sheet = {
@@ -163,7 +255,7 @@ const Sheet = {
       <div class="sheet-btns"><button class="big-btn ghost" data-close>닫기</button>${opts.action && own ? `<button class="big-btn" data-act>${opts.action.label}</button>` : ''}</div>`;
     const say = () => {
       const bub = card.querySelector('.sheet-say');
-      bub.textContent = ch.line;
+      bub.textContent = lineOf(ch.id);
       bub.animate([{ transform: 'scale(0)', opacity: 0 }, { transform: 'scale(1.1)', opacity: 1, offset: 0.6 }, { transform: 'scale(1)', opacity: 1 }], { duration: 260, fill: 'forwards' });
       card.querySelector('.sheet-art .fig').animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-14px) scale(1.04,.96)' }, { transform: 'none' }], { duration: 320 });
       Sound.voice(id, 'pick') || Sound.play('pop', 1.3, 0.6);
@@ -188,6 +280,7 @@ const Sheet = {
     if (act) act.onclick = () => { el.classList.remove('show'); opts.action.run(); };
     if (!el.classList.contains('show')) {
       el.classList.add('show');
+      fitText(el);
       card.animate([{ transform: 'translateY(60%)', opacity: 0 }, { transform: 'translateY(-3%)', opacity: 1, offset: 0.7 }, { transform: 'none' }], { duration: 320, easing: 'ease-out' });
       if (own) setTimeout(say, 200);
     }
@@ -264,7 +357,7 @@ async function pullGacha() {
   await sleep(300);
   const ch = prize.id ? CHARS[charIdx(prize.id)] : null;
   const info = {
-    new: () => ({ title: '새 친구!', char: prize.id, text: `${ch.name}: "${ch.line}"`, rows: [['친구', ch.name], ['레벨', 'Lv1']] }),
+    new: () => ({ title: '새 친구!', char: prize.id, text: `${ch.name}: "${lineOf(ch.id)}"`, rows: [['친구', ch.name], ['레벨', 'Lv1']] }),
     up: () => ({ title: '레벨 업!', char: prize.id, text: `${ch.name}이(가) 더 강해졌어요!`, rows: [['친구', ch.name], ['레벨', `Lv${prize.lv}`], ['공격·회복', `+${Math.round((Meta.mult(prize.id) - 1) * 100)}%`]] }),
     max: () => ({ title: '이미 최고 레벨', char: prize.id, text: '대신 코인 50개를 돌려받았어요.', rows: [['코인', '+50']] }),
     acc: () => ({ title: '새 액세서리!', img: ITEM(prize.acc.id), text: `${prize.acc.name}! 친구 상세에서 씌워 줄 수 있어요.`, rows: [] }),
@@ -312,31 +405,48 @@ function openHouse(id = homeOf) {
     Object.assign(im.style, { left: f.x + '%', top: f.y + '%', width: f.w + '%' });
     room.appendChild(im);
   });
-  // 집주인 + 같이 사는 친구들
+  // 집주인 + 같이 사는 친구들. 꾹 잡고 끌면 원하는 자리로 옮겨지고, 그 자리를 기억함
+  h.pos = h.pos || {};
   [id, ...h.mates.filter(m => Meta.owned(m))].forEach((cid, k) => {
     const c = CHARS[charIdx(cid)];
     const el = document.createElement('div');
     el.className = 'resident' + (k === 0 ? ' owner' : '');
     el.innerHTML = Meta.figure(c.id, art(c.id)) + '<span class="rsay"></span>';
-    const x = [50, 26, 74][k], y = [84, 78, 78][k];
-    Object.assign(el.style, { left: x + '%', top: y + '%', zIndex: Math.round(y) });
-    el.style.animationDelay = k * 0.2 + 's';
-    el.onclick = () => {
+    const [x, y] = h.pos[cid] || [[50, 26, 74][k], [80, 74, 74][k]];
+    const put = (nx, ny) => Object.assign(el.style, { left: nx + '%', top: ny + '%', zIndex: Math.round(ny) });
+    put(x, y);
+    el.querySelector('.fig').style.animationDelay = k * 0.2 + 's';
+    const say = () => {
       const s = el.querySelector('.rsay');
-      s.textContent = c.line;
+      s.textContent = lineOf(c.id);
       s.animate([{ opacity: 0, transform: 'translate(-50%, 6px) scale(.6)' }, { opacity: 1, transform: 'translate(-50%, 0) scale(1)', offset: 0.2 }, { opacity: 1, offset: 0.85 }, { opacity: 0 }], { duration: 1600 });
       Sound.voice(c.id, 'pick') || Sound.play('pop', 1.2 + Math.random() * 0.3, 0.6);
       Haptic.tap(15);
     };
-    const wander = () => {
-      if (!el.isConnected) return;
-      const nx = Math.max(12, Math.min(86, parseFloat(el.style.left) + (Math.random() - 0.5) * 24));
-      el.animate([{ left: el.style.left }, { left: nx + '%' }], { duration: 1600, easing: 'ease-in-out' });
-      el.style.left = nx + '%';
-      el.classList.toggle('flip', Math.random() < 0.5);
-      setTimeout(wander, 3000 + Math.random() * 3000);
+    // 톡: 한마디 / 끌기: 들어 올려 옮기기 (바닥 안에서만)
+    el.onpointerdown = e => {
+      e.preventDefault();
+      el.setPointerCapture(e.pointerId);
+      const rr = room.getBoundingClientRect();
+      const sx = e.clientX, sy = e.clientY, ox = parseFloat(el.style.left), oy = parseFloat(el.style.top);
+      let moved = false;
+      el.onpointermove = ev => {
+        const dx = ((ev.clientX - sx) / rr.width) * 100, dy = ((ev.clientY - sy) / rr.height) * 100;
+        if (!moved && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 8) return;
+        if (!moved) { moved = true; el.classList.add('held'); Sound.play('swap', 1.4, 0.5); Haptic.tap(10); }
+        put(Math.max(10, Math.min(90, ox + dx)), Math.max(64, Math.min(97, oy + dy)));
+        el.classList.toggle('flip', ev.clientX < sx);
+      };
+      el.onpointerup = el.onpointercancel = () => {
+        el.onpointermove = el.onpointerup = el.onpointercancel = null;
+        if (!moved) return say();
+        el.classList.remove('held');
+        el.querySelector('.fig').animate([{ transform: 'scale(1.15, .85)' }, { transform: 'scale(.95, 1.05)' }, { transform: 'none' }], { duration: 260, easing: 'ease-out' });
+        Sound.play('land', 1.2, 0.6);
+        h.pos[cid] = [Math.round(parseFloat(el.style.left)), Math.round(parseFloat(el.style.top))];
+        Save.save();
+      };
     };
-    setTimeout(wander, 2000 + Math.random() * 2000);
     room.appendChild(el);
   });
   // 아래쪽: 이 집 가구 가게
@@ -385,6 +495,7 @@ function pickMates(id) {
   };
   draw();
   $('#charSheet').classList.add('show');
+  fitText($('#charSheet'));
 }
 
 $('#btnHouse').onclick = () => { Sound.play('click'); go(() => openHouse()); };

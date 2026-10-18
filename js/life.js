@@ -1,4 +1,4 @@
-// 일상 퍼즐: 풀 뽑기, 요리, 거품 청소, 상자 뜯기, 제초 검정. 몬스터 없이 목표를 채우는 스테이지
+// 일상 퍼즐: 풀 뽑기, 요리, 거품 청소, 상자 뜯기, 제초 검정. 괴물 없이 목표를 채우는 스테이지
 // 판 글자: # 판 밖(구멍)  . 구슬  w 잡초  W 큰 잡초(두 번)  b 상자  g 선물 상자(두 번)
 //          o 거품(번짐)  i 재료  l 리본 구슬  s 처음부터 시럽 칸
 // 잡초, 상자, 거품은 칸을 차지하는 장애물: 바로 옆에서 매치하거나 아이템으로 맞히면 깨짐
@@ -14,7 +14,7 @@ const LIFE = [
   { name: '비행기 연습', icon: 'plane', types: 4, moves: 18, host: 'hachiware', intro: '네모로 모으면 비행기!',
     goals: [{ k: 'weed' }], stars: [3000, 5000, 7000],
     map: ['w.....w', 'ww...ww', '.......', '.......', '.......', '.......', '.......'] },
-  { name: '라멘 재료 나르기', icon: 'ramen', types: 5, moves: 22, host: 'shisa', intro: '재료를 맨 아래로!',
+  { name: '라멘 재료 나르기', done: '배달<br>완료!', icon: 'ramen', types: 5, moves: 22, host: 'shisa', intro: '재료를 맨 아래로!',
     goals: [{ k: 'ing' }], stars: [4000, 6500, 9000], ing: { n: 2, max: 2, kinds: ['naruto', 'egg'] },
     map: ['..i.i..', '.......', '.......', '.......', '#.....#', '##...##', '###.###'] },
   { name: '택배 상자 뜯기', icon: 'box', types: 5, moves: 20, host: 'momonga', intro: '상자를 모두 뜯자!',
@@ -23,17 +23,17 @@ const LIFE = [
   { name: '목욕탕 거품 청소', icon: 'bubble', types: 5, moves: 32, host: 'hachiware', intro: '거품이 번지기 전에!',
     goals: [{ k: 'bubble' }], stars: [4500, 7500, 10000],
     map: ['.......', '.......', '.......', '.......', '...o...', '#.o.o.#', '##o.o##'] },
-  { name: '하치와레 노래 연습', icon: 'target', types: 5, moves: 18, host: 'hachiware', intro: '하치와레를 모아 줘!',
+  { name: '하치와레 노래 연습', done: '노래<br>완성!', icon: 'target', types: 5, moves: 18, host: 'hachiware', intro: '하치와레를 모아 줘!',
     goals: [{ k: 'char', id: 'hachiware', n: 20 }], stars: [4500, 7500, 10000],
     map: ['#..#..#', '.......', '.......', '.......', '#.....#', '##...##', '###.###'] },
   { name: '제초 검정 5급', icon: 'medal', types: 5, time: 60, host: 'usagi', exam: true, intro: '60초 안에 점수!',
     goals: [{ k: 'score', n: 6500 }], stars: [6500, 9000, 12000],
     map: ['.......', '.......', '.......', '..###..', '.......', '.......', '.......'] },
   // 2장: 섞어 보기
-  { name: '선물 상자 정리', icon: 'gift', types: 5, moves: 22, host: 'momonga', intro: '선물 상자는 두 번!',
+  { name: '선물 상자 정리', done: '정리<br>끝!!', icon: 'gift', types: 5, moves: 22, host: 'momonga', intro: '선물 상자는 두 번!',
     goals: [{ k: 'box' }, { k: 'weed' }], stars: [5500, 9000, 12000],
     map: ['##.#.##', '.......', '.g...g.', '.w.w.w.', 'w.g.g.w', '.......', '.......'] },
-  { name: '시사의 라멘 가게', icon: 'ramen', types: 5, moves: 32, host: 'shisa', intro: '재료 3개를 맨 아래로!',
+  { name: '시사의 라멘 가게', done: '라멘<br>완성!', icon: 'ramen', types: 5, moves: 32, host: 'shisa', intro: '재료 3개를 맨 아래로!',
     goals: [{ k: 'ing' }], stars: [6000, 9500, 12500], ing: { n: 3, max: 2, kinds: ['naruto', 'egg'] },
     map: ['#.i.i.#', '.......', '.......', '.b...b.', '.bb.bb.', '.......', '.......'] },
   { name: '제초 검정 4급', icon: 'medal', types: 5, time: 75, host: 'usagi', exam: true, intro: '75초 안에 잡초 전부!',
@@ -42,7 +42,7 @@ const LIFE = [
   { name: '거품 대소동', icon: 'bubble', types: 5, moves: 32, host: 'chiikawa', intro: '거품과 잡초를 한꺼번에!',
     goals: [{ k: 'bubble' }, { k: 'weed' }], stars: [6500, 10500, 13500],
     map: ['#.....#', '.......', '.w...w.', '..w.w..', '.......', '.o...o.', '.o...o.'] },
-  { name: '쿠리만쥬의 안주', icon: 'dango', types: 5, moves: 32, host: 'kurimanju', intro: '경단, 주먹밥 내리고 상자도!',
+  { name: '쿠리만쥬의 안주', done: '안주<br>완성!', icon: 'dango', types: 5, moves: 32, host: 'kurimanju', intro: '경단, 주먹밥 내리고 상자도!',
     goals: [{ k: 'ing' }, { k: 'box' }], stars: [7500, 12000, 15000], ing: { n: 3, max: 2, kinds: ['dango', 'onigiri'] },
     map: ['..i.i..', '.......', '.......', 'b.....b', 'bg...gb', '#.....#', '##...##'] },
   { name: '제초 검정 3급', icon: 'medal', types: 5, time: 60, host: 'usagi', exam: true, intro: '큰 잡초는 두 번!',
@@ -52,19 +52,19 @@ const LIFE = [
   { name: '선물 리본 풀기', icon: 'ribbon', types: 5, moves: 20, host: 'momonga', intro: '리본을 모두 풀자!',
     goals: [{ k: 'lock' }], stars: [5000, 8000, 10500],
     map: ['##...##', '#.....#', '.l.l.l.', '..lll..', '.l.l.l.', '#.....#', '##...##'] },
-  { name: '핫케이크 시럽', icon: 'pancake', types: 5, moves: 25, host: 'chiikawa', intro: '시럽을 판 전체에!',
+  { name: '핫케이크 시럽', done: '핫케이크<br>완성!', icon: 'pancake', types: 5, moves: 25, host: 'chiikawa', intro: '시럽을 판 전체에!',
     goals: [{ k: 'syrup' }], stars: [5000, 8000, 10500],
     map: ['##...##', '#.....#', '.......', '...s...', '.......', '#.....#', '##...##'] },
   { name: '제초 검정 2급', icon: 'medal', types: 6, time: 65, host: 'usagi', exam: true, intro: '리본 사이 잡초!',
     goals: [{ k: 'weed' }, { k: 'lock' }], stars: [8000, 12000, 16000],
     map: ['.......', '.l...l.', 'w.l.l.w', '.w.l.w.', 'W.w.w.W', '.W...W.', '..www..'] },
-  { name: '라멘 국물 내기', icon: 'pot', types: 5, moves: 32, host: 'shisa', intro: '국물을 바르고 재료도!',
+  { name: '라멘 국물 내기', done: '국물<br>완성!', icon: 'pot', types: 5, moves: 32, host: 'shisa', intro: '국물을 바르고 재료도!',
     goals: [{ k: 'syrup' }, { k: 'ing' }], stars: [8000, 12000, 15000], ing: { n: 3, max: 2, kinds: ['naruto', 'egg'] },
     map: ['..i.i..', '.......', '.......', '.......', '#..s..#', '##...##', '###.###'] },
   { name: '거품 목욕 대작전', icon: 'bath', types: 5, moves: 28, host: 'hachiware', intro: '거품도 리본도!',
     goals: [{ k: 'bubble' }, { k: 'lock' }], stars: [7000, 11000, 14000],
     map: ['.......', '.l...l.', '..l.l..', '.......', '.o...o.', '#oo.oo#', '##...##'] },
-  { name: '소풍 도시락', icon: 'bento', types: 5, moves: 31, host: 'kurimanju', intro: '도시락 재료 모으기!',
+  { name: '소풍 도시락', done: '도시락<br>완성!', icon: 'bento', types: 5, moves: 31, host: 'kurimanju', intro: '도시락 재료 모으기!',
     goals: [{ k: 'ing' }, { k: 'box' }, { k: 'weed' }], stars: [9000, 13000, 16000], ing: { n: 3, max: 2, kinds: ['onigiri', 'dango', 'donut'] },
     map: ['.i...i.', '.......', '.......', 'b.....b', 'wb...bw', '.w.w.w.', '..www..'] },
   { name: '제초 검정 1급', icon: 'medal', types: 6, time: 130, host: 'usagi', exam: true, intro: '최종 시험!',
@@ -74,50 +74,59 @@ const LIFE = [
 // 스테이지 시작 전 짧은 대사 (팬 창작)
 const LIFE_STORY = {
   0: [
-    ['hachiware', '오늘은 풀 뽑기 일이야! 잡초 바로 옆에서 같은 얼굴 셋을 맞추면 쑥 뽑혀.'],
+    ['hachiware', '잡초는 바로 옆에서 같은 얼굴 셋을 맞추면 쑥 뽑혀. 쉽지?'],
     ['chiikawa', '(끄덕끄덕)'],
-    ['usagi', '우라!'],
   ],
   1: [
-    ['hachiware', '같은 얼굴 넷을 네모로 모으면 비행기가 생겨!'],
-    ['hachiware', '비행기는 잡초 쪽으로 슝 날아가서 뽑아 줘.'],
-    ['chiikawa', '…!'],
+    ['usagi', '우라!'],
+    ['hachiware', '우사기다~! 같이 하자!'],
+    ['hachiware', '같은 얼굴 넷을 네모로 모으면 비행기가 생겨. 잡초 쪽으로 슝 날아가!'],
+    ['usagi', '야하!'],
   ],
   2: [
-    ['shisa', '라멘 재료가 모자라요~! 나루토랑 달걀을 맨 아래까지 내려 주세요!'],
-    ['hachiware', '재료 밑에 있는 구슬을 터뜨리면 쑥 내려가!'],
+    ['shisa', '라멘 재료가 모자라요~! 나루토랑 달걀을 맨 아래까지 내려 주실 수 있나요?'],
+    ['hachiware', '재료 밑에 있는 걸 터뜨리면 쑥 내려가. 맡겨 줘!'],
   ],
-  3: [['momonga', '택배 상자다! 바로 옆에서 구슬을 터뜨리면 뜯을 수 있어. 칭찬해줘!']],
+  3: [
+    ['momonga', '모몽가 택배 왔어! 근데 안 열려…'],
+    ['momonga', '열어 줘~ 모몽가 착하게 기다릴게. 착하지? 칭찬해 줘!'],
+    ['hachiware', '상자는 바로 옆에서 터뜨리면 뜯을 수 있어!'],
+  ],
   4: [
-    ['hachiware', '목욕탕 거품이 넘쳐!'],
+    ['hachiware', '목욕탕에 거품이 넘친다는 거야!?'],
     ['hachiware', '한 번 움직일 동안 거품을 하나도 못 터뜨리면 옆으로 번져. 조심!'],
     ['chiikawa', '…!!'],
   ],
   6: [
-    ['hachiware', '제초 검정 시험이야! 제한 시간 안에 점수를 모으면 합격!'],
-    ['hachiware', '구슬이 터지는 동안에는 시계가 멈춰. 천천히 생각해도 돼.'],
+    ['hachiware', '제초 검정 시험이다…! 시간 안에 점수를 모으면 합격이야.'],
+    ['hachiware', '구슬이 터지는 동안은 시계가 멈추니까 침착하게~'],
     ['chiikawa', '(두근두근…)'],
     ['usagi', '하아?!'],
-  ],
-  13: [['momonga', '선물에 리본이 칭칭… 묶인 구슬은 못 움직여. 한 번 터뜨리면 풀려!']],
-  14: [
-    ['chiikawa', '(핫케이크…!)'],
-    ['hachiware', '시럽 칸이 낀 매치를 하면 그 줄에 시럽이 쭉 번져. 판 전체에 발라 보자!'],
-  ],
-  19: [
-    ['usagi', '우라!!'],
-    ['hachiware', '마지막 시험이야. 거품, 두 겹 잡초, 점수까지 전부!'],
-    ['chiikawa', '…(꿀꺽)'],
   ],
   12: [
     ['usagi', '야하!'],
     ['chiikawa', '…(꿀꺽)'],
-    ['hachiware', '두 겹짜리 잡초는 두 번 뽑아야 해. 할 수 있어!'],
+    ['hachiware', '두 겹 잡초는 두 번 뽑아야 해. 어떻게든 되겠지~!'],
+  ],
+  13: [
+    ['momonga', '이거 모몽가 선물이야! 리본 좀 풀어 줘~'],
+    ['hachiware', '리본 묶인 구슬은 못 움직여. 한 번 터뜨리면 풀려!'],
+  ],
+  14: [
+    ['chiikawa', '(핫케이크…!)'],
+    ['hachiware', '시럽 칸이 낀 매치를 하면 그 줄로 시럽이 쭉 번져. 판 전체에 듬뿍~!'],
+  ],
+  19: [
+    ['usagi', '우라!!'],
+    ['hachiware', '드디어 1급 시험… 거품, 두 겹 잡초, 점수까지 전부래.'],
+    ['chiikawa', '…(꿀꺽)'],
+    ['hachiware', '어떻게든 되라~!!'],
   ],
   end: [
     ['chiikawa', '…!! (와아…!)'],
-    ['hachiware', '제초 검정 1급! 오늘은 라멘 곱빼기 먹자~'],
-    ['shisa', '어서 오세요~!'],
+    ['hachiware', '제초 검정 1급 합격이라는 거야!? 해냈다~!'],
+    ['usagi', '야하~!!'],
+    ['shisa', '어서 오세요~! 오늘은 축하 곱빼기예요!'],
   ],
 };
 
@@ -132,6 +141,10 @@ const ROUTE = [
 const CHALLENGE_AT = new Set([10, 14]);
 const HARD_AT = new Set([20, 24, 25, 28, 29, 30]);
 const routeLevel = k => (HARD_AT.has(k + 1) ? 'hard' : CHALLENGE_AT.has(k + 1) ? 'challenge' : '');
+
+// 깼을 때 쾅 찍히는 말: 스테이지에 done이 있으면 그것, 없으면 첫 목표에 맞춰서
+const DONE_WORD = { weed: '제초<br>끝!!', box: '상자<br>다 뜯었다!', bubble: '거품<br>싹싹!', ing: '배달<br>완료!', lock: '리본<br>풀었다!', syrup: '시럽<br>듬뿍!', char: '모으기<br>끝!', score: '목표<br>달성!' };
+const doneWord = st => st.done || DONE_WORD[st.goals[0].k] || '클리어!';
 
 const GOAL_ICON = { lock: () => ITEM('ribbon'), syrup: () => ITEM('pancake'), weed: () => ITEM('weed2'), box: () => ITEM('box'), bubble: () => ITEM('bubble'), ing: () => ITEM('ramen'),
   char: g => FACE(g.id), score: () => ITEM('target') };
@@ -185,6 +198,7 @@ const Life = {
     Object.assign(L, { hg: 0, run, ending: false, st, i, moves: st.moves || 0, time: st.time || 0, score: 0, ing: 0, chars: {}, popped: false, extra: false, goalsHtml: '' });
     Object.assign(B, { mode: 'life', stage: i, over: false, busy: true, sel: null, pending: [], maxCombo: 0, fever: 0 });
     B.team = LIFE_CHARS.slice(0, st.types).map(id => CHARS.findIndex(c => c.id === id));
+    Object.assign(B, { real: B.team.length, played: false, dmgBy: {} });
     NTYPES = st.types;
     const lay = parseLayout(st);
     Board.floor = lay.floor;
@@ -283,6 +297,12 @@ const Life = {
     });
     if (res.hits.some(h => h.tile.block === 'bubble')) L.popped = true;
     L.score += pts;
+    // 터진 자리 한가운데에 점수가 톡 (콤보일수록 크게)
+    if (pts && res.cleared.length) {
+      const cx = res.cleared.reduce((a, x) => a + x.c, 0) / res.cleared.length, cy = res.cleared.reduce((a, x) => a + x.r, 0) / res.cleared.length;
+      const b = boardEl.getBoundingClientRect(), a = app.getBoundingClientRect();
+      setTimeout(() => floatNum(b.left - a.left + (cx + 0.5) * B.S, b.top - a.top + (cy + 0.5) * B.S, '+' + pts, combo > 1 ? '#ff5d9e' : '#ffb020', combo > 2 ? 'crit' : ''), 160);
+    }
     Life.hud();
   },
 
@@ -416,18 +436,18 @@ const Life = {
     if (first) Save.data.ramen = true;
     Save.save();
     Sound.play('win', 1);
-    await clearShow(st.exam ? '검정<br>합격!' : '일<br>끝!');
+    await clearShow(st.exam ? '검정<br>합격!' : doneWord(st));
     const k = routeIdx('l', i), last = k === ROUTE.length - 1;
     if (i === LIFE.length - 1 && first) await playStory(LIFE_STORY.end);
     if (first) await Meta.stageJoin('l', i);
     Sound.music(null);
-    const ch = CHARS.find(c => c.id === st.host) || CHARS[0];
+    const ch = mvp();
     modal({
-      title: st.exam ? '합격!' : '클리어!', stars, char: ch.id, text: `${ch.name}: "${ch.line}"`,
+      title: st.exam ? '합격!' : '클리어!', stars, char: ch.id, text: `${ch.name}: "${lineOf(ch.id)}"`,
       rows: [['점수', L.score], [`<img class="row-ic" src="${ITEM('coin')}">`, '+' + coins], treat],
       btn2: '지도', on2: () => go(() => openMap(first ? k : null)),
       btn1: last ? '지도로' : '다음 스테이지',
-      on1: () => go(() => (last ? openMap(first ? k : null) : goRoute(k + 1))),
+      on1: () => (last ? go(() => openMap(first ? k : null)) : Hearts.need(() => go(() => goRoute(k + 1)), () => go(() => openMap(first ? k : null)))),
     });
   },
 
@@ -441,7 +461,13 @@ const Life = {
     await banner(L.st.time ? '시간 끝…' : '이동 끝…', 600);
     if (L.run.kind === 'tower' && L.extra) return Tower.over();
     const left = L.st.goals.filter(g => Life.remain(g) > 0).map(g => `${GOAL_NAME[g.k](g)} ${Life.remain(g)}`).join(', ');
-    const retry = () => go(() => (L.run.kind === 'tower' ? Tower.over() : Life.start(L.i)));
+    // 모험 지도 스테이지를 포기하면 하트 하나
+    const route = L.run.kind === 'route';
+    const retry = () => {
+      if (!route) return go(() => (L.run.kind === 'tower' ? Tower.over() : Life.start(L.i)));
+      Hearts.lose();
+      Hearts.need(() => go(() => Life.start(L.i)), () => go(openMap));
+    };
     const card = { title: '아쉬워…', img: 'assets/img/art/scene_crying.jpg', photo: true, text: `남은 목표: ${left}` };
     if (!L.extra) {
       modal({
@@ -459,7 +485,7 @@ const Life = {
         btn2: L.run.kind === 'tower' ? '여기까지' : '다시 하기', on2: retry,
       });
     } else {
-      modal({ ...card, btn1: '다시 하기', on1: retry, btn2: '지도', on2: () => go(openMap) });
+      modal({ ...card, btn1: '다시 하기', on1: retry, btn2: '지도', on2: () => { if (route) Hearts.lose(); go(openMap); } });
     }
   },
 };
@@ -499,7 +525,7 @@ const Tower = {
     Sound.music(null);
     Net.submit();
     modal({
-      title: '탐험 끝!', char: 'hachiware', text: f ? `하치와레: "${f}층까지 왔어! 대단해!"` : '하치와레: "다음엔 더 높이 가 보자!"',
+      title: '탐험 끝!', char: 'hachiware', text: f ? `하치와레: "${f}층까지 왔다는 거야!? 대단해~!"` : '하치와레: "다음엔 어떻게든 더 높이 가 보자~!"',
       rows: [['오른 층', f], ['최고 기록', Save.data.towerBest || 0], [`<img class="row-ic" src="${ITEM('coin')}">`, '+' + (Tower.coins || 0)]],
       btn2: '나가기', on2: () => go(openChallenge),
       btn1: '다시 도전', on1: () => go(() => Tower.start(1)),
@@ -517,7 +543,7 @@ Life.contestEnd = async function () {
   clearSel();
   Sound.music(null);
   Sound.play('jingle_win', 1, 0.9);
-  await banner('끝!', 600);
+  await banner('제초 대회 끝!!', 700);
   const best = Save.data.contestBest || 0, isBest = L.score > best;
   Save.data.contestBest = Math.max(best, L.score);
   const coins = Math.floor(L.score / 250);
@@ -559,6 +585,7 @@ function pickHelper() {
     };
     draw();
     $('#charSheet').classList.add('show');
+    fitText($('#charSheet'));
   });
 }
 $('#lhHelper').onclick = () => useSkill(0);

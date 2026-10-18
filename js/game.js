@@ -37,6 +37,15 @@ const goRoute = k => (ROUTE[k][0] === 'b' ? openFormation(ROUTE[k][1]) : Life.st
 // ---------- 공통 ----------
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
+  fitText($('#' + id));
+}
+// 버튼 글씨가 칸보다 길면 한 줄에 들어갈 때까지 글씨를 줄임
+function fitText(root = document) {
+  requestAnimationFrame(() => root.querySelectorAll('.big-btn, .mini-btn').forEach(b => {
+    b.style.fontSize = '';
+    let fs = parseFloat(getComputedStyle(b).fontSize);
+    while (b.scrollWidth > b.clientWidth + 1 && fs > 12) b.style.fontSize = --fs + 'px';
+  }));
 }
 function updateMute() {
   document.querySelectorAll('.btn-mute').forEach(b => b.classList.toggle('off', Sound.muted));
@@ -48,6 +57,16 @@ const updateVib = () => document.querySelectorAll('.btn-vib').forEach(b => b.cla
 document.querySelectorAll('.btn-vib').forEach(b => (b.onclick = () => { Haptic.toggle(); updateVib(); Sound.play('click'); }));
 updateVib();
 window.addEventListener('pointerdown', () => Sound.unlock(), { capture: true });
+// 아이폰에서 빠르게 두 번 누르면 화면이 확대되는 것 막기 (두 번째 탭은 클릭으로 그대로 전달)
+let lastTouchEnd = 0;
+document.addEventListener('touchend', e => {
+  if (e.timeStamp - lastTouchEnd < 350 && e.changedTouches.length === 1) {
+    e.preventDefault();
+    if (!e.target.closest('#board')) e.target.click?.();
+  }
+  lastTouchEnd = e.timeStamp;
+}, { passive: false });
+['gesturestart', 'gesturechange', 'dblclick'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
 
 function rel(rect) {
   const a = app.getBoundingClientRect();
@@ -108,6 +127,8 @@ function banner(text, hold = 650) {
   b.style.left = '50%';
   b.style.top = '45%';
   b.textContent = text;
+  // 긴 문장은 화면 안에 들어오게 글씨를 줄임
+  b.style.fontSize = Math.min(54, Math.floor((app.clientWidth * 0.86) / Math.max(4, [...text].length))) + 'px';
   return b.animate([
     { transform: 'translate(-50%,-50%) scale(0) rotate(-8deg)', opacity: 0 },
     { transform: 'translate(-50%,-50%) scale(1.2) rotate(3deg)', opacity: 1, offset: 0.12 },
@@ -171,6 +192,7 @@ function openMap(advanceFrom = null) {
   Life.stopTimer();
   show('map');
   Meta.coinUI();
+  Hearts.ui();
   Meta.checkDaily();
   const STAGES = ROUTE.map((_, k) => routeStage(k));
   Sound.music('map');
@@ -207,7 +229,7 @@ function openMap(advanceFrom = null) {
     n.onclick = () => {
       if (locked) { Sound.play('bad'); n.animate([{ transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' }, { transform: 'none' }], { duration: 200 }); return; }
       Sound.play('click');
-      go(() => goRoute(i));
+      Hearts.need(() => go(() => goRoute(i)));
     };
     path.appendChild(n);
   });
@@ -236,6 +258,7 @@ function openMap(advanceFrom = null) {
   } else {
     scroller.scrollTop = goal.y - scroller.clientHeight / 2;
   }
+  Tutor.mapFlow(advanceFrom != null && advanceFrom !== cur ? 1500 : 950); // 오늘의 용돈 창(0.7초 뒤)이 먼저 뜨고 닫힌 뒤에
 }
 $('#btnMapHome').onclick = () => { Sound.play('click'); go(() => show('title')); };
 
@@ -293,6 +316,7 @@ function modal({ title, stars = null, char, img = null, photo = false, rows = []
   b1.onclick = () => { Sound.play('click'); close(); on1(); };
   b2.onclick = () => { Sound.play('click'); close(); on2 && on2(); };
   $('#modal').classList.add('show');
+  fitText($('#modal'));
   $('.modal-card').animate([{ transform: 'scale(.5)', opacity: 0 }, { transform: 'scale(1.06)', opacity: 1, offset: 0.6 }, { transform: 'scale(1)' }],
     { duration: 380, easing: 'ease-out' });
   if (stars) {
@@ -397,7 +421,10 @@ function refreshTile(t) {
   if (t.special || t.type < 0) {
     const sp = t.special || 'rainbow';
     inner.classList.add('item', sp);
-    inner.innerHTML = `<img src="${ITEM(ITEM_ICON[sp] || sp)}" draggable="false">`;
+    // 줄폭탄은 로켓 두 개가 등을 맞대고 터질 방향(가로 ◀▶ / 세로 ▲▼)을 가리킴
+    inner.innerHTML = sp === 'h' || sp === 'v'
+      ? `<i class="axis"></i><img class="r1" src="${ITEM('rocket')}" draggable="false"><img class="r2" src="${ITEM('rocket')}" draggable="false">`
+      : `<img src="${ITEM(ITEM_ICON[sp] || sp)}" draggable="false">`;
     return;
   }
   const ch = teamCh(t.type);
@@ -409,7 +436,7 @@ function refreshTile(t) {
 const ITEM_ICON = { h: 'rocket', v: 'rocket' };
 
 function buildParty() {
-  $('#party').innerHTML = B.team.map(i => CHARS[i]).map(c =>
+  $('#party').innerHTML = B.team.slice(0, B.real).map(i => CHARS[i]).map(c =>
     `<div class="pm" style="--ring:${c.ring}"><div class="pm-face">${Meta.figure(c.id, FACE(c.id))}</div>${attrIcon(c.attr)}<i class="up"></i><i class="g"><b></b></i></div>`).join('');
   [...$('#party').children].forEach((el, k) => (el.onclick = () => useSkill(k)));
   updateGauges();
@@ -419,10 +446,9 @@ function updateGauges() {
     const need = teamCh(k).skill.need;
     el.style.setProperty('--g', Math.min(1, B.gauge[k] / need));
     el.classList.toggle('ready', B.gauge[k] >= need);
-    if (B.gauge[k] >= need) Tutor.tip('skill');
   });
 }
-// 지금 몬스터에게 유리한 친구는 ▲ 표시
+// 지금 괴물에게 유리한 친구는 ▲ 표시
 function markMatchup() {
   if (B.mode !== 'battle') return;
   [...$('#party').children].forEach((el, k) => {
@@ -486,8 +512,15 @@ async function startStage(i) {
   B.maxCombo = 0;
   updateFever();
   Sound.music('battle');
+  // 편성이 5명보다 적으면 빈자리는 응원 친구 구슬로 채움 (공격 절반, 스킬 없음)
+  B.squad = B.squad || B.team.slice();
+  B.real = B.squad.length;
+  const cheer = [...LIFE_CHARS, ...CHARS.map(c => c.id)].map(id => CHARS.findIndex(c => c.id === id)).filter((k, j, a) => k >= 0 && a.indexOf(k) === j && !B.squad.includes(k));
+  B.team = [...B.squad, ...cheer.slice(0, Math.max(0, TEAM_SIZE - B.real))];
+  B.dmgBy = {};
+  B.played = false;
   NTYPES = B.team.length;
-  B.gauge = B.team.map(k => (Save.data.buff === 'gauge' ? Math.floor(CHARS[k].skill.need / 2) : 0));
+  B.gauge = B.team.map((k, j) => (j < B.real && Save.data.buff === 'gauge' ? Math.floor(CHARS[k].skill.need / 2) : 0));
   if (Save.data.buff) { Save.data.buff = null; Save.save(); }
   show('battle');
   stageTitle(routeIdx('b', i), STAGES[i].name);
@@ -538,11 +571,40 @@ async function dropIn(text) {
   Sound.play('jingle_start', 1, 0.8);
   await Promise.all(ps);
 }
+// 일시정지: 계속하기, 소리, 진동, 나가기 (모험 지도 스테이지를 하다 나가면 하트 하나)
+const leaveTo = () => (B.mode === 'life' && L.run && L.run.kind !== 'route' ? openChallenge : openMap);
+const inRoute = () => B.mode === 'battle' || L.run?.kind === 'route';
 $('#btnBack').onclick = () => {
-  if (B.busy && !B.over) return;
   Sound.play('click');
+  if (B.over) { Life.stopTimer(); go(leaveTo()); return; }
+  if ($('#modal').classList.contains('show') || $('#story').classList.contains('show')) return;
   Life.stopTimer();
-  go(B.mode === 'life' && L.run && L.run.kind !== 'route' ? openChallenge : openMap);
+  const costs = inRoute() && B.played;
+  const el = $('#pause');
+  el.querySelector('.p-warn').textContent = costs ? '지금 나가면 하트가 하나 줄어요' : '';
+  const sync = () => {
+    el.querySelector('[data-p=sound]').classList.toggle('off', Sound.muted);
+    el.querySelector('[data-p=vib]').classList.toggle('off', !Haptic.on);
+  };
+  sync();
+  el.classList.add('show');
+  fitText(el);
+  el.querySelector('.modal-card').animate([{ transform: 'scale(.6)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }], { duration: 220, easing: 'cubic-bezier(.3,1.5,.6,1)' });
+  const close = () => el.classList.remove('show');
+  el.querySelector('[data-p=resume]').onclick = () => {
+    Sound.play('click');
+    close();
+    if (B.mode === 'life' && L.st?.time && !B.over) Life.runTimer();
+  };
+  el.querySelector('[data-p=sound]').onclick = () => { Sound.muted = !Sound.muted; updateMute(); Sound.play('click'); sync(); };
+  el.querySelector('[data-p=vib]').onclick = () => { Haptic.toggle(); updateVib(); Sound.play('click'); sync(); };
+  el.querySelector('[data-p=quit]').onclick = () => {
+    Sound.play('click');
+    close();
+    if (costs) Hearts.lose();
+    B.over = true;
+    go(leaveTo());
+  };
 };
 
 // ---------- 입력 ----------
@@ -608,6 +670,7 @@ async function trySwap(a, b) {
   if (!Tutor.allow(a, b)) { Sound.play('bad', 1.2, 0.5); return; }
   Haptic.tap(15); // 손가락이 닿아 있는 동안 울려야 아이폰에서도 느껴짐
   B.busy = true;
+  B.played = true;
   Sound.play('swap', 1.15);
   Board.swap(g, a, b);
   await Promise.all([slide(ta, b[0], b[1], 100, 'cubic-bezier(.3,.7,.4,1)'), slide(tb, a[0], a[1], 100, 'cubic-bezier(.3,.7,.4,1)')]);
@@ -636,6 +699,7 @@ async function activate([r, c]) {
   if (B.busy || B.over || !t?.special || Tutor.guide) return;
   Haptic.tap(25);
   B.busy = true;
+  B.played = true;
   clearSel();
   Sound.play('click', 1.6, 0.5);
   await t.inner.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.35)' }, { transform: 'scale(1.1)' }], { duration: 140, easing: 'ease-out' }).finished;
@@ -787,6 +851,15 @@ function effectFx(ef) {
         const steps = dir > 0 ? cells - from + 0.5 : from + 1.5;
         const dist = steps * S * dir;
         const rot = horiz ? (dir > 0 ? 45 : -135) : (dir > 0 ? 135 : -45);
+        // 로켓 뒤로 하얀 꼬리가 쭉 그어졌다가 사라짐
+        const tr = addFx('rtrail', o.x, o.y), len = Math.abs(dist);
+        Object.assign(tr.style, horiz
+          ? { width: len + 'px', height: S * 0.42 + 'px', marginTop: -S * 0.21 + 'px', marginLeft: dir > 0 ? '0px' : -len + 'px', transformOrigin: dir > 0 ? 'left center' : 'right center' }
+          : { height: len + 'px', width: S * 0.42 + 'px', marginLeft: -S * 0.21 + 'px', marginTop: dir > 0 ? '0px' : -len + 'px', transformOrigin: dir > 0 ? 'center top' : 'center bottom' });
+        if (!horiz) tr.classList.add('v');
+        const sc = horiz ? 'scaleX' : 'scaleY';
+        tr.animate([{ transform: `${sc}(0)`, opacity: 1 }, { transform: `${sc}(1)`, opacity: 1, offset: 0.55 }, { transform: `${sc}(1) ${horiz ? 'scaleY' : 'scaleX'}(.2)`, opacity: 0 }],
+          { duration: steps * 32 / 0.55, easing: 'linear' }).finished.then(() => tr.remove());
         im.animate([
           { transform: `translate(-50%,-50%) rotate(${rot}deg) scale(.7)` },
           { transform: `translate(calc(-50% + ${horiz ? dist : 0}px), calc(-50% + ${horiz ? 0 : dist}px)) rotate(${rot}deg) scale(1.1)` },
@@ -855,15 +928,63 @@ function effectFx(ef) {
   }
 }
 
-function popTile(t, delay) {
-  if (t.el.isConnected && t.type >= 0) {
-    const r = t.el.getBoundingClientRect(), a = app.getBoundingClientRect();
-    const f = addFx('popflash', r.left - a.left + r.width / 2, r.top - a.top + r.height / 2);
-    f.style.width = f.style.height = r.width + 'px';
-    f.animate([{ transform: 'translate(-50%,-50%) scale(.4)', opacity: 0.95 }, { transform: 'translate(-50%,-50%) scale(1.25)', opacity: 0 }],
-      { duration: 260, delay: delay + 60, easing: 'ease-out', fill: 'backwards' }).finished.then(() => f.remove());
+// 구슬이 깨짐: 번쩍 → 구슬 그림이 조각나서 후두둑 튀었다가 떨어짐
+// push: 아이템이 터진 자리 {x, y, power}. 그 반대쪽으로 세게 날아감
+const SHARD_CUTS = [
+  c => `polygon(0 0, 56% 0, ${c[0]}% ${c[1]}%, 0 44%)`,
+  c => `polygon(56% 0, 100% 0, 100% 52%, ${c[0]}% ${c[1]}%)`,
+  c => `polygon(100% 52%, 100% 100%, 44% 100%, ${c[0]}% ${c[1]}%)`,
+  c => `polygon(44% 100%, 0 100%, 0 44%, ${c[0]}% ${c[1]}%)`,
+];
+const SHARD_DIR = [[-1, -1], [1, -1], [1, 1], [-1, 1]];
+let shardBudget = 0; // 한꺼번에 너무 많이 깨지면 조각 수를 줄임
+function shatter(t, x, y, push, delay) {
+  const S = B.S, src = t.inner.querySelector('img')?.src;
+  if (!src) return;
+  const many = shardBudget > 24;
+  shardBudget++;
+  setTimeout(() => shardBudget--, delay + 200);
+  const cen = [44 + Math.random() * 12, 44 + Math.random() * 12];
+  let ax = 0, ay = 0, pw = 1;
+  if (push) {
+    const dx = x - push.x, dy = y - push.y, d = Math.hypot(dx, dy) || 1;
+    ax = (dx / d) * S * 1.1 * push.power;
+    ay = (dy / d) * S * 0.9 * push.power;
+    pw = push.power;
   }
-  // 하얗게 번쩍 → 통 부풀었다가 → 쏙 사라짐
+  SHARD_CUTS.forEach((cut, k) => {
+    if (many && k % 2) return;
+    const el = addFx('tshard', x, y);
+    Object.assign(el.style, { width: S + 'px', height: S + 'px', backgroundImage: `url(${src})`, clipPath: cut(cen) });
+    const [sx, sy] = SHARD_DIR[k];
+    const vx = sx * S * (0.35 + Math.random() * 0.45) * pw + ax, up = S * (0.55 + Math.random() * 0.5) * (push ? 0.7 : 1) - ay * 0.5;
+    const fall = S * (2.2 + Math.random() * 1.2), rot = sx * (90 + Math.random() * 200);
+    const frames = [];
+    for (let f = 0; f <= 6; f++) {
+      const u = f / 6;
+      // 포물선: 위로 톡 튀었다가 중력으로 뚝
+      const px = vx * u, py = -up * 4 * u * (1 - u) * 0.6 + fall * u * u + sy * S * 0.18 * u;
+      frames.push({ transform: `translate(calc(-50% + ${px}px), calc(-50% + ${py}px)) rotate(${rot * u}deg) scale(${1 - u * 0.35})`, opacity: u < 0.65 ? 1 : 1 - (u - 0.65) / 0.35, offset: u });
+    }
+    el.animate(frames, { duration: 520 + Math.random() * 160, delay, easing: 'linear', fill: 'backwards' }).finished.then(() => el.remove());
+  });
+}
+function popTile(t, delay, push = null) {
+  const r = t.el.getBoundingClientRect(), a = app.getBoundingClientRect();
+  const x = r.left - a.left + r.width / 2, y = r.top - a.top + r.height / 2;
+  if (t.el.isConnected && t.type >= 0) {
+    const f = addFx('popflash', x, y);
+    f.style.width = f.style.height = r.width * 1.3 + 'px';
+    f.animate([{ transform: 'translate(-50%,-50%) scale(.4)', opacity: 1 }, { transform: 'translate(-50%,-50%) scale(1.3)', opacity: 0 }],
+      { duration: 240, delay: delay + 70, easing: 'ease-out', fill: 'backwards' }).finished.then(() => f.remove());
+    shatter(t, x, y, push, delay + 70);
+    // 하얗게 번쩍하며 통 부풀었다가 → 그 순간 조각으로 갈라짐
+    return t.inner.animate([
+      { transform: 'scale(1)', filter: 'brightness(1)', opacity: 1 },
+      { transform: 'scale(1.2, .85)', filter: 'brightness(2.4)', opacity: 1, offset: 0.6 },
+      { transform: 'scale(1.25)', filter: 'brightness(3)', opacity: 0 },
+    ], { duration: 80, delay, easing: 'ease-out', fill: 'forwards' }).finished.then(() => t.el.remove());
+  }
   return t.inner.animate([
     { transform: 'scale(1)', opacity: 1, filter: 'brightness(1)' },
     { transform: 'scale(1.18,.86)', opacity: 1, filter: 'brightness(2.2)', offset: 0.2 },
@@ -1012,14 +1133,45 @@ function effectTimes(res, from) {
   return T;
 }
 
+// 칸 하나를 하얗게 켬: on(ms)에 켜지고 깜빡이며 기다리다가 pop(ms)에 번쩍하고 꺼짐
+const ZONE_TINT = { h: '#7cc4ec', v: '#7cc4ec', bomb: '#ffb020', rainbow: '#ff8ab8', plane: '#7cc4ec', combo: '#ffd84d' };
+function zoneCell([r, c], on, pop, kind) {
+  if (!inside(r, c)) return;
+  const el = document.createElement('div');
+  el.className = 'zone';
+  Object.assign(el.style, { left: c * B.S + 'px', top: r * B.S + 'px', width: B.S + 'px', height: B.S + 'px' });
+  el.style.setProperty('--zc', ZONE_TINT[kind] || '#ffffff');
+  boardEl.appendChild(el);
+  const wait = Math.max(60, pop - on), dur = wait + 260, f = x => Math.min(0.98, x / dur);
+  el.animate([
+    { opacity: 0, transform: 'scale(.6)' },
+    { opacity: 0.85, transform: 'scale(1)', offset: f(Math.min(70, wait * 0.5)) },
+    { opacity: 0.55, transform: 'scale(.94)', offset: f(wait * 0.75) },
+    { opacity: 1, transform: 'scale(1.08)', filter: 'brightness(1.3)', offset: f(wait) },
+    { opacity: 0, transform: 'scale(1.2)' },
+  ], { duration: dur, delay: on, easing: 'ease-out', fill: 'backwards' }).finished.then(() => el.remove());
+}
+
 async function stepFx(res, combo, from = null) {
   const T = effectTimes(res, from);
+  // 터질 범위: 아이템이 발동하는 순간 범위 칸이 하얗게 켜졌다가, 그 칸이 터질 때 번쩍
+  const zoned = new Set();
+  res.effects.forEach(ef => ef.times.forEach((d, k) => {
+    if (zoned.has(k)) return;
+    zoned.add(k);
+    zoneCell(unkey(k), ef.base, T.get(k) ?? ef.base + d, ef.kind);
+  }));
+  if (from) res.cleared.forEach(({ r, c }) => { const k = key(r, c); if (!zoned.has(k)) { zoned.add(k); zoneCell([r, c], 0, T.get(k) ?? 60, 'combo'); } });
   res.effects.forEach(ef => {
     setTimeout(() => effectFx(ef), ef.base);
     setTimeout(() => afterFx(ef), ef.base + Math.max(...ef.times.values()) + 60);
   });
   const n = res.cleared.length;
   let i = 0, last = 0;
+  // 아이템에 맞아 깨지는 칸은 터진 자리 반대쪽으로 날아감
+  const pushAt = new Map(), POWER = { bomb: 1.7, h: 1.3, v: 1.3, plane: 1.2, rainbow: 0.8 };
+  res.effects.forEach(ef => { const o = tileCenter(ef.r, ef.c); ef.times.forEach((_, k) => !pushAt.has(k) && pushAt.set(k, { ...o, power: POWER[ef.kind] || 1 })); });
+  if (from) { const o = tileCenter(from.at[0], from.at[1]); res.cleared.forEach(({ r, c }) => !pushAt.has(key(r, c)) && pushAt.set(key(r, c), { ...o, power: 1.5 })); }
   res.cleared.forEach(({ r, c, tile }) => {
     const p = tileCenter(r, c);
     const color = tile.type >= 0 ? teamCh(tile.type).ring : '#ffd84d';
@@ -1031,7 +1183,7 @@ async function stepFx(res, combo, from = null) {
       burst(p.x, p.y, color, n > 15 ? 3 : 5);
       shards(p.x, p.y, [color, '#ffffff'], n > 12 ? 2 : 4, 9, true);
     }, delay + 50);
-    popTile(tile, delay);
+    popTile(tile, delay, pushAt.get(key(r, c)));
   });
   // 많이 터질수록 판이 통 울림
   if (n >= 4) setTimeout(() => boardEl.animate([{ transform: 'scale(1)' }, { transform: `scale(${1 + Math.min(0.03, n * 0.002)})` }, { transform: 'scale(1)' }], { duration: 160, easing: 'ease-out' }), 60);
@@ -1083,19 +1235,20 @@ async function stepFx(res, combo, from = null) {
     await sleep(440);
     let k = 0;
     for (const [type, cells] of tally) {
-      const ch = teamCh(type);
-      B.gauge[type] += cells.length;
+      const ch = teamCh(type), cheer = type >= B.real;
+      if (!cheer) B.gauge[type] += cells.length;
       $('#party').children[type]?.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-10px) scale(1.15)' }, { transform: 'translateY(0)' }], { duration: 260 });
       if (ch.heal) {
-        const amt = Math.round(cells.length * ch.heal * mult * Meta.mult(ch.id));
+        const amt = Math.round(cells.length * ch.heal * mult * (cheer ? 0.5 : Meta.mult(ch.id)));
+        B.dmgBy[ch.id] = (B.dmgBy[ch.id] || 0) + Math.min(amt, B.teamMax - B.teamHp);
         B.teamHp = Math.min(B.teamMax, B.teamHp + amt);
         updateTeam();
         Sound.play('heal', 1.2, 0.6);
         floatNum(teamC.x, teamC.y - 10, `+${amt}`, '#3fae4f');
       } else if (B.monHp > 0) {
         const crit = ch.crit && Math.random() < ch.crit;
-        const eff = attrMult(ch.attr, curWave().a);
-        const dmg = Math.round(cells.length * ch.dmg * mult * eff * Meta.mult(ch.id) * (crit ? 2.5 : 1));
+        const eff = cheer ? 1 : attrMult(ch.attr, curWave().a);
+        const dmg = Math.round(cells.length * ch.dmg * mult * eff * (cheer ? 0.5 : Meta.mult(ch.id)) * (crit ? 2.5 : 1));
         hitMonster(dmg, ch, crit, k++, eff);
       }
       await sleep(110);
@@ -1105,6 +1258,8 @@ async function stepFx(res, combo, from = null) {
 
   await sleep(Math.max(Math.min(n * 10, 150), stepFx.wait) + 220);
 
+  // 아이템이 생기는 순간 아주 잠깐 멈칫 + 통 (손맛)
+  if (res.created.length) { Juice.stop(55); shake(3, 140); Haptic.tap(20); }
   res.created.forEach(({ r, c, tile }) => {
     setTimeout(() => Tutor.onCreate(tile.special), 500);
     makeTile(tile);
@@ -1133,6 +1288,7 @@ function fxImage(name, x, y, size, dur) {
 }
 
 function hitMonster(dmg, ch, crit, k, eff = 1) {
+  B.dmgBy[ch.id] = (B.dmgBy[ch.id] || 0) + Math.min(dmg, B.monHp);
   B.monHp = Math.max(0, B.monHp - dmg);
   updateMon();
   const m = $('#monster');
@@ -1295,16 +1451,16 @@ async function win() {
   await clearShow();
   const k = routeIdx('b', B.stage), isLast = k === ROUTE.length - 1;
   if (B.stage === STAGES.length - 1 && firstClear) await playStory(STORY.end);
-  const pool = B.team.map(i => CHARS[i]);
-  const ch = pool[Math.floor(Math.random() * pool.length)] || CHARS[0];
+  if (firstClear) await Meta.stageJoin('b', B.stage);
+  const ch = mvp();
   Sound.music(null);
   const from = k;
   modal({
-    title: '토벌 성공!', stars, char: ch.id, text: `${ch.name}: "${ch.line}"`,
+    title: '토벌 성공!', stars, char: ch.id, text: `MVP ${ch.name}: "${lineOf(ch.id)}"`,
     rows: [['남은 체력', Math.round(ratio * 100) + '%'], [`<img class="row-ic" src="${ITEM('coin')}">`, '+' + coins], treat],
     btn2: '지도', on2: () => go(() => openMap(firstClear ? from : null)),
     btn1: isLast ? '지도로' : '다음 스테이지',
-    on1: () => go(() => (isLast ? openMap(firstClear ? from : null) : goRoute(k + 1))),
+    on1: () => (isLast ? go(() => openMap(firstClear ? from : null)) : Hearts.need(() => go(() => goRoute(k + 1)), () => go(() => openMap(firstClear ? from : null)))),
   });
 }
 
@@ -1315,9 +1471,9 @@ async function lose() {
   Sound.play('jingle_lose', 1, 0.9);
   await banner('후퇴…', 600);
   modal({
-    title: '후퇴…', img: 'assets/img/art/scene_scared.jpg', photo: true, text: '치이카와: (훌쩍…) 다시 해볼까?',
-    btn2: '지도', on2: () => go(openMap),
-    btn1: '다시 하기', on1: () => go(() => startStage(B.stage)),
+    title: '후퇴…', img: 'assets/img/art/scene_scared.jpg', photo: true, text: '치이카와: (훌쩍…)',
+    btn2: '지도', on2: () => { Hearts.lose(); go(openMap); },
+    btn1: '다시 하기', on1: () => { Hearts.lose(); Hearts.need(() => go(() => startStage(B.stage)), () => go(openMap)); },
   });
 }
 
@@ -1340,6 +1496,7 @@ function openFormation(i) {
     return `<div class="enemy-chip"><img src="${MONSTERS[w.m].img}" style="${tint}">${title}${MONSTERS[w.m].name}${attrTag(w.a)}</div>`;
   }).join('');
   renderFormation();
+  Tutor.formIntro();
 }
 function renderFormation() {
   const foes = new Set(STAGES[formStage].waves.map(w => w.a));
@@ -1400,15 +1557,17 @@ function renderFormation() {
     });
     };
   });
-  $('#btnSortie').disabled = formPick.length !== TEAM_SIZE;
+  $('#btnSortie').disabled = !formPick.length;
 }
 $('#btnSortie').onclick = () => {
-  if (formPick.length !== TEAM_SIZE) return;
-  Sound.play('open');
-  B.team = formPick.slice();
-  Save.data.team = B.team.map(k => CHARS[k].id);
-  Save.save();
-  go(() => startStage(formStage));
+  if (!formPick.length) return;
+  Hearts.need(() => {
+    Sound.play('open');
+    B.squad = formPick.slice();
+    Save.data.team = B.squad.map(k => CHARS[k].id);
+    Save.save();
+    go(() => startStage(formStage));
+  });
 };
 // 자동 편성: 이번 적에게 강한 친구 + 레벨 높은 친구, 회복 담당 한 명
 $('#btnAuto').onclick = () => {
@@ -1530,7 +1689,7 @@ async function useSkill(k) {
     const rows = [0, 1, 2, 3, 4, 5, 6].sort(() => Math.random() - 0.5).slice(0, 2);
     rows.forEach(r => { for (let c = 0; c < COLS; c++) cells.push([r, c]); });
   } else if (id === 'cross') {
-    // 랏코: 굵은 십자로 베고 몬스터에 큰 한 방
+    // 랏코: 굵은 십자로 베고 괴물에게 큰 한 방
     const r0 = 1 + Math.floor(Math.random() * 5), c0 = 1 + Math.floor(Math.random() * 5);
     for (let d = -1; d <= 1; d++) {
       for (let i = 0; i < COLS; i++) cells.push([r0 + d, i]);
@@ -1652,9 +1811,11 @@ async function useSkill(k) {
 
 // 오토: 게이지가 꽉 찬 친구가 있으면 알아서 스킬
 function autoSkill() {
-  if (!Save.data.autoSkill || B.busy || B.over || !$('#battle').classList.contains('active')) return;
+  if (B.busy || B.over || !$('#battle').classList.contains('active')) return;
+  if (Tutor.skillSpot()) return; // 처음 게이지가 꽉 차면 눌러 보라고 비춰 줌
+  if (!Save.data.autoSkill) return;
   if (B.mode === 'life') { if (L.helper != null && L.hg >= CHARS[L.helper].skill.need) useSkill(0); return; }
-  const k = B.team.findIndex((_, j) => B.gauge[j] >= teamCh(j).skill.need);
+  const k = B.team.findIndex((_, j) => j < B.real && B.gauge[j] >= teamCh(j).skill.need);
   if (k >= 0) useSkill(k);
 }
 const updateAutoBtn = () => document.querySelectorAll('.btn-auto').forEach(b => b.classList.toggle('on', !!Save.data.autoSkill));
@@ -1694,16 +1855,23 @@ function confetti(n = 14) {
   }
 }
 
+// 끝나고 나오는 친구: 토벌은 가장 많이 때린(회복한) MVP, 일상은 데려간 친구
+function mvp() {
+  if (B.mode === 'life') return CHARS[L.helper] || CHARS[0];
+  const squad = B.team.slice(0, B.real).map(k => CHARS[k]);
+  return squad.reduce((a, c) => ((B.dmgBy[c.id] || 0) > (B.dmgBy[a.id] || 0) ? c : a), squad[0]);
+}
 async function clearShow(text = '토벌<br>성공!') {
   const el = document.createElement('div');
   el.className = 'clear-show';
-  const pool = B.team.map(i => CHARS[i]);
-  const ch = pool[Math.floor(Math.random() * pool.length)];
+  const ch = mvp();
   el.innerHTML = `<div class="dim"></div>
     <div class="slam">${text}</div>
-    <img class="hero" src="${art(ch.id)}"><div class="hero-say">${ch.line}</div>`;
+    <img class="hero" src="${art(ch.id)}"><div class="hero-say">${B.mode === 'battle' ? '<b class="mvp">MVP</b>' : ''}${lineOf(ch.id)}</div>`;
   app.appendChild(el);
   const [dim, stamp, hero, say] = el.children;
+  const longest = Math.max(...text.split('<br>').map(l => [...l].length));
+  stamp.style.fontSize = Math.min(89, Math.floor((app.clientWidth * 0.82) / longest)) + 'px';
   dim.animate([{ opacity: 0 }, { opacity: 0.35 }], { duration: 200, fill: 'forwards' });
   confetti(); setTimeout(() => confetti(10), 250);
   await sleep(250);
@@ -1780,26 +1948,83 @@ async function feverShow() {
   el.remove();
 }
 
-// ---------- 라면 가게: 토벌을 새로 깰 때마다 한 그릇 ----------
-$('#btnRamen').onclick = () => {
-  Sound.play('click');
-  if (Save.data.ramen === false) {
-    modal({ title: '라면 가게', img: 'assets/img/art/armor_one.png', text: '갑옷 아저씨: 오늘 국물은 다 떨어졌어. 토벌 하나 더 하고 와.', btn1: '알겠어요', on1: () => {} });
-    return;
-  }
-  const take = buff => {
-    Save.data.buff = buff;
-    Save.data.ramen = false;
-    Save.save();
-    Sound.play('heal', 1, 0.9);
-    $('#btnRamen').classList.remove('on');
-    const c = centerOf($('#btnRamen'));
-    burst(c.x, c.y, '#ff9f5a', 14);
-    floatNum(c.x, c.y - 30, buff === 'hp' ? '다음 토벌 체력 150!' : '다음 토벌 게이지 반!', '#e07b39');
-  };
-  modal({
-    title: '라면 가게', img: 'assets/img/art/armor_one.png', text: '갑옷 아저씨: 한 그릇 먹고 가. 곱빼기는 체력 150, 진한 국물은 스킬 게이지 반부터.',
-    btn2: '진한 국물', on2: () => take('gauge'),
-    btn1: '곱빼기', on1: () => take('hp'),
+// ---------- 라면 가게: 갑옷 아저씨네 가게. 시사가 아르바이트하고, 친구들이 앉아 있고, 가끔 손님이 놀러 옴 ----------
+// 토벌을 새로 깰 때마다 한 그릇 (곱빼기: 다음 토벌 체력 150 / 진한 국물: 스킬 게이지 반부터)
+const MASTER_LINES = ['어서 오세요. 편히 앉으세요.', '토벌 하나 끝낼 때마다 한 그릇 말아 드릴게요.', '국물은 진하게. 그게 우리 가게 방식이죠.', '면은 매일 직접 뽑아요.', '오늘도 고생 많았어요.', '시사가 요즘 정말 열심히 해요.'];
+const SHISA_LINES = ['어서 오세요~!', '저 여기서 수행 중이에요! 마스터 라멘은 최고예요~', '넵! 주문 들어갑니다~!', '언젠가 저도 토벌에 따라가 보고 싶어요…!'];
+function shopSay(el, text) {
+  const say = $('#shopSay'), r = el.getBoundingClientRect(), sc = $('#shopScene').getBoundingClientRect();
+  say.textContent = text;
+  say.style.left = Math.max(70, Math.min(sc.width - 70, r.left - sc.left + r.width / 2)) + 'px';
+  say.style.top = Math.max(6, r.top - sc.top - 8) + 'px';
+  say.getAnimations().forEach(a => a.cancel());
+  say.animate([{ opacity: 0, transform: 'translate(-50%, -90%) scale(.7)' }, { opacity: 1, transform: 'translate(-50%, -100%) scale(1)', offset: 0.12 }, { opacity: 1, transform: 'translate(-50%, -100%)', offset: 0.88 }, { opacity: 0, transform: 'translate(-50%, -100%)' }], { duration: 2600, fill: 'forwards' });
+  el.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-8px)' }, { transform: 'translateY(0)' }], { duration: 260 });
+  Sound.play('pop', 1.1 + Math.random() * 0.3, 0.6);
+}
+// 문가 손님이 하는 말 (간식을 모아 오면 친구가 됨)
+const RECRUIT_ASK = { momonga: '딸기 파르페 5개 갖다주면… 모몽가가 같이 다녀 줄게! 착하지?', kurimanju: '……(경단 쪽을 힐끔)', goblin: '킥킥, 주먹밥 4개면 따라가 줄게.' };
+function openRamen() {
+  show('ramen');
+  Meta.coinUI();
+  Sound.music('map');
+  const scene = $('#shopScene');
+  scene.querySelectorAll('.guest, .seat').forEach(e => e.remove());
+  let mi = 0, si = 0;
+  $('#shopMaster').onclick = e => shopSay(e.currentTarget, MASTER_LINES[mi++ % MASTER_LINES.length]);
+  // 시사: 아르바이트 중. 시사의 라멘 가게(9번째 일상)를 도와주면 친구가 됨
+  const shisa = $('#shopShisa');
+  shisa.onclick = () => shopSay(shisa, Meta.owned('shisa') ? lineOf('shisa') : SHISA_LINES[si++ % SHISA_LINES.length]);
+  // 카운터에 앉은 친구들 (가진 친구 중 셋)
+  const sitters = CHARS.filter(c => Meta.owned(c.id) && c.id !== 'shisa').sort(() => Math.random() - 0.5).slice(0, 3);
+  sitters.forEach((c, k) => {
+    const el = document.createElement('button');
+    el.className = 'seat';
+    el.style.left = [22, 50, 78][k] + '%';
+    el.innerHTML = `<img src="${art(c.id)}" draggable="false"><i class="stool"></i>`;
+    el.onclick = () => { shopSay(el, lineOf(c.id)); Sound.voice(c.id, 'pick'); };
+    scene.appendChild(el);
   });
-};
+  // 문가에 기웃거리는 손님: 좋아하는 간식을 모아 오면 친구가 됨
+  const gid = ['momonga', 'kurimanju', 'goblin'].find(id => !Meta.owned(id) && CHARS[charIdx(id)]);
+  if (gid) {
+    const r = RECRUIT[gid], c = CHARS[charIdx(gid)];
+    const el = document.createElement('button');
+    el.className = 'guest' + (Meta.canRecruit(gid) ? ' ready' : '');
+    el.innerHTML = `<img src="${art(gid)}" draggable="false"><span class="tbadge${Meta.canRecruit(gid) ? ' ready' : ''}"><img src="${ITEM(r.treat)}">${Math.min(Save.data.treats[r.treat] || 0, r.n)}/${r.n}</span>`;
+    el.onclick = async () => {
+      if (Meta.canRecruit(gid)) { Sound.play('open'); await Meta.recruit(gid); openRamen(); return; }
+      shopSay(el, RECRUIT_ASK[gid] || `${TREATS[r.treat]} ${r.n}개…`);
+    };
+    scene.appendChild(el);
+    el.animate([{ transform: 'translateX(-60px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 500, delay: 300, easing: 'ease-out', fill: 'backwards' });
+  }
+  renderRamenMenu();
+  setTimeout(() => $('#ramen').classList.contains('active') && shopSay($('#shopMaster'), Save.data.ramen === false ? '오늘 국물은 다 떨어졌어요. 토벌 하나 더 하고 오세요.' : '어서 오세요. 한 그릇 드시고 가요.'), 450);
+}
+function renderRamenMenu() {
+  const ready = Save.data.ramen !== false;
+  $('#ramenMenu').classList.toggle('off', !ready);
+  $('#ramenNote').textContent = ready ? '하나 골라요 · 다음 토벌 한 번' : Save.data.buff ? `다음 토벌에 ${Save.data.buff === 'hp' ? '곱빼기' : '진한 국물'} 효과가 있어요` : '토벌을 새로 깨면 또 한 그릇';
+}
+$('#ramenMenu').querySelectorAll('button').forEach(b => (b.onclick = async () => {
+  if (Save.data.ramen === false) { Sound.play('bad'); shopSay($('#shopMaster'), '토벌 하나 더 하고 오세요.'); return; }
+  const buff = b.dataset.b;
+  Save.data.buff = buff;
+  Save.data.ramen = false;
+  Save.save();
+  // 그릇이 카운터에 탁 놓이고 김이 모락모락
+  const sc = $('#shopScene'), bowl = document.createElement('img');
+  bowl.className = 'bowl';
+  bowl.src = ITEM('ramen');
+  sc.appendChild(bowl);
+  Sound.play('land', 0.9, 0.9);
+  bowl.animate([{ transform: 'translate(-50%, -120px) scale(.6)', opacity: 0 }, { transform: 'translate(-50%, 6px) scale(1.1, .9)', opacity: 1, offset: 0.7 }, { transform: 'translate(-50%, 0)' }], { duration: 420, easing: 'ease-in' });
+  const c = centerOf(bowl);
+  setTimeout(() => { Sound.play('heal', 1, 0.9); burst(c.x, c.y, '#ff9f5a', 14); floatNum(c.x, c.y - 40, buff === 'hp' ? '다음 토벌 체력 150!' : '다음 토벌 게이지 반!', '#e07b39'); }, 420);
+  shopSay($('#shopMaster'), buff === 'hp' ? '곱빼기 나왔습니다. 든든하게 드세요.' : '진한 국물이에요. 힘이 날 거예요.');
+  renderRamenMenu();
+  $('#btnRamen').classList.remove('on');
+  setTimeout(() => bowl.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, fill: 'forwards' }).finished.then(() => bowl.remove()), 2600);
+}));
+$('#btnRamen').onclick = () => { Sound.play('click'); go(openRamen); };
