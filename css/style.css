@@ -751,6 +751,9 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .combo-art img { display: block; width: 100%; }
 .combo, .combo-art { will-change: transform; }
 .board-glow { position: absolute; z-index: 1; pointer-events: none; border-radius: 16px; }
+/* 지도 장 띠 */
+.chapter-band { position: absolute; left: 50%; z-index: 1; transform: translate(-50%, -50%) rotate(-2deg); padding: 3px 18px 1px; border-radius: 12px; background: var(--pink); color: #fff; font-family: var(--head); font-size: 20px; line-height: 1.2; white-space: nowrap; box-shadow: 0 3px 0 #4a426230; pointer-events: none; }
+.chapter-band.locked { background: #b9b0c8; }
 /* 랏코 칼질: 하얀 칼자국 + 휙 지나가는 칼 */
 .slash-cut { position: absolute; z-index: 6; pointer-events: none; transform-origin: 0 50%; border-radius: 99px;
   background: linear-gradient(90deg, transparent, #fff 12%, #fff 88%, transparent); box-shadow: 0 0 14px 4px #fff, 0 0 4px 1px #cfe3ff; }

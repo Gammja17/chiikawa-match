@@ -403,6 +403,15 @@ function openMap(advanceFrom = null) {
     `<svg><path d="${d}" fill="none" stroke="#fffaf2" stroke-width="14" stroke-linecap="round" opacity=".9"/><path d="${d}" fill="none" stroke="#4b3f3a" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 12" opacity=".45"/></svg>`);
 
   const cur = unlockedIdx();
+  // 장이 시작되는 자리 위에 띠 ("4장 하치와레의 노래")
+  CHAPTERS.forEach(([at, name]) => {
+    if (at >= STAGES.length) return;
+    const b = document.createElement('div');
+    b.className = 'chapter-band' + (at > cur ? ' locked' : '');
+    b.style.top = pts[at].y - NODE_GAP / 2 + 'px';
+    b.textContent = name;
+    path.appendChild(b);
+  });
   STAGES.forEach((st, i) => {
     const n = document.createElement('button');
     const locked = i > cur;
@@ -1665,7 +1674,7 @@ async function win() {
   Sound.play('win', 1);
   await clearShow();
   const k = routeIdx('b', B.stage), isLast = k === ROUTE.length - 1;
-  if (B.stage === STAGES.length - 1 && firstClear) await playStory(STORY.end);
+  if (STORY_AFTER[B.stage] && firstClear) await playStory(STORY_AFTER[B.stage]); // 장 끝 대사
   if (firstClear) await Meta.stageJoin('b', B.stage);
   const ch = mvp();
   Sound.music(null);

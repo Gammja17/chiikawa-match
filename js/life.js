@@ -71,6 +71,72 @@ const LIFE = [
   { name: '제초 검정 1급', icon: 'medal', types: 6, time: 120, host: 'usagi', exam: true, intro: '최종 시험!',
     goals: [{ k: 'weed' }, { k: 'bubble' }, { k: 'score', n: 12000 }], stars: [12000, 13500, 14500],
     map: ['#.....#', '.......', 'W.W.W.W', '.w.w.w.', 'w.WoW.w', '#.w.w.#', '##ooo##'] },
+  // 4장: 하치와레의 노래
+  { name: '기타 줄 찾기', done: '기타 줄<br>찾았다!', icon: 'box', types: 5, moves: 16, host: 'hachiware', intro: '상자 속 기타 줄!',
+    goals: [{ k: 'box' }], stars: [5000, 6500, 8000],
+    map: ['.g...g.', 'bgb.bgb', 'b.b.b.b', '.......', '.b.b.b.', 'b.....b', '#.....#'] },
+  { name: '목 풀기 연습', done: '목 풀기<br>끝!', icon: 'target', types: 5, moves: 21, host: 'hachiware', intro: '하치와레를 잔뜩!',
+    goals: [{ k: 'char', id: 'hachiware', n: 30 }], stars: [6000, 8000, 9500],
+    map: ['#.....#', '.......', '.......', '...#...', '.......', '.......', '#.....#'] },
+  { name: '무대 꾸미기', done: '무대<br>완성!', icon: 'ribbon', types: 5, moves: 14, host: 'momonga', intro: '리본이랑 선물 상자!',
+    goals: [{ k: 'lock' }, { k: 'box' }], stars: [3500, 5000, 6500],
+    map: ['##...##', '.l.g.l.', '..lll..', '.g...g.', '..lll..', '.l...l.', '.......'] },
+  { name: '객석 잡초 뽑기', icon: 'weed1', types: 5, moves: 14, host: 'chiikawa', intro: '관객 자리를 만들자!',
+    goals: [{ k: 'weed' }], stars: [4500, 6000, 7000],
+    map: ['.......', '.......', 'w.W.W.w', '.w...w.', 'W.w.w.W', '.wwwww.', '#.....#'] },
+  { name: '응원 안주', done: '안주<br>완성!', icon: 'dango', types: 5, moves: 18, host: 'kurimanju', intro: '안주 내리고 거품도!',
+    goals: [{ k: 'ing' }, { k: 'bubble' }], stars: [4500, 6000, 7500], ing: { n: 3, max: 2, kinds: ['dango', 'onigiri'] },
+    map: ['..i.i..', '.......', '.......', '.......', '.o...o.', '#o...o#', '##o.o##'] },
+  { name: '리허설', done: '리허설<br>끝!', icon: 'bubble', types: 6, moves: 20, host: 'hachiware', intro: '거품 속 하치와레!',
+    goals: [{ k: 'char', id: 'hachiware', n: 24 }, { k: 'bubble' }], stars: [5000, 6000, 7500],
+    map: ['.......', '.......', '.......', '..o.o..', '.o...o.', 'o.....o', '.o...o.'] },
+  { name: '무대 조명', done: '조명<br>반짝!', icon: 'sparkle', types: 5, moves: 24, host: 'usagi', intro: '조명을 판 전체에!',
+    goals: [{ k: 'syrup' }], stars: [8000, 10000, 11500],
+    map: ['#.....#', '.......', '.......', '...s...', '.......', '.#...#.', '##...##'] },
+  // 5장: 끝나지 않는 오늘
+  { name: '좋은 하루', icon: 'weed2', types: 5, moves: 11, host: 'chiikawa', intro: '오늘도 풀 뽑기!',
+    goals: [{ k: 'weed' }, { k: 'box' }], stars: [3500, 5000, 6000],
+    map: ['.w...w.', 'w.w.w.w', '.......', 'b.w.w.b', '.b.g.b.', '..www..', '#.....#'] },
+  { name: '또 오늘…', icon: 'clock', types: 5, moves: 13, host: 'hachiware', intro: '어제랑… 똑같아?',
+    goals: [{ k: 'weed' }, { k: 'box' }], stars: [4500, 6000, 7000],
+    map: ['#.....#', '..WWW..', '.g...g.', 'b.w.w.b', '.g...g.', '.w...w.', 'w.....w'] },
+  { name: '어제도 했잖아', icon: 'box', types: 5, moves: 12, host: 'hachiware', intro: '상자도 거품도 또!',
+    goals: [{ k: 'box' }, { k: 'bubble' }], stars: [4000, 5500, 7000],
+    map: ['#.....#', '.b.g.b.', 'bb...bb', '.g...g.', '..o.o..', '.o.o.o.', '#o...o#'] },
+  { name: '데자뷔 라멘', done: '라멘<br>완성!', icon: 'ramen', types: 5, moves: 21, host: 'shisa', intro: '재료 4개를 맨 아래로!',
+    goals: [{ k: 'ing' }, { k: 'box' }], stars: [5500, 7000, 8500], ing: { n: 4, max: 2, kinds: ['naruto', 'egg'] },
+    map: ['..i.i..', '.......', '.......', 'b.b.b.b', '.b.b.b.', '#.....#', '##...##'] },
+  { name: '시계 바늘 리본', icon: 'ribbon', types: 5, moves: 14, host: 'momonga', intro: '리본 풀고 잡초도!',
+    goals: [{ k: 'lock' }, { k: 'weed' }], stars: [4000, 6000, 7500],
+    map: ['.l...l.', '..l.l..', '...l...', '..l.l..', '.l...l.', 'w.w.w.w', '.w.w.w.'] },
+  { name: '또 같은 시험', icon: 'medal', types: 6, time: 85, host: 'usagi', exam: true, intro: '큰 잡초와 점수!',
+    goals: [{ k: 'weed' }, { k: 'score', n: 9000 }], stars: [9000, 10500, 11500],
+    map: ['##...##', '.W...W.', '..W.W..', 'W..w..W', '.w...w.', '..w.w..', '#.....#'] },
+  { name: '하루의 끝', done: '내일로!', icon: 'pancake', types: 5, moves: 26, host: 'chiikawa', intro: '시럽 바르고 재료도!',
+    goals: [{ k: 'syrup' }, { k: 'ing' }], stars: [8500, 10500, 12500], ing: { n: 3, max: 2, kinds: ['donut', 'dango'] },
+    map: ['..i.i..', '.......', '.......', '...s...', '.......', '#.....#', '##...##'] },
+  // 6장: 고블린 동굴
+  { name: '동굴 입구', icon: 'weed2', types: 6, moves: 18, host: 'usagi', intro: '큰 잡초가 잔뜩!',
+    goals: [{ k: 'weed' }], stars: [4000, 5500, 6500],
+    map: ['.......', 'W.....W', '.W...W.', '..WWW..', '.w...w.', 'w.w.w.w', '.......'] },
+  { name: '고블린의 노래', done: '같이<br>불렀다!', icon: 'target', types: 6, moves: 35, host: 'usagi', intro: '우사기를 잔뜩!',
+    goals: [{ k: 'char', id: 'usagi', n: 30 }], stars: [6000, 8000, 9000],
+    map: ['##...##', '#.....#', '.......', '.......', '.......', '#.....#', '##...##'] },
+  { name: '버섯 상자', icon: 'gift', types: 6, moves: 17, host: 'momonga', intro: '상자를 몽땅!',
+    goals: [{ k: 'box' }], stars: [3500, 5000, 5500],
+    map: ['.g...g.', 'b.b.b.b', '.b.g.b.', 'b.b.b.b', '.......', '.......', '#.....#'] },
+  { name: '동굴 온천', icon: 'bath', types: 6, moves: 18, host: 'kurimanju', intro: '거품과 리본!',
+    goals: [{ k: 'bubble' }, { k: 'lock' }], stars: [4000, 5000, 6000],
+    map: ['.......', '.l...l.', '..l.l..', '.......', 'o.o.o.o', '.o.o.o.', '#.....#'] },
+  { name: '고블린 주먹밥', done: '주먹밥<br>배달!', icon: 'bento', types: 6, moves: 32, host: 'usagi', intro: '주먹밥 내리고 잡초도!',
+    goals: [{ k: 'ing' }, { k: 'weed' }], stars: [6000, 8000, 9000], ing: { n: 4, max: 2, kinds: ['onigiri', 'dango'] },
+    map: ['.i...i.', '.......', '.......', 'w.....w', '.w...w.', '..w.w..', '#..w..#'] },
+  { name: '반짝이는 돌', icon: 'ribbon', types: 6, moves: 12, host: 'usagi', intro: '리본과 상자!',
+    goals: [{ k: 'lock' }, { k: 'box' }], stars: [3000, 4000, 5000],
+    map: ['#.....#', '.l.l.l.', 'l.l.l.l', '.b.b.b.', 'b.....b', '.......', '.......'] },
+  { name: '거인의 발자국', icon: 'medal', types: 6, time: 100, host: 'hachiware', exam: true, intro: '잡초, 거품, 점수!',
+    goals: [{ k: 'weed' }, { k: 'bubble' }, { k: 'score', n: 10000 }], stars: [10500, 11500, 12500],
+    map: ['#.....#', '.W.W.W.', 'W.w.w.W', '.w.o.w.', 'w.ooo.w', '#.....#', '##...##'] },
 ];
 // 스테이지 시작 전 짧은 대사 (팬 창작)
 const LIFE_STORY = {
@@ -124,6 +190,107 @@ const LIFE_STORY = {
     ['chiikawa', '…(꿀꺽)'],
     ['hachiware', '어떻게든 되라~!!'],
   ],
+  20: [
+    ['hachiware', '저기… 나, 노래 부르는 거 좋아하잖아.'],
+    ['hachiware', '언젠가 다른 애들 앞에서 기타 치면서 불러 보고 싶어. 조금 부끄럽지만…'],
+    ['chiikawa', '…!! (박수)'],
+    ['usagi', '푸루야~!'],
+    ['hachiware', '그럼 먼저 끊어진 기타 줄부터 찾자! 상자 안에 있을 거야.'],
+  ],
+  21: [
+    ['hachiware', '아~ 아~ 목 풀기부터!'],
+    ['chiikawa', '(두근두근…)'],
+    ['hachiware', '내 얼굴을 많이 모아 주면 힘이 날 것 같아!'],
+  ],
+  22: [
+    ['momonga', '뭐야 그 무대? 촌스러워.'],
+    ['momonga', '내가 더 귀엽게 꾸며 줄게. 대신 맨 앞자리는 내 거야!'],
+    ['hachiware', '리본이랑 선물 상자로 꾸미자!'],
+  ],
+  23: [
+    ['chiikawa', '(소매를 걷어붙인다) …!!'],
+    ['hachiware', '무대 앞 잡초를 싹 뽑자! 관객이 앉을 자리야.'],
+  ],
+  24: [
+    ['kurimanju', '……(경단을 슥 내민다)'],
+    ['kurimanju', '(꿀꺽꿀꺽) ……하아~~'],
+    ['hachiware', '공연 끝나고 먹을 안주를 준비해 준대!'],
+  ],
+  25: [
+    ['hachiware', '리허설이다…! 떨려…'],
+    ['chiikawa', '…!! (주먹을 꼭 쥔다)'],
+    ['usagi', '우라!'],
+  ],
+  26: [
+    ['usagi', '야하!'],
+    ['hachiware', '무대 조명을 판 전체에 쭉 바르자. 반짝반짝하게!'],
+  ],
+  27: [
+    ['hachiware', '오늘 정말 좋은 하루다~ 날씨도 좋고, 라멘도 맛있었고!'],
+    ['chiikawa', '(밤하늘에 반짝이는 별을 보며 두 손을 모은다)'],
+  ],
+  28: [
+    ['hachiware', '…어라? 이 잡초, 어제도 뽑지 않았어…?'],
+    ['chiikawa', '…?'],
+    ['usagi', '하아?'],
+  ],
+  29: [
+    ['hachiware', '상자도, 거품도, 전부 어제랑 같아…'],
+    ['hachiware', '혹시 우리… 같은 날을 계속 반복하고 있는 거야!?'],
+    ['chiikawa', '…!! (부들부들)'],
+  ],
+  30: [
+    ['shisa', '어서 와사~! 오늘 첫 손님이사!'],
+    ['hachiware', '…어제도 그 말 했어.'],
+    ['shisa', '엥? 처음 보는 것 같은데사…?'],
+  ],
+  31: [
+    ['momonga', '시계 바늘에 리본이 감겼어. 풀어. 빨리!'],
+    ['hachiware', '시간이 멈춘 게… 이것 때문일까?'],
+  ],
+  32: [
+    ['hachiware', '또 시험이야… 이것도 어제 봤는데…'],
+    ['usagi', '하아?!'],
+    ['hachiware', '그래도 이번엔 더 잘할 수 있어! 어떻게든 되겠지~!'],
+  ],
+  33: [
+    ['chiikawa', '(밤하늘을 올려다본다) …!'],
+    ['hachiware', '저 까만 별… 저게 소원을 들어준 거야!?'],
+    ['hachiware', '하루의 끝까지 가 보자!'],
+  ],
+  34: [
+    ['usagi', '우라!'],
+    ['hachiware', '동굴에서 이상한 노랫소리가 들린대. 가 보자는 거야!?'],
+    ['chiikawa', '…(꿀꺽)'],
+  ],
+  35: [
+    ['goblin', '옴 빰 빰~ 예 예 예~'],
+    ['goblin', '제야! 야요!'],
+    ['usagi', '이얏하!'],
+    ['hachiware', '따라 부르면… 친해질 수 있을지도?'],
+  ],
+  36: [
+    ['momonga', '버섯 상자다! 안에 든 건 다 내 거야.'],
+    ['hachiware', '다 같이 나누자~!'],
+    ['momonga', '흥!'],
+  ],
+  37: [
+    ['kurimanju', '(온천에 몸을 담근다) ……하아~~'],
+    ['hachiware', '동굴 온천이다! 거품부터 치우자~'],
+  ],
+  38: [
+    ['goblin', '(주먹밥을 가리킨다) 옴 빰 빰~'],
+    ['hachiware', '주먹밥을 좋아하는구나! 많이 내려 주자!'],
+  ],
+  39: [
+    ['usagi', '(반짝이는 돌을 높이 든다) 야하~!!'],
+    ['hachiware', '동굴 깊은 곳에 반짝이는 돌이 잔뜩이래!'],
+  ],
+  40: [
+    ['hachiware', '이 큰 발자국… 뭐지?'],
+    ['goblin', '(벌벌 떨며 동굴 안쪽을 가리킨다)'],
+    ['chiikawa', '…!!'],
+  ],
   end: [
     ['chiikawa', '…!! (와아…!)'],
     ['hachiware', '제초 검정 1급 합격이라는 거야!? 해냈다~!'],
@@ -137,11 +304,19 @@ const ROUTE = [
   ['l', 0], ['l', 1], ['b', 0], ['l', 2], ['l', 3], ['b', 1], ['l', 4], ['l', 5], ['b', 2], ['l', 6],
   ['l', 7], ['b', 3], ['l', 8], ['b', 4], ['l', 9], ['l', 10], ['b', 5], ['l', 11], ['b', 6], ['l', 12],
   ['l', 13], ['b', 7], ['l', 14], ['l', 15], ['b', 8], ['l', 16], ['l', 17], ['l', 18], ['l', 19], ['b', 9],
+  // 4장 하치와레의 노래
+  ['l', 20], ['l', 21], ['b', 10], ['l', 22], ['l', 23], ['b', 11], ['l', 24], ['l', 25], ['l', 26], ['b', 12],
+  // 5장 끝나지 않는 오늘
+  ['l', 27], ['l', 28], ['b', 13], ['l', 29], ['l', 30], ['b', 14], ['l', 31], ['l', 32], ['l', 33], ['b', 15],
+  // 6장 고블린 동굴
+  ['l', 34], ['l', 35], ['b', 16], ['l', 36], ['l', 37], ['b', 17], ['l', 38], ['l', 39], ['l', 40], ['b', 18],
 ];
+// 지도에 띄우는 장 띠 (ROUTE 번호에서 시작)
+const CHAPTERS = [[0, '1장 풀 뽑기 첫걸음'], [10, '2장 섞어 보기'], [20, '3장 제초 검정 1급'], [30, '4장 하치와레의 노래'], [40, '5장 끝나지 않는 오늘'], [50, '6장 고블린 동굴']];
 
-// 난이도: 1~19는 쉽게, 그 사이 도전 두 번(제초 검정 5급, 데카츠요). 20부터 HARD가 띄엄띄엄
-const CHALLENGE_AT = new Set([10, 14]);
-const HARD_AT = new Set([20, 24, 25, 28, 29, 30]);
+// 난이도: 1~19는 쉽게, 그 사이 도전 두 번(제초 검정 5급, 데카츠요). 20부터 HARD가 띄엄띄엄, 장마다 끝은 HARD
+const CHALLENGE_AT = new Set([10, 14, 36, 46, 56]);
+const HARD_AT = new Set([20, 24, 25, 28, 29, 30, 38, 40, 48, 50, 58, 59, 60]);
 const routeLevel = k => (HARD_AT.has(k + 1) ? 'hard' : CHALLENGE_AT.has(k + 1) ? 'challenge' : '');
 
 // 깼을 때 쾅 찍히는 말: 스테이지에 done이 있으면 그것, 없으면 첫 목표에 맞춰서
@@ -500,7 +675,7 @@ const Life = {
     Sound.play('win', 1);
     await clearShow(st.exam ? '검정<br>합격!' : doneWord(st));
     const k = routeIdx('l', i), last = k === ROUTE.length - 1;
-    if (i === LIFE.length - 1 && first) await playStory(LIFE_STORY.end);
+    if (i === 19 && first) await playStory(LIFE_STORY.end); // 3장 끝: 제초 검정 1급 합격
     if (first) await Meta.stageJoin('l', i);
     Sound.music(null);
     const ch = mvp();

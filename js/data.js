@@ -90,6 +90,10 @@ const MONSTERS = {
   chimera:   { name: '키메라',   img: 'assets/img/monsters/chimera.png' },
   mimic:     { name: '미믹',     img: 'assets/img/monsters/mimic.png' },
   dekatsuyo: { name: '데카츠요', img: 'assets/img/monsters/dekatsuyo.png' },
+  // 4~6장 보스 (Chiikawa Wiki 그림에서 배경을 지움)
+  elephant:  { name: '한밤의 코끼리', img: 'assets/img/monsters/elephant.png' },
+  blackstar: { name: '까만별',   img: 'assets/img/monsters/blackstar.png' },
+  ode:       { name: '오데',     img: 'assets/img/monsters/ode.png' },
 };
 
 // a: 속성, m: 몬스터 종류, hp, atk: 공격력, cd: 몇 턴마다 공격, hue: 색 변형, title: 이름 앞말, boss
@@ -105,6 +109,18 @@ const STAGES = [
   { name: '연속 토벌',      waves: [{ a: 'odd', m: 'chimera', hp: 1450, atk: 56, cd: 3 }, { a: 'brave', m: 'mimic', hp: 1740, atk: 66, cd: 3 }, { a: 'brave', m: 'chimera', hp: 1960, atk: 66, cd: 3, hue: 100, title: '초록' }] },
   { name: '성급한 녀석',    waves: [{ a: 'dark', m: 'chimera', hp: 5340, atk: 50, cd: 2, hue: 250, title: '보라' }] },
   { name: '토벌 대작전',    waves: [{ a: 'brave', m: 'mimic', hp: 1360, atk: 80, cd: 3 }, { a: 'cry', m: 'chimera', hp: 1520, atk: 80, cd: 3, hue: 200, title: '푸른' }, { a: 'dark', m: 'dekatsuyo', hp: 2700, atk: 95, cd: 4, hue: 30, title: '진·', boss: true }] },
+  // 4장
+  { name: '밤의 키메라',    waves: [{ a: 'dark', m: 'chimera', hp: 5000, atk: 52, cd: 3, hue: 240, title: '밤의' }] },
+  { name: '시끄러운 상자',  waves: [{ a: 'brave', m: 'mimic', hp: 2470, atk: 64, cd: 3 }, { a: 'odd', m: 'chimera', hp: 2290, atk: 60, cd: 3 }] },
+  { name: '한밤의 코끼리',  waves: [{ a: 'cry', m: 'chimera', hp: 1910, atk: 75, cd: 3, hue: 200, title: '푸른' }, { a: 'light', m: 'elephant', hp: 4370, atk: 105, cd: 4, boss: true }] },
+  // 5장
+  { name: '또 같은 키메라', waves: [{ a: 'odd', m: 'chimera', hp: 3010, atk: 62, cd: 3 }, { a: 'odd', m: 'chimera', hp: 3010, atk: 62, cd: 3, title: '또' }] },
+  { name: '되돌아온 녀석들', waves: [{ a: 'light', m: 'mimic', hp: 2750, atk: 68, cd: 3, hue: 320, title: '붉은' }, { a: 'brave', m: 'dekatsuyo', hp: 3100, atk: 71, cd: 3 }] },
+  { name: '까만별',         waves: [{ a: 'dark', m: 'chimera', hp: 2420, atk: 59, cd: 2, hue: 250, title: '보라' }, { a: 'dark', m: 'blackstar', hp: 5440, atk: 80, cd: 3, boss: true }] },
+  // 6장
+  { name: '동굴 키메라',    waves: [{ a: 'brave', m: 'chimera', hp: 2760, atk: 58, cd: 3, hue: 30, title: '동굴' }, { a: 'cry', m: 'mimic', hp: 2920, atk: 61, cd: 3 }] },
+  { name: '동굴의 데카츠요', waves: [{ a: 'brave', m: 'dekatsuyo', hp: 7150, atk: 68, cd: 3 }] },
+  { name: '거인 오데',      waves: [{ a: 'odd', m: 'chimera', hp: 2070, atk: 81, cd: 3 }, { a: 'brave', m: 'mimic', hp: 2180, atk: 85, cd: 3 }, { a: 'brave', m: 'ode', hp: 5060, atk: 106, cd: 4, boss: true }] },
 ];
 
 // 스테이지 시작 전 짧은 대사 (팬 창작)
@@ -129,10 +145,75 @@ const STORY = {
     ['shisa', '끝나면 다 같이 라멘 먹으러 와사~!'],
     ['usagi', '우라!!'],
   ],
+  10: [
+    ['rakko', '밤에는 놈들이 더 날뛴다.'],
+    ['rakko', '…연습하는 소리에 끌려온 모양이군.'],
+    ['hachiware', '노래 연습 방해하지 마~!'],
+  ],
+  11: [
+    ['usagi', '하아?!'],
+    ['hachiware', '상자가… 움직인다는 거야!?'],
+  ],
+  12: [
+    ['hachiware', '공연 날 밤인데… 어디서 노랫소리가 들려.'],
+    ['chiikawa', '…!?'],
+    ['hachiware', '저, 저건… 밤새 노래하는 코끼리!? 무대를 지켜야 해!'],
+  ],
+  13: [
+    ['hachiware', '이 키메라도… 어제 쓰러뜨린 거랑 똑같아!'],
+    ['rakko', '…같은 놈이 또 나왔다고? 방심하지 마라.'],
+  ],
+  14: [
+    ['usagi', '우-라-!!'],
+    ['hachiware', '이번엔 순서를 바꿔 보자. 뭔가 달라질지도!'],
+  ],
+  15: [
+    ['darkstar', '아~아, 들켰네~'],
+    ['darkstar', '오늘이 계속되면 좋겠다며? 들어줬잖아~ 히히.'],
+    ['hachiware', '그런 뜻이 아니었어! 내일로 보내 줘!'],
+  ],
+  16: [
+    ['rakko', '동굴 안은 어둡다. 발밑을 조심해라.'],
+    ['hachiware', '앗, 키메라다!'],
+  ],
+  17: [
+    ['hachiware', '저, 저건 데카츠요…!?'],
+    ['rakko', '…강해졌구나. 이번엔 너희가 앞장서라.'],
+  ],
+  18: [
+    ['hachiware', '거, 거인이다…!!'],
+    ['goblin', '옴 빰… 빰…'],
+    ['rakko', '기세를 타라!'],
+    ['usagi', '우라아아!!'],
+  ],
   end: [
     ['chiikawa', '…!! (폴짝폴짝)'],
     ['hachiware', '토벌 대성공이라는 거야!? 보수로 맛있는 거 먹자~!'],
     ['kurimanju', '(건배) ……하아~~ 으어어…'],
+  ],
+};
+// 그 토벌을 처음 깼을 때 나오는 장 끝 대사
+const STORY_AFTER = {
+  9: STORY.end,
+  12: [
+    ['hachiware', '(기타 둥가둥가~) …♪'],
+    ['chiikawa', '…!! (눈물이 그렁그렁)'],
+    ['usagi', '푸루야 우라우라!'],
+    ['kurimanju', '(건배) ……하아~~ 으어어…'],
+    ['hachiware', '다들 들어 줘서 고마워. …어떻게든 됐다!'],
+  ],
+  15: [
+    ['darkstar', '칫, 재미없어!'],
+    ['chiikawa', '…!! (창밖으로 아침 햇살)'],
+    ['hachiware', '내일이다…! 진짜 내일이 왔어!'],
+    ['usagi', '야하~!!'],
+  ],
+  18: [
+    ['goblin', '옴 빰 빰~ 예 예 예~!'],
+    ['hachiware', '고블린들이 고맙다고 춤춰 주는 거야!?'],
+    ['shisa', '다들 라멘 먹으러 와사~! 오늘은 다 같이 곱빼기사!'],
+    ['chiikawa', '…!! (모구모구…)'],
+    ['hachiware', '다음엔 또 무슨 일이 기다리고 있을까~ 어떻게든 되겠지!'],
   ],
 };
 // 친구마다 하는 말 (끝나고 한마디, 집, 라멘 가게에서 톡 했을 때). 우사기는 말 대신 소리, 치이카와는 거의 말이 없음, 카니는 말을 안 함(몸짓만)
