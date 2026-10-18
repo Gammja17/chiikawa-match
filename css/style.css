@@ -331,14 +331,20 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 .modal-btns .big-btn { flex: 1; min-width: 0; font-size: 30px; height: 52px; padding: 4px 10px 0; }
 .modal-btns .big-btn:empty { display: none; }
 
-/* ---------- 스킬 컷인 ---------- */
+/* ---------- 스킬 컷인: 집중선 + 캐릭터 색 띠 두 줄 + 튀어나오는 친구 + 한 글자씩 스킬 이름 ---------- */
 .cutin { position: absolute; inset: 0; z-index: 25; pointer-events: none; overflow: hidden; }
-.cutin .dim { position: absolute; inset: 0; background: var(--ink); opacity: 0; }
-.cutin .band { position: absolute; left: -8%; right: -8%; top: 38%; height: 150px; transform: rotate(-6deg); background: var(--ring); border-top: 3px solid var(--ink); border-bottom: 3px solid var(--ink); }
-.cutin .body { position: absolute; left: 4%; top: calc(38% - 84px); height: 230px; }
-.cutin .say { position: absolute; left: 52%; top: calc(38% + 6px); max-width: 44%; background: var(--paper); border: var(--line); border-radius: 14px; padding: 8px 14px; font-family: var(--hand); font-weight: 700; font-size: 25px; line-height: 1.15; }
-.cutin .sname { position: absolute; left: 52%; top: calc(38% + 82px); font-family: var(--head); font-size: 32px; line-height: 1.15; color: #fff; -webkit-text-stroke: 7px var(--ink); paint-order: stroke fill; }
-.cutin .streak { position: absolute; left: -10%; right: -10%; top: calc(38% + 72px); height: 4px; background: #fff; transform: rotate(-6deg); opacity: 0; }
+.cutin .dim { position: absolute; inset: 0; background: #2a2440; opacity: 0; }
+.cutin .lines { position: absolute; left: 50%; top: 42%; width: 200vmax; height: 200vmax; border-radius: 50%; opacity: 0;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 255, 255, .22) 0 2deg, transparent 2deg 9deg); -webkit-mask: radial-gradient(circle, transparent 0 16%, #000 30%); mask: radial-gradient(circle, transparent 0 16%, #000 30%); }
+.cutin .band { position: absolute; left: -10%; right: -10%; top: 36%; height: 160px; transform: rotate(-8deg); background: var(--ring); border-top: 4px solid #fff; border-bottom: 4px solid #fff; overflow: hidden; }
+.cutin .band span { position: absolute; inset: 0; background-image: radial-gradient(circle, rgba(255, 255, 255, .35) 0 4px, transparent 5px); background-size: 24px 24px; }
+.cutin .band2 { position: absolute; left: -10%; right: -10%; top: calc(36% + 168px); height: 18px; transform: rotate(-8deg); background: color-mix(in srgb, var(--ring) 60%, #fff); }
+.cutin .body { position: absolute; left: 2%; top: calc(36% - 96px); height: 250px; filter: drop-shadow(3px 0 0 #fff) drop-shadow(-3px 0 0 #fff) drop-shadow(0 3px 0 #fff) drop-shadow(0 -3px 0 #fff); }
+.cutin .say { position: absolute; left: 50%; top: calc(36% + 4px); max-width: 46%; background: #fff; border: var(--line); border-radius: 16px; padding: 8px 14px; font-family: var(--hand); font-size: 22px; line-height: 1.2; }
+.cutin .sname { position: absolute; left: 50%; top: calc(36% + 86px); white-space: nowrap; font-family: var(--head); font-size: 38px; line-height: 1; color: #fff; -webkit-text-stroke: 7px var(--ink); paint-order: stroke fill; }
+.cutin .sname i { display: inline-block; font-style: normal; animation: letterPop .3s cubic-bezier(.3, 1.8, .5, 1) backwards; }
+@keyframes letterPop { from { transform: translateY(-30px) scale(0) rotate(-20deg); opacity: 0; } to { transform: none; opacity: 1; } }
+.cutin .streak { position: absolute; left: -10%; right: -10%; top: calc(36% + 74px); height: 6px; background: #fff; transform: rotate(-8deg); opacity: 0; box-shadow: 0 0 16px 6px #fff; }
 
 /* ---------- 화면 전환 ---------- */
 .wipe { position: absolute; top: -10%; bottom: -10%; left: -15%; right: -15%; z-index: 40; background: var(--pink-l); border-left: 3px solid var(--ink); border-right: 3px solid var(--ink); pointer-events: all; display: flex; align-items: center; justify-content: center; }
@@ -458,7 +464,6 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .recruit .big-btn { min-width: 0; height: 42px; padding: 3px 14px 0; font-size: 26px; }
 
 /* ---------- 빤딱빤딱: 구슬 광택, 아이템 반짝임 ---------- */
-.tile .inner:not(.item):not(.block):not(.ing)::after { content: ''; position: absolute; left: 20%; top: 12%; width: 26%; height: 14%; border-radius: 50%; background: rgba(255, 255, 255, .75); transform: rotate(-30deg); pointer-events: none; }
 @keyframes glint { 0%, 70%, 100% { filter: drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 1.5px #fff) brightness(1); } 80% { filter: drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 6px #fff) brightness(1.35); } }
 .tile .inner.item img { animation: glint 2.4s ease-in-out infinite; }
 
@@ -524,3 +529,23 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .mates-grid button.on { background: color-mix(in srgb, var(--ring) 30%, #fff); box-shadow: 0 0 0 2px var(--ring); }
 .tile .inner.block.weed { border-radius: 12px; background: #dff3d0; box-shadow: inset 0 -4px 0 #c3e6ad; }
 .tile .inner.block.weed img { transform: scale(.82) translateY(4%); }
+
+.ray { position: absolute; height: 6px; margin-top: -3px; transform-origin: 0 50%; border-radius: 3px; background: var(--c); box-shadow: 0 0 8px 2px var(--c), 0 0 0 1px #fff inset; pointer-events: none; }
+
+/* ---------- 오토 스킬, 일상 퍼즐 도우미 ---------- */
+.btn-auto { flex: none; height: 24px; padding: 0 9px; border-radius: 8px; background: #ece6f3; color: var(--ink2); font-family: var(--head); font-size: 14px; letter-spacing: .04em; }
+.btn-auto.on { background: var(--pink); color: #fff; animation: pulse 1.2s infinite; }
+.lh-help { width: 76px; flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+#lhHelper { position: relative; width: 60px; height: 60px; border-radius: 50%; border: 2px solid var(--ink); cursor: pointer;
+  background: conic-gradient(color-mix(in srgb, var(--ring) 70%, #fff) calc(var(--g, 0) * 360deg), #fff 0); }
+#lhHelper .pm-face { width: 100%; height: 100%; border-radius: 50%; overflow: hidden; display: grid; place-items: center; }
+#lhHelper .fig { width: 92%; height: 92%; margin-top: 8%; }
+#lhHelper.ready { background: var(--ring); animation: bob 1s ease-in-out infinite; }
+#lhHelper.ready::after { content: ''; position: absolute; right: -9px; bottom: -6px; width: 24px; height: 24px; background: url(../assets/img/items/sparkle.png) center / contain no-repeat; animation: spin 2.4s linear infinite; }
+.helper-pick { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; padding: 10px; border-radius: 14px; background: color-mix(in srgb, var(--ring) 18%, #fff); }
+.helper-pick .fig { width: 84px; height: 84px; flex: none; }
+.helper-pick b { display: block; font-family: var(--head); font-size: 22px; }
+.helper-pick small { color: var(--pink); font-size: 14px; }
+.helper-pick p { margin: 2px 0 0; font-size: 13px; color: var(--ink2); }
+.afterline { position: absolute; height: 10px; margin-top: -5px; border-radius: 5px; background: #fff; box-shadow: 0 0 12px 4px #9fdcff; pointer-events: none; }
+.afterline.v { width: 10px; height: auto; margin: 0 0 0 -5px; }

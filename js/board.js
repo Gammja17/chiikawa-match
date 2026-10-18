@@ -266,7 +266,7 @@ const Board = {
       if (!t || !t.special || fired.has(t.id)) continue;
       fired.add(t.id);
       const cells = Board.effectCells(g, t, r, c, clear);
-      effects.push({ kind: t.special, r, c, type: t.type, target: t.target });
+      effects.push({ kind: t.special, r, c, type: t.type, target: t.target, cells, tile: t });
       if (Board.syrup?.[r][c] || syrupKeys.has(key(r, c))) cells.forEach(([rr, cc]) => syrupKeys.add(key(rr, cc)));
       cells.forEach(([rr, cc]) => {
         const k = key(rr, cc);

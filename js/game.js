@@ -615,10 +615,10 @@ async function trySwap(a, b) {
     B.busy = false;
     return;
   }
-  if (combo) await comboFx(combo);
-  await cascade([a, b], combo ? combo.cells : items);
+  if (combo) { await mergeFx(ta, tb, b); await comboFx(combo); }
+  await cascade([a, b], combo ? combo.cells : items, combo);
   await endTurn();
-  if (!B.over) B.busy = false;
+  if (!B.over) { B.busy = false; setTimeout(autoSkill, 300); }
 }
 
 // 아이템 하나를 제자리에서 터뜨림 (한 턴 씀)
@@ -632,7 +632,7 @@ async function activate([r, c]) {
   await t.inner.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.35)' }, { transform: 'scale(1.1)' }], { duration: 140, easing: 'ease-out' }).finished;
   await cascade(null, [[r, c]]);
   await endTurn();
-  if (!B.over) B.busy = false;
+  if (!B.over) { B.busy = false; setTimeout(autoSkill, 300); }
 }
 
 const settleAll = dur => {
@@ -642,7 +642,7 @@ const settleAll = dur => {
 };
 
 // ---------- 연쇄 ----------
-async function cascade(swapped, forced) {
+async function cascade(swapped, forced, origin = null) {
   let combo = 0;
   for (;;) {
     const res = Board.resolve(B.grid, combo === 0 ? swapped : null, combo === 0 ? forced : []);
@@ -650,7 +650,7 @@ async function cascade(swapped, forced) {
     combo++;
     B.maxCombo = Math.max(B.maxCombo || 0, combo);
     if (B.mode === 'battle' && combo === 5 && !B.fever) await feverShow();
-    await stepFx(res, combo);
+    await stepFx(res, combo, combo === 1 ? origin : null);
     await fall(Board.gravity(B.grid));
     if (B.mode === 'life') await Life.collect();
   }
@@ -660,6 +660,21 @@ async function cascade(swapped, forced) {
     await settleAll(380);
     if (Board.findRuns(B.grid).length) await cascade(null, []);
   }
+}
+
+// 아이템 합체: 두 아이템이 한 칸으로 빨려 들어가 빙글 돌며 번쩍
+async function mergeFx(ta, tb, at) {
+  const p = tileCenter(at[0], at[1]);
+  Sound.play('special', 0.8, 0.8);
+  Haptic.tap(20);
+  tb.el.style.zIndex = 5;
+  const spin = [{ transform: 'scale(1) rotate(0)' }, { transform: 'scale(1.35) rotate(200deg)', offset: 0.7 }, { transform: 'scale(1.6) rotate(360deg)', filter: 'brightness(2)' }];
+  slide(tb, at[0], at[1], 220, 'cubic-bezier(.5,0,.4,1)');
+  ta.inner.animate(spin, { duration: 380, easing: 'ease-in', fill: 'forwards' });
+  tb.inner.animate(spin, { duration: 380, easing: 'ease-in', fill: 'forwards' });
+  kp('twirl_01', p.x, p.y, B.S * 2.6, '#ffe680', [{ transform: 'scale(1.3) rotate(0)', opacity: 0 }, { transform: 'scale(.5) rotate(-300deg)', opacity: 1 }], { duration: 380, easing: 'ease-in' });
+  await sleep(380);
+  kp('flare_01', p.x, p.y, B.S * 4, '#ffffff', [{ transform: 'scale(.3)', opacity: 1 }, { transform: 'scale(1.3)', opacity: 0 }], { duration: 320 });
 }
 
 async function comboFx(combo) {
@@ -678,93 +693,156 @@ async function comboFx(combo) {
   banner(label, 350);
   await sleep(250);
   if (combo.planes) {
-    await Promise.all(combo.planes.map(tg => planeFly(p, tileCenter(tg[0], tg[1]), combo.carry)));
+    await Promise.all(combo.planes.map(tg => planeFly(p, tileCenter(tg[0], tg[1]), combo.carry, 620)));
     combo.planes.forEach(([tr, tc]) => (combo.carry ? effectFx({ kind: combo.carry, r: tr, c: tc }) : burst(tileCenter(tr, tc).x, tileCenter(tr, tc).y, '#bff3ff', 8)));
   }
 }
 
-// 비행기가 목표 칸으로 휙 날아감 (carry: 싣고 가는 아이템)
-function planeFly(from, to, carry = null) {
+// 비행기가 목표 칸으로 활처럼 날아감 (carry: 싣고 가는 아이템), 반짝이 꼬리
+function planeFly(from, to, carry = null, dur = 600) {
   Sound.play('swap', 0.75, 0.8);
   const el = addFx('plane-fly', from.x, from.y);
-  el.innerHTML = `<img src="${ITEM('plane')}">` + (carry ? `<img class="carry" src="${ITEM(carry)}">` : '');
+  el.style.width = el.style.height = B.S * 1.25 + 'px';
+  el.innerHTML = `<img src="${ITEM('plane')}">` + (carry ? `<img class="carry" src="${ITEM(ITEM_ICON[carry] || carry)}">` : '');
   const dx = to.x - from.x, dy = to.y - from.y;
-  const ang = Math.atan2(dy, dx) * 180 / Math.PI + 30; // 그림이 오른쪽 위를 봄
-  const lift = -Math.max(60, Math.hypot(dx, dy) * 0.35);
-  return el.animate([
-    { transform: 'translate(-50%,-50%) scale(.6) rotate(0deg)' },
-    { transform: `translate(calc(-50% + ${dx * 0.4}px), calc(-50% + ${dy * 0.4 + lift}px)) scale(1.25) rotate(${ang}deg)`, offset: 0.45 },
-    { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(.8) rotate(${ang}deg)` },
-  ], { duration: 380, easing: 'ease-in-out' }).finished.then(() => el.remove());
+  const lift = Math.max(80, Math.hypot(dx, dy) * 0.45);
+  const pt = t => [dx * t, dy * t - lift * 4 * t * (1 - t)];
+  const frames = [];
+  for (let k = 0; k <= 12; k++) {
+    const t = k / 12, [x, y] = pt(t), [x2, y2] = pt(Math.min(1, t + 0.05));
+    const ang = Math.atan2(y2 - y, x2 - x) * 180 / Math.PI + 30; // 그림이 오른쪽 위를 봄
+    const sc = 0.8 + Math.sin(t * Math.PI) * 0.5;
+    frames.push({ transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) rotate(${ang}deg) scale(${sc})`, offset: t });
+  }
+  for (let k = 1; k < 10; k++) setTimeout(() => {
+    const [x, y] = pt(k / 10);
+    kp('star_06', from.x + x, from.y + y, B.S * 0.6, '#ffffff', [{ transform: 'scale(1)', opacity: 0.9 }, { transform: 'scale(0)', opacity: 0 }], { duration: 400 });
+  }, (dur * k) / 10);
+  return el.animate(frames, { duration: dur, easing: 'ease-in-out' }).finished.then(() => el.remove());
 }
 
-function effectFx(ef) {
-  const b = boardEl.getBoundingClientRect(), a = app.getBoundingClientRect();
-  const bx = b.left - a.left, by = b.top - a.top, S = B.S;
-  if (ef.kind === 'h' || ef.kind === 'v') {
-    Sound.play('line', 1.1, 0.7);
-    const horiz = ef.kind === 'h', thick = S * 0.55;
-    // 로켓 두 개가 양쪽 끝으로 쓩, 출발점은 하얗게 번쩍
-    const o = tileCenter(ef.r, ef.c);
-    kp('flare_01', o.x, o.y, S * 2.6, '#ffffff', [{ transform: 'scale(.3)', opacity: 1 }, { transform: 'scale(1.2)', opacity: 0 }], { duration: 300, easing: 'ease-out' });
-    for (let k = 1; k < 7; k++) [-1, 1].forEach(d => setTimeout(() => {
-      const x = o.x + (horiz ? d * k * S : 0), y = o.y + (horiz ? 0 : d * k * S);
-      kp('spark_05', x, y, S * 0.9, '#bfe9ff', [{ transform: `scale(.4) rotate(${horiz ? 90 : 0}deg)`, opacity: 1 }, { transform: `scale(1.1) rotate(${horiz ? 90 : 0}deg)`, opacity: 0 }], { duration: 240 });
-    }, k * 28));
-    [-1, 1].forEach(dir => {
-      const im = new Image();
-      im.src = ITEM('rocket');
-      im.className = 'fximg';
-      Object.assign(im.style, { left: o.x + 'px', top: o.y + 'px', width: S * 0.8 + 'px', zIndex: 3 });
-      fx.appendChild(im);
-      const dist = (horiz ? app.clientWidth : app.clientHeight) * dir;
-      const rot = horiz ? (dir > 0 ? 45 : -135) : (dir > 0 ? 135 : -45);
-      im.animate([
-        { transform: `translate(-50%,-50%) rotate(${rot}deg) scale(.6)` },
-        { transform: `translate(calc(-50% + ${horiz ? dist : 0}px), calc(-50% + ${horiz ? 0 : dist}px)) rotate(${rot}deg) scale(1.1)` },
-      ], { duration: 420, easing: 'cubic-bezier(.4,0,.9,.5)' }).finished.then(() => im.remove());
-    });
-    const beam = addFx('beam ' + ef.kind, 0, 0);
-    Object.assign(beam.style, horiz
-      ? { left: '0px', top: by + (ef.r + 0.5) * S - thick / 2 + 'px', width: app.clientWidth + 'px', height: thick + 'px' }
-      : { left: bx + (ef.c + 0.5) * S - thick / 2 + 'px', top: '0px', width: thick + 'px', height: app.clientHeight + 'px' });
-    const [along, across] = horiz ? ['X', 'Y'] : ['Y', 'X'];
-    beam.animate([
-      { transform: `scale${along}(0) scale${across}(1.6)`, opacity: 1 },
-      { transform: `scale${along}(1) scale${across}(1)`, opacity: 1, offset: 0.3 },
-      { transform: `scale${along}(1) scale${across}(.15)`, opacity: 0 },
-    ], { duration: 450, easing: 'ease-out' }).finished.then(() => beam.remove());
-    const n = horiz ? COLS : ROWS, from = horiz ? ef.c : ef.r;
-    for (let i = 0; i < n; i++) {
-      const p = horiz ? tileCenter(ef.r, i) : tileCenter(i, ef.c);
-      setTimeout(() => burst(p.x, p.y, '#bff3ff', 3), 40 + Math.abs(i - from) * 25);
-    }
-    shake(4, 200);
-  } else if (ef.kind === 'bomb') {
-    Sound.play('line', 0.7, 0.9);
-    const p = tileCenter(ef.r, ef.c);
-    kp('light_02', p.x, p.y, S * 4, '#fff6c8', [{ transform: 'scale(.2)', opacity: 1 }, { transform: 'scale(1)', opacity: 0 }], { duration: 300, easing: 'ease-out' });
-    kp('magic_02', p.x, p.y, S * 4.2, '#ffb347', [{ transform: 'scale(.2) rotate(0)', opacity: 1 }, { transform: 'scale(1) rotate(60deg)', opacity: 0 }], { duration: 480, easing: 'ease-out' });
-    kp('smoke_04', p.x, p.y, S * 3, '#e8dccb', [{ transform: 'scale(.3)', opacity: 0.9 }, { transform: 'scale(1.2)', opacity: 0 }], { duration: 700, easing: 'ease-out' });
-    ringFx(p.x, p.y, S * 5, '#ffd84d', 420);
-    burst(p.x, p.y, '#ffb347', 10);
-    Juice.stop(60);
-    shake(7, 280);
-    flash('#fff6a8', 0.3);
+// 터지고 난 뒤 여운: 연기, 떠오르는 불씨, 남은 빛줄기
+function afterFx(ef) {
+  const S = B.S, o = tileCenter(ef.r, ef.c);
+  const embers = (x, y, color, n) => { for (let k = 0; k < n; k++) {
+    const dx = (Math.random() - 0.5) * S * 2.4, up = S * (0.8 + Math.random());
+    kp('star_06', x + dx * 0.3, y, S * (0.3 + Math.random() * 0.3), color, [{ transform: 'translate(0,0) scale(1)', opacity: 1 }, { transform: `translate(${dx}px, ${-up}px) scale(0)`, opacity: 0 }], { duration: 700 + Math.random() * 400, delay: k * 40, easing: 'ease-out' });
+  } };
+  if (ef.kind === 'bomb') {
+    kp('smoke_04', o.x, o.y - S * 0.3, S * 2.6, '#d9cfc2', [{ transform: 'translateY(0) scale(.6)', opacity: 0.7 }, { transform: `translateY(${-S}px) scale(1.4)`, opacity: 0 }], { duration: 1000, easing: 'ease-out' });
+    embers(o.x, o.y, '#ffb347', 8);
+  } else if (ef.kind === 'h' || ef.kind === 'v') {
+    const b = boardEl.getBoundingClientRect(), a = app.getBoundingClientRect(), horiz = ef.kind === 'h';
+    const line = addFx('afterline' + (horiz ? '' : ' v'), horiz ? b.left - a.left : o.x, horiz ? o.y : b.top - a.top);
+    Object.assign(line.style, horiz ? { width: b.width + 'px' } : { height: b.height + 'px' });
+    line.animate([{ opacity: 0.9 }, { opacity: 0 }], { duration: 500, easing: 'ease-out' }).finished.then(() => line.remove());
+    for (let k = 0; k < 7; k++) { const x = horiz ? b.left - a.left + (k + 0.5) * S : o.x, y = horiz ? o.y : b.top - a.top + (k + 0.5) * S; embers(x, y, '#bfe9ff', 1); }
   } else if (ef.kind === 'rainbow') {
+    const b = boardEl.getBoundingClientRect(), a = app.getBoundingClientRect();
+    const colors = ['#ff8ab8', '#ffd84d', '#7cc4ec', '#a6d96a', '#b99cf0'];
+    for (let k = 0; k < 14; k++) embers(b.left - a.left + Math.random() * b.width, b.top - a.top + Math.random() * b.height, colors[k % 5], 1);
+  } else if (ef.kind === 'plane' && ef.target) {
+    const t = tileCenter(ef.target[0], ef.target[1]);
+    kp('smoke_04', t.x, t.y, S * 1.8, '#e3eef7', [{ transform: 'scale(.5)', opacity: 0.7 }, { transform: 'scale(1.3)', opacity: 0 }], { duration: 700 });
+    embers(t.x, t.y, '#bff3ff', 5);
+  }
+}
+
+// 빛줄기: from에서 to까지 쭉 뻗었다가 사라짐 (무지개)
+function beamTo(from, to, color, delay = 0) {
+  const el = addFx('ray', from.x, from.y);
+  const dx = to.x - from.x, dy = to.y - from.y;
+  Object.assign(el.style, { width: Math.hypot(dx, dy) + 'px', transform: `rotate(${Math.atan2(dy, dx)}rad)` });
+  el.style.setProperty('--c', color);
+  el.animate([{ clipPath: 'inset(0 100% 0 0)', opacity: 1 }, { clipPath: 'inset(0 0 0 0)', opacity: 1, offset: 0.5 }, { clipPath: 'inset(0 0 0 0)', opacity: 0 }],
+    { duration: 300, delay, fill: 'backwards' }).finished.then(() => el.remove());
+}
+
+// 아이템 발동 연출 (ef.base 시각에 불림, 칸이 터지는 시각은 ef.times)
+function effectFx(ef) {
+  const S = B.S, o = tileCenter(ef.r, ef.c), inner = ef.tile?.inner;
+  if (ef.kind === 'h' || ef.kind === 'v') {
+    const horiz = ef.kind === 'h';
+    // 로켓이 부르르 → 양쪽 끝으로 쓩. 지나가는 칸이 차례로 터짐
+    inner?.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.25) rotate(-6deg)' }, { transform: 'scale(1.25) rotate(6deg)' }], { duration: FUSE.h });
+    setTimeout(() => {
+      Sound.play('line', 1.1, 0.8);
+      kp('flare_01', o.x, o.y, S * 2.8, '#ffffff', [{ transform: 'scale(.3)', opacity: 1 }, { transform: 'scale(1.2)', opacity: 0 }], { duration: 300, easing: 'ease-out' });
+      const cells = horiz ? COLS : ROWS, from = horiz ? ef.c : ef.r;
+      [-1, 1].forEach(dir => {
+        const im = new Image();
+        im.src = ITEM('rocket');
+        im.className = 'fximg';
+        Object.assign(im.style, { left: o.x + 'px', top: o.y + 'px', width: S * 0.95 + 'px', zIndex: 3 });
+        fx.appendChild(im);
+        const steps = dir > 0 ? cells - from + 0.5 : from + 1.5;
+        const dist = steps * S * dir;
+        const rot = horiz ? (dir > 0 ? 45 : -135) : (dir > 0 ? 135 : -45);
+        im.animate([
+          { transform: `translate(-50%,-50%) rotate(${rot}deg) scale(.7)` },
+          { transform: `translate(calc(-50% + ${horiz ? dist : 0}px), calc(-50% + ${horiz ? 0 : dist}px)) rotate(${rot}deg) scale(1.1)` },
+        ], { duration: steps * 32, easing: 'linear' }).finished.then(() => im.remove());
+        // 불꽃 꼬리
+        for (let k = 1; k <= steps; k++) setTimeout(() => {
+          const x = o.x + (horiz ? dir * k * S : 0), y = o.y + (horiz ? 0 : dir * k * S);
+          kp('spark_05', x, y, S * 1.1, '#bfe9ff', [{ transform: `scale(.5) rotate(${horiz ? 90 : 0}deg)`, opacity: 1 }, { transform: `scale(1.2) rotate(${horiz ? 90 : 0}deg)`, opacity: 0 }], { duration: 260 });
+        }, k * 32);
+      });
+      shake(4, 200);
+    }, FUSE.h);
+  } else if (ef.kind === 'bomb') {
+    // 폭탄이 부풀며 빨갛게 지지직 → 쾅! 충격파가 둥글게 퍼짐
+    Sound.play('swap', 0.6, 0.6);
+    inner?.animate([
+      { transform: 'scale(1)', filter: 'brightness(1)' },
+      { transform: 'scale(1.25) rotate(-8deg)', filter: 'brightness(1.3) sepia(.4) hue-rotate(-30deg)', offset: 0.3 },
+      { transform: 'scale(1.3) rotate(8deg)', filter: 'brightness(1.6) sepia(.6) hue-rotate(-30deg)', offset: 0.6 },
+      { transform: 'scale(1.55)', filter: 'brightness(2.5)' },
+    ], { duration: FUSE.bomb, fill: 'forwards' });
+    for (let k = 0; k < 4; k++) setTimeout(() => kp('star_06', o.x + S * 0.25, o.y - S * 0.35, S * 0.7, '#ffcf3f', [{ transform: 'scale(.3)', opacity: 1 }, { transform: 'scale(1)', opacity: 0 }], { duration: 120 }), k * 70);
+    setTimeout(() => {
+      Sound.play('thwack', 0.6, 1);
+      Sound.play('line', 0.6, 0.9);
+      kp('light_02', o.x, o.y, S * 5, '#fff6c8', [{ transform: 'scale(.2)', opacity: 1 }, { transform: 'scale(1)', opacity: 0 }], { duration: 320, easing: 'ease-out' });
+      kp('magic_02', o.x, o.y, S * 5, '#ffb347', [{ transform: 'scale(.2) rotate(0)', opacity: 1 }, { transform: 'scale(1) rotate(60deg)', opacity: 0 }], { duration: 520, easing: 'ease-out' });
+      kp('smoke_04', o.x, o.y, S * 3.4, '#e8dccb', [{ transform: 'scale(.3)', opacity: 0.9 }, { transform: 'scale(1.3)', opacity: 0 }], { duration: 800, easing: 'ease-out' });
+      kp('circle_03', o.x, o.y, S * 5.5, '#ffe066', [{ transform: 'scale(.1)', opacity: 1 }, { transform: 'scale(1)', opacity: 0 }], { duration: 420, easing: 'cubic-bezier(.2,.8,.3,1)' });
+      burst(o.x, o.y, '#ffb347', 14);
+      shards(o.x, o.y, ['#4a4262', '#ff9a4d', '#ffd84d'], 10, 10);
+      Juice.zoom(o.x, o.y, 1.06, 300);
+      Juice.stop(70);
+      shake(9, 320);
+      flash('#fff6a8', 0.35);
+    }, FUSE.bomb);
+  } else if (ef.kind === 'rainbow') {
+    // 무지개가 빙글빙글 모았다가 → 같은 얼굴마다 빛줄기가 하나씩 닿음
     Sound.play('rainbow', 1);
-    const p = tileCenter(ef.r, ef.c);
-    kp('twirl_01', p.x, p.y, S * 6, '#ffb3d1', [{ transform: 'scale(.2) rotate(0)', opacity: 1 }, { transform: 'scale(1) rotate(240deg)', opacity: 0 }], { duration: 650, easing: 'ease-out' });
-    burst(p.x, p.y, '#b99cf0', 14);
-    flash('#ffffff', 0.5);
-    shake(6, 300);
+    inner?.animate([{ transform: 'scale(1) rotate(0)' }, { transform: 'scale(1.45) rotate(360deg)' }], { duration: FUSE.rainbow, easing: 'ease-in', fill: 'forwards' });
+    kp('twirl_01', o.x, o.y, S * 3, '#ffb3d1', [{ transform: 'scale(1.2) rotate(0)', opacity: 0 }, { transform: 'scale(.4) rotate(-240deg)', opacity: 1 }], { duration: FUSE.rainbow, easing: 'ease-in' });
+    const colors = ['#ff8ab8', '#ffd84d', '#7cc4ec', '#a6d96a', '#b99cf0'];
+    let k = 0;
+    ef.times.forEach((t, cell) => {
+      const [r, c] = unkey(cell);
+      if (r === ef.r && c === ef.c) return;
+      beamTo(o, tileCenter(r, c), colors[k++ % colors.length], Math.max(0, t - 150));
+    });
+    setTimeout(() => { flash('#ffffff', 0.4); shake(6, 300); }, FUSE.rainbow);
   } else if (ef.kind === 'plane') {
-    const p = tileCenter(ef.r, ef.c);
-    NEAR4.forEach(([dr, dc]) => inside(ef.r + dr, ef.c + dc) && burst(p.x + dc * S, p.y + dr * S, '#bff3ff', 3));
-    if (ef.target) {
-      const to = tileCenter(ef.target[0], ef.target[1]);
-      planeFly(p, to).then(() => { burst(to.x, to.y, '#ffffff', 8); Sound.play('pop', 0.9, 0.8); });
-    }
+    // 비행기가 붕 떠올라 → 활처럼 날아가 → 꽂히면서 쾅
+    inner?.animate([{ transform: 'scale(1) rotate(0)' }, { transform: 'scale(1.3) rotate(-15deg) translateY(-20%)' }], { duration: FUSE.plane, fill: 'forwards' });
+    setTimeout(() => {
+      NEAR4.forEach(([dr, dc]) => inside(ef.r + dr, ef.c + dc) && burst(o.x + dc * S, o.y + dr * S, '#bff3ff', 3));
+      if (ef.target) {
+        const to = tileCenter(ef.target[0], ef.target[1]);
+        planeFly(o, to, null, 720 - FUSE.plane).then(() => {
+          kp('flare_01', to.x, to.y, S * 2.6, '#ffffff', [{ transform: 'scale(.3)', opacity: 1 }, { transform: 'scale(1.2)', opacity: 0 }], { duration: 300 });
+          ringFx(to.x, to.y, S * 2.4, '#7cc4ec', 320);
+          burst(to.x, to.y, '#bff3ff', 10);
+          Sound.play('thwack', 1.1, 0.8);
+          shake(4, 160);
+        });
+      }
+    }, FUSE.plane);
   }
 }
 
@@ -818,8 +896,8 @@ function flyOff(img, x, y, size) {
   ], { duration: 750, easing: 'ease-out' }).finished.then(() => im.remove());
 }
 // 장애물이 맞거나 깨짐, 리본이 풀림, 잡초가 뽑힘, 시럽이 번짐
-function hitFx(res, late) {
-  const at = (r, c) => (late.has(key(r, c)) ? 380 : 60);
+function hitFx(res, T) {
+  const at = (r, c) => T.get(key(r, c)) ?? 60;
   const S = B.S;
   res.unlocked.forEach(({ r, c, tile }) => setTimeout(() => {
     const p = tileCenter(r, c);
@@ -896,29 +974,67 @@ function projectile(from, to, img, ring, delay) {
   ], { duration: 460, delay, easing: 'cubic-bezier(.5,0,.85,.55)', fill: 'both' }).finished.then(() => p.remove());
 }
 
-async function stepFx(res, combo) {
-  res.effects.forEach(effectFx);
-  if (res.effects.length) await sleep(60);
+// 아이템마다 터지는 순서: 칸마다 '언제 터질지(ms)'를 정해 두고 그 시각에 터뜨림
+// 로켓은 출발점에서 양 끝으로 쓸고 가고, 폭탄은 부풀었다가 둥글게 퍼지고, 무지개는 빛줄기가 하나씩 닿고, 비행기는 날아가 꽂힘
+const FUSE = { h: 90, v: 90, bomb: 320, rainbow: 260, plane: 120 };
+function effectTimes(res, from) {
+  const T = new Map();
+  const dist = (a, b) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
+  res.effects.forEach(e => {
+    const base = T.get(key(e.r, e.c)) ?? 0;
+    const o = [e.r, e.c];
+    const order = e.kind === 'rainbow' ? e.cells.slice().sort((x, y) => dist(x, o) - dist(y, o)) : e.cells;
+    e.base = base;
+    e.times = new Map();
+    order.forEach(([r, c], idx) => {
+      let d;
+      if (e.kind === 'h' || e.kind === 'v') d = FUSE.h + Math.abs(e.kind === 'h' ? c - e.c : r - e.r) * 32;
+      else if (e.kind === 'bomb') d = FUSE.bomb + dist([r, c], o) * 45;
+      else if (e.kind === 'rainbow') d = r === e.r && c === e.c ? FUSE.rainbow + order.length * 38 : FUSE.rainbow + idx * 38;
+      else if (e.kind === 'plane') d = e.target && r === e.target[0] && c === e.target[1] ? 720 : FUSE.plane;
+      else d = 60;
+      const k = key(r, c);
+      e.times.set(k, d);
+      if (!T.has(k) || base + d < T.get(k)) T.set(k, base + d);
+    });
+  });
+  // 아이템 조합으로 지운 칸: 조합한 자리에서 물결처럼
+  if (from) [...res.cleared, ...res.hits].forEach(({ r, c }) => { const k = key(r, c); if (!T.has(k)) T.set(k, 60 + dist([r, c], from.at) * 34); });
+  return T;
+}
 
-  // 뽀용 터짐 (비행기가 날아간 칸은 도착할 때)
-  const late = new Set(res.effects.filter(e => e.target).map(e => key(e.target[0], e.target[1])));
+async function stepFx(res, combo, from = null) {
+  const T = effectTimes(res, from);
+  res.effects.forEach(ef => {
+    setTimeout(() => effectFx(ef), ef.base);
+    setTimeout(() => afterFx(ef), ef.base + Math.max(...ef.times.values()) + 60);
+  });
   const n = res.cleared.length;
-  res.cleared.forEach(({ r, c, tile }, i) => {
+  let i = 0, last = 0;
+  res.cleared.forEach(({ r, c, tile }) => {
     const p = tileCenter(r, c);
     const color = tile.type >= 0 ? teamCh(tile.type).ring : '#ffd84d';
-    const delay = late.has(key(r, c)) ? 380 : Math.min(i * 10, 150);
+    const delay = T.get(key(r, c)) ?? Math.min(i++ * 10, 150);
+    last = Math.max(last, delay);
     setTimeout(() => {
       // 캐릭터 색 고리 + 반짝이 + 같은 색 방울이 포물선으로 톡톡
-      if (i < 14) ringFx(p.x, p.y, B.S * 1.5, color, 300);
+      if (n < 16 || Math.random() < 0.5) ringFx(p.x, p.y, B.S * 1.5, color, 300);
       burst(p.x, p.y, color, n > 15 ? 3 : 5);
-      if (i < 20) shards(p.x, p.y, [color, '#ffffff'], n > 12 ? 2 : 4, 9, true);
+      shards(p.x, p.y, [color, '#ffffff'], n > 12 ? 2 : 4, 9, true);
     }, delay + 50);
     popTile(tile, delay);
   });
   // 많이 터질수록 판이 통 울림
   if (n >= 4) setTimeout(() => boardEl.animate([{ transform: 'scale(1)' }, { transform: `scale(${1 + Math.min(0.03, n * 0.002)})` }, { transform: 'scale(1)' }], { duration: 160, easing: 'ease-out' }), 60);
   if (combo >= 3) setTimeout(() => shake(2 + combo, 160), 60);
-  hitFx(res, late);
+  hitFx(res, T);
+  res.hits.forEach(({ r, c }) => (last = Math.max(last, T.get(key(r, c)) ?? 60)));
+  // 무지개 조합: 무지개 자리에서 지우는 칸마다 빛줄기
+  if (from && from.kind.startsWith('rainbow')) {
+    const o = tileCenter(from.at[0], from.at[1]), colors = ['#ff8ab8', '#ffd84d', '#7cc4ec', '#a6d96a', '#b99cf0'];
+    res.cleared.forEach(({ r, c }, k) => k < 40 && beamTo(o, tileCenter(r, c), colors[k % colors.length], Math.max(0, (T.get(key(r, c)) ?? 0) - 120)));
+  }
+  stepFx.wait = last;
   if (B.mode === 'life') Life.onStep(res, combo);
   for (let i = 0; i < Math.min(3, Math.ceil(n / 3)); i++) setTimeout(() => Sound.pop(combo - 1 + i), i * 70);
   if (n >= 6) setTimeout(() => Sound.play('sparkle', 1 + combo * 0.05, 0.6), 60);
@@ -978,7 +1094,7 @@ async function stepFx(res, combo) {
     updateGauges();
   })());
 
-  await sleep(Math.min(n * 10, 150) + 170);
+  await sleep(Math.max(Math.min(n * 10, 150), stepFx.wait) + 220);
 
   res.created.forEach(({ r, c, tile }) => {
     setTimeout(() => Tutor.onCreate(tile.special), 500);
@@ -1305,44 +1421,60 @@ $('#btnFormBack').onclick = () => { Sound.play('click'); go(openMap); };
 // ---------- 스킬 ----------
 // 캐릭터 색 스티커 띠가 찰싹 붙고, 그림이 튀어나와 대사, 빛줄기 남기고 빠짐 (약 1초)
 async function cutIn(ch) {
+  // 화면이 어두워지고 집중선이 돌며 → 캐릭터 색 띠가 쾅 → 친구가 튀어나와 한마디 → 스킬 이름이 한 글자씩 → 번쩍 하고 빠짐
   const el = document.createElement('div');
   el.className = 'cutin';
   el.style.setProperty('--ring', ch.ring);
-  el.innerHTML = `<div class="dim"></div><div class="band"></div><img class="body" src="${art(ch.id)}">
-    <div class="say">${ch.skill.say}</div><div class="sname">${ch.skill.name}</div><div class="streak"></div>`;
+  const letters = [...ch.skill.name].map((t, k) => `<i style="animation-delay:${0.32 + k * 0.05}s">${t === ' ' ? '&nbsp;' : t}</i>`).join('');
+  el.innerHTML = `<div class="dim"></div><div class="lines"></div><div class="band"><span></span></div><div class="band2"></div>
+    <img class="body" src="${art(ch.id)}"><div class="say">${ch.skill.say}</div><div class="sname">${letters}</div><div class="streak"></div>`;
   app.appendChild(el);
-  const [dim, band, body, say, sname, streak] = el.children;
+  const [dim, lines, band, band2, body, say, sname, streak] = el.children;
   Sound.play('jingle_skill', 1, 0.9);
+  Haptic.tap(40);
   setTimeout(() => Sound.voice(ch.id, 'skill'), 200);
-  dim.animate([{ opacity: 0 }, { opacity: 0.55 }], { duration: 120, fill: 'forwards' });
+  dim.animate([{ opacity: 0 }, { opacity: 0.6 }], { duration: 140, fill: 'forwards' });
+  lines.animate([{ opacity: 0, transform: 'translate(-50%,-50%) scale(1.4) rotate(0)' }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1) rotate(25deg)' }], { duration: 1100, fill: 'forwards' });
   band.animate([
-    { transform: 'rotate(-6deg) translateX(-110%)' },
-    { transform: 'rotate(-6deg) translateX(4%)', offset: 0.75 },
-    { transform: 'rotate(-6deg) translateX(0)' },
-  ], { duration: 220, easing: 'cubic-bezier(.2,.9,.3,1)', fill: 'backwards' });
+    { transform: 'rotate(-8deg) translateX(-110%)' },
+    { transform: 'rotate(-8deg) translateX(3%)', offset: 0.7 },
+    { transform: 'rotate(-8deg) translateX(0)' },
+  ], { duration: 240, easing: 'cubic-bezier(.2,.9,.3,1)', fill: 'backwards' });
+  band2.animate([{ transform: 'rotate(-8deg) translateX(110%)' }, { transform: 'rotate(-8deg) translateX(0)' }], { duration: 260, delay: 60, easing: 'cubic-bezier(.2,.9,.3,1)', fill: 'backwards' });
+  setTimeout(() => { shake(8, 220); flash('#ffffff', 0.35); Sound.play('thwack', 1.2, 0.7); }, 230);
   body.animate([
-    { transform: 'translateY(60px) scale(.6) rotate(-8deg)', opacity: 0 },
-    { transform: 'translateY(-8px) scale(1.08) rotate(3deg)', opacity: 1, offset: 0.7 },
+    { transform: 'translate(-60%, 40px) scale(.5) rotate(-15deg)', opacity: 0 },
+    { transform: 'translate(4%, -12px) scale(1.15) rotate(4deg)', opacity: 1, offset: 0.6 },
+    { transform: 'translate(0, 0) scale(.97, 1.03)', offset: 0.8 },
     { transform: 'none', opacity: 1 },
-  ], { duration: 300, delay: 90, easing: 'ease-out', fill: 'backwards' });
-  say.animate([
-    { transform: 'scale(0)', opacity: 0 },
-    { transform: 'scale(1.15)', opacity: 1, offset: 0.7 },
-    { transform: 'scale(1)', opacity: 1 },
-  ], { duration: 240, delay: 200, easing: 'ease-out', fill: 'backwards' });
-  sname.animate([{ opacity: 0, transform: 'translateX(-20px)' }, { opacity: 1, transform: 'none' }], { duration: 200, delay: 260, fill: 'backwards' });
-  setTimeout(() => Sound.play('pop', 1.4, 0.7), 220);
-  await sleep(760);
+  ], { duration: 420, delay: 120, easing: 'ease-out', fill: 'backwards' });
+  setTimeout(() => {
+    const r = body.getBoundingClientRect(), a = app.getBoundingClientRect();
+    const x = r.left - a.left + r.width / 2, y = r.top - a.top + r.height / 2;
+    burst(x, y, ch.ring, 14);
+    burst(x, y, '#ffffff', 10);
+    kp('star_09', x, y, 260, '#fff6c8', [{ transform: 'scale(.3) rotate(0)', opacity: 1 }, { transform: 'scale(1.2) rotate(90deg)', opacity: 0 }], { duration: 600 });
+  }, 380);
+  say.animate([{ transform: 'scale(0) rotate(-10deg)', opacity: 0 }, { transform: 'scale(1.18) rotate(3deg)', opacity: 1, offset: 0.7 }, { transform: 'scale(1)', opacity: 1 }],
+    { duration: 260, delay: 300, easing: 'ease-out', fill: 'backwards' });
+  setTimeout(() => Sound.play('pop', 1.4, 0.7), 300);
+  [...sname.children].forEach((_, k) => setTimeout(() => Sound.play('pop', 1.6 + k * 0.08, 0.35), 320 + k * 50));
+  // 띠 위 물방울 무늬가 흐름
+  band.firstChild.animate([{ backgroundPosition: '0 0' }, { backgroundPosition: '120px 0' }], { duration: 1000, iterations: 2 });
+  await sleep(980);
   Sound.play('line', 1.3, 0.6);
   streak.animate([
-    { opacity: 1, transform: 'rotate(-6deg) scaleX(0)' },
-    { opacity: 1, transform: 'rotate(-6deg) scaleX(1)', offset: 0.5 },
-    { opacity: 0, transform: 'rotate(-6deg) scaleX(1) scaleY(.2)' },
+    { opacity: 1, transform: 'rotate(-8deg) scaleX(0)' },
+    { opacity: 1, transform: 'rotate(-8deg) scaleX(1)', offset: 0.5 },
+    { opacity: 0, transform: 'rotate(-8deg) scaleX(1) scaleY(.2)' },
   ], { duration: 260 });
-  const out = { duration: 200, easing: 'ease-in', fill: 'forwards' };
-  band.animate([{ transform: 'rotate(-6deg) translateX(0)' }, { transform: 'rotate(-6deg) translateX(115%)' }], out);
-  [body, say, sname].forEach(e => e.animate([{ transform: 'none', opacity: 1 }, { transform: 'translateX(140%)', opacity: 0 }], out));
-  await dim.animate([{ opacity: 0.55 }, { opacity: 0 }], { duration: 220, fill: 'forwards' }).finished;
+  flash('#ffffff', 0.5);
+  const out = { duration: 220, easing: 'ease-in', fill: 'forwards' };
+  band.animate([{ transform: 'rotate(-8deg) translateX(0)' }, { transform: 'rotate(-8deg) translateX(115%)' }], out);
+  band2.animate([{ transform: 'rotate(-8deg) translateX(0)' }, { transform: 'rotate(-8deg) translateX(-115%)' }], out);
+  [body, say, sname].forEach(e => e.animate([{ transform: 'none', opacity: 1 }, { transform: 'translateX(140%) scale(1.2)', opacity: 0 }], out));
+  lines.animate([{ opacity: 1 }, { opacity: 0 }], out);
+  await dim.animate([{ opacity: 0.6 }, { opacity: 0 }], { duration: 240, fill: 'forwards' }).finished;
   el.remove();
 }
 
@@ -1357,20 +1489,30 @@ function pickTiles(n, ok = t => !t.special && t.type >= 0) {
 }
 
 // 게이지가 차면 파티 얼굴을 눌러 사용. 턴은 쓰지 않음
+// 일상 퍼즐에서는 데려간 친구 한 명(L.helper)의 스킬을 씀. 전투 전용 효과는 일상용으로 바꿈
 async function useSkill(k) {
-  const ch = teamCh(k);
-  if (B.busy || B.over) return;
-  if (B.gauge[k] < ch.skill.need) {
-    const p = centerOf($('#party').children[k]);
+  const life = B.mode === 'life';
+  const ch = life ? CHARS[L.helper] : teamCh(k);
+  if (B.busy || B.over || !ch) return;
+  const btn = life ? $('#lhHelper') : $('#party').children[k];
+  if ((life ? L.hg : B.gauge[k]) < ch.skill.need) {
     Sound.play('bad', 1.2, 0.5);
-    $('#party').children[k].animate([{ transform: 'translateX(-4px)' }, { transform: 'translateX(4px)' }, { transform: 'none' }], { duration: 180 });
+    btn.animate([{ transform: 'translateX(-4px)' }, { transform: 'translateX(4px)' }, { transform: 'none' }], { duration: 180 });
     return;
   }
   B.busy = true;
   clearSel();
-  B.gauge[k] = 0;
-  updateGauges();
+  Tutor.hideHand();
+  if (life) { L.hg = 0; Life.hud(); } else { B.gauge[k] = 0; updateGauges(); }
   await cutIn(ch);
+  // 일상 퍼즐: 이동(시간)을 더 주는 스킬
+  const bonusMoves = (n, color) => {
+    if (L.st.time) L.time += n * 3; else L.moves += n;
+    Life.hud();
+    const p = centerOf($('.lh-limit'));
+    floatNum(p.x, p.y, L.st.time ? `+${n * 3}초` : `+${n}`, color, 'crit');
+    Sound.play('heal', 1.2, 0.9);
+  };
   const id = ch.skill.id;
   let cells = [];
   if (id === 'random8') {
@@ -1385,14 +1527,21 @@ async function useSkill(k) {
       for (let i = 0; i < COLS; i++) cells.push([r0 + d, i]);
       for (let i = 0; i < ROWS; i++) cells.push([i, c0 + d]);
     }
-    const eff = attrMult(ch.attr, curWave().a);
-    const m = centerOf($('#monster'));
-    Juice.zoom(m.x, m.y, 1.1, 500);
-    hitMonster(Math.round(ch.dmg * 10 * eff * Meta.mult(ch.id)), ch, true, 0, eff);
-    B.cd += 2;
-    updateCd();
-    const p = centerOf($('#countdown'));
-    $('#countdown').animate([{ transform: 'scale(1)' }, { transform: 'scale(1.3)' }, { transform: 'scale(1)' }], { duration: 300 });
+    if (!life) {
+      const eff = attrMult(ch.attr, curWave().a);
+      const m = centerOf($('#monster'));
+      Juice.zoom(m.x, m.y, 1.1, 500);
+      hitMonster(Math.round(ch.dmg * 10 * eff * Meta.mult(ch.id)), ch, true, 0, eff);
+      B.cd += 2;
+      updateCd();
+      $('#countdown').animate([{ transform: 'scale(1)' }, { transform: 'scale(1.3)' }, { transform: 'scale(1)' }], { duration: 300 });
+    }
+  } else if (id === 'bighit' && life) {
+    // 일상: 제일 귀찮은 칸에 폭탄을 꽂음
+    const tg = Board.pickTarget(B.grid) || pickTiles(1)[0];
+    if (tg && B.grid[tg[0]][tg[1]] && !B.grid[tg[0]][tg[1]].block) { const t = B.grid[tg[0]][tg[1]]; t.special = 'bomb'; t.type = -1; refreshTile(t); squish(t); }
+    cells = tg ? [tg] : [];
+    await sleep(200);
   } else if (id === 'bighit') {
     const eff = attrMult(ch.attr, curWave().a);
     const m = centerOf($('#monster'));
@@ -1402,9 +1551,10 @@ async function useSkill(k) {
     hitMonster(Math.round(ch.dmg * 18 * eff), ch, true, 0, eff);
     await sleep(500);
   } else if (id === 'convert6') {
-    pickTiles(6, t => !t.special && t.type >= 0 && t.type !== k).forEach(([r, c], i) => {
+    const into = life ? Math.max(0, B.team.indexOf(L.helper)) : k;
+    pickTiles(6, t => !t.special && t.type >= 0 && t.type !== into).forEach(([r, c], i) => {
       const t = B.grid[r][c];
-      t.type = k;
+      t.type = into;
       setTimeout(() => {
         refreshTile(t);
         squish(t);
@@ -1414,6 +1564,9 @@ async function useSkill(k) {
       }, i * 70);
     });
     await sleep(6 * 70 + 200);
+  } else if (life && (id === 'heal40' || id === 'ramen' || id === 'stall')) {
+    bonusMoves(id === 'heal40' ? 4 : 3, ch.ring);
+    await sleep(400);
   } else if (id === 'heal40') {
     const amt = Math.round(B.teamMax * 0.4);
     B.teamHp = Math.min(B.teamMax, B.teamHp + amt);
@@ -1464,8 +1617,8 @@ async function useSkill(k) {
   } else if (id === 'cheer') {
     Board.shuffle(B.grid);
     await settleAll(420);
-    B.gauge = B.gauge.map((g, j) => (j === k ? g : g + 4));
-    updateGauges();
+    if (life) bonusMoves(1, ch.ring);
+    else { B.gauge = B.gauge.map((g, j) => (j === k ? g : g + 4)); updateGauges(); }
     Sound.play('sparkle', 1.1, 0.8);
   } else if (id === 'rainbow') {
     const [rc] = pickTiles(1);
@@ -1484,9 +1637,20 @@ async function useSkill(k) {
   await cascade(null, cells);
   await Promise.all(B.pending);
   B.pending = [];
-  if (B.monHp <= 0) await monsterDefeated();
-  if (!B.over) B.busy = false;
+  if (life) { Life.hud(); await Life.check(); } else if (B.monHp <= 0) await monsterDefeated();
+  if (!B.over) { B.busy = false; setTimeout(autoSkill, 300); }
 }
+
+// 오토: 게이지가 꽉 찬 친구가 있으면 알아서 스킬
+function autoSkill() {
+  if (!Save.data.autoSkill || B.busy || B.over || !$('#battle').classList.contains('active')) return;
+  if (B.mode === 'life') { if (L.helper != null && L.hg >= CHARS[L.helper].skill.need) useSkill(0); return; }
+  const k = B.team.findIndex((_, j) => B.gauge[j] >= teamCh(j).skill.need);
+  if (k >= 0) useSkill(k);
+}
+const updateAutoBtn = () => document.querySelectorAll('.btn-auto').forEach(b => b.classList.toggle('on', !!Save.data.autoSkill));
+document.querySelectorAll('.btn-auto').forEach(b => (b.onclick = () => { Save.data.autoSkill = !Save.data.autoSkill; Save.save(); updateAutoBtn(); Sound.play('click'); autoSkill(); }));
+updateAutoBtn();
 
 // ---------- 화면 전환: 크레용 종이가 쓱 덮었다 걷힘 ----------
 let wiping = false;

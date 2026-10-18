@@ -174,7 +174,10 @@ const Life = {
   async begin(st, run) {
     const i = run.i ?? -1;
     Life.stopTimer();
-    Object.assign(L, { run, ending: false, st, i, moves: st.moves || 0, time: st.time || 0, score: 0, ing: 0, chars: {}, popped: false, extra: false, goalsHtml: '' });
+    // 같이 갈 친구 한 명 (인어섬은 1층에서만 고름)
+    if (run.kind === 'route' && run.i < 2 && !Save.data.helper) L.helper = CHARS.findIndex(c => c.id === 'hachiware'); // 처음 두 판은 하치와레가 알아서 따라옴
+    else if (run.kind !== 'tower' || run.floor === 1 || L.helper == null) await pickHelper();
+    Object.assign(L, { hg: 0, run, ending: false, st, i, moves: st.moves || 0, time: st.time || 0, score: 0, ing: 0, chars: {}, popped: false, extra: false, goalsHtml: '' });
     Object.assign(B, { mode: 'life', stage: i, over: false, busy: true, sel: null, pending: [], maxCombo: 0, fever: 0 });
     B.team = LIFE_CHARS.slice(0, st.types).map(id => CHARS.findIndex(c => c.id === id));
     NTYPES = st.types;
@@ -191,7 +194,9 @@ const Life = {
     show('battle');
     $('#stageName').textContent = run.kind === 'route' ? `${routeIdx('l', i) + 1}. ${st.name}` : st.name;
     $('#waveInfo').innerHTML = '';
-    $('#lhChar').src = art(st.host);
+    const hc = CHARS[L.helper];
+    $('#lhHelper').style.setProperty('--ring', hc.ring);
+    $('#lhHelper .pm-face').innerHTML = Meta.figure(hc.id, FACE(hc.id));
     layoutBoard();
     boardEl.querySelectorAll('.tile').forEach(e => e.remove());
     fx.innerHTML = '';
@@ -247,7 +252,7 @@ const Life = {
     if (html !== L.goalsHtml) {
       const was = L.goalsHtml;
       $('#lhGoals').innerHTML = L.goalsHtml = html;
-      if (was) $('#lhChar').animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-10px) rotate(-4deg)' }, { transform: 'none' }], { duration: 300 });
+      if (was) $('#lhHelper').animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-10px) rotate(-4deg)' }, { transform: 'none' }], { duration: 300 });
     }
     const top = st.stars[2] * 1.12;
     $('#lhScore .fill').style.width = Math.min(1, L.score / top) * 100 + '%';
@@ -256,12 +261,17 @@ const Life = {
       m.classList.toggle('on', L.score >= st.stars[k]);
     });
     $('#lhScore b').textContent = L.score;
+    const need = CHARS[L.helper].skill.need;
+    $('#lhHelper').style.setProperty('--g', Math.min(1, L.hg / need));
+    $('#lhHelper').classList.toggle('ready', L.hg >= need);
   },
 
   onStep(res, combo) {
     const pts = res.cleared.length * 20 * combo + res.created.length * 100 + res.hits.length * 50 + res.weeds.length * 60 +
       res.unlocked.length * 60 + res.syrup.length * 40;
     res.cleared.forEach(({ tile }) => {
+      // 데려간 친구 얼굴이면 게이지 1, 다른 얼굴은 1/3
+      L.hg += tile.type >= 0 && B.team[tile.type] === L.helper ? 1 : 1 / 3;
       if (tile.type < 0) return;
       const id = teamCh(tile.type).id;
       L.chars[id] = (L.chars[id] || 0) + 1;
@@ -517,3 +527,33 @@ Life.contestEnd = async function () {
     btn1: '다시 도전', on1: () => go(() => Life.begin(CONTEST, { kind: 'contest' })),
   });
 };
+
+// ---------- 같이 갈 친구 고르기 (일상 퍼즐은 한 명만) ----------
+function pickHelper() {
+  return new Promise(done => {
+    const list = CHARS.map((c, k) => [c, k]).filter(([c]) => Meta.owned(c.id));
+    let pick = L.helper != null && Meta.owned(CHARS[L.helper].id) ? L.helper : CHARS.findIndex(c => c.id === (Save.data.helper || 'hachiware'));
+    if (pick < 0 || !Meta.owned(CHARS[pick].id)) pick = list[0][1];
+    const card = $('#charSheet .sheet-card');
+    const draw = () => {
+      const ch = CHARS[pick];
+      card.style.setProperty('--ring', ch.ring);
+      card.innerHTML = `<div class="mates-title">같이 갈 친구 한 명</div>
+        <div class="helper-pick"><span class="fig">${Meta.figure(ch.id, art(ch.id))}</span><div><b>${ch.name}</b><small>${ch.skill.name}</small><p>${ch.skill.desc}</p></div></div>
+        <div class="mates-grid">${list.map(([c, k]) => `<button class="${k === pick ? 'on' : ''}" data-k="${k}" style="--ring:${c.ring}"><img src="${FACE(c.id)}"><span>${c.name}</span></button>`).join('')}</div>
+        <div class="sheet-btns"><button class="big-btn" data-go>같이 가자!</button></div>`;
+      card.querySelectorAll('.mates-grid button').forEach(b => (b.onclick = () => { pick = +b.dataset.k; Sound.play('pop', 1.2, 0.5); draw(); }));
+      card.querySelector('[data-go]').onclick = () => {
+        L.helper = pick;
+        Save.data.helper = CHARS[pick].id;
+        Save.save();
+        Sound.voice(CHARS[pick].id, 'pick') || Sound.play('click');
+        $('#charSheet').classList.remove('show');
+        done();
+      };
+    };
+    draw();
+    $('#charSheet').classList.add('show');
+  });
+}
+$('#lhHelper').onclick = () => useSkill(0);
