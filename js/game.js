@@ -2070,8 +2070,9 @@ async function feverShow() {
 
 // ---------- 라면 가게: 갑옷 아저씨네 가게. 시사가 아르바이트하고, 친구들이 앉아 있고, 가끔 손님이 놀러 옴 ----------
 // 토벌을 새로 깰 때마다 한 그릇 (곱빼기: 다음 토벌 체력 150 / 진한 국물: 스킬 게이지 반부터)
-const MASTER_LINES = ['어서 오세요. 편히 앉으세요.', '토벌 하나 끝낼 때마다 한 그릇 말아 드릴게요.', '국물은 진하게. 그게 우리 가게 방식이죠.', '면은 매일 직접 뽑아요.', '오늘도 고생 많았어요.', '시사가 요즘 정말 열심히 해요.'];
-const SHISA_LINES = ['어서 오세요~!', '저 여기서 수행 중이에요! 마스터 라멘은 최고예요~', '넵! 주문 들어갑니다~!', '언젠가 저도 토벌에 따라가 보고 싶어요…!'];
+// 라멘 갑옷 씨: 가게 규칙에 엄격한 사장. 아이들은 이름 대신 생김새로 부름
+const MASTER_LINES = ['왔군. 주문은 순서대로.', '면 굵기, 기름 양, 국물 진하기. 정하고 말해라.', '가게 규칙은 지켜라.', '토벌 하나 끝냈으면 한 그릇 먹고 가라.', '국물은 새벽부터 끓인다.', '하얀 녀석, 오늘도 왔군.', '시사 녀석… 요즘 손이 빨라졌다.'];
+const SHISA_LINES = ['어서 와사~!', '여기서 수행 중이사! 스승님 라멘은 최고사~', '주문 들어갑니다사~!', '언젠가 토벌에도 따라가 보고 싶사…!'];
 function shopSay(el, text) {
   const say = $('#shopSay'), r = el.getBoundingClientRect(), sc = $('#shopScene').getBoundingClientRect();
   say.textContent = text;
@@ -2083,7 +2084,7 @@ function shopSay(el, text) {
   Sound.play('pop', 1.1 + Math.random() * 0.3, 0.6);
 }
 // 문가 손님이 하는 말 (간식을 모아 오면 친구가 됨)
-const RECRUIT_ASK = { momonga: '딸기 파르페 5개 갖다주면… 모몽가가 같이 다녀 줄게! 착하지?', kurimanju: '……(경단 쪽을 힐끔)', goblin: '킥킥, 주먹밥 4개면 따라가 줄게.' };
+const RECRUIT_ASK = { momonga: '딸기 파르페 5개 갖다주면… 모몽가가 같이 다녀 줄게! 착하지?', kurimanju: '……(경단 쪽을 힐끔)', goblin: '옴 빰 빰~ (주먹밥 4개를 가리킨다)' };
 function openRamen() {
   show('ramen');
   Meta.coinUI();
@@ -2120,7 +2121,7 @@ function openRamen() {
     el.animate([{ transform: 'translateX(-60px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 500, delay: 300, easing: 'ease-out', fill: 'backwards' });
   }
   renderRamenMenu();
-  setTimeout(() => $('#ramen').classList.contains('active') && shopSay($('#shopMaster'), Save.data.ramen === false ? '오늘 국물은 다 떨어졌어요. 토벌 하나 더 하고 오세요.' : '어서 오세요. 한 그릇 드시고 가요.'), 450);
+  setTimeout(() => $('#ramen').classList.contains('active') && shopSay($('#shopMaster'), Save.data.ramen === false ? '오늘 국물은 다 떨어졌다. 토벌 하나 더 하고 와라.' : '왔군. 한 그릇 먹고 가라.'), 450);
 }
 function renderRamenMenu() {
   const ready = Save.data.ramen !== false;
@@ -2128,7 +2129,7 @@ function renderRamenMenu() {
   $('#ramenNote').textContent = ready ? '하나 골라요 · 다음 토벌 한 번' : Save.data.buff ? `다음 토벌에 ${Save.data.buff === 'hp' ? '곱빼기' : '진한 국물'} 효과가 있어요` : '토벌을 새로 깨면 또 한 그릇';
 }
 $('#ramenMenu').querySelectorAll('button').forEach(b => (b.onclick = async () => {
-  if (Save.data.ramen === false) { Sound.play('bad'); shopSay($('#shopMaster'), '토벌 하나 더 하고 오세요.'); return; }
+  if (Save.data.ramen === false) { Sound.play('bad'); shopSay($('#shopMaster'), '토벌 하나 더 하고 와라.'); return; }
   const buff = b.dataset.b;
   Save.data.buff = buff;
   Save.data.ramen = false;
@@ -2142,7 +2143,7 @@ $('#ramenMenu').querySelectorAll('button').forEach(b => (b.onclick = async () =>
   bowl.animate([{ transform: 'translate(-50%, -120px) scale(.6)', opacity: 0 }, { transform: 'translate(-50%, 6px) scale(1.1, .9)', opacity: 1, offset: 0.7 }, { transform: 'translate(-50%, 0)' }], { duration: 420, easing: 'ease-in' });
   const c = centerOf(bowl);
   setTimeout(() => { Sound.play('heal', 1, 0.9); burst(c.x, c.y, '#ff9f5a', 14); floatNum(c.x, c.y - 40, buff === 'hp' ? '다음 토벌 체력 150!' : '다음 토벌 게이지 반!', '#e07b39'); }, 420);
-  shopSay($('#shopMaster'), buff === 'hp' ? '곱빼기 나왔습니다. 든든하게 드세요.' : '진한 국물이에요. 힘이 날 거예요.');
+  shopSay($('#shopMaster'), buff === 'hp' ? '곱빼기다. 남기지 마라.' : '진한 국물이다. 힘이 날 거다.');
   renderRamenMenu();
   $('#btnRamen').classList.remove('on');
   setTimeout(() => bowl.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, fill: 'forwards' }).finished.then(() => bowl.remove()), 2600);
