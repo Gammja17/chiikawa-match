@@ -586,7 +586,7 @@ $('#btnMapHome').onclick = () => { Sound.play('click'); go(() => show('title'));
 // ---------- 스토리 ----------
 // 입힌 옷이 있으면 그 그림, 없으면 기본 그림 (대화창·스킬 컷인·결과창)
 // 스킬 게이지 요구치: 일상 퍼즐(친구 한 명)은 2.5배, 친구 레벨 1마다 4%씩 줄어듦 (Lv10이면 64%)
-const skillNeed = (id, life = B.mode === 'life') => Math.round(skillOf(id).need * (life ? 2.5 : 1) * (1 - 0.04 * Math.max(0, Meta.lv(id) - 1)));
+const skillNeed = (id, life = B.mode === 'life', lv = Meta.lv(id)) => Math.round(skillOf(id).need * (life ? 2.5 : 1) * (1 - 0.04 * Math.max(0, lv - 1)));
 const artOf = id => { const s = Save.data.outfit?.[id]; return s && SKINS[id]?.[s] ? SKIN(id, s) : art(id); };
 function playStory(lines) {
   return new Promise(done => {

@@ -223,6 +223,7 @@ const Spot = {
     Spot.close();
     const els = [].concat(target).filter(e => e && e.getClientRects().length); // 안 보이는 곳(다른 화면의 버튼 등)은 건너뜀
     if (!els.length) return Promise.resolve();
+    if (els[0].closest('.ch-body, .sheet-card, #friendsGrid')) els[0].scrollIntoView({ block: 'nearest' }); // 목록 안에서 가려져 있으면 보이게 굴림
     return new Promise(done => {
       const a = app.getBoundingClientRect();
       const rs = els.map(e => e.getBoundingClientRect());
@@ -275,7 +276,7 @@ const UNLOCK_INTRO = {
   ramen: () => [['#shopMaster', '갑옷 아저씨네 라멘 가게야. 말 걸어 봐!'], ['#ramenMenu', '토벌을 새로 깰 때마다 한 그릇! 먹으면 다음 토벌이 편해져'], ['#shopShisa', '시사는 여기서 수행 중이야. 언젠가 같이 다닐지도~?']],
   house: () => [['#room .resident.owner', '친구를 꾹 잡고 끌면 원하는 자리로 옮길 수 있어'], ['.shop-wrap', '코인으로 가구를 사서 꾸미자~'], ['#btnMates', '같이 살 친구도 정할 수 있어!']],
   gacha: () => [['#btnPull', '코인 100개로 캡슐 하나! 뭐가 나올까~']],
-  challenge: () => [['.ch-card.tower', '인어섬 탐험! 끝없이 올라가. 몇 층까지 갈 수 있을까?'], ['.ch-card.contest', '제초 대회! 60초 동안 최고 점수 내기~']],
+  challenge: () => [['.ch-card.tower', '인어섬 탐험! 끝없이 올라가. 몇 층까지 갈 수 있을까?'], ['.ch-card.contest', '제초 대회! 60초 동안 최고 점수 내기~'], ...CH_TIPS.map(([k, sel, text]) => (Tutor.mark(k), [sel, text]))],
 };
 const Unlock = {
   open: u => clearedCount() >= u.at,

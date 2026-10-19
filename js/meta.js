@@ -7,6 +7,10 @@ const SHARD_NEED = [0, 10, 15, 20, 25, 30, 40, 50, 60, 80];
 // 간식으로 데려온 친구(모몽가·쿠리만쥬·고블린)는 좋아하는 간식도 Lv×2개 더 듦 (대신 레벨마다 더 많이 오름)
 const upCost = id => { const lv = Meta.lv(id), t = RECRUIT[id]?.treat; return lv >= LV_MAX ? null : { shards: SHARD_NEED[lv], coins: lv * 80, treat: t, tn: t ? lv * 2 : 0 }; };
 const canUp = id => { const c = upCost(id); return !!c && Meta.owned(id) && (Save.data.shards[id] || 0) >= c.shards && Save.data.coins >= c.coins && (!c.treat || (Save.data.treats[c.treat] || 0) >= c.tn); };
+// 레벨로 오르는 몫: 레벨마다 +8% (간식으로 데려온 친구는 +12%)
+const lvMult = (id, lv = Meta.lv(id)) => 1 + (RECRUIT[id]?.treat ? 0.12 : 0.08) * Math.max(0, lv - 1);
+// 레벨 lv일 때 공격(회복) 숫자. 옷·친밀도 보너스는 지금 그대로 두고 레벨 몫만 바꿔 셈 (강화하면 얼마나 오르는지 미리 보여 주려고)
+const powAt = (id, lv) => { const ch = CHARS[charIdx(id)], m = Meta.mult(id) / lvMult(id) * lvMult(id, lv); return ch.heal ? Math.round(ch.heal * m * 10) / 10 : Math.round(ch.dmg * m); };
 const GACHA_COST = 100;
 // x, y: 방 안 위치(%), w: 너비(%)
 // 치이카와네 원룸에 있을 법한 살림 (VARCO로 원작 느낌 그림)
@@ -80,7 +84,7 @@ const Meta = {
   owned: id => !!Save.data.own[id],
   lv: id => Save.data.own[id] || 0,
   // 레벨마다 공격·회복 8%씩
-  mult: id => (1 + (RECRUIT[id]?.treat ? 0.12 : 0.08) * Math.max(0, Meta.lv(id) - 1)) * (Save.data.outfit?.[id] ? 1.05 : 1), // 레벨마다 +8% (간식으로 데려온 친구는 +12%), 옷을 입으면 +5%
+  mult: id => lvMult(id) * (Save.data.outfit?.[id] ? 1.05 : 1), // 레벨마다 +8% (간식으로 데려온 친구는 +12%), 옷을 입으면 +5%
   addCoins(n) {
     Save.data.coins += n;
     Save.save();
@@ -247,8 +251,59 @@ const Sheet = {
     if (!r) return `<div class="recruit"><img src="${ITEM('gift')}"><span>캡슐 뽑기에서 만나요</span></div>`;
     if (r.stage) { const k = routeIdx(r.stage[0], r.stage[1]); return `<div class="recruit"><img src="${ITEM(routeStage(k).icon)}"><span>${k + 1}. ${routeStage(k).name}을(를) 깨면 와요</span></div>`; }
     const have = Save.data.treats[r.treat] || 0;
-    return `<div class="recruit"><img src="${ITEM(r.treat)}"><span>${TREATS[r.treat]} ${Math.min(have, r.n)} / ${r.n}</span>
+    return `<div class="recruit"><img src="${ITEM(r.treat)}"><span><b>${TREATS[r.treat]} ${Math.min(have, r.n)} / ${r.n}</b><span class="lvbar"><i style="width:${Math.min(1, have / r.n) * 100}%"></i></span><small>좋아하는 간식을 모으면 같이 다녀요</small></span>
       <button class="big-btn" data-recruit ${have >= r.n ? '' : 'disabled'}>데려오기</button></div>`;
+  },
+  // 강화 칸: 레벨 바, 드는 것(조각·코인·간식)과 가진 개수, 강화하면 오르는 숫자, 강화 버튼
+  upHtml(id) {
+    const lv = Meta.lv(id), ch = CHARS[charIdx(id)];
+    const bar = `<div class="up-lv"><b>Lv <i>${lv}</i></b><div class="lvbar"><i style="width:${(lv / LV_MAX) * 100}%"></i></div><small>${lv >= LV_MAX ? 'MAX' : LV_MAX}</small></div>`;
+    if (lv >= LV_MAX) return `<div class="up-box max">${bar}<div class="up-max"><img src="assets/img/ui/check.png" alt="">최고 레벨까지 키웠어요!</div></div>`;
+    const c = upCost(id), shard = Save.data.shards[id] || 0, tr = c.treat ? Save.data.treats[c.treat] || 0 : 0;
+    const cost = (ok, icon, label, have, need) => `<div class="cost${ok ? '' : ' lack'}">${icon}<small>${label}</small><b>${have}${need ? `<i>/${need}</i>` : ''}</b></div>`;
+    const lack = [shard < c.shards && '조각: 가게 캡슐 뽑기에서 또 만나면 10개', c.treat && tr < c.tn && `${TREATS[c.treat]}: 도전 › 간식 창고`, Save.data.coins < c.coins && '코인이 모자라요'].filter(Boolean);
+    const pow0 = powAt(id, lv), pow1 = powAt(id, lv + 1), need0 = skillNeed(id, false), need1 = skillNeed(id, false, lv + 1);
+    return `<div class="up-box">${bar}
+      <div class="up-costs">
+        ${cost(shard >= c.shards, `<span class="shard-ic"><img src="${FACE(id)}" alt=""></span>`, '조각', shard, c.shards)}
+        ${c.treat ? cost(tr >= c.tn, `<img src="${ITEM(c.treat)}" alt="">`, TREATS[c.treat], tr, c.tn) : ''}
+        ${cost(Save.data.coins >= c.coins, `<img src="${ITEM('coin')}" alt="">`, '코인', c.coins, 0)}
+      </div>
+      <div class="up-next">강화하면 <span>${ch.heal ? '회복' : '공격'} ${pow1 > pow0 ? `${pow0} → <b>${pow1}</b>` : `<b>+${RECRUIT[id]?.treat ? 12 : 8}%</b>`}</span>${need1 < need0 ? `<span>게이지 ${need0} → <b>${need1}</b></span>` : ''}</div>
+      <button class="up-btn${canUp(id) ? ' ready' : ''}" data-up>강화하기</button>
+      ${lack.length ? `<small class="up-hint">${lack.join(' · ')}</small>` : ''}
+    </div>`;
+  },
+  // 강화 연출: 레벨 도장이 쾅, 바가 차오르고, 오른 숫자 옆에 +몇이 톡
+  levelUp(id, before) {
+    const card = $('#charSheet .sheet-card'), ch = CHARS[charIdx(id)], lv = Meta.lv(id);
+    const artEl = card.querySelector('.sheet-art'), fig = artEl.querySelector('.fig');
+    Sound.play('star', 1.2); Sound.play('jingle_win', 1.3, 0.5);
+    setTimeout(() => Sound.voice(id, 'pick'), 300);
+    const stamp = document.createElement('div');
+    stamp.className = 'lvup-stamp';
+    stamp.innerHTML = `<small>LEVEL UP!</small><b>Lv ${lv}</b>`;
+    artEl.appendChild(stamp);
+    stamp.animate([{ transform: 'translate(-50%,-50%) scale(2.2) rotate(-14deg)', opacity: 0 }, { transform: 'translate(-50%,-50%) scale(.92) rotate(-6deg)', opacity: 1, offset: 0.25 }, { transform: 'translate(-50%,-50%) scale(1) rotate(-6deg)', opacity: 1, offset: 0.8 }, { transform: 'translate(-50%,-80%) scale(1) rotate(-6deg)', opacity: 0 }], { duration: 1500, easing: 'ease-out', fill: 'forwards' }).finished.then(() => stamp.remove());
+    fig.animate([{ transform: 'none' }, { transform: 'translateY(-26px) scale(1.06,.94)', offset: 0.35 }, { transform: 'translateY(0) scale(1.08,.92)', offset: 0.6 }, { transform: 'none' }], { duration: 520, easing: 'ease-out' });
+    const bar = card.querySelector('.up-lv .lvbar i');
+    bar.animate([{ width: (before.lv / LV_MAX) * 100 + '%' }, { width: bar.style.width }], { duration: 600, delay: 200, easing: 'ease-out', fill: 'backwards' });
+    card.querySelector('.up-lv b i').animate([{ transform: 'scale(1)' }, { transform: 'scale(1.6)', color: ch.ring }, { transform: 'scale(1)' }], { duration: 420, delay: 300 });
+    // 오른 숫자: 그 칸이 반짝, 숫자 위에 +몇 (게이지는 줄어드는 게 좋은 것)
+    const gains = { pow: Math.round((powAt(id, lv) - before.pow) * 10) / 10, need: before.need - skillNeed(id, false) };
+    Object.entries(gains).forEach(([k, d], j) => {
+      if (!d) return;
+      const cell = card.querySelector(`[data-st="${k}"]`);
+      cell.classList.add('gain');
+      const tag = document.createElement('em');
+      tag.textContent = k === 'need' ? '−' + d : '+' + d;
+      cell.appendChild(tag);
+      tag.animate([{ transform: 'translateY(8px) scale(.4)', opacity: 0 }, { transform: 'translateY(-4px) scale(1.2)', opacity: 1, offset: 0.4 }, { transform: 'none', opacity: 1 }], { duration: 420, delay: 500 + j * 150, easing: 'ease-out', fill: 'backwards' });
+      setTimeout(() => cell.classList.remove('gain'), 1800);
+    });
+    const r = artEl.getBoundingClientRect(), ar = app.getBoundingClientRect();
+    burst(r.left - ar.left + r.width / 2, r.top - ar.top + r.height * 0.55, ch.ring, 16);
+    setTimeout(() => burst(r.left - ar.left + r.width / 2, r.top - ar.top + r.height * 0.45, '#ffd84d', 10), 220);
   },
   open(id, opts = {}) {
     const ch = CHARS[charIdx(id)];
@@ -256,22 +311,24 @@ const Sheet = {
     const el = $('#charSheet');
     const card = el.querySelector('.sheet-card');
     card.style.setProperty('--ring', ch.ring);
-    const stat = ch.heal ? `회복 ${Math.round(ch.heal * Meta.mult(id) * 10) / 10}` : `공격 ${Math.round(ch.dmg * Meta.mult(id))}`;
     const stories = (CHAR_STORY[id] || []).map(([need], k) =>
-      `<button class="story-btn" data-k="${k}" ${lv >= need ? '' : 'disabled'}><img class="b-ic" src="assets/img/ui/book.png" alt="">이야기 ${k + 1}${lv >= need ? '' : ` (Lv${need})`}</button>`).join('');
+      `<button class="story-btn" data-k="${k}" ${lv >= need ? '' : 'disabled'}><img src="assets/img/ui/book.png" alt=""><b>이야기 ${k + 1}</b><small>${lv >= need ? '읽기' : `Lv${need}에 열림`}</small></button>`).join('');
     card.innerHTML = `
       <div class="sheet-art${own && specialOf(id) ? ' special' : ''}"${own && specialOf(id) ? ` style="--scene:url(${SCENE(specialOf(id).special)})"` : ''}>${own ? Meta.figure(id, art(id), 'big') : `<span class="fig big"><img src="${art(id)}" class="shadow"></span>`}${own && specialOf(id) ? '<span class="sp-tag">✦ 스페셜</span>' : ''}<div class="sheet-say"></div></div>
       <div class="sheet-name">${ch.name} ${attrTag(ch.attr)}</div>
-      ${own ? `<div class="sheet-lv"><b>Lv ${lv}</b><div class="lvbar"><i style="width:${(lv / LV_MAX) * 100}%"></i></div><small>${lv >= LV_MAX ? 'MAX' : `조각 ${Save.data.shards[id] || 0}/${upCost(id).shards}${upCost(id).treat ? ` · ${TREATS[upCost(id).treat]} ${Save.data.treats[upCost(id).treat] || 0}/${upCost(id).tn}` : ''}`}</small></div>
-        ${lv < LV_MAX ? `<button class="up-btn${canUp(id) ? ' ready' : ''}" data-up>강화 <img src="${ITEM('coin')}">${upCost(id).coins}</button><small class="up-hint">조각은 캡슐 뽑기에서 같은 친구가 또 나오면 모여요${RECRUIT[id]?.treat ? ' · 간식은 도전의 간식 창고에서' : ''}</small>` : ''}` : Sheet.recruitHtml(id)}
-      <div class="sheet-rows"><div>${ch.heal ? '회복' : '공격'}<b>${stat.split(' ')[1]}</b></div><div>속성<b>${ATTR[ch.attr].icon}${ATTR[ch.attr].name}</b></div><div>스킬 게이지<b>${skillNeed(id, false)}</b><small>일상 ${skillNeed(id, true)}</small></div></div>
+      ${own ? Sheet.upHtml(id) : Sheet.recruitHtml(id)}
+      <div class="sheet-rows">
+        <div data-st="pow"><img src="${ITEM(ch.heal ? 'heart' : 'sword')}" alt=""><small>${ch.heal ? '회복' : '공격'}</small><b>${powAt(id, Math.max(1, lv))}</b></div>
+        <div>${attrIcon(ch.attr)}<small>속성</small><b>${ATTR[ch.attr].name}</b></div>
+        <div data-st="need"><img src="${ITEM('sparkle')}" alt=""><small>스킬 게이지</small><b>${skillNeed(id, false)}</b><small>일상 ${skillNeed(id, true)}</small></div>
+      </div>
       <div class="sheet-label">스킬 <small>하나 골라 장착</small></div>
       <div class="sheet-skills">${ch.skills.map((sk, k) => { const open = own && lv >= sk.lv, on = skillOf(id) === sk;
-        return `<button data-sk="${k}" class="${on ? 'on' : ''}${open ? '' : ' locked'}"><b>${sk.name}</b><small>${open ? `게이지 ${sk.need}` : `Lv${sk.lv}에 열림`}</small></button>`; }).join('')}</div>
+        return `<button data-sk="${k}" class="${on ? 'on' : ''}${open ? '' : ' locked'}">${on && open ? '<img class="sk-on" src="assets/img/ui/check.png" alt="">' : ''}<b>${sk.name}</b><small>${open ? `게이지 ${sk.need}` : `Lv${sk.lv}에 열림`}</small></button>`; }).join('')}</div>
       <div class="sheet-skill">${skillOf(id).desc}</div>
       ${own && SKINS[id] ? `<div class="sheet-label">옷 <small>입으면 공격 +5%</small></div><div class="sheet-accs"><button data-s="" class="${Save.data.outfit[id] ? '' : 'on'}">기본</button>${(Save.data.skins[id] || []).map(s => `<button data-s="${s}" class="${Save.data.outfit[id] === s ? 'on' : ''}"><img src="${SKIN(id, s)}"></button>`).join('')}</div>
         ${(Save.data.skins[id] || []).length ? '' : '<small class="sheet-hint">가게의 옷 가게에서 살 수 있어요</small>'}` : ''}
-      <div class="sheet-stories">${own ? stories : ''}</div>
+      ${own && stories ? `<div class="sheet-label">이야기</div><div class="sheet-stories">${stories}</div>` : ''}
       <div class="sheet-btns"><button class="big-btn ghost" data-close>닫기</button>${opts.action && own ? `<button class="big-btn" data-act>${opts.action.label}</button>` : ''}</div>`;
     const say = () => {
       const bub = card.querySelector('.sheet-say');
@@ -296,15 +353,19 @@ const Sheet = {
     const up = card.querySelector('[data-up]');
     if (up) up.onclick = () => {
       const c = upCost(id);
-      if (!canUp(id)) { Sound.play('bad'); up.animate([{ transform: 'translateX(-4px)' }, { transform: 'translateX(4px)' }, { transform: 'none' }], { duration: 180 }); return; }
+      if (!canUp(id)) {
+        Sound.play('bad');
+        up.animate([{ transform: 'translateX(-4px)' }, { transform: 'translateX(4px)' }, { transform: 'none' }], { duration: 180 });
+        card.querySelectorAll('.cost.lack').forEach(e => e.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.12)' }, { transform: 'scale(1)' }], { duration: 260 }));
+        return;
+      }
+      const before = { lv, pow: powAt(id, lv), need: skillNeed(id, false) };
       Save.data.shards[id] -= c.shards;
       if (c.treat) Save.data.treats[c.treat] -= c.tn;
-      Save.data.own[id] = Meta.lv(id) + 1;
+      Save.data.own[id] = lv + 1;
       Meta.addCoins(-c.coins);
-      Sound.play('star', 1.2); Sound.voice(id, 'pick');
-      const r = up.getBoundingClientRect(), ar = app.getBoundingClientRect();
-      burst(r.left - ar.left + r.width / 2, r.top - ar.top, ch.ring, 14);
       Sheet.open(id, opts);
+      Sheet.levelUp(id, before);
       opts.onChange && opts.onChange();
       friendsDot();
     };
@@ -328,10 +389,18 @@ const Sheet = {
       fitText(el);
       card.animate([{ transform: 'translateY(60%)', opacity: 0 }, { transform: 'translateY(-3%)', opacity: 1, offset: 0.7 }, { transform: 'none' }], { duration: 320, easing: 'ease-out' });
       if (own) setTimeout(say, 200);
+      // 처음으로 강화할 수 있게 되면 강화 버튼을 비춰 줌
+      if (canUp(id) && !Tutor.seen('upBtn')) {
+        Tutor.mark('upBtn');
+        Tutor.mark('upCard');
+        setTimeout(() => el.classList.contains('show') && Spot.show(card.querySelector('[data-up]'), '조각이랑 코인이 다 모였어! 강화하면 더 세지고 스킬도 더 빨리 차', { tap: true }), 450);
+      }
     }
   },
 };
 
+// 강화할 수 있을 때 친구 카드에 붙는 작은 위쪽 화살표
+const UP_SVG = '<svg viewBox="0 0 24 24"><path d="M12 4l7 8h-4.2v7.5H9.2V12H5z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>';
 // 아직 없는 친구 카드 위: 모으는 간식과 개수 (데려올 수 있으면 반짝)
 const treatBadge = id => {
   const r = RECRUIT[id];
@@ -346,8 +415,14 @@ function openFriends() {
   $('#friendsCount').textContent = `${n} / ${CHARS.length}`;
   $('#friendsGrid').innerHTML = CHARS.map(c => `<button class="fcard${Meta.owned(c.id) ? '' : ' locked'}${Meta.owned(c.id) && specialOf(c.id) ? ' special' : ''}" style="--ring:${c.ring}${Meta.owned(c.id) && specialOf(c.id) ? `;--scene:url(${SCENE(specialOf(c.id).special)})` : ''}" data-id="${c.id}">
     ${Meta.owned(c.id) ? Meta.figure(c.id, art(c.id)) : `<span class="fig"><img src="${art(c.id)}" class="shadow"></span>`}
-    <span class="fname">${Meta.owned(c.id) ? c.name : '???'}</span>${Meta.owned(c.id) ? `<span class="flv">Lv${Meta.lv(c.id)}</span>${canUp(c.id) ? '<span class="fup">강화!</span>' : ''}` : treatBadge(c.id)}</button>`).join('');
+    <span class="fname">${Meta.owned(c.id) ? c.name : '???'}</span>${Meta.owned(c.id) ? `<span class="flv${canUp(c.id) ? ' up' : ''}">Lv<b>${Meta.lv(c.id)}</b>${canUp(c.id) ? `${UP_SVG}강화` : ''}</span>` : treatBadge(c.id)}</button>`).join('');
   $('#friendsGrid').querySelectorAll('.fcard').forEach(b => (b.onclick = () => { Sound.play('click'); Sheet.open(b.dataset.id, { onChange: openFriends }); }));
+  // 처음으로 강화할 수 있는 친구가 생기면 그 카드를 비춰 줌
+  const upCard = $('#friendsGrid .flv.up')?.closest('.fcard');
+  if (upCard && !Tutor.seen('upCard') && !Tutor.busyFlow && !$('#charSheet').classList.contains('show')) {
+    Tutor.mark('upCard');
+    setTimeout(() => $('#friends').classList.contains('active') && Spot.show(upCard, '강화할 수 있는 친구가 있어! 눌러 보자', { tap: true }), 400);
+  }
   albumUI();
 }
 // 도감 보상: 친구를 모으거나 레벨 합계를 올리면 한 번씩 받음

@@ -64,6 +64,24 @@ const DUN_DAILY = 3;
 const DCH_COINS = 150;
 const dayTreat = day => ['dango', 'parfait', 'onigiri'][dayNo(day) % 3];
 
+// 도전 화면 카드 처음 볼 때 안내: [본 표시, 카드, 한 줄]. 도전이 처음 열릴 때는 tutor.js의 UNLOCK_INTRO가 이어서 보여 줌
+const CH_TIPS = [
+  ['chDaily', '#btnDayChal', '오늘의 도전! 하루에 한 판, 날마다 판이 바뀌어. 깨면 코인이랑 간식을 줘'],
+  ['chDungeon', '#btnDungeon', '미믹 보물창고! 15번 움직이는 동안 상자를 깨면 코인이 나와. 하루 3번'],
+  ['chSnack', '#btnSnack', '간식 창고! 받고 싶은 간식을 톡 골라 두고 들어가. 간식은 친구 데려오기랑 강화에 써'],
+];
+async function chTips() {
+  if (Tutor.busyFlow || chTips.on || CH_TIPS.every(([k]) => Tutor.seen(k))) return;
+  chTips.on = true;
+  await sleep(500);
+  for (const [k, sel, text] of CH_TIPS) {
+    if (Tutor.seen(k) || !$('#challenge').classList.contains('active')) continue;
+    Tutor.mark(k);
+    await Spot.show($(sel), text);
+  }
+  chTips.on = false;
+}
+
 // ---------- 오늘의 도전 ----------
 const DayChal = {
   done: () => Save.data.dch?.day === today() && Save.data.dch.done,
@@ -74,6 +92,7 @@ const DayChal = {
     $('#dayTwist').textContent = st.twist;
     $('#dayState').innerHTML = DayChal.done() ? '오늘 완료 ✓' : `<img src="${ITEM('coin')}">${DCH_COINS} + <img src="${ITEM(dayTreat(today()))}">×2`;
     $('#btnDayChal').classList.toggle('done', DayChal.done());
+    chTips();
   },
   // Life.win에서 보너스 타임 뒤에 부름. 보상은 하루 한 번
   async cleared() {
