@@ -1,4 +1,6 @@
-// 괴물 특수 공격과 디버프: 종류마다 하나씩, 공격할 때 한 번 걸러 한 번(1·3·5번째) 같이 씀. 너무 어렵지 않게 약하고 짧게
+// 괴물 특수 공격과 디버프: 종류마다 하나씩. 너무 어렵지 않게 약하고 짧게
+// 보스: 공격할 때 한 번 걸러 한 번(1·3·5번째). 쫄몹: 한 웨이브에 한 번만(첫 공격), 이미 디버프가 걸려 있으면 안 씀,
+// 여럿이 나오는 웨이브에선 그중 한 마리만 씀 → 쫄몹이 거는 디버프는 0~1개
 // 잠재우기(친구 하나 2턴: 공격 반, 게이지 안 참) · 독(3턴 동안 매 턴 조금씩, 체력 1은 남김) · 어둠(2턴 공격 -30%)
 // 수수께끼(친구 하나 게이지 반) · 거품 뿜기(구슬 2개가 거품) · 쿵쿵(판 섞기) · 회복(괴물 체력 15%)
 const MON_SKILL = {
@@ -39,11 +41,16 @@ const Debuff = {
     Object.keys(s.sleep).forEach(k => { if (--s.sleep[k] <= 0) delete s.sleep[k]; });
     Debuff.render();
   },
-  // 괴물이 공격한 뒤 특수 공격 (종류마다, 한 번 걸러 한 번)
+  // 디버프가 하나라도 걸려 있나
+  any: () => Debuff.s.poison > 0 || Debuff.s.weak > 0 || Object.keys(Debuff.s.sleep).length > 0,
+  // 괴물이 공격한 뒤 특수 공격: 보스는 한 번 걸러 한 번, 쫄몹은 웨이브에 한 번 (같은 웨이브 괴물 중 한 마리만, 다른 디버프가 없을 때)
   async special(mon) {
     const kind = MON_SKILL[mon.w.m];
     mon.atkN = (mon.atkN || 0) + 1;
-    if (!kind || mon.atkN % 2 === 0 || B.teamHp <= 0) return;
+    if (!kind || B.teamHp <= 0) return;
+    if (mon.w.boss) { if (mon.atkN % 2 === 0) return; }
+    else if (mon.used || (B.mons || []).some(o => o !== mon && o.used) || (kind !== 'heal' && Debuff.any())) return;
+    mon.used = true;
     const from = centerOf(mon.el.img), s = Debuff.s;
     if (kind === 'sleep') {
       const ks = B.team.slice(0, B.real).map((_, k) => k).filter(k => !Debuff.asleep(k) && !teamCh(k).heal);
