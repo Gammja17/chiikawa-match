@@ -241,11 +241,23 @@ const Board = {
   // 한 단계 터뜨리기. 판을 바꾸고 무엇이 지워지고 생겼는지 돌려줌
   // 장애물은 매치 바로 옆이거나 효과 범위에 들면 한 대 맞고, 재료는 안 터짐. 잡초는 위의 것이 터지면 한 겹 뽑힘
   resolve(g, swapped, forced = []) {
+    // 지난 단계에서 미뤄 둔 아이템(새 아이템이 생기는 매치와 같이 밀어 쓴 것)을 이번에 터뜨림. 방금 생긴 아이템은 안 터짐
+    const protect = Board._protect || null, deferred = Board._deferred || null;
+    Board._protect = Board._deferred = null;
+    if (!forced.length && deferred) { forced = []; Board.each(g, (t, r, c) => deferred.includes(t) && t.special && forced.push([r, c])); }
     const groups = Board.groupRuns(Board.findRuns(g));
     const clear = new Set(), matched = new Set();
     const creates = [];
     const syrupKeys = new Set();
-    const hasSyrup = ks => Board.syrup && ks.some(k => { const [r, c] = unkey(k); return Board.syrup[r][c]; });
+    // 시럽 칸에서 밀려 나온 구슬·아이템도 시럽을 묻혀 감 (거기서 매치되거나 터지면 시럽이 번짐)
+    const carried = new Set();
+    if (Board.syrup && swapped) {
+      const [a, b] = swapped;
+      if (Board.syrup[a[0]][a[1]]) carried.add(key(b[0], b[1]));
+      if (Board.syrup[b[0]][b[1]]) carried.add(key(a[0], a[1]));
+    }
+    const sticky = (r, c) => Board.syrup && (Board.syrup[r][c] || carried.has(key(r, c)));
+    const hasSyrup = ks => Board.syrup && ks.some(k => { const [r, c] = unkey(k); return sticky(r, c); });
     groups.forEach(grp => {
       grp.keys.forEach(k => { clear.add(k); matched.add(k); });
       grp.locked = new Set([...grp.keys].filter(k => { const [r, c] = unkey(k); return g[r][c]?.lock; }));
@@ -253,22 +265,28 @@ const Board = {
       const sp = Board.specialFor(grp, swapped);
       if (sp) creates.push(sp);
     });
-    const forcedKeys = forced.filter(([r, c]) => inside(r, c)).map(([r, c]) => key(r, c));
+    let forcedKeys = forced.filter(([r, c]) => inside(r, c)).map(([r, c]) => key(r, c));
+    // 매치로 새 아이템이 생기는 단계면, 밀어 쓴 아이템은 다음 단계로 미룸 (새 아이템이 먼저 생기고, 남은 칸에서 터짐)
+    if (creates.length && forcedKeys.length && forcedKeys.every(k => { const [r, c] = unkey(k); return g[r][c]?.special; })) {
+      Board._deferred = forcedKeys.map(k => { const [r, c] = unkey(k); return g[r][c]; });
+      forcedKeys = [];
+    }
     forcedKeys.forEach(k => clear.add(k));
     if (hasSyrup(forcedKeys)) forcedKeys.forEach(k => syrupKeys.add(k));
     if (!clear.size) return null;
 
     const effects = [];
-    const fired = new Set();
+    const fired = new Set(), origins = [];
     const queue = [...clear];
     while (queue.length) {
       const [r, c] = unkey(queue.pop());
       const t = g[r][c];
-      if (!t || !t.special || fired.has(t.id)) continue;
+      if (!t || !t.special || fired.has(t.id) || protect?.has(t.id)) continue;
       fired.add(t.id);
+      origins.push([r, c]);
       const cells = Board.effectCells(g, t, r, c, clear);
       effects.push({ kind: t.special, r, c, type: t.type, target: t.target, cells, tile: t });
-      if (Board.syrup?.[r][c] || syrupKeys.has(key(r, c))) cells.forEach(([rr, cc]) => syrupKeys.add(key(rr, cc)));
+      if (sticky(r, c) || syrupKeys.has(key(r, c))) cells.forEach(([rr, cc]) => syrupKeys.add(key(rr, cc)));
       cells.forEach(([rr, cc]) => {
         const k = key(rr, cc);
         if (!clear.has(k)) { clear.add(k); queue.push(k); }
@@ -281,6 +299,8 @@ const Board = {
       NEAR4.forEach(([dr, dc]) => inside(r + dr, c + dc) && g[r + dr][c + dc]?.block && hitKeys.add(key(r + dr, c + dc)));
     });
     clear.forEach(k => { const [r, c] = unkey(k); if (g[r][c]?.block) hitKeys.add(k); });
+    // 터진 아이템 바로 옆 장애물도 한 대 맞음 (매치 옆처럼)
+    origins.forEach(([r, c]) => NEAR4.forEach(([dr, dc]) => inside(r + dr, c + dc) && g[r + dr][c + dc]?.block && hitKeys.add(key(r + dr, c + dc))));
 
     const cleared = [], hits = [], weeds = [], unlocked = [], syrup = [];
     const pullWeed = (r, c) => {
@@ -289,7 +309,7 @@ const Board = {
     clear.forEach(k => {
       const [r, c] = unkey(k);
       const t = g[r][c];
-      if (!t || t.block || t.type === ING) return;
+      if (!t || t.block || t.type === ING || protect?.has(t.id)) return;
       if (t.lock) { t.lock = 0; unlocked.push({ r, c, tile: t }); pullWeed(r, c); return; }
       cleared.push({ r, c, tile: t });
       g[r][c] = null;
@@ -307,6 +327,7 @@ const Board = {
       g[sp.pos[0]][sp.pos[1]] = t;
       return { r: sp.pos[0], c: sp.pos[1], tile: t };
     });
+    if (Board._deferred) Board._protect = new Set([...(protect || []), ...created.map(x => x.tile.id)]); // 또 미뤄지면 앞서 지킨 아이템도 계속 지킴
     syrupKeys.forEach(k => {
       const [r, c] = unkey(k);
       if (Board.syrup && !hole(r, c) && !Board.syrup[r][c]) { Board.syrup[r][c] = true; syrup.push({ r, c }); }

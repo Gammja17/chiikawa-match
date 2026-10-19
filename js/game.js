@@ -581,7 +581,10 @@ window.addEventListener('resize', () => { if ($('#battle').classList.contains('a
 function cellClass(r, c) {
   const w = Board.floor?.[r][c] || 0, out = hole(r, c);
   const exit = B.mode === 'life' && Life.hasIng() && !out && (r === ROWS - 1 || hole(r + 1, c));
-  return 'cellbg' + (out ? ' void' : '') + (w ? ' weed w' + w : '') + (Board.syrup?.[r][c] ? ' syrup' : '') + (exit ? ' exit' : '');
+  // 시럽은 이웃 시럽 칸과 이어 그림 (꿈의집 꿀처럼 한 덩어리): n-t/r/b/l = 그쪽에 시럽이 이어짐
+  const sy = (rr, cc) => inside(rr, cc) && !hole(rr, cc) && Board.syrup?.[rr][cc];
+  const join = Board.syrup?.[r][c] ? ' syrup' + (sy(r - 1, c) ? ' n-t' : '') + (sy(r, c + 1) ? ' n-r' : '') + (sy(r + 1, c) ? ' n-b' : '') + (sy(r, c - 1) ? ' n-l' : '') : '';
+  return 'cellbg' + (out ? ' void' : '') + (w ? ' weed w' + w : '') + join + (exit ? ' exit' : '');
 }
 const fgClass = (r, c) => { const w = Board.floor?.[r][c] || 0; return 'cellfg' + (w ? ' w' + w : ''); };
 function renderFloor() {
@@ -1349,6 +1352,7 @@ function hitFx(res, T) {
     res.syrup.forEach(({ r, c }, i) => setTimeout(() => {
       const d = cells[key(r, c)];
       d.className = cellClass(r, c);
+      NEAR4.forEach(([dr, dc]) => inside(r + dr, c + dc) && (cells[key(r + dr, c + dc)].className = cellClass(r + dr, c + dc))); // 이웃 시럽과 이어지게
       d.animate([{ transform: 'scale(.3)', filter: 'brightness(1.6)' }, { transform: 'scale(1.18)', offset: 0.6 }, { transform: 'scale(1)', filter: 'brightness(1)' }], { duration: 360, easing: 'ease-out' });
       const p = tileCenter(r, c);
       shards(p.x, p.y, ['#ffb347', '#ffd27a', '#e8912d'], 4, 8, true);
