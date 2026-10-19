@@ -287,7 +287,7 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 #battle.has-bg #arena { background-image: var(--stage-bg); background-position: center 18%; }
 #battle.has-bg .bar-title, #battle.has-bg #lhScore { text-shadow: 0 0 3px #fff, 0 0 6px #fff, 0 0 10px #fff; } /* 밤 하늘 위에서도 판 이름·점수가 읽히게 */
 #boardWrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 8px; min-height: 0; }
-#board { position: relative; width: calc(var(--s) * var(--cols, 7)); height: calc(var(--s) * var(--rows, 7)); border-radius: 16px; background: var(--paper); border: var(--line); box-shadow: var(--sh); touch-action: none; overflow: hidden; }
+#board { position: relative; width: calc(var(--s) * var(--cols, 7)); height: calc(var(--s) * var(--rows, 7)); border-radius: 16px; background: var(--paper); border: var(--line); box-shadow: var(--sh); touch-action: none; clip-path: inset(-6px -12px -12px round 20px); } /* 맨 윗줄이 통통 튈 때 잘리지 않게 위로 6px 여유 (새 구슬은 위에서 투명하게 들어와서 거의 안 보임). 옆·아래는 그림자 몫 */
 .cellbg { position: absolute; width: var(--s); height: var(--s); }
 .cellbg::after { content: ''; position: absolute; inset: 2px; border-radius: 10px; background: #f6f1fb; }
 .cellbg:nth-child(even)::after { background: #f1eaf8; }
