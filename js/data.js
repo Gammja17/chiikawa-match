@@ -84,7 +84,9 @@ const portrait = id => (NO_BODY.has(id) ? FACE(id) : BODY(id));
 const ART = { chiikawa: 'pose_chiikawa', hachiware: 'pose_hachiware2', usagi: 'pose_usagi', momonga: 'pose_momonga', rakko: 'pose_rakko',
   kani: 'body_kani', kurimanju: 'pose_kurimanju', shisa: 'pose_shisa' };
 const art = id => (ART[id] ? `assets/img/art/${ART[id]}.png` : portrait(id));
-const POCKETS = ['chiikawa', 'hachiware', 'usagi', 'momonga', 'rakko', 'shisa', 'kurimanju'].map(id => `assets/img/art/pocket_${id}.png`);
+// 화면 넘어갈 때 쓱 지나가는 친구 그림 (위키 포즈 그림)
+const POCKETS = ['chiikawa', 'hachiware', 'usagi', 'momonga', 'rakko', 'shisa', 'kurimanju'].map(id => art(id));
+
 
 const MONSTERS = {
   chimera:   { name: '키메라',   img: 'assets/img/monsters/chimera.png' },
@@ -273,29 +275,33 @@ const LINES = {
   darkstar: ['소원? 들어줄게~ 내 맘대로!', '아~아, 들켰네~', '칫, 재미없어!', '오늘이 계속되면 좋겠다며? 히히.'],
 };
 const lineOf = id => { const p = LINES[id]; return p ? p[Math.floor(Math.random() * p.length)] : (CHARS.find(c => c.id === id) || {}).line || '…!'; };
-// 옷 갈아입기: assets/img/skins/<친구>/<파일> 그림으로 통째로 바꿔 끼움 (gif·apng·webp면 그대로 움직임)
+// 옷 갈아입기: assets/img/skins/<친구>/<파일> 그림으로 통째로 바꿔 끼움. 애니·만화 장면에서 배경을 지운 그림 (Chiikawa Wiki)
+// price: 옷 가게 값 (캡슐 뽑기 화면의 '옷 가게' 탭에서 코인으로 삼)
 const SKINS = {
-  chiikawa:  { outing: { name: '나들이 모자', img: 'outing.png' } },
-  hachiware: { outing: { name: '나들이 카메라', img: 'outing.png' } },
-  usagi:     { outing: { name: '나들이 모자', img: 'outing.png' } },
-  kurimanju: { chef: { name: '요리사 옷', img: 'chef.png' } },
-  shisa:     { chef: { name: '요리사 옷', img: 'chef.png' } },
+  chiikawa: {
+    sprout:   { name: '멜론 새싹',   img: 'sprout.png',   price: 150 },
+    gelsheet: { name: '해열 시트',   img: 'gelsheet.png', price: 150 },
+    pochette: { name: '분홍 포셰트', img: 'pochette.png', price: 200 },
+    sasumata: { name: '토벌봉',      img: 'sasumata.png', price: 250 },
+    melon:    { name: '멜론 모자',   img: 'melon.png',    price: 300 },
+    squid:    { name: '오징어 옷',   img: 'squid.png',    price: 350 },
+    tanuki:   { name: '너구리 옷',   img: 'tanuki.png',   price: 400 },
+    magical:  { name: '마법소녀',    img: 'magical.png',  price: 600 },
+  },
+  hachiware: {
+    bugnet:   { name: '잠자리채',    img: 'bugnet.png',   price: 150 },
+    sasumata: { name: '토벌봉',      img: 'sasumata.png', price: 250 },
+    guitar:   { name: '기타',        img: 'guitar.png',   price: 300 },
+    tanuki:   { name: '너구리 옷',   img: 'tanuki.png',   price: 400 },
+    magical:  { name: '마법소녀',    img: 'magical.png',  price: 600 },
+  },
+  usagi: {
+    neckie:   { name: '시원한 넥밴드', img: 'neckie.png', price: 150 },
+    squid:    { name: '오징어 옷',   img: 'squid.png',    price: 350 },
+    magical:  { name: '마법소녀',    img: 'magical.png',  price: 600 },
+  },
 };
 const SKIN = (id, s) => `assets/img/skins/${id}/${SKINS[id][s].img}`;
-// 치이카와 포켓 코스튬 (옷 뽑기에서 나옴): 친구마다 가진 코스튬을 SKINS에 등록
-const COSTUME_NAMES = { alice: '앨리스', beach: '해변', bento: '도시락', circus: '서커스', cooking: '요리사', dino: '공룡옷', edo: '에도', fantasy: '판타지 용사',
-  fes: '음악 페스', fruit: '과일', halloween: '할로윈', ice: '아이스크림', mermaid: '인어섬', moon: '달맞이', newyear: '설날', peterpan: '피터팬',
-  picnic: '소풍', rain: '비 오는 날', shop: '가게놀이', snow: '백설공주', xmas: '크리스마스' };
-const POCKET_COSTUMES = {
-  chiikawa: 'alice beach bento cooking dino edo fantasy fes fruit halloween ice moon newyear peterpan rain shop snow xmas',
-  hachiware: 'alice beach bento cooking dino edo fantasy fes fruit halloween ice moon newyear peterpan rain shop snow xmas',
-  usagi: 'alice beach bento circus cooking dino edo fantasy fes fruit halloween ice mermaid moon newyear peterpan rain shop snow xmas',
-  momonga: 'alice beach bento circus dino edo fantasy fes fruit halloween ice mermaid moon newyear peterpan picnic rain shop snow xmas',
-  rakko: 'alice beach bento circus dino edo fantasy fes halloween ice mermaid moon newyear peterpan picnic rain shop snow xmas',
-  kurimanju: 'alice beach bento dino edo fantasy fes fruit halloween ice mermaid moon newyear peterpan picnic rain shop snow xmas',
-  shisa: 'alice beach bento dino edo fantasy fes fruit halloween ice mermaid moon newyear peterpan picnic rain shop snow xmas',
-};
-Object.entries(POCKET_COSTUMES).forEach(([id, list]) => list.split(' ').forEach(c => ((SKINS[id] = SKINS[id] || {})[c] = { name: COSTUME_NAMES[c], img: c + '.webp' })));
 // 표정: 기본 옷일 때만 잠깐 바꿔 끼움
 const MOODS = { chiikawa: { cry: 'cry.png', happy: 'dance.gif' } };
 // 집에서 들어 올렸을 때 반응: held=들고 있을 때 말, cry=오래 들면, drop=내려놨을 때 말, mood=들고 있을 때 표정

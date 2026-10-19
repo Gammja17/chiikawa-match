@@ -68,6 +68,9 @@ const Meta = {
     d.shards = d.shards || {}; // 강화 조각 { 친구id: 개수 }
     d.skins = d.skins || {};   // 가진 옷 { 친구id: [옷id] }
     d.outfit = d.outfit || {}; // 입은 옷 { 친구id: 옷id }
+    // 없어진 옷(예전 치이카와 포켓 코스튬)은 한 벌에 40코인으로 돌려주고 정리
+    Object.keys(d.skins).forEach(id => { const ok = (d.skins[id] || []).filter(s => SKINS[id]?.[s]); d.coins += ((d.skins[id] || []).length - ok.length) * 40; d.skins[id] = ok; });
+    Object.keys(d.outfit).forEach(id => { if (!SKINS[id]?.[d.outfit[id]]) delete d.outfit[id]; });
     d.furn = d.furn || [];
     d.treats = d.treats || {};
     Save.save();
@@ -263,7 +266,7 @@ const Sheet = {
       <div class="sheet-rows"><div>${ch.heal ? '회복' : '공격'}<b>${stat.split(' ')[1]}</b></div><div>속성<b>${ATTR[ch.attr].icon}${ATTR[ch.attr].name}</b></div><div>스킬 게이지<b>${skillNeed(id, false)}</b><small>일상 ${skillNeed(id, true)}</small></div></div>
       <div class="sheet-skill"><b>${ch.skill.name}</b> ${ch.skill.desc}</div>
       ${own && SKINS[id] ? `<div class="sheet-label">옷 <small>입으면 공격 +5%</small></div><div class="sheet-accs"><button data-s="" class="${Save.data.outfit[id] ? '' : 'on'}">기본</button>${(Save.data.skins[id] || []).map(s => `<button data-s="${s}" class="${Save.data.outfit[id] === s ? 'on' : ''}"><img src="${SKIN(id, s)}"></button>`).join('')}</div>
-        ${(Save.data.skins[id] || []).length ? '' : '<small class="sheet-hint">캡슐 뽑기에서 옷을 모아 보세요</small>'}` : ''}
+        ${(Save.data.skins[id] || []).length ? '' : '<small class="sheet-hint">캡슐 뽑기 화면의 옷 가게에서 살 수 있어요</small>'}` : ''}
       <div class="sheet-stories">${own ? stories : ''}</div>
       <div class="sheet-btns"><button class="big-btn ghost" data-close>닫기</button>${opts.action && own ? `<button class="big-btn" data-act>${opts.action.label}</button>` : ''}</div>`;
     const say = () => {
@@ -418,6 +421,9 @@ function openGacha() {
 }
 function syncGacha() {
   document.querySelectorAll('.gacha-tabs button').forEach(b => b.classList.toggle('on', b.dataset.g === gachaKind));
+  // 옷 탭은 뽑기 기계 대신 옷 가게
+  $('#gacha .gacha-body').classList.toggle('shop-mode', gachaKind === 'outfit');
+  if (gachaKind === 'outfit') return renderOutfitShop();
   const none = gachaKind === 'outfit' && !outfitPool().length;
   $('#gachaNote').textContent = none ? '옷이 있는 친구를 먼저 데려와요'
     : (gachaKind === 'outfit' ? '가진 친구의 옷이 나와요 · 이미 있으면 코인 40' : '새 친구를 만나거나 레벨 업!') +
@@ -426,6 +432,38 @@ function syncGacha() {
   $('#btnPull').innerHTML = tk ? `<img src="${ITEM('gift')}" alt="">티켓 ${tk} · 1번` : `<img src="${ITEM('coin')}" alt="">${GACHA_COST} · 1번`;
   $('#btnPull').disabled = gachaBusy || none || (!tk && Save.data.coins < GACHA_COST);
   $('#btnPull10').disabled = gachaBusy || none || Save.data.coins < GACHA10_COST;
+}
+
+// ---------- 옷 가게: 가진 친구의 옷을 코인으로 삼. 산 옷은 바로 입어 보기 ----------
+function renderOutfitShop() {
+  let shop = $('#outfitShop');
+  if (!shop) { shop = document.createElement('div'); shop.id = 'outfitShop'; $('#gacha .gacha-tabs').after(shop); }
+  const rows = Object.entries(SKINS).map(([cid, ss]) => {
+    const own = Meta.owned(cid), ch = CHARS[charIdx(cid)];
+    const items = Object.entries(ss).map(([s, k]) => {
+      const have = hasSkin(cid, s), wear = Save.data.outfit[cid] === s;
+      const btn = !own ? '<em class="lock">친구를 먼저 만나요</em>' : wear ? '<em class="wear">입는 중</em>' : have ? '<button data-wear>입기</button>'
+        : `<button data-buy class="${Save.data.coins >= k.price ? '' : 'poor'}"><img src="${ITEM('coin')}">${k.price}</button>`;
+      return `<div class="os-item${own ? '' : ' locked'}${have ? ' have' : ''}" data-c="${cid}" data-s="${s}"><img class="os-img" src="${SKIN(cid, s)}" draggable="false"><b>${k.name}</b>${btn}</div>`;
+    }).join('');
+    return `<div class="os-row"><div class="os-who" style="--ring:${ch.ring}">${own ? ch.name : '???'}</div><div class="os-items">${items}</div></div>`;
+  }).join('');
+  shop.innerHTML = `<p class="os-note">원하는 옷을 골라 사요 · 입으면 공격 +5%</p>${rows}`;
+  shop.querySelectorAll('.os-item').forEach(el => {
+    const cid = el.dataset.c, s = el.dataset.s, k = SKINS[cid][s];
+    el.querySelector('[data-buy]')?.addEventListener('click', () => {
+      if (Save.data.coins < k.price) { Sound.play('bad'); el.animate([{ transform: 'translateX(-4px)' }, { transform: 'translateX(4px)' }, { transform: 'none' }], { duration: 180 }); return; }
+      Meta.addCoins(-k.price);
+      (Save.data.skins[cid] = Save.data.skins[cid] || []).push(s);
+      Save.data.outfit[cid] = s; // 사자마자 입혀 줌
+      Save.save();
+      Sound.play('star', 1.2); Sound.voice(cid, 'pick');
+      const r = el.getBoundingClientRect(), ar = app.getBoundingClientRect();
+      burst(r.left - ar.left + r.width / 2, r.top - ar.top + r.height / 3, CHARS[charIdx(cid)].ring, 14);
+      renderOutfitShop();
+    });
+    el.querySelector('[data-wear]')?.addEventListener('click', () => { Save.data.outfit[cid] = s; Save.save(); Sound.play('sparkle', 1.3, 0.6); renderOutfitShop(); });
+  });
 }
 
 // 캡슐 하나 (새 친구는 무지개 캡슐)
@@ -663,7 +701,7 @@ async function openTen(prizes) {
 async function pullGacha(n = 1) {
   const ticket = n === 1 && (Save.data.tickets || 0) > 0;
   const cost = ticket ? 0 : n === 10 ? GACHA10_COST : GACHA_COST;
-  if (gachaBusy || wiping || Save.data.coins < cost || (gachaKind === 'outfit' && !outfitPool().length)) return;
+  if (gachaBusy || wiping || Save.data.coins < cost || gachaKind === 'outfit') return; // 옷은 뽑기 대신 가게에서 삼
   gachaBusy = true;
   if (ticket) Save.data.tickets--;
   else Meta.addCoins(-cost);

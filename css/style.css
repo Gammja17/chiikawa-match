@@ -460,6 +460,24 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .gacha-btns { display: flex; gap: 10px; }
 .gacha-btns .big-btn { display: flex; align-items: center; gap: 4px; min-width: 0; padding: 0 16px; font-size: 26px; }
 .gacha-btns .big-btn img { width: 26px; height: 26px; }
+/* 옷 가게 탭: 뽑기 기계 대신 옷 목록 */
+.gacha-body.shop-mode { justify-content: flex-start; gap: 10px; padding-top: 10px; }
+.gacha-body.shop-mode #gachaMachine, .gacha-body.shop-mode #gachaNote, .gacha-body.shop-mode .gacha-btns { display: none; }
+.gacha-body:not(.shop-mode) #outfitShop { display: none; }
+#outfitShop { align-self: stretch; overflow-y: auto; padding: 0 12px 20px; }
+.os-note { margin: 0 0 8px; text-align: center; font-size: 14px; color: var(--ink2); }
+.os-row { margin-bottom: 12px; }
+.os-who { display: inline-block; margin: 0 0 6px 4px; padding: 1px 12px 0; border-radius: 10px; background: var(--ring); color: #fff; font-family: var(--head); font-size: 17px; }
+.os-items { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.os-item { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 6px; border-radius: 14px; background: var(--paper); box-shadow: var(--sh); text-align: center; }
+.os-item.locked { opacity: .5; }
+.os-item .os-img { width: 100%; height: 78px; object-fit: contain; }
+.os-item b { font-family: var(--head); font-weight: 400; font-size: 15px; line-height: 1.15; }
+.os-item button { display: flex; align-items: center; gap: 2px; padding: 2px 10px 1px; border-radius: 10px; background: var(--pink); color: #fff; font-family: var(--head); font-size: 15px; }
+.os-item button img { width: 14px; }
+.os-item button.poor { background: #c9bfd6; }
+.os-item em { font-style: normal; font-size: 12px; color: var(--ink2); }
+.os-item em.wear { color: #e2543f; font-family: var(--head); font-size: 14px; }
 /* 뽑기 무대: 캡슐과 결과가 뜨는 층 (10번 뽑기 때는 어둡게 깔림) */
 #gachaStage { position: absolute; inset: 0; pointer-events: none; }
 #gachaStage:not(:empty) { pointer-events: auto; }
