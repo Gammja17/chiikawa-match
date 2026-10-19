@@ -947,6 +947,11 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .boost-row button { position: relative; width: 44px; height: 44px; border-radius: 12px; background: var(--paper); box-shadow: var(--sh); opacity: .55; }
 .boost-row button.on { opacity: 1; box-shadow: 0 0 0 3px var(--gold, #ffcf3f), var(--sh); }
 .boost-row img { width: 32px; height: 32px; }
+.boost-row i.price { display: flex; align-items: center; gap: 1px; right: 50%; bottom: -8px; transform: translateX(50%); padding: 0 5px; background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(74, 66, 98, .3); white-space: nowrap; }
+.boost-row i.price img { width: 11px; height: 11px; }
+#modalRows .mini-btn { float: none; }
+#ramenMenu .rm-btns { height: 34vh; } /* 라멘·포장 코너 칸 높이를 같게: 위 가게 그림이 들썩이지 않게 */
+#ramenNote { height: 2.8em; overflow: hidden; }
 .boost-row i { position: absolute; right: -4px; bottom: -4px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--ink); color: #fff; font-style: normal; font-size: 12px; line-height: 18px; }
 #ramenNote { margin: 8px 0 0; text-align: center; font-size: 14px; color: var(--ink2); }
 

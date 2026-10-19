@@ -268,6 +268,7 @@ const Hearts = {
     Sound.play('bad', 1, 0.6);
     modal({
       title: '하트가 없어요', img: ITEM('heart'), text: `다음 하트까지 ${Hearts.wait()} · 코인 ${HEART_REFILL}개로 다 채울 수 있어요`,
+      rows: !lunch && Save.data.coins >= itemPrice('lunch') ? [[`<img class="row-ic" src="${ITEM('bento')}">`, `<button class="mini-btn" data-lunch>도시락 사서 먹기 · 코인 ${itemPrice('lunch')}</button>`]] : [],
       btn2: '기다릴게', on2: no,
       btn1: lunch ? `하트 도시락 먹기 (${Items.n('lunch')})` : refill ? `무한 리필권 쓰기 (${Items.n('refill')})` : `채우기 ${HEART_REFILL}`,
       on1: () => {
@@ -283,6 +284,8 @@ const Hearts = {
       },
     });
     $('#modalChar').classList.add('icon');
+    const lb = $('#modalRows [data-lunch]');
+    if (lb) lb.onclick = () => { Meta.addCoins(-itemPrice('lunch')); Hearts.add(1); Sound.play('heal', 1.2, 0.9); $('#modal').classList.remove('show'); go(); };
   },
 };
 setInterval(() => $('#map').classList.contains('active') && Hearts.ui(), 1000);

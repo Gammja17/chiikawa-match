@@ -524,7 +524,7 @@ function openMap(advanceFrom = null, paging = false) {
   if (advanceFrom != null && Math.floor(advanceFrom / MAP_PAGE) !== mapPage) advanceFrom = null; // 새 지역으로 넘어가면 걷는 연출 없이
   const a0 = mapPage * MAP_PAGE, a1 = Math.min(STAGES.length, a0 + MAP_PAGE), r = regionOf(a0);
   $('#mapRegion').textContent = REGIONS[r];
-  $('#mapRange').textContent = `${a0 + 1}~${a1}판`;
+  $('#mapRange').textContent = `스테이지 ${a0 + 1}~${a1}`;
   $('#mapPrev').disabled = mapPage === 0;
   $('#mapNext').disabled = mapPage >= pages - 1 || mapPage > Math.floor(cur / MAP_PAGE); // 지금 지역의 다음 지역까지만 미리 보기
   $('#mapScroll').style.backgroundImage = `url(assets/img/map/m${r + 1}.jpg)`;
@@ -997,6 +997,7 @@ async function startStage(i) {
   B.teamHp = B.teamMax = bowl && (bowl.id === 'hp' || bowl.id === 'okinawa') ? 150 : 120;
   B.fever = 0;
   B.rally = 0;
+  B.cont = false; // 이어하기는 스테이지마다 한 번
   B.maxCombo = 0;
   updateFever();
   // 편성이 5명보다 적으면 빈자리는 응원 친구 구슬로 채움 (공격 절반, 스킬 없음)
@@ -2094,7 +2095,7 @@ async function win() {
     title: '토벌 성공!', stars, char: ch.id, text: `MVP ${ch.name}: "${lineOf(ch.id)}"`,
     rows: [['남은 체력', Math.round(ratio * 100) + '%'], [`<img class="row-ic" src="${ITEM('coin')}">`, '+' + coins], treat, shard].filter(Boolean),
     btn2: '🏠 지도로', on2: () => go(() => openMap(firstClear ? from : null)),
-    btn1: isLast ? '🏠 지도로' : Unlock.fresh() ? '🎁 새 기능 보러 가기' : '다음 판 ▶', // 새 기능이 열렸으면 지도로 데려가서 안내
+    btn1: isLast ? '🏠 지도로' : Unlock.fresh() ? '🎁 새 기능 보러 가기' : '다음 스테이지 ▶', // 새 기능이 열렸으면 지도로 데려가서 안내
     on1: () => (isLast || Unlock.fresh() ? go(() => openMap(firstClear ? from : null)) : Hearts.need(() => go(() => goRoute(k + 1)), () => go(() => openMap(firstClear ? from : null)))),
   });
   Net.rankLine(rank);
@@ -2111,11 +2112,12 @@ async function lose() {
     rows: [['괴물 체력', Math.ceil((aliveMons().reduce((t, m) => t + m.hp, 0) / Math.max(1, (B.mons || []).reduce((t, m) => t + m.max, 0))) * 100) + '%'], ['웨이브', `${B.wave + 1} / ${STAGES[B.stage].waves.length}`], [`<img class="row-ic" src="${ITEM('heart')}">`, '-1']],
     btn2: '🏠 지도로', on2: () => { Hearts.lose(); go(openMap); },
     btn1: '다시 하기', on1: () => { Hearts.lose(); Hearts.need(() => go(() => startStage(B.stage)), () => go(openMap)); },
-    ...(Items.n('cont') ? { // 이어하기권: 체력 절반 채우고 그 자리에서 계속 (다시 하기는 지도로)
+    ...(!B.cont && (Items.n('cont') || Save.data.coins >= itemPrice('cont')) ? { // 이어하기: 체력 절반 채우고 그 자리에서 계속. 이어하기권이 없으면 코인으로, 스테이지마다 한 번
       btn2: '다시 하기', on2: () => { Hearts.lose(); Hearts.need(() => go(() => startStage(B.stage)), () => go(openMap)); },
-      btn1: `이어하기권 쓰기 (${Items.n('cont')})`,
+      btn1: Items.n('cont') ? `이어하기권 쓰기 (${Items.n('cont')})` : `이어하기 (코인 ${itemPrice('cont')})`,
       on1: () => {
-        Items.use('cont');
+        if (Items.n('cont')) Items.use('cont'); else Meta.addCoins(-itemPrice('cont'));
+        B.cont = true;
         B.teamHp = Math.ceil(B.teamMax / 2);
         aliveMons().forEach(m => (m.cd = m.w.cd));
         updateTeam();
@@ -3063,7 +3065,7 @@ const RAMEN_MENU = [
   { id: 'hp', name: '곱빼기', icon: 'ramen', desc: '토벌 체력 150', mode: 'b', price: 60, at: 0, say: '곱빼기다. 남기지 마라.' },
   { id: 'gauge', name: '진한 국물', icon: 'pot', desc: '토벌 스킬 게이지 반', mode: 'b', price: 60, at: 0, say: '진한 국물이다. 힘이 날 거다.' },
   { id: 'naruto', name: '나루토 토핑', icon: 'naruto', desc: '퍼즐: 랏코 검 2개 깔고 시작', mode: 'l', price: 50, at: 10, say: '나루토 듬뿍. 판이 술술 풀릴 거다.' },
-  { id: 'egg', name: '반숙 달걀', icon: 'egg', desc: '퍼즐: 이동 +3 (시간 판 +10초)', mode: 'l', price: 70, at: 20, say: '반숙이다. 터뜨리지 말고 먹어라.' },
+  { id: 'egg', name: '반숙 달걀', icon: 'egg', desc: '퍼즐: 이동 +3 (시간 스테이지 +10초)', mode: 'l', price: 70, at: 20, say: '반숙이다. 터뜨리지 말고 먹어라.' },
   { id: 'onigiri', name: '주먹밥 세트', icon: 'onigiri', desc: '퍼즐: 폭탄·종이비행기 깔고 시작', mode: 'l', price: 90, at: 30, say: '주먹밥도 같이 먹어라. 든든할 거다.' },
   { id: 'okinawa', name: '사타안다기 세트', icon: 'donut', desc: '토벌: 체력 150 + 게이지 반', mode: 'b', price: 120, at: 40, say: '시사가 튀긴 거다. 맛있게 먹어라.' },
   { id: 'secret', name: '스승님 비밀 메뉴', icon: 'dango', desc: '퍼즐: 경단 깔고 + 이동 +2', mode: 'l', price: 150, at: 50, say: '…아무한테도 말하지 마라.' },
@@ -3078,13 +3080,13 @@ function renderRamenMenu() {
     const locked = prog < m.at && !(m.at === 0);
     const price = ramenFree() ? '<em class="free">서비스</em>' : `<em><img src="${ITEM('coin')}">${m.price}</em>`;
     return `<button data-b="${m.id}" class="${locked ? 'locked' : ''}${cur?.id === m.id ? ' on' : ''}">` +
-      `<img src="${ITEM(m.icon)}" alt=""><b>${m.name}</b><small>${locked ? `${m.at + 1}판을 열면 메뉴에 나와요` : m.desc}</small>${locked ? '' : price}</button>`;
+      `<img src="${ITEM(m.icon)}" alt=""><b>${m.name}</b><small>${locked ? `스테이지 ${m.at + 1}까지 열면 메뉴에 나와요` : m.desc}</small>${locked ? '' : price}</button>`;
   }).join('');
   wrap.querySelectorAll('button').forEach(b => (b.onclick = () => orderRamen(b.dataset.b)));
   const stamp = Save.data.ramenStamp || 0;
   $('#ramenNote').innerHTML = cur
     ? `먹은 효과: <b>${cur.name}</b> · 다음 ${cur.mode === 'b' ? '토벌' : '퍼즐'}에서 써요`
-    : `${ramenFree() ? '새로 깬 판 축하 · 한 그릇은 서비스! ' : ''}도장 ${'●'.repeat(stamp % 5)}${'○'.repeat(5 - (stamp % 5))} (5개마다 간식)`;
+    : `${ramenFree() ? '새로 깬 스테이지 축하 · 한 그릇은 서비스! ' : ''}도장 ${'●'.repeat(stamp % 5)}${'○'.repeat(5 - (stamp % 5))} (5개마다 간식)`;
 }
 function orderRamen(id) {
   const m = ramenOf(id), shopkeep = $('#shopMaster');
@@ -3160,6 +3162,7 @@ const SHOP_ITEMS = [
   { id: 'bomb', name: '폭탄', icon: 'bomb', desc: '일상 퍼즐: 폭탄 깔고 시작', price: 80, put: ['bomb'], say: '폭탄이다… 가게 안에서 터뜨리지 마라.' },
   { id: 'dango', name: '경단', icon: 'rainbow', desc: '일상 퍼즐: 경단 깔고 시작', price: 120, put: ['rainbow'], say: '경단이다. 시사가 빚은 거다.' },
 ];
+const itemPrice = id => SHOP_ITEMS.find(x => x.id === id).price;
 const Items = {
   n: id => Save.data.items?.[id] || 0,
   add(id, k = 1) { (Save.data.items = Save.data.items || {})[id] = Items.n(id) + k; Save.save(); },
@@ -3193,7 +3196,7 @@ function renderShopItems() {
       `<em><img src="${ITEM('coin')}">${it.price}</em>${use ? `<span class="use" data-use>${it.id === 'lunch' ? '먹기' : '쓰기'}</span>` : ''}</button>`;
   }).join('');
   wrap.querySelectorAll('button').forEach(b => (b.onclick = e => (e.target.closest('[data-use]') ? useShopItem(b.dataset.i) : buyShopItem(b.dataset.i))));
-  $('#ramenNote').innerHTML = Hearts.inf() ? `무한 리필 중 · <b>${Hearts.infLeft()}</b> 남음` : '사 두면 필요할 때 써요 · 하트가 없을 때, 실패했을 때, 판 시작 전';
+  $('#ramenNote').innerHTML = Hearts.inf() ? `무한 리필 중 · <b>${Hearts.infLeft()}</b> 남음` : '사 두면 필요할 때 써요 · 하트가 없을 때, 실패했을 때, 스테이지 시작 전 (종류마다 스테이지에 한 번)';
 }
 function buyShopItem(id) {
   const it = SHOP_ITEMS.find(x => x.id === id), shopkeep = $('#shopMaster');

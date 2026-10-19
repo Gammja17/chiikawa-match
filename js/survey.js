@@ -20,7 +20,7 @@ const Survey = {
       card.innerHTML = `<div class="mates-title">게임 재밌어?</div>
         <div class="helper-pick"><span class="fig"><img src="${artOf('hachiware')}" draggable="false"></span><div><b>하치와레</b><p>여기까지 와 줘서 고마워! 별점이랑 하고 싶은 말을 남겨 주면 다음 업데이트에 꼭 참고할게~</p></div></div>
         <div class="survey-stars">${[1, 2, 3, 4, 5].map(n => `<button data-n="${n}" aria-label="별 ${n}개"><img src="${ITEM('star')}" alt=""></button>`).join('')}</div>
-        <textarea class="survey-text" maxlength="500" rows="4" placeholder="재밌었던 것, 어려웠던 판, 바라는 것… (안 써도 돼요)"></textarea>
+        <textarea class="survey-text" maxlength="500" rows="4" placeholder="재밌었던 것, 어려웠던 스테이지, 바라는 것… (안 써도 돼요)"></textarea>
         <div class="survey-note">${from === 'auto' && !s.coins ? `보내 주면 ${SURVEY_COINS}코인 선물! · ` : ''}닉네임 없이 보내져요</div>
         <div class="sheet-btns"><button class="big-btn ghost" data-back>나중에</button><button class="big-btn" data-go disabled>보내기</button></div>`;
       const go = card.querySelector('[data-go]'), text = card.querySelector('.survey-text');

@@ -81,7 +81,7 @@ const Net = {
       const cloud = JSON.parse(d.data), mine = progressOf(Save.data), theirs = progressOf(cloud);
       // 이 기기는 아직 아무것도 안 깼으면(새 기기) → 묻지 않고 계정 기록을 받음
       if (!mine.cleared) return Net.takeCloud(d);
-      const line = p => `깬 판 ${p.cleared} · 친구 ${p.friends} · 코인 ${p.coins}`;
+      const line = p => `깬 스테이지 ${p.cleared} · 친구 ${p.friends} · 코인 ${p.coins}`;
       const cloudBetter = theirs.cleared >= mine.cleared;
       modal({
         title: '기록 불러오기', char: 'hachiware',
@@ -136,7 +136,7 @@ const Net = {
     try {
       const mine = clearedCount(), rows = (await Net.top('cleared', 10 * 60 * 1000)).filter(r => r.id !== Net.user.uid);
       const rank = 1 + rows.filter(r => (r.cleared || 0) > mine).length;
-      if (rank > 50) return `50위까지 ${rows[49].cleared - mine}판 남았어요`;
+      if (rank > 50) return `50위까지 스테이지 ${rows[49].cleared - mine}개 남았어요`;
       const up = Save.data.rankLast ? Save.data.rankLast - rank : 0;
       if (up > 0) Save.data.rankNew = true;
       Save.data.rankLast = rank;

@@ -2,10 +2,10 @@
 // 고른 칭호는 프로필·지도 이름표·랭킹 이름 옆에 붙음
 // Save.data.ach = { n: {기록: 누적}, best: {combo: 한 번에 최고}, got: {업적 id: 1}, title: 고른 업적 id }
 const ACHIEVES = [
-  { id: 'clear1', title: '새싹 토벌러', text: '모험 지도 첫 판 깨기', n: 1, val: () => clearedCount() },
-  { id: 'clear10', title: '풀숲 탐험가', text: '모험 지도 10판 깨기', n: 10, val: () => clearedCount() },
-  { id: 'clear50', title: '모험 지도 단골', text: '모험 지도 50판 깨기', n: 50, val: () => clearedCount() },
-  { id: 'clear150', title: '지도의 주인', text: '모험 지도 150판 깨기', n: 150, val: () => clearedCount() },
+  { id: 'clear1', title: '새싹 토벌러', text: '모험 지도 첫 스테이지 깨기', n: 1, val: () => clearedCount() },
+  { id: 'clear10', title: '풀숲 탐험가', text: '모험 지도 스테이지 10개 깨기', n: 10, val: () => clearedCount() },
+  { id: 'clear50', title: '모험 지도 단골', text: '모험 지도 스테이지 50개 깨기', n: 50, val: () => clearedCount() },
+  { id: 'clear150', title: '지도의 주인', text: '모험 지도 스테이지 150개 깨기', n: 150, val: () => clearedCount() },
   { id: 'boss10', title: '보스 사냥꾼', text: '보스 10마리 물리치기', n: 10, val: s => s.n.boss || 0 },
   { id: 'boss50', title: '전설의 토벌대', text: '보스 50마리 물리치기', n: 50, val: s => s.n.boss || 0 },
   { id: 'combo20', title: '콤보 장인', text: '5콤보 20번 만들기', n: 20, val: s => s.n.combo5 || 0 },
@@ -21,7 +21,7 @@ const ACHIEVES = [
   { id: 'tower20', title: '인어섬 모험가', text: '인어섬 20층 오르기', n: 20, val: () => Save.data.towerBest || 0 },
   { id: 'ramen30', title: '라멘 단골', text: '라멘 30그릇 먹기', n: 30, val: s => s.n.ramen || 0 },
   // 친구들 말투 칭호
-  { id: 'say_clear30', title: '와… 와아…!', text: '모험 지도 30판 깨기', n: 30, val: () => clearedCount() },
+  { id: 'say_clear30', title: '와… 와아…!', text: '모험 지도 스테이지 30개 깨기', n: 30, val: () => clearedCount() },
   { id: 'say_combo50', title: '으럇~!!', text: '5콤보 50번 만들기', n: 50, val: s => s.n.combo5 || 0 },
   { id: 'say_skill300', title: '우라~ 야하~!!', text: '친구 스킬 300번 쓰기', n: 300, val: s => s.n.skill || 0 },
   { id: 'say_friends5', title: '어떻게든 되겠지~', text: '친구 5명 모으기', n: 5, val: () => Object.keys(Save.data.own || {}).length },
