@@ -2,6 +2,11 @@
 // Firestore: scores/{uid} = { name, cleared(깬 스테이지 수), tower(인어섬 최고 층), contest(제초 대회 최고 점수), updated }
 const loadScript = src => new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = bad; document.head.appendChild(s); });
 const clearedCount = () => ROUTE.filter((_, k) => routeStars(k) != null).length;
+// 기록 한 벌의 진행 정도 (어느 쪽 기록을 쓸지 고를 때 보여 줌)
+const progressOf = d => {
+  const n = a => (a || []).filter(v => v != null).length;
+  return { cleared: n(d.stars) + n(d.life), friends: Object.keys(d.own || {}).length, coins: d.coins || 0 };
+};
 
 const Net = {
   on: false, user: null, listeners: [],
@@ -14,7 +19,7 @@ const Net = {
       Net.db = firebase.firestore();
       Net.on = true;
       Net.auth.getRedirectResult().catch(() => {});
-      Net.auth.onAuthStateChanged(async u => { Net.user = u; Net.ready = true; Net.listeners.forEach(f => f()); if (u) { await Net.cloudLoad(); Net.submit(); } });
+      Net.auth.onAuthStateChanged(async u => { Net.user = u; Net.ready = true; Net.synced = false; Net.listeners.forEach(f => f()); if (u) { await Net.cloudLoad(); Net.submit(); } });
     } catch (e) { console.warn('랭킹 서버를 켜지 못했어요', e); }
   },
   onChange(f) { Net.listeners.push(f); },
@@ -31,31 +36,57 @@ const Net = {
     }
     Net.listeners.forEach(f => f());
   },
-  // 진행 저장을 계정에: users/{uid} = { data(JSON), at }. 더 최근 쪽을 씀
+  // 진행 저장을 계정에: users/{uid} = { data(JSON), at }
+  // 이 기기가 마지막으로 계정과 맞춘 때(syncAt, syncUid)를 기억해서, 그 뒤 다른 기기에서 바뀐 계정 기록을 덮어쓰지 않음
+  // (켜자마자 저장이 한 번 일어나서 '더 최근 쪽'으로만 고르면 새 기기의 빈 기록이 계정 기록을 덮어썼음)
   cloudSave() {
     if (!Net.on || !Net.user) return;
     clearTimeout(Net.saveTimer);
     Net.savePending = true;
     Net.saveTimer = setTimeout(Net.flush, 2500);
   },
-  // 미뤄 둔 저장을 바로 올림 (앱을 닫거나 다른 앱으로 넘어갈 때)
+  // 미뤄 둔 저장을 바로 올림 (앱을 닫거나 다른 앱으로 넘어갈 때). 계정 기록과 맞추기 전(synced 전)에는 안 올림
   flush() {
     clearTimeout(Net.saveTimer);
-    if (!Net.savePending || !Net.on || !Net.user) return;
+    if (!Net.savePending || !Net.on || !Net.user || !Net.synced) return;
     Net.savePending = false;
-    Net.db.collection('users').doc(Net.user.uid).set({ data: JSON.stringify(Save.data), at: Save.data.savedAt || Date.now() }).catch(() => {});
+    const uid = Net.user.uid, at = Save.data.savedAt || Date.now();
+    Object.assign(Save.data, { syncAt: at, syncUid: uid });
+    Net.db.collection('users').doc(uid).set({ data: JSON.stringify(Save.data), at }).catch(() => { Net.savePending = true; });
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(Save.data)); } catch {}
+  },
+  // 이 기기 기록으로 계속 (계정 기록은 이 기기 것으로 바뀜)
+  keepLocal() {
+    Net.synced = true;
+    Net.savePending = true;
+    Net.flush();
+  },
+  // 계정 기록을 이 기기에 받고 다시 켬
+  takeCloud(d) {
+    Save.wiped = true; // 다시 켜기 전에 지금 기록으로 덮어쓰지 않게
+    const data = JSON.parse(d.data);
+    Object.assign(data, { savedAt: d.at, syncAt: d.at, syncUid: Net.user.uid });
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch {}
+    location.reload();
   },
   async cloudLoad() {
     try {
-      const d = (await Net.db.collection('users').doc(Net.user.uid).get()).data();
-      if (d && d.at > (Save.data.savedAt || 0) + 1000) {
-        modal({
-          title: '기록 불러오기', char: 'hachiware', text: '다른 기기에서 한 기록이 있어요. 불러올까요?',
-          btn2: '이 기기 기록', on2: () => Net.cloudSave(),
-          btn1: '불러오기', on1: () => { localStorage.setItem(SAVE_KEY, d.data); location.reload(); },
-        });
-      } else Net.cloudSave();
-    } catch {}
+      const uid = Net.user.uid, d = (await Net.db.collection('users').doc(uid).get()).data();
+      // 계정에 기록이 없거나, 이 기기가 마지막으로 맞춘 뒤 계정 기록이 그대로면 → 이 기기 기록을 올림
+      if (!d || (Save.data.syncUid === uid && d.at <= (Save.data.syncAt || 0))) return Net.keepLocal();
+      const cloud = JSON.parse(d.data), mine = progressOf(Save.data), theirs = progressOf(cloud);
+      // 이 기기는 아직 아무것도 안 깼으면(새 기기) → 묻지 않고 계정 기록을 받음
+      if (!mine.cleared) return Net.takeCloud(d);
+      const line = p => `깬 판 ${p.cleared} · 친구 ${p.friends} · 코인 ${p.coins}`;
+      const cloudBetter = theirs.cleared >= mine.cleared;
+      modal({
+        title: '기록 불러오기', char: 'hachiware',
+        text: '다른 기기에서 한 기록이 있어요. 어느 쪽으로 할까요?',
+        btn1: cloudBetter ? '계정 기록 불러오기' : '이 기기 기록으로', on1: () => (cloudBetter ? Net.takeCloud(d) : Net.keepLocal()),
+        btn2: cloudBetter ? '이 기기 기록으로' : '계정 기록 불러오기', on2: () => (cloudBetter ? Net.keepLocal() : Net.takeCloud(d)),
+      });
+      $('#modalText').innerHTML += `<br><small>계정: ${line(theirs)}<br>이 기기: ${line(mine)}</small>`; // 숫자만 들어감
+    } catch (e) { console.warn('계정 기록을 못 불러왔어요', e); } // 못 불러오면 이번엔 안 올림 (계정 기록을 지킴)
   },
   guest() { return Net.auth.signInAnonymously(); },
   logout() { return Net.auth.signOut(); },
