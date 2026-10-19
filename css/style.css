@@ -146,7 +146,7 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 #mapParty img:nth-child(3) { animation-delay: .3s; }
 #mapParty img.fav { width: 62px; position: relative; z-index: 1; }
 /* 프로필 이름표 (지도 왼쪽 위) */
-#btnProfile { position: absolute; left: 12px; top: 62px; z-index: 5; display: flex; align-items: center; gap: 6px; max-width: 46%; padding: 3px 12px 3px 3px; border-radius: 99px; background: var(--paper); box-shadow: var(--sh); font-family: var(--head); font-size: 16px; line-height: 1.1; }
+#btnProfile { position: absolute; left: 12px; top: 62px; z-index: 5; display: flex; align-items: center; gap: 6px; max-width: 72%; padding: 3px 12px 3px 3px; border-radius: 99px; background: var(--paper); box-shadow: var(--sh); font-family: var(--head); font-size: 16px; line-height: 1.1; }
 .pf-ava { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; overflow: hidden; background: color-mix(in srgb, var(--ring) 22%, #fff); border: 2px solid var(--ring); }
 .pf-ava img { width: 92%; margin-top: 10%; }
 .pf-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1091,6 +1091,17 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .ach.got i { margin-top: 3px; padding: 1px 8px 0; border-radius: 8px; background: #ffd36b; color: #7a5410; font-style: normal; font-family: var(--head); font-size: 12px; }
 .ach.on { background: #ffe9a6; box-shadow: inset 0 0 0 3px #f2b52e; }
 .ach.on i { background: var(--pink); color: #fff; }
-.pf-name { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; }
-.pf-name .pf-title { font-size: 10px; margin-bottom: 1px; }
+.pf-name { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.pf-nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf-name .pf-title { font-size: 10px; }
+.pf-info b { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 .pf-info .pf-title { font-size: 13px; }
+.rk-nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* 프사: 옷 그림은 얼굴 쪽으로 꽉 차게 */
+.pf-ava img.pic { width: 100%; height: 100%; margin: 0; object-fit: cover; object-position: 50% 26%; transform: scale(1.12); }
+.rk-face.pic { object-fit: cover; object-position: 50% 26%; }
+.pic-grid { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 8px; margin-bottom: 8px; touch-action: pan-x; }
+.pic-grid button { flex: none; width: 66px; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 2px 4px; border-radius: 12px; background: #f6f1fb; }
+.pic-grid .pf-ava { width: 48px; height: 48px; }
+.pic-grid small { width: 100%; font-size: 10px; color: var(--ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pic-grid button.on { background: var(--pink-l); box-shadow: inset 0 0 0 2px var(--pink); }

@@ -103,7 +103,7 @@ const Net = {
         tower: Math.max(old.tower || 0, Save.data.towerBest || 0),
         contest: Math.max(old.contest || 0, Save.data.contestBest || 0),
         title: Achieve.title(), // 고른 칭호 (없으면 빈 글자)
-        fav: favId(), // 최애 친구 얼굴 (랭킹에 같이 보임)
+        fav: Pic.code(), // 프사: 최애 친구 id 또는 '친구:옷' (랭킹에 같이 보임)
         updated: firebase.firestore.FieldValue.serverTimestamp(),
       });
     } catch (e) { console.warn('기록을 못 올렸어요', e); }
@@ -170,8 +170,12 @@ $('#btnContest').onclick = () => { Sound.play('open'); go(() => Life.begin(CONTE
 $('#btnChallenge').onclick = () => { Sound.play('click'); go(openChallenge); };
 $('#btnMapRank').onclick = () => { Sound.play('click'); go(() => openRanking('cleared')); };
 
-// 랭킹 줄의 최애 친구 얼굴 (모르는 값이면 안 그림)
-const rankFace = id => (CHARS.some(c => c.id === id) ? `<img class="rk-face" src="${FACE(id)}" alt="">` : '');
+// 랭킹 줄의 프사: 최애 친구 얼굴이나 '친구:옷' 그림 (모르는 값이면 안 그림)
+const rankFace = v => {
+  const [c, sk] = String(v || '').split(':');
+  if (sk) return SKINS[c]?.[sk] ? `<img class="rk-face pic" src="${SKIN(c, sk)}" alt="">` : '';
+  return CHARS.some(x => x.id === c) ? `<img class="rk-face" src="${FACE(c)}" alt="">` : '';
+};
 const BOARDS = { cleared: { label: '깬 스테이지', unit: '개' }, tower: { label: '인어섬', unit: '층' }, contest: { label: '제초 대회', unit: '점' } };
 let rankTab = 'cleared';
 async function openRanking(tab = rankTab) {
@@ -204,7 +208,7 @@ async function openRanking(tab = rankTab) {
   list.innerHTML = '<li class="rank-note">불러오는 중…</li>';
   try {
     const rows = await Net.top(tab);
-    list.innerHTML = rows.map((r, k) => `<li class="${r.id === Net.user?.uid ? 'mine' : ''}"><span class="rk${k < 3 ? ' top' + (k + 1) : ''}">${k + 1}</span><span class="nm">${rankFace(r.fav)}${r.title ? `<small class="rk-title">${String(r.title).replace(/[<>&]/g, '')}</small>` : ''}${String(r.name || '???').replace(/[<>&]/g, '')}</span><b>${r[tab] || 0}${BOARDS[tab].unit}</b></li>`).join('') ||
+    list.innerHTML = rows.map((r, k) => `<li class="${r.id === Net.user?.uid ? 'mine' : ''}"><span class="rk${k < 3 ? ' top' + (k + 1) : ''}">${k + 1}</span><span class="nm">${rankFace(r.fav)}<span class="rk-nm">${String(r.name || '???').replace(/[<>&]/g, '')}</span>${r.title ? `<small class="rk-title">${String(r.title).replace(/[<>&]/g, '')}</small>` : ''}</span><b>${r[tab] || 0}${BOARDS[tab].unit}</b></li>`).join('') ||
       '<li class="rank-note">아직 아무도 없어요. 첫 번째가 되어 보세요!</li>';
   } catch {
     list.innerHTML = '<li class="rank-note">랭킹을 불러오지 못했어요</li>';

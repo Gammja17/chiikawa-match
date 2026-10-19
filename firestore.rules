@@ -50,7 +50,7 @@ service cloud.firestore {
       && d.contest is int && d.contest >= 0 && d.contest <= 300000
       // 칭호와 최애 친구 (없어도 됨)
       && (!('title' in d) || (d.title is string && d.title.size() <= 12))
-      && (!('fav' in d) || (d.fav is string && d.fav.size() <= 16))
+      && (!('fav' in d) || (d.fav is string && d.fav.size() <= 40))
       && d.updated == request.time;
   }
 }

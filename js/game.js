@@ -452,7 +452,7 @@ function profileChip() {
   const b = $('#btnProfile'), fav = CHARS[charIdx(favId())];
   b.style.setProperty('--ring', fav.ring);
   const t = Achieve.title();
-  b.innerHTML = `<span class="pf-ava"><img src="${FACE(fav.id)}" alt=""></span><span class="pf-name">${t ? `<small class="pf-title">${t}</small>` : ''}${netName()}</span>${googleOn() ? '<i class="pf-g" title="구글 연결됨">G</i>' : ''}`;
+  b.innerHTML = `<span class="pf-ava">${Pic.img()}</span><span class="pf-name"><span class="pf-nm">${netName()}</span>${t ? `<small class="pf-title">${t}</small>` : ''}</span>${googleOn() ? '<i class="pf-g" title="구글 연결됨">G</i>' : ''}`;
 }
 $('#btnProfile').onclick = () => { Sound.play('click'); openProfile(); };
 function openProfile() {
@@ -461,14 +461,16 @@ function openProfile() {
     const fav = CHARS[charIdx(favId())], net = typeof Net !== 'undefined' && Net.on;
     card.style.setProperty('--ring', fav.ring);
     card.innerHTML = `<div class="mates-title">프로필</div>
-      <div class="pf-head"><span class="pf-ava big"><img src="${FACE(fav.id)}" alt=""></span>
-        <div class="pf-info">${Achieve.title() ? `<small class="pf-title">${Achieve.title()}</small>` : ''}<b>${netName()}</b><button class="mini-btn" data-nick>이름 바꾸기</button></div></div>
+      <div class="pf-head"><span class="pf-ava big">${Pic.img()}</span>
+        <div class="pf-info"><b>${netName()}${Achieve.title() ? `<small class="pf-title">${Achieve.title()}</small>` : ''}</b><button class="mini-btn" data-nick>이름 바꾸기</button></div></div>
       ${net ? (googleOn() ? '<div class="pf-google on">✓ 구글 연결됨 · 진행이 계정에 저장돼요</div>'
         : '<button class="pf-google" data-google>구글로 로그인하고 진행 저장</button>') : ''}
       <div class="sheet-label">최애 친구 <small>지도에서 같이 다녀요 · 랭킹 얼굴도 이 친구</small></div>
       <div class="mates-grid">${CHARS.filter(c => Meta.owned(c.id)).map(c => `<button class="${c.id === fav.id ? 'on' : ''}" data-id="${c.id}" style="--ring:${c.ring}"><img src="${FACE(c.id)}"><span>${c.name}</span></button>`).join('')}</div>
+      ${Pic.html()}
       ${Achieve.html()}
       <div class="sheet-btns"><button class="big-btn" data-go>닫기</button></div>`;
+    Pic.bind(card, draw);
     Achieve.bind(card, draw);
     card.querySelectorAll('.mates-grid button').forEach(b => (b.onclick = () => {
       Save.data.fav = b.dataset.id;

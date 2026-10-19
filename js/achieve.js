@@ -1,4 +1,4 @@
-// 업적과 칭호: 게임 곳곳의 기록을 쌓고(대부분 Daily.add로 같이 들어옴), 목표를 넘으면 칭호를 얻음
+// 업적과 칭호, 프사: 게임 곳곳의 기록을 쌓고(대부분 Daily.add로 같이 들어옴), 목표를 넘으면 칭호를 얻음
 // 고른 칭호는 프로필·지도 이름표·랭킹 이름 옆에 붙음
 // Save.data.ach = { n: {기록: 누적}, best: {combo: 한 번에 최고}, got: {업적 id: 1}, title: 고른 업적 id }
 const ACHIEVES = [
@@ -20,6 +20,14 @@ const ACHIEVES = [
   { id: 'friends10', title: '인기쟁이', text: '친구 10명 모으기', n: 10, val: () => Object.keys(Save.data.own || {}).length },
   { id: 'tower20', title: '인어섬 모험가', text: '인어섬 20층 오르기', n: 20, val: () => Save.data.towerBest || 0 },
   { id: 'ramen30', title: '라멘 단골', text: '라멘 30그릇 먹기', n: 30, val: s => s.n.ramen || 0 },
+  // 친구들 말투 칭호
+  { id: 'say_clear30', title: '와… 와아…!', text: '모험 지도 30판 깨기', n: 30, val: () => clearedCount() },
+  { id: 'say_combo50', title: '으럇~!!', text: '5콤보 50번 만들기', n: 50, val: s => s.n.combo5 || 0 },
+  { id: 'say_skill300', title: '우라~ 야하~!!', text: '친구 스킬 300번 쓰기', n: 300, val: s => s.n.skill || 0 },
+  { id: 'say_friends5', title: '어떻게든 되겠지~', text: '친구 5명 모으기', n: 5, val: () => Object.keys(Save.data.own || {}).length },
+  { id: 'say_tower10', title: '하아?', text: '인어섬 10층 오르기', n: 10, val: () => Save.data.towerBest || 0 },
+  { id: 'say_ramen10', title: '캬~! 한 그릇 더', text: '라멘 10그릇 먹기', n: 10, val: s => s.n.ramen || 0 },
+  { id: 'say_weed1000', title: '풀 뽑기 장인이사!', text: '잡초 1000개 뽑기', n: 1000, val: s => s.n.weed || 0 },
 ];
 
 const Achieve = {
@@ -73,6 +81,38 @@ const Achieve = {
     card.querySelectorAll('.ach.got').forEach(b => (b.onclick = () => {
       const s = Achieve.s();
       s.title = s.title === b.dataset.ach ? null : b.dataset.ach; // 다시 누르면 떼기
+      Save.save();
+      Sound.play('pop', 1.2, 0.5);
+      if (typeof Net !== 'undefined') Net.submit();
+      redraw();
+    }));
+  },
+};
+
+// 프사: 기본은 최애 친구 얼굴, 옷을 해금했으면 그 옷 그림으로도 (Save.data.pic = '친구:옷')
+const Pic = {
+  list() {
+    const out = [];
+    Object.entries(Save.data.skins || {}).forEach(([cid, ss]) => (ss || []).forEach(sk => SKINS[cid]?.[sk] && out.push(cid + ':' + sk)));
+    return out;
+  },
+  valid(v) { if (!v) return false; const [c, sk] = v.split(':'); return !!SKINS[c]?.[sk] && hasSkin(c, sk); },
+  cur() { return Pic.valid(Save.data.pic) ? Save.data.pic : null; },
+  src(v = Pic.cur()) { if (!v) return FACE(favId()); const [c, sk] = v.split(':'); return SKIN(c, sk); },
+  img(cls = '') { return `<img src="${Pic.src()}" class="${Pic.cur() ? 'pic ' : ''}${cls}" alt="">`; },
+  // 랭킹에 올리는 값: 옷 프사면 '친구:옷', 아니면 최애 친구 id
+  code() { return Pic.cur() || favId(); },
+  html() {
+    const cur = Pic.cur(), list = Pic.list();
+    return `<div class="sheet-label">프사 <small>${list.length ? '옷을 해금하면 그 옷 그림으로도 할 수 있어요' : '가게에서 옷을 해금하면 그 옷 그림으로도 할 수 있어요'}</small></div>
+      <div class="pic-grid"><button class="${cur ? '' : 'on'}" data-pic=""><span class="pf-ava"><img src="${FACE(favId())}" alt=""></span><small>최애 얼굴</small></button>${list.map(v => {
+        const [c, sk] = v.split(':');
+        return `<button class="${cur === v ? 'on' : ''}" data-pic="${v}"><span class="pf-ava"><img class="pic" src="${SKIN(c, sk)}" alt=""></span><small>${SKINS[c][sk].name}</small></button>`;
+      }).join('')}</div>`;
+  },
+  bind(card, redraw) {
+    card.querySelectorAll('[data-pic]').forEach(b => (b.onclick = () => {
+      Save.data.pic = b.dataset.pic || null;
       Save.save();
       Sound.play('pop', 1.2, 0.5);
       if (typeof Net !== 'undefined') Net.submit();
