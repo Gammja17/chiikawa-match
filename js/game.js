@@ -320,9 +320,17 @@ function burst(x, y, color, n = 6) {
   }
 }
 
+// '+숫자'(점수·보너스·회복·코인, '+3초')와 몇몇 말은 콤보 숫자와 같은 그림 글자로
+const NUM_WORD = { '선물!': 'w_gift' };
+function spriteText(text) {
+  if (NUM_WORD[text]) return `<img class="w" src="${CIMG(NUM_WORD[text])}">`;
+  if (!/^\+\d+초?$/.test(text)) return null;
+  return [...text].map(ch => `<img src="${CIMG(ch === '+' ? 'plus' : ch === '초' ? 'sec' : 'd' + ch)}"${ch === '+' ? ' class="pl"' : ''}>`).join('');
+}
 function floatNum(x, y, text, color, cls = '') {
   const n = addFx('num ' + cls, x, y);
-  n.textContent = text;
+  const spr = spriteText(text);
+  if (spr) { n.classList.add('spr'); n.innerHTML = spr; } else n.textContent = text;
   n.style.setProperty('--c', color);
   return n.animate([
     { transform: 'translate(-50%,-50%) scale(.3)', opacity: 0 },
@@ -332,11 +340,14 @@ function floatNum(x, y, text, color, cls = '') {
   ], { duration: 950, easing: 'ease-out' }).finished.then(() => n.remove());
 }
 
+const BANNER_IMG = { '보너스 타임!': 'w_bonus' }; // 그림 글자가 있는 띠 문구
 function banner(text, hold = 650) {
   const b = addFx('banner', 0, 0);
   b.style.left = '50%';
   b.style.top = '45%';
-  b.textContent = text;
+  if (BANNER_IMG[text]) { b.classList.add('img'); b.innerHTML = `<img src="${CIMG(BANNER_IMG[text])}" alt="${text}">`; }
+  else if (spriteText(text)) { b.classList.add('nums'); b.innerHTML = spriteText(text); }
+  else b.textContent = text;
   // 긴 문장은 화면 안에 들어오게 글씨를 줄임
   b.style.fontSize = Math.min(54, Math.floor((app.clientWidth * 0.86) / Math.max(4, [...text].length))) + 'px';
   return b.animate([
@@ -2720,7 +2731,7 @@ async function feverShow() {
   // 우후~! 빛줄기가 돌고, 파자마 파티즈가 통통 튀어 올라 춤추고, 하트·별이 쏟아짐
   const el = document.createElement('div');
   el.className = 'fever-show';
-  el.innerHTML = `<div class="rays"></div><img src="assets/img/art/pajama_uwawa.png"><div class="fever-txt">피버 타임!</div><div class="fever-sub">${life ? `점수 ×1.5${L.st.time ? ' · 10초' : ''}` : '공격 ×1.5'}</div>`;
+  el.innerHTML = `<div class="rays"></div><img src="assets/img/art/pajama_uwawa.png"><img class="fever-txt" src="${CIMG('w_fever')}" alt="피버 타임!"><div class="fever-sub">${life ? `점수 ×1.5${L.st.time ? ' · 10초' : ''}` : '공격 ×1.5'}</div>`;
   app.appendChild(el);
   const [rays, img, txt, sub] = el.children;
   Sound.play('rainbow', 1.1, 1);

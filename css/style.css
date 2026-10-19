@@ -311,6 +311,19 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 .num { position: absolute; font-size: 32px; line-height: 1.15; color: #fff; -webkit-text-stroke: 7px var(--ink); paint-order: stroke fill; white-space: nowrap; transform: translate(-50%, -50%); }
 .num.crit { font-size: 43px; color: var(--gold); }
 .num.small { font-size: 24px; }
+/* 그림 숫자 (+점수 등): 콤보 숫자 그림을 이어 붙임 */
+.num.spr { display: flex; align-items: center; -webkit-text-stroke: 0; }
+.num.spr img { flex: none; height: 36px; margin: 0 -3px; }
+.num.spr img.pl { height: 25px; margin-right: -1px; }
+.num.spr img.w { height: 44px; margin: 0; }
+.num.spr.crit img { height: 48px; }
+.num.spr.crit img.pl { height: 33px; }
+.num.spr.small img { height: 28px; }
+.num.spr.small img.pl { height: 19px; }
+.banner.img img { display: block; width: min(86vw, 400px); }
+.banner.nums { display: flex; align-items: center; -webkit-text-stroke: 0; }
+.banner.nums img { flex: none; height: 76px; margin: 0 -4px; }
+.banner.nums img.pl { height: 52px; }
 .banner { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-family: var(--head); font-size: 54px; line-height: 1.15; color: #fff; -webkit-text-stroke: .17em var(--ink); paint-order: stroke fill; white-space: nowrap; }
 .combo { position: absolute; font-family: var(--head); font-size: 40px; line-height: 1.15; color: var(--gold); -webkit-text-stroke: 8px var(--ink) !important; text-shadow: none !important; paint-order: stroke fill; white-space: nowrap; transform: translate(-50%, -50%); }
 .beam { position: absolute; border-radius: 99px; background: #fff; box-shadow: 0 0 0 4px #bfe9ff, 0 0 18px 8px #9fdcff; }
@@ -421,6 +434,7 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 .fever-show .rays { position: absolute; left: 50%; top: 45%; width: 180vmax; height: 180vmax; opacity: 0;
   background: repeating-conic-gradient(from 0deg, #ffd6e8cc 0 8deg, #ffffff00 8deg 14deg, #fff5c8cc 14deg 22deg, #ffffff00 22deg 28deg, #d9f1ffcc 28deg 36deg, #ffffff00 36deg 42deg); border-radius: 50%; }
 .fever-show img { position: absolute; left: 50%; top: 55%; width: 86%; transform: translate(-50%, -50%) scale(0); }
+.fever-show img.fever-txt { top: 9%; width: 82%; transform: translateX(-50%); }
 .fever-show .fever-txt { position: absolute; left: 50%; top: 12%; transform: translateX(-50%); white-space: nowrap; font-family: var(--head); font-weight: 700; font-size: 58px; line-height: 1.1; color: #fff; -webkit-text-stroke: 9px var(--pink); paint-order: stroke fill; }
 .fever-show .fever-sub { position: absolute; left: 50%; top: calc(12% + 66px); transform: translateX(-50%); padding: 2px 14px; border-radius: 12px; background: var(--gold); font-family: var(--head); font-size: 22px; color: var(--ink); }
 /* 피버 중: 판 테두리가 무지갯빛으로 반짝 */
