@@ -213,6 +213,7 @@ const Hearts = {
     return `${m}:${String(sec).padStart(2, '0')}`;
   },
   lose() {
+    if (Hearts.inf()) return; // 무한 리필 중엔 안 줄어듦
     Hearts.sync();
     if (Save.data.hearts >= HEART_MAX) Save.data.heartAt = Date.now();
     Save.data.hearts = Math.max(0, Save.data.hearts - 1);
@@ -223,19 +224,26 @@ const Hearts = {
     const n = Hearts.n(), full = n >= HEART_MAX;
     document.querySelectorAll('.hearts').forEach(el => {
       el.querySelector('b').textContent = n;
-      el.querySelector('small').textContent = full ? 'MAX' : Hearts.wait();
+      el.querySelector('small').textContent = Hearts.inf() ? '∞ ' + Hearts.infLeft() : full ? 'MAX' : Hearts.wait();
       el.classList.toggle('empty', !n);
     });
   },
+  // 무한 리필권: 30분 동안 하트가 안 줄어듦 (Save.data.infUntil)
+  inf: () => (Save.data.infUntil || 0) > Date.now(),
+  infLeft: () => Math.ceil(((Save.data.infUntil || 0) - Date.now()) / 60000) + '분',
+  startInf() { Save.data.infUntil = Math.max(Date.now(), Save.data.infUntil || 0) + 30 * 60000; Save.save(); Hearts.ui(); },
+  add(k) { Hearts.sync(); Save.data.hearts = Math.min(HEART_MAX, Save.data.hearts + k); if (Save.data.hearts >= HEART_MAX) Save.data.heartAt = Date.now(); Save.save(); Hearts.ui(); },
   // 하트가 있으면 바로 시작, 없으면 기다리거나 코인으로 채우기
   need(go, no = () => {}) {
-    if (Hearts.n() > 0) return go();
+    if (Hearts.n() > 0 || Hearts.inf()) return go();
+    const lunch = Items.n('lunch') > 0, refill = !lunch && Items.n('refill') > 0; // 포장 코너에서 사 둔 것부터
     Sound.play('bad', 1, 0.6);
     modal({
       title: '하트가 없어요', img: ITEM('heart'), text: `다음 하트까지 ${Hearts.wait()} · 코인 ${HEART_REFILL}개로 다 채울 수 있어요`,
       btn2: '기다릴게', on2: no,
-      btn1: `채우기 ${HEART_REFILL}`,
+      btn1: lunch ? `하트 도시락 먹기 (${Items.n('lunch')})` : refill ? `무한 리필권 쓰기 (${Items.n('refill')})` : `채우기 ${HEART_REFILL}`,
       on1: () => {
+        if (lunch || refill) { Items.use(lunch ? 'lunch' : 'refill'); lunch ? Hearts.add(1) : Hearts.startInf(); Sound.play('heal', 1.2, 0.9); go(); return; }
         if (Save.data.coins < HEART_REFILL) { Sound.play('bad'); floatNum(app.clientWidth / 2, app.clientHeight / 2, '코인이 모자라요', '#e2543f'); no(); return; }
         Meta.addCoins(-HEART_REFILL);
         Save.data.hearts = HEART_MAX;

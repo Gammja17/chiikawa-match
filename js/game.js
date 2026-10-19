@@ -571,7 +571,7 @@ function openMap(advanceFrom = null, paging = false) {
     const s = routeStars(i) || 0;
     const icon = st.icon ? ITEM(st.icon) : MONSTERS[st.waves[st.waves.length - 1].m].img;
     const kind = st.exam ? ['exam', 'gradcap'] : st.icon ? ['life', 'plant'] : ['hunt', 'sword']; // 일상·토벌·시험 배지
-    n.innerHTML = `<i class="nkind ${kind[0]}"><img src="${ITEM(kind[1])}" alt=""></i>` + (locked ? LOCK_SVG : `<img class="nicon" src="${icon}" loading="lazy"><span class="nnum">${i + 1}</span>`) +
+    n.innerHTML = `<i class="nkind ${kind[0]}"><img src="${ITEM(kind[1])}" alt=""></i>` + (st.host ? `<img class="nhost" src="${FACE(st.host)}" alt="">` : '') + (locked ? LOCK_SVG : `<img class="nicon" src="${icon}" loading="lazy"><span class="nnum">${i + 1}</span>`) +
       (i === cur ? `<span class="nname">${st.name}</span>` : '') +
       (lv && !locked ? `<span class="ntag">${lv === 'hard' ? 'HARD' : '도전'}</span>` : '') +
       (s ? `<span class="nstars">${[0, 1, 2].map(k => `<i class="${k < s ? 'on' : ''}"></i>`).join('')}</span>` : '');
@@ -2111,6 +2111,21 @@ async function lose() {
     rows: [['괴물 체력', Math.ceil((aliveMons().reduce((t, m) => t + m.hp, 0) / Math.max(1, (B.mons || []).reduce((t, m) => t + m.max, 0))) * 100) + '%'], ['웨이브', `${B.wave + 1} / ${STAGES[B.stage].waves.length}`], [`<img class="row-ic" src="${ITEM('heart')}">`, '-1']],
     btn2: '🏠 지도로', on2: () => { Hearts.lose(); go(openMap); },
     btn1: '다시 하기', on1: () => { Hearts.lose(); Hearts.need(() => go(() => startStage(B.stage)), () => go(openMap)); },
+    ...(Items.n('cont') ? { // 이어하기권: 체력 절반 채우고 그 자리에서 계속 (다시 하기는 지도로)
+      btn2: '다시 하기', on2: () => { Hearts.lose(); Hearts.need(() => go(() => startStage(B.stage)), () => go(openMap)); },
+      btn1: `이어하기권 쓰기 (${Items.n('cont')})`,
+      on1: () => {
+        Items.use('cont');
+        B.teamHp = Math.ceil(B.teamMax / 2);
+        aliveMons().forEach(m => (m.cd = m.w.cd));
+        updateTeam();
+        updateCd();
+        B.over = false;
+        B.busy = false;
+        Sound.play('heal', 1.2, 0.9);
+        Sound.music(aliveMons().some(m => m.w.boss) ? 'boss' : 'battle');
+      },
+    } : {}),
   });
 }
 
@@ -3056,6 +3071,7 @@ const RAMEN_MENU = [
 const ramenOf = id => RAMEN_MENU.find(m => m.id === id);
 const ramenFree = () => Save.data.ramen !== false;
 function renderRamenMenu() {
+  if (ramenTab === 'items') return renderShopItems(); // 포장 코너 칸
   const cur = Save.data.buff ? ramenOf(Save.data.buff) : null, prog = unlockedIdx();
   const wrap = $('#ramenMenu .rm-btns');
   wrap.innerHTML = RAMEN_MENU.map(m => {
@@ -3134,4 +3150,67 @@ const Ramen = {
     return m;
   },
 };
+// ---------- 라멘 가게 포장 코너: 사 두고 필요할 때 쓰는 아이템 (Save.data.items = { id: 개수 }) ----------
+// 하트 도시락·무한 리필권: 하트가 없을 때 창이나 가게에서 / 이어하기권: 실패 창에서 / 시작 아이템: 친구 고르는 창에서 켜면 판에 깔고 시작
+const SHOP_ITEMS = [
+  { id: 'lunch', name: '하트 도시락', icon: 'bento', desc: '하트 1개 바로 채움', price: 40, say: '도시락이다. 배고프면 먹어라.' },
+  { id: 'refill', name: '무한 리필권', icon: 'heart', desc: '30분 동안 하트가 안 줄어요', price: 250, say: '무한 리필이다. 30분은 마음껏 다녀와라.' },
+  { id: 'cont', name: '이어하기권', icon: 'timer', desc: '실패했을 때 이어서 (일상 +5번, 토벌 체력 절반)', price: 120, say: '이어하기권이다. 포기하지 마라.' },
+  { id: 'sword', name: '랏코 검', icon: 'rocket', desc: '일상 퍼즐: 가로·세로 검 깔고 시작', price: 60, put: ['h', 'v'], say: '랏코 검이다. 조심해서 들고 가라.' },
+  { id: 'bomb', name: '폭탄', icon: 'bomb', desc: '일상 퍼즐: 폭탄 깔고 시작', price: 80, put: ['bomb'], say: '폭탄이다… 가게 안에서 터뜨리지 마라.' },
+  { id: 'dango', name: '경단', icon: 'rainbow', desc: '일상 퍼즐: 경단 깔고 시작', price: 120, put: ['rainbow'], say: '경단이다. 시사가 빚은 거다.' },
+];
+const Items = {
+  n: id => Save.data.items?.[id] || 0,
+  add(id, k = 1) { (Save.data.items = Save.data.items || {})[id] = Items.n(id) + k; Save.save(); },
+  use(id) { if (Items.n(id) < 1) return false; Save.data.items[id]--; Save.save(); return true; },
+  // 친구 고르는 창에서 켠 시작 아이템을 판에 깖 (보드를 만든 뒤에 부름)
+  applyBoost() {
+    const used = [...(L.boost || [])].filter(id => Items.use(id));
+    L.boost = new Set();
+    if (!used.length) return null;
+    const spots = [];
+    Board.each(B.grid, t => { if (t.type >= 0 && !t.special && !t.lock) spots.push(t); });
+    used.flatMap(id => SHOP_ITEMS.find(x => x.id === id).put).forEach(k => {
+      const t = spots.splice(Math.floor(Math.random() * spots.length), 1)[0];
+      if (t) { t.special = k; t.type = -1; }
+    });
+    return used;
+  },
+};
+let ramenTab = 'ramen';
+document.querySelectorAll('.rm-tabs button').forEach(b => (b.onclick = () => {
+  Sound.play('pop', 1.2, 0.5);
+  ramenTab = b.dataset.t;
+  document.querySelectorAll('.rm-tabs button').forEach(x => x.classList.toggle('on', x === b));
+  renderRamenMenu();
+}));
+function renderShopItems() {
+  const wrap = $('#ramenMenu .rm-btns');
+  wrap.innerHTML = SHOP_ITEMS.map(it => {
+    const n = Items.n(it.id), use = n && ((it.id === 'lunch' && Hearts.n() < HEART_MAX) || it.id === 'refill');
+    return `<button data-i="${it.id}"><img src="${ITEM(it.icon)}" alt=""><b>${it.name}${n ? ` <i class="have">×${n}</i>` : ''}</b><small>${it.desc}</small>` +
+      `<em><img src="${ITEM('coin')}">${it.price}</em>${use ? `<span class="use" data-use>${it.id === 'lunch' ? '먹기' : '쓰기'}</span>` : ''}</button>`;
+  }).join('');
+  wrap.querySelectorAll('button').forEach(b => (b.onclick = e => (e.target.closest('[data-use]') ? useShopItem(b.dataset.i) : buyShopItem(b.dataset.i))));
+  $('#ramenNote').innerHTML = Hearts.inf() ? `무한 리필 중 · <b>${Hearts.infLeft()}</b> 남음` : '사 두면 필요할 때 써요 · 하트가 없을 때, 실패했을 때, 판 시작 전';
+}
+function buyShopItem(id) {
+  const it = SHOP_ITEMS.find(x => x.id === id), shopkeep = $('#shopMaster');
+  if (Save.data.coins < it.price) { Sound.play('bad'); shopSay(shopkeep, '코인이 모자라다. 토벌하고 와라.'); return; }
+  Meta.addCoins(-it.price);
+  Items.add(id);
+  Sound.play('land', 1.1, 0.8);
+  shopSay(shopkeep, it.say);
+  const b = $(`#ramenMenu [data-i="${id}"]`);
+  if (b) { const c = centerOf(b); floatNum(c.x, c.y - 20, `+1 ${it.name}`, '#e07b39'); }
+  renderRamenMenu();
+}
+function useShopItem(id) {
+  if (!Items.use(id)) return;
+  if (id === 'lunch') Hearts.add(1); else Hearts.startInf();
+  Sound.play('heal', 1.2, 0.9);
+  shopSay($('#shopMaster'), id === 'lunch' ? '든든하게 먹어라.' : '30분 동안 마음껏 다녀와라.');
+  renderRamenMenu();
+}
 $('#btnRamen').onclick = () => { Sound.play('click'); go(openRamen); };

@@ -472,11 +472,13 @@ const Life = {
     fx.innerHTML = '';
     B.grid = Board.create(lay);
     const bowl = run.kind === 'route' ? Ramen.takeLife() : null; // 먹고 온 라멘: 아이템 깔기·이동 더하기
+    const boosts = Items.applyBoost(); // 친구 고르는 창에서 켠 시작 아이템
     renderFloor();
     Life.hud();
     if (run.kind === 'route' && LIFE_STORY[i] && (Save.data.life || [])[i] == null) await playStory(LIFE_STORY[i]);
     await dropIn(run.kind === 'route' && routeLevel(routeIdx('l', i)) === 'hard' ? 'HARD!' : st.intro);
     if (bowl) banner(`${bowl.name}!`, 500);
+    else if (boosts) banner('시작 아이템!', 500);
     if (buddy) setTimeout(() => banner(`단짝 보너스! ${st.time ? '+6초' : '이동 +2'}`, 450), bowl ? 900 : 0);
     B.busy = false;
     Tutor.onStart();
@@ -819,11 +821,13 @@ const Life = {
     // 못 모은 목표를 아이콘과 남은 수로 (결과 창처럼)
     const left = L.st.goals.filter(g => Life.remain(g) > 0).slice(0, 3).map(g => [`<img class="row-ic" src="${GOAL_ICON[g.k](g)}">`, Life.remain(g)]);
     const card = { title: L.st.exam ? '불합격…' : '실패…', stars: 0, img: 'assets/img/art/scene_crying.jpg', photo: true, rows: left };
-    if (!L.extra) {
+    const ticket = L.extra && L.run.kind !== 'tower' && Items.n('cont') > 0; // 공짜 한 번을 쓴 뒤엔 이어하기권
+    if (!L.extra || ticket) {
       modal({
-        ...card, text: `조금만 더! ${L.st.time ? '15초' : '5번'} 더 해 볼까요?`,
-        btn1: L.st.time ? '+15초 더!' : '+5번 더!',
+        ...card, text: ticket ? `이어하기권으로 ${L.st.time ? '15초' : '5번'} 더 해 볼까요?` : `조금만 더! ${L.st.time ? '15초' : '5번'} 더 해 볼까요?`,
+        btn1: ticket ? `이어하기권 쓰기 (${Items.n('cont')})` : L.st.time ? '+15초 더!' : '+5번 더!',
         on1: () => {
+          if (ticket) Items.use('cont');
           L.extra = true;
           if (L.st.time) L.time += 15; else L.moves += 5;
           B.over = false;
@@ -918,15 +922,18 @@ function pickHelper(st = L.st) {
     let pick = L.helper != null && Meta.owned(CHARS[L.helper].id) ? L.helper : CHARS.findIndex(c => c.id === (Save.data.helper || 'hachiware'));
     if (pick < 0 || !Meta.owned(CHARS[pick].id)) pick = list[0][1];
     const card = $('#charSheet .sheet-card');
+    L.boost = new Set(); // 이번 판에 쓸 시작 아이템
     const draw = () => {
       const ch = CHARS[pick];
       card.style.setProperty('--ring', ch.ring);
       card.innerHTML = `<div class="mates-title">같이 갈 친구 한 명</div>
         <div class="helper-pick"><span class="fig">${Meta.figure(ch.id, art(ch.id))}</span><div><b>${ch.name}</b><small>${skillOf(ch.id).name}</small><p>${skillOf(ch.id).desc}</p></div></div>
-        ${host ? `<div class="buddy-note${CHARS[pick].id === st.host ? ' on' : ''}">이 판 단짝: <b>${host.name}</b> · 데려가면 ${st.time ? '+6초' : '이동 +2'}${Meta.owned(host.id) ? '' : ' (아직 없는 친구)'}</div>` : ''}
+        ${host ? `<div class="buddy-note${CHARS[pick].id === st.host ? ' on' : ''}"><img class="bn-face" src="${FACE(host.id)}" alt="">이 판 단짝: <b>${host.name}</b> · 데려가면 ${st.time ? '+6초' : '이동 +2'}${Meta.owned(host.id) ? '' : ' (아직 없는 친구)'}</div>` : ''}
+        ${(() => { const own = SHOP_ITEMS.filter(it => it.put && Items.n(it.id)); return own.length ? `<div class="boost-row"><span>시작 아이템</span>${own.map(it => `<button data-bo="${it.id}" class="${L.boost.has(it.id) ? 'on' : ''}"><img src="${ITEM(it.icon)}" alt=""><i>${Items.n(it.id)}</i></button>`).join('')}</div>` : ''; })()}
         <div class="mates-grid">${list.map(([c, k]) => `<button class="${k === pick ? 'on' : ''}${c.id === st?.host ? ' buddy' : ''}" data-k="${k}" style="--ring:${c.ring}"><img src="${FACE(c.id)}"><span>${c.name}</span></button>`).join('')}</div>
         <div class="sheet-btns"><button class="big-btn ghost" data-back><img class="b-ic" src="assets/img/ui/back.png" alt="">돌아가기</button><button class="big-btn" data-go>같이 가자!</button></div>`;
       card.querySelectorAll('.mates-grid button').forEach(b => (b.onclick = () => { pick = +b.dataset.k; Sound.play('pop', 1.2, 0.5); draw(); }));
+      card.querySelectorAll('[data-bo]').forEach(b => (b.onclick = () => { const id = b.dataset.bo; L.boost.has(id) ? L.boost.delete(id) : L.boost.add(id); Sound.play('pop', 1.4, 0.5); draw(); }));
       card.querySelector('[data-go]').onclick = () => {
         L.helper = pick;
         Save.data.helper = CHARS[pick].id;

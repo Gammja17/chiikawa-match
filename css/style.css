@@ -133,6 +133,7 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 .node.battle { background: #ffe8de; }
 /* 판 종류 배지: 일상(풀)·토벌(칼)·시험(학사모) */
 .node .nkind { position: absolute; left: -7px; top: -7px; z-index: 1; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; box-shadow: 0 0 0 2px #fff, 0 2px 3px rgba(74, 66, 98, .25); }
+.node .nhost { position: absolute; right: -9px; top: -9px; z-index: 1; width: 26px; height: 26px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px #fff, 0 2px 3px rgba(74, 66, 98, .25); } /* 이 판 단짝 */
 .node .nkind img { width: 15px; height: 15px; }
 .nkind.life { background: #c4ecae; }
 .nkind.hunt { background: #ffb9ad; }
@@ -914,6 +915,17 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .rm-btns em img { width: 14px; grid-row: auto; }
 .rm-btns em.free { color: #e2543f; }
 .rm-btns b { font-size: 18px; }
+/* 라멘 / 포장 코너 탭, 아이템 개수·쓰기, 친구 고르는 창의 시작 아이템 */
+.rm-tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+.rm-tabs button { flex: 1; height: 34px; border-radius: 12px; background: var(--paper); box-shadow: var(--sh); font-family: var(--head); font-size: 18px; color: var(--ink2); }
+.rm-tabs button.on { background: var(--pink); color: #fff; }
+.rm-btns .have { font-style: normal; font-size: 15px; color: var(--pink); }
+.rm-btns .use { position: absolute; right: 8px; bottom: 8px; padding: 2px 10px 0; border-radius: 10px; background: #3fae4f; color: #fff; font-family: var(--head); font-size: 15px; }
+.boost-row { display: flex; align-items: center; gap: 8px; margin: -4px 0 10px; font-size: 13px; color: var(--ink2); }
+.boost-row button { position: relative; width: 44px; height: 44px; border-radius: 12px; background: var(--paper); box-shadow: var(--sh); opacity: .55; }
+.boost-row button.on { opacity: 1; box-shadow: 0 0 0 3px var(--gold, #ffcf3f), var(--sh); }
+.boost-row img { width: 32px; height: 32px; }
+.boost-row i { position: absolute; right: -4px; bottom: -4px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--ink); color: #fff; font-style: normal; font-size: 12px; line-height: 18px; }
 #ramenNote { margin: 8px 0 0; text-align: center; font-size: 14px; color: var(--ink2); }
 
 /* ---------- 스포트라이트 안내 ---------- */
@@ -1032,6 +1044,7 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .rank-pop em { font-style: normal; color: #e0446a; font-family: var(--head); font-size: 22px; }
 /* 일상 퍼즐 단짝 */
 .buddy-note { margin: -4px 0 10px; padding: 5px 10px; border-radius: 10px; background: #fff3d6; font-size: 13px; color: var(--ink2); text-align: center; }
+.buddy-note .bn-face { width: 24px; height: 24px; margin: -4px 4px -6px 0; vertical-align: middle; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px #fff; }
 .buddy-note.on { background: #ffe39a; color: var(--ink); }
 .mates-grid button.buddy::after { content: '단짝'; position: absolute; left: 50%; top: -6px; transform: translateX(-50%); padding: 0 5px; border-radius: 6px; background: var(--gold, #ffcf3f); font-family: var(--head); font-size: 11px; line-height: 1.4; color: var(--ink); }
 .mates-grid button { position: relative; }
