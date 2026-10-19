@@ -25,12 +25,15 @@ const Net = {
   },
   onChange(f) { Net.listeners.push(f); },
   // 방문자 수·이용 시간 (Google Analytics). 진짜 사이트에서만 켬 (로컬에서 시험한 게 통계에 안 섞이게)
-  async analytics() {
-    if (!window.FIREBASE_CONFIG.measurementId || !location.hostname.endsWith('workers.dev')) return;
-    try {
-      await loadScript('assets/vendor/firebase-analytics-compat.js');
-      Net.ga = firebase.analytics();
-    } catch (e) { console.warn('방문 통계를 켜지 못했어요', e); }
+  // Firebase Analytics 대신 gtag.js를 바로 씀: Firebase 쪽 앱 설정에 측정 ID가 없으면 SDK가 우리 ID를 버리고 아무것도 안 보냄
+  analytics() {
+    const id = window.FIREBASE_CONFIG.measurementId;
+    if (!id || !location.hostname.endsWith('workers.dev')) return;
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function () { dataLayer.push(arguments); };
+    gtag('js', new Date());
+    gtag('config', id);
+    loadScript(`https://www.googletagmanager.com/gtag/js?id=${id}`).catch(e => console.warn('방문 통계를 켜지 못했어요', e));
   },
   // 구글 로그인. 게스트로 하던 중이면 그 기록 그대로 구글 계정에 연결
   async google() {
