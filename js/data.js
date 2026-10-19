@@ -16,7 +16,7 @@ const CHARS = [
   { id: 'kurimanju', name: '쿠리만쥬', ring: '#79bf3f', attr: 'odd',   dmg: 12, line: '하아~~ 으어어…',
     skill: { id: 'rainbow',  name: '한잔 하아~', desc: '판에 경단 하나', need: 15, say: '(꿀꺽꿀꺽) ……하아~~ 으어어…' } },
   { id: 'shisa',     name: '시사',     ring: '#ff8a33', attr: 'odd',   dmg: 11, line: '어서 와사~!',
-    skill: { id: 'ramen',    name: '치바리요~!', desc: '오키나와 간식 나눠 주기: 체력 20% 회복, 모두 게이지 +3', need: 15, say: '치바리요~! 이거 먹고 힘내사!' } },
+    skill: { id: 'ramen',    name: '치바리요~!', desc: '오키나와 간식 나눠 주기: 체력 20% 회복, 모두 게이지 +3', need: 12, say: '치바리요~! 이거 먹고 힘내사!' } },
   { id: 'shooting',  name: '별똥별',   ring: '#e5c100', attr: 'light', dmg: 11, line: '반짝!',
     skill: { id: 'meteor',   name: '소원 별똥별', desc: '무작위 3곳에 폭탄이 떨어짐', need: 17, say: '구해 준 보답이야! 소원을 빌어!' } },
   { id: 'darkstar',  name: '까만별',   ring: '#4b4b66', attr: 'dark',   dmg: 12, line: '칫, 재미없어!',

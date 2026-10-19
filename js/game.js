@@ -1763,7 +1763,7 @@ function effectTimes(res, from) {
 // 칸 하나를 하얗게 켬: on(ms)에 켜지고 깜빡이며 기다리다가 pop(ms)에 번쩍하고 꺼짐
 const ZONE_TINT = { h: '#7cc4ec', v: '#7cc4ec', bomb: '#ffb020', rainbow: '#ff8ab8', plane: '#7cc4ec', combo: '#ffd84d' };
 function zoneCell([r, c], on, pop, kind) {
-  if (!inside(r, c)) return;
+  if (!inside(r, c) || hole(r, c)) return; // 모양 판의 빈 곳(칸 없는 자리)은 안 켬
   const el = document.createElement('div');
   el.className = 'zone';
   Object.assign(el.style, { left: c * B.S + 'px', top: r * B.S + 'px', width: B.S + 'px', height: B.S + 'px' });
@@ -3034,7 +3034,7 @@ function openRamen() {
   scene.querySelectorAll('.guest, .seat').forEach(e => e.remove());
   let mi = 0, si = 0;
   $('#shopMaster').onclick = e => shopSay(e.currentTarget, MASTER_LINES[mi++ % MASTER_LINES.length]);
-  // 시사: 아르바이트 중. 시사의 라멘 가게(9번째 일상)를 도와주면 친구가 됨
+  // 시사: 아르바이트 중. 3번째 일상(라멘 재료 나르기)을 도와주면 친구가 됨
   const shisa = $('#shopShisa');
   shisa.onclick = () => shopSay(shisa, Meta.owned('shisa') ? lineOf('shisa') : SHISA_LINES[si++ % SHISA_LINES.length]);
   // 카운터에 앉은 친구들 (가진 친구 중 셋)

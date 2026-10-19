@@ -276,7 +276,7 @@ const UNLOCKS = [
 // 들어가면 그 화면에서 비춰 줄 곳
 const UNLOCK_INTRO = {
   friends: () => [['#friendsGrid .fcard', '친구를 꾹 누르면 스킬이랑 이야기를 볼 수 있어. 간식을 모으면 데려올 수 있는 친구도 있대!']],
-  ramen: () => [['#shopMaster', '갑옷 아저씨네 라멘 가게야. 말 걸어 봐!'], ['#ramenMenu', '토벌을 새로 깰 때마다 한 그릇! 먹으면 다음 토벌이 편해져'], ['#shopShisa', '시사는 여기서 수행 중이야. 언젠가 같이 다닐지도~?']],
+  ramen: () => [['#shopMaster', '갑옷 아저씨네 라멘 가게야. 말 걸어 봐!'], ['#ramenMenu', '토벌을 새로 깰 때마다 한 그릇! 먹으면 다음 토벌이 편해져'], ['#shopShisa', '시사는 여기서 수행 중이야. 토벌에도 같이 가 준대~!']],
   house: () => [['#room .resident.owner', '친구를 꾹 잡고 끌면 원하는 자리로 옮길 수 있어'], ['.shop-wrap', '코인으로 가구를 사서 꾸미자~ 벽지랑 바닥도 있어'], (Tutor.mark('houseDeco'), ['#btnDeco', DECO_TIP]), ['#btnMates', '같이 살 친구도 정할 수 있어!']],
   gacha: () => [['#btnPull', '코인 100개로 캡슐 하나! 뭐가 나올까~']],
   challenge: () => [['.ch-card.tower', '인어섬 탐험! 끝없이 올라가. 몇 층까지 갈 수 있을까?'], ['.ch-card.contest', '제초 대회! 60초 동안 최고 점수 내기~'], ...CH_TIPS.map(([k, sel, text]) => (Tutor.mark(k), [sel, text]))],

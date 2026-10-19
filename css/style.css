@@ -49,7 +49,7 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 .icon-btn:active { transform: scale(.92); }
 .icon-btn.off { opacity: .4; }
 /* 글자 기호(⌂ ⚙ ◀) 대신 손그림 아이콘 */
-#btnMapHome, .btn-set, .btn-tomap, #btnFormBack { font-size: 0; }
+#btnMapHome, .btn-set, .btn-tomap, #btnFormBack { font-size: 0; line-height: 0; place-content: center; } /* 숨긴 글자 기호가 한 줄을 차지해 아이콘이 위로 밀리지 않게 */
 #btnMapHome::before, .btn-set::before, .btn-tomap::before, #btnFormBack::before { content: ''; width: 30px; height: 30px; background: center / contain no-repeat; }
 #btnMapHome::before { background-image: url(../assets/img/ui/home.png); }
 .btn-set::before { background-image: url(../assets/img/ui/gear.png); }
@@ -343,6 +343,11 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 .life-mode .cellbg { background: var(--paper); box-shadow: 0 0 0 1px var(--paper); }
 .life-mode .cellbg.void { background: none; box-shadow: none; }
 .life-mode .cellbg.void::after { display: none; }
+/* 판 배경 풍경 위에서는 판과 칸을 반투명하게 (하얀 판때기가 풍경을 가리지 않게). 잡초·시럽 칸 색은 그대로 */
+#battle.has-bg #board { background: rgba(255, 255, 255, .42); }
+.life-mode #battle.has-bg .cellbg:not(.void) { background: rgba(255, 255, 255, .42); box-shadow: none; }
+#battle.has-bg .cellbg:not(.weed):not(.syrup)::after { background: rgba(250, 246, 253, .7); }
+#battle.has-bg .cellbg:not(.weed):not(.syrup):nth-child(even)::after { background: rgba(243, 236, 250, .7); }
 
 /* ---------- 효과 ---------- */
 #fx { position: absolute; inset: 0; pointer-events: none; z-index: 20; overflow: hidden; }

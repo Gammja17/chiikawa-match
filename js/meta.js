@@ -80,9 +80,11 @@ const RECRUIT = {
   // 모험을 하다 보면 차례로 합류
   hachiware: { stage: ['l', 0], story: [['hachiware', '같이 하니까 금방 끝났다!'], ['hachiware', '앞으로도 같이 일하자. 둘이면 어떻게든 될 거야~!'], ['chiikawa', '…!! (끄덕끄덕)']] },
   usagi: { stage: ['l', 1], story: [['usagi', '우라!'], ['hachiware', '너도 같이 다니고 싶다는 거야!?'], ['usagi', '야하~!!']] },
-  kani: { stage: ['b', 0], story: [['kani', '(토벌에서 돌아온 걸 보고 꾸벅 인사한다)'], ['kani', '(책 한 권을 골라 살며시 내민다)'], ['hachiware', '쉬는 동안 읽으라는 거야!? …같이 와 준대!'], ['chiikawa', '…!! (끄덕끄덕)']] },
+  // 카니: 모몽가가 온 뒤 새 판을 3개 더 깨면 같이 옴. 원작처럼 모몽가가 게 머리띠 두 개를 겹쳐 쓰다가 불편해서,
+  // 하나를 헌책방 주인 머리에 그냥 툭 얹어 줌 → 그 뒤로 늘 쓰고 다님
+  kani: { after: 'momonga', wait: 3, story: [['momonga', '(게 머리띠를 두 개나 겹쳐 쓰고 뽐낸다)'], ['momonga', '…무거워. 불편해.'], ['momonga', '(헌책방 앞을 지나다가, 하나를 책방 주인 머리에 툭 얹어 준다)'], ['kani', '(…! 머리 위 머리띠를 살짝 만져 본다)'], ['kani', '(그 뒤로 게 머리띠를 꼭 쓰고 모몽가를 따라다닌다)'], ['chiikawa', '…!! (끄덕끄덕)']] },
   rakko: { stage: ['b', 1], story: [['rakko', '…강해졌구나.'], ['rakko', '다음 토벌, 같이 간다. 기세를 타라.'], ['hachiware', '선생님이랑 같이…!?'], ['chiikawa', '…!!!']] },
-  shisa: { stage: ['l', 8], story: [['shisa', '도와줘서 고맙사~!'], ['shisa', '스승님이 밖에서도 수행하고 오래사. 토벌 따라가도 될까사!?'], ['hachiware', '물론이지~! 같이 가자!'], ['shisa', '열심히 할 거사! 치바리요~!']] },
+  shisa: { stage: ['l', 2], story: [['shisa', '도와줘서 고맙사~!'], ['shisa', '스승님이 밖에서도 수행하고 오래사. 토벌 따라가도 될까사!?'], ['hachiware', '물론이지~! 같이 가자!'], ['shisa', '열심히 할 거사! 치바리요~!']] },
 };
 // 스테이지마다 주는 간식 (일상·토벌 모두 세 가지가 돌아가며)
 const stageTreat = (t, i) => ['dango', 'parfait', 'onigiri'][(t === 'b' ? i + 1 : i) % 3]; // 토벌도 돌아가며 (예전엔 늘 파르페라 모몽가가 너무 빨리 옴)
@@ -148,15 +150,21 @@ const Meta = {
     const r = RECRUIT[id];
     if (r.treat) Save.data.treats[r.treat] -= r.n;
     Save.data.own[id] = 1;
+    (Save.data.joinAt = Save.data.joinAt || {})[id] = clearedCount();
     Save.save();
     await playStory(r.story);
     await Meta.joinShow(id);
   },
-  // 스테이지를 깨서 합류하는 친구 (시사)
+  // 스테이지를 깨서 합류하는 친구 (시사), 누가 온 뒤 새 판을 몇 개 더 깨면 오는 친구 (카니: 모몽가가 온 뒤 3판)
+  // 예전 기록엔 합류한 때가 없어서 0으로 셈 (이미 모몽가가 있으면 다음 새 판에 바로 옴)
   async stageJoin(t, i) {
     for (const [id, r] of Object.entries(RECRUIT)) {
-      if (r.stage && r.stage[0] === t && r.stage[1] === i && !Meta.owned(id)) {
+      if (Meta.owned(id)) continue;
+      const byStage = r.stage && r.stage[0] === t && r.stage[1] === i;
+      const byFriend = r.after && Meta.owned(r.after) && clearedCount() >= (Save.data.joinAt?.[r.after] || 0) + r.wait;
+      if (byStage || byFriend) {
         Save.data.own[id] = 1;
+        (Save.data.joinAt = Save.data.joinAt || {})[id] = clearedCount();
         Save.save();
         await playStory(r.story);
         await Meta.joinShow(id);
@@ -298,6 +306,7 @@ const Sheet = {
     const meet = (icon, text) => `<section class="sh-sec"><h3>만나는 곳</h3><div class="recruit"><img src="${ITEM(icon)}"><span><b>${text}</b></span></div></section>`;
     if (!r) return meet('gift', '가게 캡슐 뽑기에서 만나요');
     if (r.stage) { const k = routeIdx(r.stage[0], r.stage[1]); return meet(routeStage(k).icon, `${k + 1}. ${routeStage(k).name}을(를) 깨면 와요`); }
+    if (r.after) { const n = CHARS[charIdx(r.after)].name, jong = (n.charCodeAt(n.length - 1) - 0xac00) % 28; return meet('ribbon', `${n}${jong ? '과' : '와'} 친해지고 조금 지나면 와요`); }
     const have = Save.data.treats[r.treat] || 0;
     return `<section class="sh-sec"><h3>데려오기 <small>좋아하는 간식을 모으면 같이 다녀요</small></h3><div class="recruit"><img src="${ITEM(r.treat)}"><span><b>${TREATS[r.treat]} ${Math.min(have, r.n)} / ${r.n}</b><span class="sh-bar"><i style="width:${Math.min(1, have / r.n) * 100}%"></i></span></span>
       <button class="big-btn" data-recruit ${have >= r.n ? '' : 'disabled'}>데려오기</button></div></section>`;
