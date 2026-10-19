@@ -41,9 +41,9 @@ const CHAR_STORY = {
 // 몇몇 친구는 좋아하는 간식을 모아서 데려옴 (간식은 스테이지를 깨면 받음)
 const TREATS = { parfait: '딸기 파르페', dango: '경단', onigiri: '주먹밥' };
 const RECRUIT = {
-  momonga: { treat: 'parfait', n: 5, story: [['momonga', '딸기 파르페다! 이리 내. 전부.'], ['momonga', '(순식간에 다 먹어 치운다) …흥, 같이 다녀 줄게. 대신 매일 칭찬해. 안 하면 운다?'], ['chiikawa', '…!! (끄덕끄덕)']] },
-  kurimanju: { treat: 'dango', n: 5, story: [['kurimanju', '……(경단을 바라본다)'], ['kurimanju', '(한 입) ……하아~~'], ['hachiware', '같이 가 준다는 거야!?']] },
-  goblin: { treat: 'onigiri', n: 4, story: [['goblin', '(주먹밥 냄새를 킁킁)'], ['goblin', '옴 빰 빰~ 예 예 예~!'], ['usagi', '야하!']] },
+  momonga: { treat: 'parfait', n: 8, story: [['momonga', '딸기 파르페다! 이리 내. 전부.'], ['momonga', '(순식간에 다 먹어 치운다) …흥, 같이 다녀 줄게. 대신 매일 칭찬해. 안 하면 운다?'], ['chiikawa', '…!! (끄덕끄덕)']] },
+  kurimanju: { treat: 'dango', n: 8, story: [['kurimanju', '……(경단을 바라본다)'], ['kurimanju', '(한 입) ……하아~~'], ['hachiware', '같이 가 준다는 거야!?']] },
+  goblin: { treat: 'onigiri', n: 6, story: [['goblin', '(주먹밥 냄새를 킁킁)'], ['goblin', '옴 빰 빰~ 예 예 예~!'], ['usagi', '야하!']] },
   // 모험을 하다 보면 차례로 합류
   hachiware: { stage: ['l', 0], story: [['hachiware', '같이 하니까 금방 끝났다!'], ['hachiware', '앞으로도 같이 일하자. 둘이면 어떻게든 될 거야~!'], ['chiikawa', '…!! (끄덕끄덕)']] },
   usagi: { stage: ['l', 1], story: [['usagi', '우라!'], ['hachiware', '너도 같이 다니고 싶다는 거야!?'], ['usagi', '야하~!!']] },
@@ -51,8 +51,8 @@ const RECRUIT = {
   rakko: { stage: ['b', 1], story: [['rakko', '…강해졌구나.'], ['rakko', '다음 토벌, 같이 간다. 기세를 타라.'], ['hachiware', '선생님이랑 같이…!?'], ['chiikawa', '…!!!']] },
   shisa: { stage: ['l', 8], story: [['shisa', '도와줘서 고맙사~!'], ['shisa', '스승님이 밖에서도 수행하고 오래사. 토벌 따라가도 될까사!?'], ['hachiware', '물론이지~! 같이 가자!'], ['shisa', '열심히 할 거사! 치바리요~!']] },
 };
-// 스테이지마다 주는 간식 (토벌은 딸기 파르페)
-const stageTreat = (t, i) => (t === 'b' ? 'parfait' : ['dango', 'parfait', 'onigiri'][i % 3]);
+// 스테이지마다 주는 간식 (일상·토벌 모두 세 가지가 돌아가며)
+const stageTreat = (t, i) => ['dango', 'parfait', 'onigiri'][(t === 'b' ? i + 1 : i) % 3]; // 토벌도 돌아가며 (예전엔 늘 파르페라 모몽가가 너무 빨리 옴)
 
 const today = () => new Date().toISOString().slice(0, 10);
 const charIdx = id => CHARS.findIndex(c => c.id === id);
@@ -92,9 +92,9 @@ const Meta = {
     });
   },
   // 처음 깨면 100 + 별마다 30, 다시 깨면 별마다 15
-  // 간식: 처음 깨면 별 수만큼, 다시 깨면 1개. 결과 창에 넣을 [아이콘, 개수]를 돌려줌
+  // 간식: 처음 깨면 1개(별 3개면 2개), 다시 깨면 1개. 결과 창에 넣을 [아이콘, 개수]를 돌려줌
   treat(t, i, stars, first) {
-    const k = stageTreat(t, i), n = first ? stars : 1;
+    const k = stageTreat(t, i), n = first && stars === 3 ? 2 : 1;
     Save.data.treats[k] = (Save.data.treats[k] || 0) + n;
     Save.save();
     return [`<img class="row-ic" src="${ITEM(k)}">`, '+' + n];

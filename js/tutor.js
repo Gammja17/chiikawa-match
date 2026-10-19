@@ -279,6 +279,7 @@ const UNLOCK_INTRO = {
 };
 const Unlock = {
   open: u => clearedCount() >= u.at,
+  fresh: () => UNLOCKS.find(u => Unlock.open(u) && !Tutor.seen('u_' + u.id)), // 열렸는데 아직 안내 안 한 기능
   // 아래 메뉴: 아직 안 열린 건 자물쇠와 '몇 단계'
   dock() {
     UNLOCKS.forEach(u => {
@@ -322,7 +323,7 @@ Tutor.mapFlow = async function (delay) {
       await Spot.show($('#mapPath .node.current'), '여기 눌러서 첫 일 시작하자!', { tap: true });
       return;
     }
-    const u = UNLOCKS.find(x => Unlock.open(x) && !Tutor.seen('u_' + x.id));
+    const u = Unlock.fresh();
     if (u) {
       Tutor.mark('u_' + u.id);
       const b = $(u.btn);
