@@ -33,7 +33,7 @@ service cloud.firestore {
   function valid(d) {
     return d.keys().hasOnly(['name', 'cleared', 'tower', 'contest', 'updated'])
       && d.name is string && d.name.size() > 0 && d.name.size() <= 12
-      && d.cleared is int && d.cleared >= 0 && d.cleared <= 100
+      && d.cleared is int && d.cleared >= 0 && d.cleared <= 500
       && d.tower is int && d.tower >= 0 && d.tower <= 999
       && d.contest is int && d.contest >= 0 && d.contest <= 300000
       && d.updated == request.time;

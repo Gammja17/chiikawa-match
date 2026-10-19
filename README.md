@@ -20,7 +20,7 @@
   - L, T 모양: 주변을 터뜨리는 폭탄
   - 5개 한 줄: 한 캐릭터를 전부 지우는 무지개 폭탄
   - 특수 구슬끼리 바꾸면 더 큰 효과
-- 스테이지 10개, 남은 체력에 따라 별 1~3개
+- 남은 체력에 따라 별 1~3개
 
 ### 아이템
 
@@ -32,7 +32,10 @@
 
 ### 모험 지도
 
-토벌 10개와 일상 퍼즐 20개가 한 줄 루트에 정해진 순서로 섞여 있습니다. 스테이지마다 판 모양이 다릅니다.
+30장 300판: 토벌 93개와 일상 퍼즐 207개가 한 줄 루트에 정해진 순서로 섞여 있습니다. 장마다 10판(일상 7, 토벌 3 안팎)이고 마지막 판은 보스. 스테이지마다 판 모양이 다릅니다.
+
+- 1~6장: 풀 뽑기 첫걸음, 섞어 보기, 제초 검정 1급, 하치와레의 노래, 끝나지 않는 오늘, 고블린 동굴 (`js/data.js`, `js/life.js`)
+- 7~30장: 라멘 가게 대작전, 비 오는 날, 카니의 헌책방, 여름 축제, 바다로!, 랏코 선생님의 수련, 모몽가 소동, 쿠리만쥬의 하루, 별똥별의 밤, 마법소녀 치이카와, 할로윈 밤, 풍뎅이와 숙제, 가을 소풍, 제초 검정 특급, 눈 내리는 날, 산타의 밤, 새해 첫 해돋이, 우사기의 보물 돌, 온천 마을, 꽃놀이, 하치와레의 첫 공연, 키메라의 숲, 거인의 성, 토벌 대축제 (`js/chapters.js`)
 
 - 일상 퍼즐에는 친구 한 명을 데려가서 그 친구 스킬을 씀 (처음 두 판은 하치와레)
 - 스킬 AUTO 버튼: 게이지가 차면 알아서 발동
@@ -73,6 +76,22 @@
 - 사파리에서 공유 → 「홈 화면에 추가」 하면 주소창 없이 앱처럼 켜짐 (`manifest.webmanifest`, `sw.js`). 코드는 켤 때마다 새로 받고, 인터넷이 없으면 저장해 둔 걸로 켬
 - 플레이어 폰에서 난 에러는 Firestore `errors` 컬렉션에 쌓임 (켤 때마다 최대 8개, 어떤 화면·판·판 크기였는지 함께). Firebase 콘솔 → Firestore → `errors`에서 봄
 - 판이 20초 넘게 아무 연출 없이 멈춰 있으면 「앗, 판이 멈췄어요」 창이 뜨고 하트를 잃지 않고 다시 시작 (이것도 `errors`에 `stuck`으로 남음)
+
+## 스테이지 만들기 (7장~)
+
+`js/chapters.js`는 만든 파일입니다. 이름·목표·응원 친구·대사는 `tools/stages/spec.js`에 적고, 판 그림·이동 수·별 점수·괴물 체력은 봇이 정합니다.
+
+```bash
+node tools/stages/make.js                      # 바뀐 판만 다시 재서 js/chapters.js를 새로 씀
+node tools/stages/make.js "--only=진한 국물"     # 이 판만
+node tools/stages/make.js --all                # 전부 (4코어로 20분쯤)
+node tools/sim.js route 100                    # 루트 전체를 봇으로 돌려 판마다 깨는 비율 보기
+```
+
+- 봇(`tools/sim.js`)은 `js/board.js`를 그대로 불러와 화면 없이 둠. 둘 수 있는 수를 하나씩 미리 터뜨려 보고 목표에 제일 가까워지는 수를 고름
+- 일상 퍼즐: 봇이 깨는 데 든 수의 분포에서 이동 수를 정함 (보통 93%→88%, 도전 85%, HARD 64%→56% 깸, 1~6장을 같은 봇으로 잰 값과 맞춤). 너무 짧거나 길면 장애물 양을 늘리고 줄여 다시 잼. 별은 깬 판 점수(보너스 포함)의 40%·75% 지점
+- 토벌: 친구 레벨이 60판 6 → 300판 10으로 오른다고 보고, 깨는 비율과 싸움 길이(10~18턴)에 맞춰 괴물 체력·공격력을 정함
+- 잰 값은 `tools/stages/tuned.json`에 남겨 둬서, 대사만 고치면 다시 재지 않음
 
 ## 실행
 
@@ -133,7 +152,7 @@ service cloud.firestore {
       allow write: if request.auth != null && request.auth.uid == uid
         && request.resource.data.keys().hasOnly(['name', 'cleared', 'tower', 'contest', 'updated'])
         && request.resource.data.name is string && request.resource.data.name.size() <= 12
-        && request.resource.data.cleared is int && request.resource.data.cleared <= 30
+        && request.resource.data.cleared is int && request.resource.data.cleared <= 500
         && request.resource.data.tower is int && request.resource.data.tower <= 999
         && request.resource.data.contest is int && request.resource.data.contest <= 300000;
     }

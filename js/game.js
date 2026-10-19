@@ -483,13 +483,17 @@ function openMap(advanceFrom = null) {
   path.style.height = NODE_TOP + STAGES.length * NODE_GAP + 40 + 'px';
   const W = path.clientWidth;
   const pts = STAGES.map((_, i) => nodePos(i, W));
-  let d = `M${pts[0].x} ${pts[0].y}`;
-  for (let i = 1; i < pts.length; i++) {
-    const p = pts[i - 1], q = pts[i];
-    d += ` C${p.x} ${p.y + NODE_GAP / 2} ${q.x} ${q.y - NODE_GAP / 2} ${q.x} ${q.y}`;
+  // 길은 20판씩 잘라 그림 (300판이면 3만 px가 넘어서 한 장으로 그리면 폰에서 무거움)
+  for (let a = 0; a < pts.length - 1; a += 20) {
+    const b = Math.min(pts.length - 1, a + 20), top = pts[a].y - 20;
+    let d = `M${pts[a].x} ${pts[a].y - top}`;
+    for (let i = a + 1; i <= b; i++) {
+      const p = pts[i - 1], q = pts[i];
+      d += ` C${p.x} ${p.y - top + NODE_GAP / 2} ${q.x} ${q.y - top - NODE_GAP / 2} ${q.x} ${q.y - top}`;
+    }
+    path.insertAdjacentHTML('beforeend',
+      `<svg style="top:${top}px;height:${pts[b].y - top + 20}px"><path d="${d}" fill="none" stroke="#fffaf2" stroke-width="14" stroke-linecap="round" opacity=".9"/><path d="${d}" fill="none" stroke="#4b3f3a" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 12" opacity=".45"/></svg>`);
   }
-  path.insertAdjacentHTML('beforeend',
-    `<svg><path d="${d}" fill="none" stroke="#fffaf2" stroke-width="14" stroke-linecap="round" opacity=".9"/><path d="${d}" fill="none" stroke="#4b3f3a" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 12" opacity=".45"/></svg>`);
 
   const cur = unlockedIdx();
   // 장이 시작되는 자리 위에 띠 ("4장 하치와레의 노래")
@@ -511,7 +515,7 @@ function openMap(advanceFrom = null) {
     n.style.top = pts[i].y + 'px';
     const s = routeStars(i) || 0;
     const icon = st.icon ? ITEM(st.icon) : MONSTERS[st.waves[st.waves.length - 1].m].img;
-    n.innerHTML = (locked ? LOCK_SVG : `<img class="nicon" src="${icon}"><span class="nnum">${i + 1}</span>`) +
+    n.innerHTML = (locked ? LOCK_SVG : `<img class="nicon" src="${icon}" loading="lazy"><span class="nnum">${i + 1}</span>`) +
       (i === cur ? `<span class="nname">${st.name}</span>` : '') +
       (lv && !locked ? `<span class="ntag">${lv === 'hard' ? 'HARD' : '도전'}</span>` : '') +
       (s ? `<span class="nstars">${[0, 1, 2].map(k => `<i class="${k < s ? 'on' : ''}"></i>`).join('')}</span>` : '');
