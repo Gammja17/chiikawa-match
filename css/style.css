@@ -439,6 +439,7 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 /* 피버: 큰 빛 배경 없이, 제목·점수 표·파자마 파티즈를 한 덩어리로 가운데에 모음 */
 .fever-show { --fy: 27%; }
 .fever-show .rays { display: none; }
+.fever-show .dim { position: absolute; inset: 0; z-index: -1; background: #2a2440; opacity: 0; }
 .fever-show img { position: absolute; left: 50%; top: calc(var(--fy) + 225px); width: 74%; transform: translate(-50%, -50%) scale(0); }
 .fever-show img.fever-txt { top: var(--fy); width: 72%; transform: translateX(-50%); }
 .fever-show img.fever-sub { top: calc(var(--fy) + 76px); width: auto; height: 40px; padding: 0; border-radius: 0; background: none; transform: translateX(-50%); }

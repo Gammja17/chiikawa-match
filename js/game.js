@@ -2828,6 +2828,11 @@ async function feverShow() {
   el.innerHTML = `<div class="rays"></div><img src="assets/img/art/pajama_uwawa.png"><img class="fever-txt" src="${CIMG('w_fever')}" alt="피버 타임!"><img class="fever-sub" src="${CIMG(life ? (L.st.time ? 'fsub_score10' : 'fsub_score') : 'fsub_atk')}" alt="${life ? '점수' : '공격'} ×1.5">`;
   app.appendChild(el);
   const [rays, img, txt, sub] = el.children;
+  // 스킬 컷인처럼 뒤 화면을 어둡게 (맨 뒤에 깔림)
+  const dim = document.createElement('div');
+  dim.className = 'dim';
+  el.appendChild(dim);
+  dim.animate([{ opacity: 0 }, { opacity: 0.6 }], { duration: 160, fill: 'forwards' });
   Sound.play('rainbow', 1.1, 1);
   Sound.play('jingle_skill', 1.25, 0.8);
   [0, 4, 7, 12, 16, 19, 24].forEach((s, i) => setTimeout(() => Sound.play('pop', Math.pow(2, s / 12), 0.7), 80 + i * 70));
