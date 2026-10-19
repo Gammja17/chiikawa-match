@@ -442,7 +442,7 @@ const Life = {
     if (run.kind === 'route' && run.i < 2 && !Save.data.helper) L.helper = CHARS.findIndex(c => c.id === 'hachiware'); // 처음 두 판은 하치와레가 알아서 따라옴
     else if ((run.kind !== 'tower' || run.floor === 1 || L.helper == null) && !(await pickHelper(st))) return go(run.kind === 'route' ? openMap : openChallenge); // 고르다가 돌아가기
     const buddy = !!st.host && CHARS[L.helper]?.id === st.host; // 단짝 보너스
-    Object.assign(L, { hg: 0, run, ending: false, st, i, moves: (st.moves || 0) + (buddy && st.moves ? 2 : 0), time: (st.time || 0) + (buddy && st.time ? 6 : 0), score: 0, ing: 0, chars: {}, popped: false, extra: false, goalsHtml: '' });
+    Object.assign(L, { hg: 0, run, ending: false, st, i, moves: (st.moves || 0) + (buddy && st.moves ? 2 : 0), time: (st.time || 0) + (buddy && st.time ? 6 : 0), score: 0, ing: 0, chars: {}, popped: false, extra: false, goalsHtml: '', feverT: 0, feverGift: false });
     Object.assign(B, { mode: 'life', stage: i, over: false, busy: true, inSkill: false, sel: null, pending: [], maxCombo: 0, fever: 0 });
     B.team = LIFE_CHARS.slice(0, st.types).map(id => CHARS.findIndex(c => c.id === id));
     Object.assign(B, { real: B.team.length, played: false, dmgBy: {} });
@@ -491,6 +491,7 @@ const Life = {
       last = now;
       if (B.mode !== 'life' || B.over || B.busy || wiping || !$('#battle').classList.contains('active') || $('#modal').classList.contains('show')) return;
       L.time = Math.max(0, L.time - dt);
+      if (B.fever) { L.feverT = Math.max(0, L.feverT - dt); if (!L.feverT) B.fever = 0; updateFever(); } // 시간 판 피버는 10초
       Life.hud();
       if (L.time <= 0) Life.check();
     }, 100);
@@ -542,8 +543,8 @@ const Life = {
   },
 
   onStep(res, combo) {
-    const pts = res.cleared.length * 20 * combo + res.created.length * 100 + res.hits.length * 50 + res.weeds.length * 60 +
-      res.unlocked.length * 60 + res.syrup.length * 40;
+    const pts = Math.round((res.cleared.length * 20 * combo + res.created.length * 100 + res.hits.length * 50 + res.weeds.length * 60 +
+      res.unlocked.length * 60 + res.syrup.length * 40) * (B.fever ? 1.5 : 1)); // 피버 중 ×1.5
     res.cleared.forEach(({ tile }) => {
       // 데려간 친구 얼굴이면 게이지 1, 다른 얼굴은 1/3
       if (!B.inSkill) L.hg += tile.type >= 0 && B.team[tile.type] === L.helper ? 1 : 1 / 3;
@@ -597,6 +598,7 @@ const Life = {
 
   async endTurn() {
     if (!L.st.time) L.moves--;
+    if (B.fever && !L.st.time) { B.fever--; updateFever(); }
     // 거품을 하나도 못 터뜨린 턴에는 거품이 번짐
     if (!L.popped && Life.count('bubble') && !Life.done()) {
       const s = Board.spreadBubble(B.grid);
@@ -616,6 +618,22 @@ const Life = {
     if (L.st.contest && !Life.count('weed')) await Life.regrow();
     Life.hud();
     await Life.check();
+  },
+
+  // 피버 선물: 구슬 하나가 반짝 하고 아이템으로 바뀜 (터지지는 않고 그대로 둠)
+  async feverGift() {
+    const [rc] = pickTiles(1, t => !t.special && t.type >= 0 && !t.lock);
+    if (!rc) return;
+    const t = B.grid[rc[0]][rc[1]], p = tileCenter(rc[0], rc[1]);
+    t.special = ['h', 'v', 'bomb', 'plane'][Math.floor(Math.random() * 4)];
+    t.type = -1;
+    refreshTile(t);
+    t.inner.animate([{ transform: 'scale(0) rotate(-180deg)' }, { transform: 'scale(1.4)', offset: 0.6 }, { transform: 'scale(1)' }], { duration: 420 });
+    kp('light_02', p.x, p.y, B.S * 3, '#fff6c8', [{ transform: 'scale(.2)', opacity: 1 }, { transform: 'scale(1)', opacity: 0 }], { duration: 360, easing: 'ease-out' });
+    burst(p.x, p.y, '#ff8ab8', 10);
+    floatNum(p.x, p.y - B.S * 0.4, '선물!', '#ff5d9e');
+    Sound.play('special', 1.2, 0.9);
+    await sleep(450);
   },
 
   // 제초 대회: 잡초를 다 뽑으면 보너스와 함께 여기저기 새로 돋아남

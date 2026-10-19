@@ -389,6 +389,10 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 /* 피버 중: 판 테두리가 무지갯빛으로 반짝 */
 @keyframes feverGlow { 0% { box-shadow: 0 0 0 4px #ff8ab8, 0 0 18px 6px #ff8ab8; } 33% { box-shadow: 0 0 0 4px #ffd84d, 0 0 18px 6px #ffd84d; } 66% { box-shadow: 0 0 0 4px #7cc4ec, 0 0 18px 6px #7cc4ec; } 100% { box-shadow: 0 0 0 4px #ff8ab8, 0 0 18px 6px #ff8ab8; } }
 #app.fever #board { animation: feverGlow 1.2s linear infinite; }
+/* 일상 퍼즐 피버: 큰 판에서 그림자를 매 프레임 바꾸면 버벅여서 빛은 고정, 점수 막대 위에 남은 턴·초 */
+#app.life-mode.fever #board { animation: none; box-shadow: 0 0 0 4px #ff8ab8, 0 0 18px 6px #ff8ab8; }
+.life-mode #lhScore { position: relative; }
+.life-mode.fever #lhScore::before { content: attr(data-fever); position: absolute; left: 0; top: -14px; padding: 1px 10px 0; border-radius: 10px; background: var(--pink); color: #fff; font-family: var(--head); font-size: 15px; line-height: 1.2; white-space: nowrap; transform-origin: 0 50%; animation: pulse .6s infinite; }
 .mini-btn { white-space: nowrap; float: right; padding: 3px 12px; border-radius: 10px; background: var(--pink-l); color: var(--pink); font-family: var(--head); font-size: 16px; line-height: 1.2; }
 .mini-btn:active { transform: scale(.94); }
 
@@ -812,6 +816,13 @@ img.shadow { filter: brightness(0) opacity(.15); }
 
 /* ---------- 스킬 쓸 때 판 위에 나오는 친구 ---------- */
 .actor { position: absolute; left: 0; top: 0; z-index: 4; pointer-events: none; will-change: transform; } /* 움직이는 동안 매번 다시 그리지 않게 그림자 필터 뺌 */
+/* 친구가 지나간 빛줄기, 스킬 동안 판 테두리 빛 (그림자는 고정, 움직이는 건 transform/opacity만) */
+.sk-beam { position: absolute; z-index: 3; pointer-events: none; transform-origin: 0 50%; border-radius: 99px; will-change: transform, opacity;
+  background: linear-gradient(90deg, transparent, var(--c) 30%, var(--c) 75%, #fff); }
+.sk-beam::after { content: ''; position: absolute; left: 20%; right: 0; top: 34%; bottom: 34%; border-radius: inherit; background: linear-gradient(90deg, transparent, #fff 50%); }
+.skill-aura { position: absolute; z-index: 2; pointer-events: none; border-radius: 22px; will-change: transform, opacity; }
+.skill-aura i { position: absolute; inset: 0; border-radius: inherit; will-change: opacity;
+  box-shadow: 0 0 0 3px #fff, 0 0 0 7px var(--c), 0 0 22px 9px var(--c), inset 0 0 16px 4px var(--c); }
 
 /* ---------- 오늘의 미션, 출석 도장 ---------- */
 #btnMission { position: absolute; left: 18px; top: 66px; z-index: 5; width: 58px; padding: 6px 0 4px; border-radius: 16px; background: var(--paper); box-shadow: var(--sh); display: flex; flex-direction: column; align-items: center; font-family: var(--head); font-size: 14px; line-height: 1.1; }

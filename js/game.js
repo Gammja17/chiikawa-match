@@ -988,12 +988,13 @@ async function cascade(swapped, forced, origin = null, depth = 0) {
     combo++;
     B.maxCombo = Math.max(B.maxCombo || 0, combo);
     if (combo === 5) Daily.add('combo5');
-    if (B.mode === 'battle' && combo === 5 && !B.fever) await feverShow();
+    if (combo === 5 && !B.fever) await feverShow();
     await stepFx(res, combo, combo === 1 ? origin : null);
     await fall(Board.gravity(B.grid));
     if (B.mode === 'life') await Life.collect();
   }
   Combo.end();
+  if (B.mode === 'life' && L.feverGift) { L.feverGift = false; await Life.feverGift(); } // 피버 첫 턴 선물
   if (!Board.hasMove(B.grid)) {
     await banner('섞는 중…', 400);
     Board.shuffle(B.grid);
@@ -1916,6 +1917,123 @@ function pickTiles(n, ok = t => !t.special && t.type >= 0) {
 
 // 게이지가 차면 파티 얼굴을 눌러 사용. 턴은 쓰지 않음
 // 일상 퍼즐에서는 데려간 친구 한 명(L.helper)의 스킬을 씀. 전투 전용 효과는 일상용으로 바꿈
+// ---------- 스킬 반짝이: 지나간 자리 빛줄기·별가루, 맞은 칸 번쩍, 판 테두리 빛, 마무리 펑 ----------
+// 전부 transform/opacity만 움직임 (필터·그림자를 매 프레임 바꾸면 버벅임)
+// trail: beam 빛줄기 | dust 별가루 | heart 하트, hit: 맞은 칸에 번지는 그림, fin: 마무리 모양
+const SKFX = {
+  random8: { trail: 'dust', hit: 'star_06', fin: 'ring' },              // 치이카와: 별가루 톡톡
+  rows2: { trail: 'beam', hit: 'spark_05', fin: 'ring' },               // 하치와레: 빛줄기 쓩
+  cols2: { trail: 'beam', hit: 'magic_02', fin: 'ring', c2: '#b99cf0' }, // 까만별
+  cross: { trail: 'dust', hit: 'slash_03', fin: 'cross' },              // 랏코: 칼빛 번쩍
+  bighit: { trail: 'dust', hit: 'flare_01', fin: 'fireworks' },         // 우사기: 불꽃 펑펑
+  convert6: { trail: 'dust', hit: 'twirl_01', fin: 'ring', c2: '#ffd84d' }, // 모몽가: 빙글 마법
+  heal40: { trail: 'heart', hit: 'symbol_01', fin: 'hearts' },          // 카니
+  ramen: { trail: 'heart', hit: 'symbol_01', fin: 'hearts', c2: '#ffd84d' }, // 시사
+  stall: { trail: 'dust', hit: 'star_04', fin: 'ring', c2: '#ffd84d' }, // 고블린
+  meteor: { trail: 'dust', hit: 'star_09', fin: 'ring', c2: '#fff3a8' }, // 별똥별
+  cheer: { trail: 'heart', hit: 'twirl_01', fin: 'twirl' },             // 풍뎅이
+  rainbow: { trail: 'dust', hit: 'star_06', fin: 'rainbow' },           // 쿠리만쥬
+};
+let skStyle = SKFX.random8;
+const RAINBOW = ['#ff8ab8', '#ffb347', '#ffd84d', '#7be0a0', '#7cc4ec', '#b99cf0'];
+// 한 번 뛰는 동안 지나간 자리에 남는 빛: a→(m)→b, dur 동안 (몸 가운데 높이로 올려서)
+function skTrail(a, m, b, dur, color, size) {
+  const S = B.S, st = skStyle, up = S * size * 0.3;
+  if (st.trail === 'beam') {
+    const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy);
+    if (len < S * 0.4) return;
+    // 한 칸 뒤에서부터 그어서 앞 줄기와 겹치게 (끊긴 점선처럼 안 보이게)
+    const back = S * 0.8, sx = a.x - (dx / len) * back, sy = a.y - (dy / len) * back;
+    const el = addFx('sk-beam', sx, sy - up);
+    el.style.setProperty('--c', color);
+    Object.assign(el.style, { width: len + back + 'px', height: S * 0.46 + 'px', marginTop: -S * 0.23 + 'px' });
+    const rot = `rotate(${Math.atan2(dy, dx) * 180 / Math.PI}deg)`;
+    el.animate([{ transform: `${rot} scaleX(.2)`, opacity: 1 }, { transform: `${rot} scaleX(1)`, opacity: 1, offset: 0.25 }, { transform: `${rot} scaleX(1) scaleY(.7)`, opacity: 0.9, offset: 0.5 },
+      { transform: `${rot} scaleX(1) scaleY(.1)`, opacity: 0 }], { duration: dur + 460, easing: 'ease-out' }).finished.then(() => el.remove());
+    return;
+  }
+  const heart = st.trail === 'heart';
+  for (let k = 1; k <= 3; k++) {
+    const u = k / 4, s = u < 0.5 ? u * 2 : u * 2 - 1, f = u < 0.5 ? a : m, t = u < 0.5 ? m : b;
+    const x = f.x + (t.x - f.x) * s + (Math.random() - 0.5) * S * 0.3, y = f.y + (t.y - f.y) * s - up;
+    const sz = S * (heart ? 0.42 : 0.34 + Math.random() * 0.2);
+    kp(heart ? 'symbol_01' : k % 2 ? 'star_04' : 'spark_05', x, y, sz, k === 2 ? '#ffffff' : st.c2 || color, [
+      { transform: 'scale(.2) rotate(0)', opacity: 0 },
+      { transform: 'scale(1.1) rotate(40deg)', opacity: 1, offset: 0.3 },
+      { transform: `translateY(${heart ? -S * 0.6 : S * 0.35}px) scale(0) rotate(90deg)`, opacity: 0 },
+    ], { duration: 460, delay: dur * u, easing: 'ease-out', fill: 'backwards' });
+  }
+}
+// 맞은 칸: 하얀 빛이 번쩍 + 스킬마다 다른 그림이 퍼짐
+function skHit(p, color) {
+  const S = B.S, rot = Math.random() * 360;
+  kp('light_02', p.x, p.y, S * 1.9, '#ffffff', [{ transform: 'scale(.3)', opacity: 1 }, { transform: 'scale(1.15)', opacity: 0 }], { duration: 240, easing: 'ease-out' });
+  kp(skStyle.hit, p.x, p.y, S * 1.3, skStyle.c2 || color, [{ transform: `rotate(${rot}deg) scale(.2)`, opacity: 1 }, { transform: `rotate(${rot + 70}deg) scale(1.1)`, opacity: 0 }],
+    { duration: 380, easing: 'ease-out' });
+}
+// 스킬 쓰는 동안 판 테두리가 친구 색으로 은은히 빛남 (그림자는 한 번만 그리고 투명도만 움직임). 돌려주는 함수로 끔
+function skillAura(color) {
+  const b = cachedRect(boardEl), a = cachedRect(app), S = B.S;
+  const x = b.left - a.left, y = b.top - a.top;
+  const el = addFx('skill-aura', x - 6, y - 6);
+  Object.assign(el.style, { width: b.width + 12 + 'px', height: b.height + 12 + 'px' });
+  el.style.setProperty('--c', color);
+  el.innerHTML = '<i></i>';
+  el.animate([{ opacity: 0, transform: 'scale(1.04)' }, { opacity: 1, transform: 'scale(1)' }], { duration: 220, easing: 'ease-out', fill: 'forwards' });
+  el.firstChild.animate([{ opacity: 1 }, { opacity: 0.45 }, { opacity: 1 }], { duration: 620, iterations: Infinity });
+  // 테두리를 따라 반짝이 몇 개
+  for (let k = 0; k < 8; k++) {
+    const side = k % 4, u = Math.random();
+    const px = side === 0 ? x + u * b.width : side === 1 ? x + b.width : side === 2 ? x + u * b.width : x;
+    const py = side === 0 ? y : side === 1 ? y + u * b.height : side === 2 ? y + b.height : y + u * b.height;
+    kp('star_04', px, py, S * 0.55, k % 2 ? color : '#ffffff', [{ transform: 'scale(0) rotate(0)', opacity: 1 }, { transform: 'scale(1.1) rotate(60deg)', opacity: 1, offset: 0.4 }, { transform: 'scale(0) rotate(120deg)', opacity: 0 }],
+      { duration: 520, delay: k * 70, fill: 'backwards' });
+  }
+  return () => el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, fill: 'forwards' }).finished.then(() => el.remove());
+}
+// 스킬 마무리: 친구 색 큰 별 펑 + 하얀 고리 + 스킬마다 다른 반짝이
+function skillFinish(ch, p) {
+  const S = B.S, st = skStyle, c = ch.ring;
+  flash(c, 0.22);
+  Sound.play('sparkle', 1.2, 0.6);
+  kx('explosion01', 'star_09', p.x, p.y, S * 3.4, c, [{ transform: 'scale(.2) rotate(0)', opacity: 1 }, { transform: 'scale(1.1) rotate(40deg)', opacity: 0 }], { duration: 520, easing: 'ease-out' });
+  kp('circle_03', p.x, p.y, S * 6, '#ffffff', [{ transform: 'scale(.1)', opacity: 1 }, { transform: 'scale(1)', opacity: 0 }], { duration: 460, easing: 'cubic-bezier(.2,.8,.3,1)' });
+  const ring = (n, colors, name = 'star_06', dist = S * 2.4) => {
+    for (let k = 0; k < n; k++) {
+      const ang = (k / n) * Math.PI * 2, dx = Math.cos(ang) * dist, dy = Math.sin(ang) * dist;
+      kp(k % 2 ? 'star_04' : name, p.x, p.y, S * 0.7, colors[k % colors.length], [
+        { transform: 'translate(0,0) scale(.3) rotate(0)', opacity: 1 },
+        { transform: `translate(${dx * 0.8}px,${dy * 0.8}px) scale(1.1) rotate(120deg)`, opacity: 1, offset: 0.5 },
+        { transform: `translate(${dx}px,${dy}px) scale(0) rotate(200deg)`, opacity: 0 },
+      ], { duration: 620, easing: 'cubic-bezier(.2,.8,.4,1)' });
+    }
+  };
+  if (st.fin === 'hearts') {
+    for (let k = 0; k < 7; k++) {
+      const dx = (k - 3) * S * 0.45, rise = S * (1.6 + Math.random() * 1.2);
+      kp('symbol_01', p.x + dx, p.y, S * (0.5 + Math.random() * 0.3), k % 2 ? '#ffffff' : st.c2 || c, [
+        { transform: 'translate(0,0) scale(.2)', opacity: 0 },
+        { transform: `translate(${-dx * 0.2}px,${-rise * 0.5}px) scale(1.1)`, opacity: 1, offset: 0.5 },
+        { transform: `translate(${dx * 0.3}px,${-rise}px) scale(.6)`, opacity: 0 },
+      ], { duration: 820, delay: k * 50, easing: 'ease-out', fill: 'backwards' });
+    }
+  } else if (st.fin === 'fireworks') {
+    ['#ffd84d', '#ff6b4a', '#ffffff'].forEach((col, k) => setTimeout(() => {
+      const q = { x: p.x + (k - 1) * S * 1.6, y: p.y - S * (0.6 + (k % 2) * 0.8) };
+      kp('circle_05', q.x, q.y, S * 2.2, col, [{ transform: 'scale(.2)', opacity: 1 }, { transform: 'scale(1.2)', opacity: 0 }], { duration: 360, easing: 'ease-out' });
+      burst(q.x, q.y, col, 8);
+      Sound.play('pop', 0.9 + k * 0.2, 0.6);
+    }, k * 140));
+  } else if (st.fin === 'cross') {
+    [0, 90].forEach(r => kp('flare_01', p.x, p.y, S * 5, '#ffffff', [{ transform: `rotate(${r + 45}deg) scale(.2, .2)`, opacity: 1 }, { transform: `rotate(${r + 45}deg) scale(1.3, .5)`, opacity: 0 }], { duration: 420, easing: 'ease-out' }));
+    ring(8, [c, '#ffffff']);
+  } else if (st.fin === 'twirl') {
+    kp('twirl_01', p.x, p.y, S * 4, c, [{ transform: 'scale(.3) rotate(0)', opacity: 1 }, { transform: 'scale(1.2) rotate(-280deg)', opacity: 0 }], { duration: 600, easing: 'ease-out' });
+    ring(8, ['#ffffff', c], 'symbol_01');
+  } else if (st.fin === 'rainbow') ring(12, RAINBOW);
+  else ring(10, [c, '#ffffff', st.c2 || c]);
+}
+
 // ---------- 스킬 쓸 때 친구가 판 위에 나와서 직접 움직임 (입은 옷 그대로) ----------
 // points를 차례로 콩콩 뛰어다니고, 도착할 때마다 onHit(i). hop: 뛰는 높이(칸), dur: 한 번 뛰는 시간
 async function actor(ch, points, { dur = 170, hop = 0.8, size = 1.5, onHit = null } = {}) {
@@ -1930,6 +2048,7 @@ async function actor(ch, points, { dur = 170, hop = 0.8, size = 1.5, onHit = nul
   for (const [i, p] of points.entries()) {
     const f = p.x < prev.x - 1 ? -1 : 1;
     const mid = { x: (prev.x + p.x) / 2, y: Math.min(prev.y, p.y) - S * hop };
+    skTrail(prev, mid, p, i ? dur : 280, ch.ring, size);
     await im.animate([
       { transform: place(prev, `scale(${f}, 1)`) },
       { transform: place(mid, `scale(${f * 0.9}, 1.12)`), offset: 0.5 },
@@ -1942,12 +2061,13 @@ async function actor(ch, points, { dur = 170, hop = 0.8, size = 1.5, onHit = nul
     { duration: 260, easing: 'ease-in', fill: 'forwards' }).finished;
   im.remove();
 }
-// 친구가 닿은 칸: 찌그러지며 반짝
+// 친구가 닿은 칸: 찌그러지며 번쩍 + 별이 튐
 function actorHit(r, c, color, i = 0) {
   const t = B.grid[r]?.[c];
   if (t?.inner) squish(t);
   const p = tileCenter(r, c);
-  burst(p.x, p.y, color, 5);
+  skHit(p, color);
+  burst(p.x, p.y, color, 3);
   Sound.pop(Math.min(i, 11));
 }
 // 랏코: 십자 가운데에 폴짝 나타나 칼을 가로로 한 번, 세로로 한 번 휘두름. 칼이 지나간 자리에 하얀 칼자국이 남고 칸이 차례로 베임
@@ -2012,7 +2132,10 @@ async function useSkill(k) {
   clearSel();
   Tutor.hideHand();
   if (life) { L.hg = 0; Life.hud(); } else { B.gauge[k] = 0; updateGauges(); }
+  skStyle = SKFX[ch.skill.id] || SKFX.random8;
   await cutIn(ch);
+  const auraOff = skillAura(ch.ring);
+  let finAt = null; // 마무리 펑 자리 (없으면 맞은 칸들 가운데)
   // 일상 퍼즐: 이동(시간)을 더 주는 스킬
   const bonusMoves = (n, color) => {
     if (L.st.time) L.time += n * 3; else L.moves += n;
@@ -2053,13 +2176,13 @@ async function useSkill(k) {
   } else if (id === 'bighit' && life) {
     // 일상: 제일 귀찮은 칸에 폭탄을 꽂음
     const tg = Board.pickTarget(B.grid) || pickTiles(1)[0];
-    if (tg) await actor(ch, [tileCenter(tg[0], tg[1])], { hop: 1.6 });
+    if (tg) await actor(ch, [(finAt = tileCenter(tg[0], tg[1]))], { hop: 1.6 });
     if (tg && B.grid[tg[0]][tg[1]] && !B.grid[tg[0]][tg[1]].block) { const t = B.grid[tg[0]][tg[1]]; t.special = 'bomb'; t.type = -1; refreshTile(t); squish(t); }
     cells = tg ? [tg] : [];
     await sleep(200);
   } else if (id === 'bighit') {
     const eff = attrMult(ch.attr, curWave().a);
-    const m = centerOf($('#monster'));
+    const m = (finAt = centerOf($('#monster')));
     await actor(ch, [m], { hop: 2.2, dur: 320, size: 1.8 }); // 우사기: 괴물에게 높이 뛰어올라 쾅
     fxImage('boom', m.x, m.y, B.S * 4, 500);
     flash('#fff6a8', 0.5);
@@ -2074,12 +2197,12 @@ async function useSkill(k) {
     await actor(ch, linePath(picks), { onHit: i => { const [r, c] = picks[i]; refreshTile(B.grid[r][c]); actorHit(r, c, ch.ring, i); } });
     await sleep(150);
   } else if (life && (id === 'heal40' || id === 'ramen' || id === 'stall')) {
-    const p = centerOf($('.lh-limit'));
+    const p = (finAt = centerOf($('.lh-limit')));
     await actor(ch, [p, { x: p.x + B.S * 0.6, y: p.y }, p], { hop: 0.6, dur: 200, size: 1.2 });
     bonusMoves(id === 'heal40' ? 4 : 3, ch.ring);
     await sleep(400);
   } else if (id === 'heal40') {
-    const hp = centerOf($('#teamHp'));
+    const hp = (finAt = centerOf($('#teamHp')));
     await actor(ch, [hp, { x: hp.x + B.S, y: hp.y }], { hop: 0.7, dur: 220, size: 1.2 }); // 카니: 체력바 위에서 통통
     const amt = Math.round(B.teamMax * 0.25); // 회복이 너무 세면 토벌이 '안 다치거나 두 방에 끝'이 돼서 25%로
     B.teamHp = Math.min(B.teamMax, B.teamHp + amt);
@@ -2090,7 +2213,7 @@ async function useSkill(k) {
     floatNum(p.x, p.y - 10, `+${amt}`, '#3fae4f', 'crit');
     await sleep(400);
   } else if (id === 'ramen') {
-    const hp = centerOf($('#teamHp'));
+    const hp = (finAt = centerOf($('#teamHp')));
     await actor(ch, [hp, { x: hp.x - B.S, y: hp.y }, hp], { hop: 0.7, dur: 200, size: 1.2 }); // 시사: 간식 들고 통통
     const amt = Math.round(B.teamMax * 0.2);
     B.teamHp = Math.min(B.teamMax, B.teamHp + amt);
@@ -2112,7 +2235,11 @@ async function useSkill(k) {
       Object.assign(s.style, { left: p.x + 'px', top: p.y + 'px', width: B.S * 1.2 + 'px' });
       fx.appendChild(s);
       s.animate([{ transform: 'translate(-50%,-50%) translate(140px,-420px) rotate(-200deg)' }, { transform: 'translate(-50%,-50%) rotate(0)' }],
-        { duration: 380, easing: 'cubic-bezier(.5,0,1,1)' }).finished.then(() => s.remove());
+        { duration: 380, easing: 'cubic-bezier(.5,0,1,1)' }).finished.then(() => { s.remove(); skHit(p, ch.ring); });
+      // 떨어지는 별 뒤로 반짝이 (점점 빨라지는 별을 따라가게 늦춰 둠)
+      [0.3, 0.55, 0.8].forEach((u, j) => kp(j % 2 ? 'spark_05' : 'star_04', p.x + 140 * (1 - u), p.y - 420 * (1 - u), B.S * 0.5, j % 2 ? '#ffffff' : '#fff3a8',
+        [{ transform: 'scale(.3)', opacity: 0 }, { transform: 'scale(1.1)', opacity: 1, offset: 0.2 }, { transform: 'translateY(12px) scale(0)', opacity: 0 }],
+        { duration: 420, delay: 380 * Math.sqrt(u), fill: 'backwards' }));
       await sleep(130);
     }
     await sleep(260);
@@ -2124,7 +2251,7 @@ async function useSkill(k) {
     cs.forEach((c, j) => { for (let r = 0; r < ROWS; r++) cells.push([j ? ROWS - 1 - r : r, c]); });
     await actor(ch, linePath(cells), { dur: 55, hop: 0.15, onHit: i => actorHit(...cells[i], ch.ring, i % 7) });
   } else if (id === 'stall') {
-    const cd = centerOf($('#countdown'));
+    const cd = (finAt = centerOf($('#countdown')));
     await actor(ch, [cd, { x: cd.x - B.S * 0.7, y: cd.y }, { x: cd.x + B.S * 0.7, y: cd.y }, cd], { hop: 0.7, dur: 180, size: 1.2 }); // 고블린: 옴 빰 빰 춤
     B.cd += 3;
     updateCd();
@@ -2144,7 +2271,7 @@ async function useSkill(k) {
     Sound.play('sparkle', 1.1, 0.8);
   } else if (id === 'rainbow') {
     const [rc] = pickTiles(1);
-    if (rc) await actor(ch, [tileCenter(rc[0], rc[1])], { hop: 1.2, dur: 260 }); // 쿠리만쥬: 폴짝 와서 경단 두고 감
+    if (rc) await actor(ch, [(finAt = tileCenter(rc[0], rc[1]))], { hop: 1.2, dur: 260 }); // 쿠리만쥬: 폴짝 와서 경단 두고 감
     if (rc) {
       const t = B.grid[rc[0]][rc[1]];
       t.special = 'rainbow';
@@ -2157,6 +2284,13 @@ async function useSkill(k) {
       await sleep(450);
     }
   }
+  auraOff();
+  if (!finAt && cells.length) {
+    const ps = cells.map(([r, c]) => tileCenter(r, c));
+    finAt = { x: ps.reduce((a, q) => a + q.x, 0) / ps.length, y: ps.reduce((a, q) => a + q.y, 0) / ps.length };
+  }
+  if (!finAt) { const b = cachedRect(boardEl), a = cachedRect(app); finAt = { x: b.left - a.left + b.width / 2, y: b.top - a.top + b.height / 2 }; }
+  skillFinish(ch, finAt);
   await cascade(null, cells);
   await Promise.all(B.pending);
   B.pending = [];
@@ -2262,14 +2396,18 @@ async function clearShow(text = '토벌<br>성공!') {
 function updateFever() {
   $('#feverTag').classList.toggle('on', B.fever > 0);
   app.classList.toggle('fever', B.fever > 0);
+  if (B.mode === 'life' && B.fever) $('#lhScore').dataset.fever = `피버 ×1.5 · ${L.st.time ? Math.ceil(L.feverT) + '초' : B.fever + '턴'}`;
 }
+// 일상 퍼즐: 점수 ×1.5 (이동 판은 3턴, 시간 판은 10초) + 첫 턴에 아이템 하나 선물
 async function feverShow() {
+  const life = B.mode === 'life';
   B.fever = 3;
+  if (life) { L.feverGift = true; if (L.st.time) L.feverT = 10; }
   updateFever();
   // 우후~! 빛줄기가 돌고, 파자마 파티즈가 통통 튀어 올라 춤추고, 하트·별이 쏟아짐
   const el = document.createElement('div');
   el.className = 'fever-show';
-  el.innerHTML = `<div class="rays"></div><img src="assets/img/art/pajama_uwawa.png"><div class="fever-txt">피버 타임!</div><div class="fever-sub">공격 ×1.5</div>`;
+  el.innerHTML = `<div class="rays"></div><img src="assets/img/art/pajama_uwawa.png"><div class="fever-txt">피버 타임!</div><div class="fever-sub">${life ? `점수 ×1.5${L.st.time ? ' · 10초' : ''}` : '공격 ×1.5'}</div>`;
   app.appendChild(el);
   const [rays, img, txt, sub] = el.children;
   Sound.play('rainbow', 1.1, 1);
