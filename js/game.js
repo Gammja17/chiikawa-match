@@ -1,6 +1,6 @@
 // 화면, 입력, 전투 연출
 const $ = s => document.querySelector(s);
-const sleep = ms => new Promise(r => setTimeout(r, ms));
+const sleep = ms => new Promise(r => setTimeout(r, ms / Prefs.speed())); // 빠른 진행이면 기다림도 짧게
 const app = $('#app'), fx = $('#fx'), boardEl = $('#board');
 
 // ---------- 저장 ----------
@@ -65,6 +65,15 @@ function openSettings() {
     ['sfx', 'bgm'].forEach(k => { const r = el.querySelector(`[data-s=${k}]`); r.value = Math.round(Sound.vol[k] * 100); r.nextElementSibling.textContent = r.value; });
     el.querySelector('[data-s=mute]').classList.toggle('off', Sound.muted);
     el.querySelector('[data-s=vib]').classList.toggle('off', !Haptic.on);
+    // 이 기기 설정: 연출 가볍게, 화면 흔들림, 빠른 진행 (켜진 게 분홍, 꺼진 게 회색)
+    el.querySelector('[data-s=light]').classList.toggle('off', !Prefs.d.light);
+    el.querySelector('[data-s=shake]').classList.toggle('off', Prefs.d.noShake);
+    el.querySelector('[data-s=fast]').classList.toggle('off', !Prefs.d.fast);
+    // 테마 색: 기본 분홍 + 가진 친구 색
+    const cur = Prefs.d.theme || '';
+    el.querySelector('[data-s=theme]').innerHTML = [['', Prefs.THEME_DEFAULT, '기본'], ...CHARS.filter(c => Meta.owned(c.id)).map(c => [c.id, c.ring, c.name])]
+      .map(([id, col, name]) => `<button data-t="${id}" class="${id === cur ? 'on' : ''}" style="--c:${col}" title="${name}">${id ? `<img src="${FACE(id)}" alt="">` : ''}</button>`).join('');
+    el.querySelectorAll('[data-t]').forEach(b => (b.onclick = () => { Prefs.set('theme', b.dataset.t || null); Sound.play('sparkle', 1.3, 0.6); sync(); }));
   };
   ['sfx', 'bgm'].forEach(k => {
     const r = el.querySelector(`[data-s=${k}]`);
@@ -73,6 +82,14 @@ function openSettings() {
   });
   el.querySelector('[data-s=mute]').onclick = () => { Sound.muted = !Sound.muted; updateMute(); Sound.play('click'); sync(); };
   el.querySelector('[data-s=vib]').onclick = () => { Haptic.toggle(); updateVib(); Sound.play('click'); sync(); };
+  el.querySelector('[data-s=light]').onclick = () => { Prefs.set('light', !Prefs.d.light); Sound.play('click'); sync(); };
+  el.querySelector('[data-s=shake]').onclick = () => { Prefs.set('noShake', !Prefs.d.noShake); Sound.play('click'); sync(); shake(6, 260); };
+  el.querySelector('[data-s=fast]').onclick = () => { Prefs.set('fast', !Prefs.d.fast); Sound.play('click'); sync(); };
+  el.querySelector('[data-s=credits]').onclick = () => {
+    Sound.play('click');
+    el.classList.remove('show');
+    modal({ title: '만든 사람·출처', char: 'hachiware', text: CREDITS, btn1: '닫기', on1: openSettings });
+  };
   const close = () => el.classList.remove('show');
   // 게임 초기화: 한 번 더 물어보고, 이 기기 기록(계정에 연결돼 있으면 계정 기록도)을 지우고 처음부터
   el.querySelector('[data-s=reset]').onclick = () => {
@@ -150,7 +167,7 @@ function addFx(cls, x, y) {
 const KP = n => `url(${new URL(`assets/img/fx/k/${n}.png`, location.href).href})`;
 const FX_MAX = 120;
 function kp(name, x, y, size, color, frames, opts) {
-  if (fx.childElementCount > FX_MAX) return Promise.resolve();
+  if (fx.childElementCount > (Prefs.d.light ? 40 : FX_MAX) || (Prefs.d.light && Math.random() < 0.6)) return Promise.resolve(); // 연출 가볍게: 반짝이 줄임
   const el = addFx('kp', x, y);
   Object.assign(el.style, { width: size + 'px', height: size + 'px', marginLeft: -size / 2 + 'px', marginTop: -size / 2 + 'px' });
   el.style.setProperty('--m', KP(name));
@@ -188,7 +205,7 @@ const KMASK = {};
 }
 const KXU = n => KMASK[n];
 function kx(name, alt, x, y, size, color, frames, opts) {
-  if (!KING) return kp(alt, x, y, size, color, frames, opts);
+  if (!KING || Prefs.d.light) return kp(alt, x, y, size, color, frames, opts);
   const el = addFx('kp', x, y);
   Object.assign(el.style, { width: size + 'px', height: size + 'px', marginLeft: -size / 2 + 'px', marginTop: -size / 2 + 'px' });
   el.style.setProperty('--m', KXU(name));
@@ -331,6 +348,7 @@ function banner(text, hold = 650) {
 }
 
 function shake(power = 6, dur = 300) {
+  if (Prefs.d.noShake) return Haptic.tap(Math.min(60, power * 5)); // 화면 흔들림 끄기 (진동은 그대로)
   const k = [];
   for (let i = 0; i < 6; i++) k.push({ transform: `translate(${(Math.random() - .5) * power * 2}px,${(Math.random() - .5) * power * 2}px)` });
   k.push({ transform: 'translate(0,0)' });
@@ -349,6 +367,7 @@ const Juice = {
     setTimeout(() => document.getAnimations().forEach(a => a.updatePlaybackRate(1)), ms);
   },
   zoom(x, y, scale = 1.08, dur = 420) {
+    if (Prefs.d.noShake) return;
     app.style.transformOrigin = `${x}px ${y}px`;
     app.animate([{ transform: 'scale(1)' }, { transform: `scale(${scale})`, offset: 0.25 }, { transform: 'scale(1)' }], { duration: dur, easing: 'cubic-bezier(.2,.8,.3,1)' });
   },
@@ -1277,6 +1296,7 @@ function popTile(t, delay, push = null, to = null, at = null) {
 
 // 조각이 포물선으로 튀어 떨어짐 (상자 나무 조각, 포장지, 흙, 물방울)
 function shards(x, y, colors, n = 8, size = 10, round = false) {
+  if (Prefs.d.light) return;
   if (fx.childElementCount > 60) n = Math.ceil(n / 2);
   for (let i = 0; i < n; i++) {
     const el = addFx('shard' + (round ? ' round' : ''), x, y);

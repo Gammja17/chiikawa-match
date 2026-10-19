@@ -796,6 +796,16 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .rtrail { position: absolute; pointer-events: none; z-index: 2; border-radius: 99px; background: linear-gradient(0deg, #9fdcff, #fff 35% 65%, #9fdcff); box-shadow: 0 0 14px 4px rgba(159, 220, 255, .8); }
 .rtrail.v { background: linear-gradient(90deg, #9fdcff, #fff 35% 65%, #9fdcff); }
 .p-reset { display: block; margin: 0 auto 14px; padding: 4px 10px; background: none; color: var(--ink2); font-family: var(--head); font-size: 15px; text-decoration: underline; }
+/* 설정: 테마 색, 이 기기 설정 */
+.set-label { margin: 6px 4px 6px; font-family: var(--head); font-size: 18px; text-align: left; }
+.set-label small { font-family: var(--body); font-size: 12px; color: var(--ink2); margin-left: 4px; }
+.theme-dots { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 0 0 12px; }
+.theme-dots button { position: relative; width: 38px; height: 38px; padding: 0; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px color-mix(in srgb, var(--c) 60%, var(--ink)); overflow: hidden; }
+.theme-dots button img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.15) translateY(6%); }
+.theme-dots button.on { box-shadow: 0 0 0 3px #fff, 0 0 0 6px var(--ink); transform: scale(1.08); }
+.p-toggles3 button { width: 84px; height: 54px; font-size: 15px; }
+.p-credits { margin-bottom: 4px; }
+#modalText { white-space: pre-line; } /* 줄바꿈 있는 글(크레딧)도 그대로 */
 #settings { align-items: center; justify-content: center; background: rgba(74, 66, 98, .5); z-index: 33; } /* 일시정지 창 위에 뜸 */
 .set-row { display: flex; align-items: center; gap: 10px; margin: 0 4px 12px; font-family: var(--head); font-size: 18px; }
 .set-row span { width: 72px; flex: none; text-align: left; }
