@@ -315,7 +315,7 @@ Tutor.mapFlow = async function (delay) {
   Tutor.busyFlow = true;
   try {
     await sleep(delay);
-    const ready = async () => { while ($('#modal').classList.contains('show') || $('#story').classList.contains('show') || $('.join-show')) await sleep(300); return $('#map').classList.contains('active'); };
+    const ready = async () => { while ($('#modal').classList.contains('show') || $('#story').classList.contains('show') || $('#attend').classList.contains('show') || $('.join-show')) await sleep(300); return $('#map').classList.contains('active'); };
     if (!(await ready())) return;
     if (!Tutor.seen('mapFirst') && clearedCount() === 0) {
       Tutor.mark('mapFirst');

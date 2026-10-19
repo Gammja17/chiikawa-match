@@ -24,7 +24,8 @@ if os.path.isdir(os.path.join(ROOT, 'assets', 'king')):
 if os.path.isdir(DIST):
     shutil.rmtree(DIST)
 os.makedirs(DIST)
-shutil.copy2(os.path.join(ROOT, 'index.html'), DIST)
+for f in ('index.html', 'manifest.webmanifest', 'sw.js'):  # 홈 화면 앱(PWA) 파일은 맨 위에
+    shutil.copy2(os.path.join(ROOT, f), DIST)
 for top in ('css', 'js', 'assets'):
     for dirpath, dirnames, files in os.walk(os.path.join(ROOT, top)):
         rel = os.path.relpath(dirpath, ROOT)
@@ -34,6 +35,6 @@ for top in ('css', 'js', 'assets'):
             shutil.copy2(os.path.join(dirpath, f), os.path.join(DIST, rel, f))
 # 캐시: 코드는 짧게, 그림·소리는 길게
 with open(os.path.join(DIST, '_headers'), 'w', encoding='utf-8') as f:
-    f.write('/js/*\n  Cache-Control: public, max-age=300\n/css/*\n  Cache-Control: public, max-age=300\n/assets/*\n  Cache-Control: public, max-age=86400\n')
+    f.write('/sw.js\n  Cache-Control: no-cache\n/js/*\n  Cache-Control: public, max-age=300\n/css/*\n  Cache-Control: public, max-age=300\n/assets/*\n  Cache-Control: public, max-age=86400\n')
 n = sum(len(fs) for _, _, fs in os.walk(DIST))
 print(f'dist/ 준비 완료: 파일 {n}개 (유료 원본 PNG 0개)')

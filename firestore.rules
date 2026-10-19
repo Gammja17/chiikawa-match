@@ -1,5 +1,5 @@
 rules_version = '2';
-// 진행 저장(users)은 본인만 읽고 씀. 랭킹(scores)은 누구나 읽고, 본인 기록만 '올리는' 쪽으로만 바꿀 수 있음
+// 진행 저장(users)은 본인만 읽고 씀. 에러(errors)는 누구나 쓰기만. 랭킹(scores)은 누구나 읽고, 본인 기록만 '올리는' 쪽으로만 바꿀 수 있음
 service cloud.firestore {
   match /databases/{db}/documents {
     match /users/{uid} {
@@ -8,6 +8,18 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['data', 'at'])
         && request.resource.data.data is string && request.resource.data.data.size() < 200000
         && request.resource.data.at is number;
+    }
+    // 플레이어 폰에서 난 에러 (로그인 없이도 쓰기만 됨, 읽기는 콘솔에서만)
+    match /errors/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['kind', 'msg', 'stack', 'ctx', 'ver', 'ua', 'uid', 'at'])
+        && request.resource.data.kind is string && request.resource.data.kind.size() <= 20
+        && request.resource.data.msg is string && request.resource.data.msg.size() <= 300
+        && request.resource.data.stack is string && request.resource.data.stack.size() <= 1200
+        && request.resource.data.ctx is string && request.resource.data.ctx.size() <= 300
+        && request.resource.data.ver is string && request.resource.data.ver.size() <= 20
+        && request.resource.data.ua is string && request.resource.data.ua.size() <= 160
+        && request.resource.data.uid is string && request.resource.data.uid.size() <= 128
+        && request.resource.data.at == request.time;
     }
     match /scores/{uid} {
       allow read: if true;

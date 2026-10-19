@@ -129,7 +129,7 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 #mapParty img { width: 44px; margin: 0 -5px; animation: hop 1s ease-in-out infinite; }
 #mapParty img:nth-child(2) { animation-delay: .15s; }
 #mapParty img:nth-child(3) { animation-delay: .3s; }
-.dock { position: absolute; left: 10px; right: 10px; bottom: 0; z-index: 5; display: flex; padding: 6px 6px 10px; background: var(--paper); border-radius: 18px 18px 0 0; box-shadow: 0 -2px 10px rgba(74, 66, 98, .12); }
+.dock { position: absolute; left: 10px; right: 10px; bottom: 0; z-index: 5; display: flex; padding: 6px 6px calc(10px + env(safe-area-inset-bottom)); background: var(--paper); border-radius: 18px 18px 0 0; box-shadow: 0 -2px 10px rgba(74, 66, 98, .12); }
 .dock button { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; padding: 2px 0 0; border-radius: 12px; font-family: var(--head); font-size: 17px; line-height: 1.15; }
 .dock button + button { border-left: 1.5px dashed var(--ink3); border-radius: 0; }
 .dock button:active { transform: scale(.94); }
@@ -473,7 +473,7 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .ten-btn { position: absolute; left: 50%; bottom: 14%; transform: translateX(-50%); }
 
 /* ---------- 우리 집 ---------- */
-#room { position: relative; flex: 1; margin: 0 12px; border-radius: var(--r); box-shadow: var(--sh); overflow: hidden; min-height: 0; }
+#room { isolation: isolate; position: relative; flex: 1; margin: 0 12px; border-radius: var(--r); box-shadow: var(--sh); overflow: hidden; min-height: 0; }
 #room .wall { box-shadow: var(--sh); position: absolute; left: 0; right: 0; top: 0; height: 58%; background-color: #fff3e3; background-image: repeating-linear-gradient(90deg, transparent 0 26px, #f6e3cc 26px 28px); }
 #room .floor { position: absolute; left: 0; right: 0; bottom: 0; height: 42%; background-color: #f0cfa6; background-image: repeating-linear-gradient(0deg, transparent 0 32px, #dcb284 32px 34px); }
 .furn { position: absolute; transform: translate(-50%, -100%); }
@@ -792,3 +792,59 @@ img.shadow { filter: brightness(0) opacity(.15); }
 
 /* ---------- 스킬 쓸 때 판 위에 나오는 친구 ---------- */
 .actor { position: absolute; left: 0; top: 0; z-index: 4; pointer-events: none; will-change: transform; } /* 움직이는 동안 매번 다시 그리지 않게 그림자 필터 뺌 */
+
+/* ---------- 오늘의 미션, 출석 도장 ---------- */
+#btnMission { position: absolute; left: 18px; top: 66px; z-index: 5; width: 58px; padding: 6px 0 4px; border-radius: 16px; background: var(--paper); box-shadow: var(--sh); display: flex; flex-direction: column; align-items: center; font-family: var(--head); font-size: 14px; line-height: 1.1; }
+#btnMission img { width: 30px; height: 30px; }
+#btnMission i { position: absolute; right: -4px; top: -4px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: #ff5d7e; color: #fff; font-style: normal; font-size: 13px; line-height: 20px; display: none; }
+#btnMission.ready i { display: block; }
+#btnMission.ready img { animation: hop 1s ease-in-out infinite; }
+#mission, #attend { align-items: center; justify-content: center; background: rgba(74, 66, 98, .5); z-index: 31; }
+.mis-card, .att-card { padding: 20px 16px 16px; margin-top: 0; }
+.mis-card h2, .att-card h2 { margin: 0 0 12px; font-family: var(--head); font-size: 30px; font-weight: 400; }
+.mis-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.mis { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 14px; background: #fbf5fa; text-align: left; }
+.mis > img { width: 36px; height: 36px; flex: none; }
+.mis .mtx { flex: 1; min-width: 0; }
+.mis .mtx b { display: block; font-family: var(--head); font-weight: 400; font-size: 17px; line-height: 1.2; }
+.mis .mtx small { font-size: 12px; color: var(--ink2); }
+.mbar { display: block; height: 7px; margin: 4px 0 1px; border-radius: 4px; background: #ece3ef; overflow: hidden; }
+.mbar i { display: block; height: 100%; border-radius: 4px; background: var(--pink); }
+.mis .mini-btn { float: none; flex: none; display: flex; align-items: center; gap: 2px; padding: 5px 10px; }
+.mis .mini-btn img { width: 16px; height: 16px; }
+.mis .mini-btn:disabled { opacity: .45; }
+.mis.full { background: #fff1d6; }
+.mis.full .mini-btn { background: var(--pink); color: #fff; animation: pulse 1s ease-in-out infinite; }
+.mis.done { opacity: .55; }
+.mis.bonus { background: #f1ecff; }
+.att-line { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 14px; font-family: var(--head); font-size: 16px; color: var(--ink2); }
+.att-line .mini-btn { float: none; }
+.att-sub { margin: -6px 0 12px; font-size: 14px; color: var(--ink2); }
+.att-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+.att-cell { position: relative; aspect-ratio: 1; border-radius: 14px; background: #fbf5fa; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; overflow: hidden; }
+.att-cell.big { grid-column: span 2; aspect-ratio: auto; background: #f1ecff; }
+.att-cell small { font-size: 11px; color: var(--ink2); }
+.att-cell .rw { display: flex; align-items: center; gap: 2px; font-family: var(--head); font-size: 14px; }
+.att-cell .rw img { width: 22px; height: 22px; }
+.att-cell.on .rw, .att-cell.on small { opacity: .35; }
+.att-cell .stamp { position: absolute; right: 4px; bottom: 4px; width: 44px; height: 44px; display: grid; place-items: center; border: 2.5px solid #ff5d7e; border-radius: 50%; color: #ff5d7e; font-style: normal; font-family: var(--head); font-size: 11px; line-height: 1.05; text-align: center; transform: rotate(-14deg); background: rgba(255, 255, 255, .7); }
+.mtoast { top: 70px; }
+
+/* ---------- 호감도 ---------- */
+#affBar { display: flex; align-items: center; gap: 8px; margin: 0 14px 8px; padding: 6px 12px; border-radius: 14px; background: var(--paper); box-shadow: var(--sh); font-family: var(--head); flex: none; }
+#affBar .hearts5 i { font-style: normal; font-size: 17px; color: #e6dbe8; }
+#affBar .hearts5 i.on { color: #ff6b8a; }
+#affBar .abar { flex: 1; height: 8px; border-radius: 4px; background: #efe6f0; overflow: hidden; }
+#affBar .abar i { display: block; height: 100%; border-radius: 4px; background: #ff8aa8; transition: width .4s; }
+#affBar small { display: flex; align-items: center; gap: 2px; font-size: 12px; color: var(--ink2); white-space: nowrap; }
+#affBar small img { width: 20px; height: 20px; }
+#btnFeed { position: absolute; right: 10px; top: 46px; z-index: 100; float: none; background: #fff; box-shadow: var(--sh); }
+.feed-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 6px 0 14px; }
+.feed-grid button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 4px; border-radius: 16px; background: #fbf5fa; font-family: var(--head); }
+.feed-grid button img { width: 46px; height: 46px; }
+.feed-grid button b { font-weight: 400; font-size: 16px; }
+.feed-grid button small { font-size: 12px; color: var(--ink2); }
+.feed-grid button:disabled { opacity: .4; }
+.feed-none { text-align: center; color: var(--ink2); font-size: 14px; }
+/* 홈 화면 앱으로 켰을 때: 아이폰 아래 막대 자리만큼 띄움 */
+@media (display-mode: standalone) { #battle, #house, #gacha, #ramen, #friends, #formation, #challenge, #ranking { padding-bottom: env(safe-area-inset-bottom); box-sizing: border-box; } }

@@ -743,6 +743,7 @@ const Life = {
     const list = (Save.data.life = Save.data.life || []);
     const first = list[i] == null;
     const coins = Meta.reward(stars, first), treat = Meta.treat('l', i, stars, first);
+    if (L.run.kind === 'route') { Daily.add('win'); Aff.afterWin([CHARS[L.helper].id]); }
     list[i] = Math.max(list[i] || 0, stars);
     setTimeout(() => Net.submit(), 0);
     if (first) Save.data.ramen = true;
@@ -821,6 +822,7 @@ const Tower = {
   },
   async cleared() {
     const f = L.run.floor;
+    Daily.add('tower');
     const c = 20 + f * 2;
     Tower.coins += c;
     Meta.addCoins(c);

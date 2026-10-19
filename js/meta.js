@@ -401,7 +401,9 @@ function syncGacha() {
   $('#gachaNote').textContent = none ? '옷이 있는 친구를 먼저 데려와요'
     : (gachaKind === 'outfit' ? '가진 친구의 옷이 나와요 · 이미 있으면 코인 40' : '새 친구를 만나거나 레벨 업!') +
       (canFresh(gachaKind) ? ` · 10번 뽑기는 새 ${gachaKind === 'outfit' ? '옷' : '친구'} 하나 확정` : '');
-  $('#btnPull').disabled = gachaBusy || none || Save.data.coins < GACHA_COST;
+  const tk = Save.data.tickets || 0; // 뽑기 티켓이 있으면 1번 뽑기는 티켓으로
+  $('#btnPull').innerHTML = tk ? `<img src="${ITEM('gift')}" alt="">티켓 ${tk} · 1번` : `<img src="${ITEM('coin')}" alt="">${GACHA_COST} · 1번`;
+  $('#btnPull').disabled = gachaBusy || none || (!tk && Save.data.coins < GACHA_COST);
   $('#btnPull10').disabled = gachaBusy || none || Save.data.coins < GACHA10_COST;
 }
 
@@ -638,10 +640,13 @@ async function openTen(prizes) {
 }
 
 async function pullGacha(n = 1) {
-  const cost = n === 10 ? GACHA10_COST : GACHA_COST;
+  const ticket = n === 1 && (Save.data.tickets || 0) > 0;
+  const cost = ticket ? 0 : n === 10 ? GACHA10_COST : GACHA_COST;
   if (gachaBusy || wiping || Save.data.coins < cost || (gachaKind === 'outfit' && !outfitPool().length)) return;
   gachaBusy = true;
-  Meta.addCoins(-cost);
+  if (ticket) Save.data.tickets--;
+  else Meta.addCoins(-cost);
+  Daily.add('gacha', n);
   syncGacha();
   const prizes = [];
   for (let i = 0; i < n - 1; i++) prizes.push(drawPrize(gachaKind));
@@ -767,6 +772,7 @@ function openHouse(id = homeOf) {
           // 1.5초 안에 세 번 찌르면 성격대로 반응 (치이카와는 울먹)
           const r = el.getBoundingClientRect(), now = performance.now();
           jelly(Math.max(-1, Math.min(1, (ev.clientX - r.left - r.width / 2) / (r.width / 2))));
+          Aff.pat(c.id, el); // 하루 한 번 쓰다듬으면 호감도
           pokes = pokes.filter(t => now - t < 1500).concat(now);
           if (pokes.length < 3) { mood('happy', 1400); return say(); }
           pokes = [];
@@ -790,6 +796,7 @@ function openHouse(id = homeOf) {
     };
     room.appendChild(el);
   });
+  Aff.bar(id);
   // 아래쪽: 이 집 가구 가게
   $('#shop').innerHTML = FURN.map(f => {
     const have = h.furn.includes(f.id);

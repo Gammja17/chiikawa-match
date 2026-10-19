@@ -982,6 +982,7 @@ async function cascade(swapped, forced, origin = null, depth = 0) {
     if (!res) break;
     combo++;
     B.maxCombo = Math.max(B.maxCombo || 0, combo);
+    if (combo === 5) Daily.add('combo5');
     if (B.mode === 'battle' && combo === 5 && !B.fever) await feverShow();
     await stepFx(res, combo, combo === 1 ? origin : null);
     await fall(Board.gravity(B.grid));
@@ -1458,6 +1459,10 @@ async function stepFx(res, combo, from = null) {
   }
   stepFx.wait = last;
   if (B.mode === 'life') Life.onStep(res, combo);
+  // 오늘의 미션
+  Daily.add('pop', res.cleared.filter(x => x.tile.type >= 0).length);
+  Daily.add('item', res.effects.length);
+  ['weed', 'bubble', 'box'].forEach(k => Daily.add(k, res.hits.filter(h => h.gone && h.tile.block === k).length));
   for (let i = 0; i < Math.min(3, Math.ceil(n / 3)); i++) setTimeout(() => Sound.pop(combo - 1 + i), i * 70);
   if (n >= 6) setTimeout(() => Sound.play('sparkle', 1 + combo * 0.05, 0.6), 60);
 
@@ -1683,6 +1688,9 @@ async function win() {
   const stars = ratio >= 0.7 ? 3 : ratio >= 0.35 ? 2 : 1;
   const firstClear = Save.data.stars[B.stage] == null;
   const coins = Meta.reward(stars, firstClear), treat = Meta.treat('b', B.stage, stars, firstClear);
+  Daily.add('win');
+  Daily.add('battle');
+  Aff.afterWin(B.team.slice(0, B.real).map(k => CHARS[k].id));
   if (firstClear) Save.data.ramen = true;
   Save.data.stars[B.stage] = Math.max(Save.data.stars[B.stage] || 0, stars);
   setTimeout(() => Net.submit(), 0);
@@ -1990,6 +1998,7 @@ async function useSkill(k) {
     return;
   }
   B.busy = true;
+  Daily.add('skill');
   B.inSkill = true; // 스킬로 깨진 칸(이어지는 연쇄 포함)은 게이지를 안 채움: 스킬이 스킬을 부르는 무한 반복 막기
   clearSel();
   Tutor.hideHand();
@@ -2380,6 +2389,7 @@ function orderRamen(id) {
   Save.data.ramen = false;
   Save.data.ramenStamp = (Save.data.ramenStamp || 0) + 1;
   Save.save();
+  Daily.add('ramen');
   // 그릇이 카운터에 탁 놓이고 김이 모락모락
   const sc = $('#shopScene'), bowl = document.createElement('img');
   bowl.className = 'bowl';
