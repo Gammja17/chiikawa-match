@@ -2541,6 +2541,8 @@ async function clearShow(text = '토벌<br>성공!') {
     <img class="hero" src="${art(ch.id)}"><div class="hero-say">${B.mode === 'battle' ? '<b class="mvp">MVP</b>' : ''}${lineOf(ch.id)}</div>`;
   app.appendChild(el);
   const [dim, stamp, hero, say] = el.children;
+  // 차례가 올 때까지 숨겨 둠 (안 그러면 제자리에 먼저 한 번 보였다가, 애니메이션이 시작되며 다시 나옴)
+  stamp.style.opacity = hero.style.opacity = say.style.opacity = 0;
   const longest = Math.max(...text.split('<br>').map(l => [...l].length));
   stamp.style.fontSize = Math.min(89, Math.floor((app.clientWidth * 0.82) / longest)) + 'px';
   dim.animate([{ opacity: 0 }, { opacity: 0.35 }], { duration: 200, fill: 'forwards' });
@@ -2560,6 +2562,7 @@ async function clearShow(text = '토벌<br>성공!') {
   const sc = centerOf(stamp);
   burst(sc.x, sc.y, '#e2543f', 16);
   await sleep(420);
+  hero.style.opacity = say.style.opacity = '';
   hero.animate([
     { transform: 'translateY(120%) rotate(-8deg)' },
     { transform: 'translateY(-6%) rotate(3deg)', offset: 0.7 },
