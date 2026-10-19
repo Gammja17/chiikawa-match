@@ -107,8 +107,11 @@ const Daily = {
   board(stampAt = -1) {
     const a = Save.data.att || { n: 0 };
     const el = $('#attend');
-    el.querySelector('.att-grid').innerHTML = ATTEND.map((r, k) => `<div class="att-cell${k < a.n ? ' on' : ''}${k === ATTEND.length - 1 ? ' big' : ''}">
-      <small>${k + 1}일째</small><span class="rw">${Daily.rewardHtml(r)}</span>${k < a.n ? '<i class="stamp">참<br>잘했어요</i>' : ''}</div>`).join('');
+    // 찍은 칸은 분홍 + 도장, 오늘 찍은 칸은 반짝, 다음에 찍을 칸은 점선. 7일째는 큰 선물 칸
+    const last = ATTEND.length - 1;
+    el.querySelector('.att-grid').innerHTML = ATTEND.map((r, k) => `<div class="att-cell${k < a.n ? ' on' : ''}${k === stampAt ? ' today' : ''}${k === a.n ? ' next' : ''}${k === last ? ' big' : ''}">
+      <b class="dd">${k === a.n ? '내일' : k + 1 + '일'}</b><span class="rw">${Daily.rewardHtml(r)}</span>${k < a.n ? '<i class="stamp">참<br>잘했어요</i>' : ''}${k === last ? `<img class="peek" src="${art('usagi')}" alt="">` : ''}</div>`).join('');
+    el.querySelector('.att-sub').innerHTML = a.n >= ATTEND.length ? '7일 다 모았어요! 내일부터 새 도장판' : `<b>${a.n}일째</b> 출석! 7일째엔 뽑기 티켓 ${ATTEND[last].tickets}장`;
     el.classList.add('show');
     fitText(el);
     el.querySelector('.modal-card').animate([{ transform: 'scale(.6)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }], { duration: 260, easing: 'cubic-bezier(.3,1.5,.6,1)' });

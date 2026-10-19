@@ -874,15 +874,29 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .mis.bonus { background: #f1ecff; }
 .att-line { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 14px; font-family: var(--head); font-size: 16px; color: var(--ink2); }
 .att-line .mini-btn { float: none; }
-.att-sub { margin: -6px 0 12px; font-size: 14px; color: var(--ink2); }
+/* 출석 도장판: 위로 빼꼼 하치와레, 칸마다 날짜 띠·큰 보상, 찍은 칸엔 빨간 도장 */
+.att-card { padding-top: 62px; margin-top: 64px; }
+.att-card h2 { font-size: 36px; font-weight: 700; margin-bottom: 4px; }
+.att-hero { position: absolute; left: 50%; top: -78px; height: 132px; transform: translateX(-50%); pointer-events: none; }
+.att-sub { margin: 0 0 14px; font-size: 16px; color: var(--ink2); }
+.att-sub b { color: var(--pink); font-family: var(--head); font-size: 20px; }
 .att-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
-.att-cell { position: relative; aspect-ratio: 1; border-radius: 14px; background: #fbf5fa; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; overflow: hidden; }
-.att-cell.big { grid-column: span 2; aspect-ratio: auto; background: #f1ecff; }
-.att-cell small { font-size: 11px; color: var(--ink2); }
-.att-cell .rw { display: flex; align-items: center; gap: 2px; font-family: var(--head); font-size: 14px; }
-.att-cell .rw img { width: 22px; height: 22px; }
-.att-cell.on .rw, .att-cell.on small { opacity: .35; }
-.att-cell .stamp { position: absolute; right: 4px; bottom: 4px; width: 44px; height: 44px; display: grid; place-items: center; border: 2.5px solid #ff5d7e; border-radius: 50%; color: #ff5d7e; font-style: normal; font-family: var(--head); font-size: 11px; line-height: 1.05; text-align: center; transform: rotate(-14deg); background: rgba(255, 255, 255, .7); }
+.att-cell { position: relative; aspect-ratio: .82; border-radius: 14px; background: var(--paper); border: 2px solid var(--ink3); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding-top: 14px; overflow: hidden; }
+.att-cell .dd { position: absolute; left: 0; right: 0; top: 0; padding: 2px 0 0; background: var(--ink3); font-family: var(--head); font-size: 14px; font-weight: 400; line-height: 1.2; color: var(--ink); }
+.att-cell .rw { display: flex; flex-direction: column; align-items: center; gap: 0; white-space: nowrap; font-family: var(--head); font-size: 17px; line-height: 1.1; }
+.att-cell .rw img { width: 34px; height: 34px; }
+.att-cell.on { background: var(--pink-l); border-color: #ffb3cd; }
+.att-cell.on .dd { background: #ffb3cd; }
+.att-cell.on .rw { opacity: .4; }
+.att-cell.next { border: 2px dashed var(--pink); }
+.att-cell.next .dd { background: var(--pink); color: #fff; }
+.att-cell.today { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(255, 200, 61, .45); }
+.att-cell.big { grid-column: span 2; aspect-ratio: auto; background: #fff6d8; border-color: var(--gold); padding-left: 0; padding-right: 54px; }
+.att-cell.big .dd { background: var(--gold); }
+.att-cell.big .rw { flex-direction: row; gap: 4px; font-size: 19px; }
+.att-cell.big .rw img { width: 44px; height: 44px; }
+.att-cell .peek { position: absolute; right: -6px; bottom: -8px; height: 74px; }
+.att-cell .stamp { position: absolute; left: 50%; top: 56%; width: 54px; height: 54px; margin: -27px 0 0 -27px; display: grid; place-items: center; border: 3px solid #f0436a; border-radius: 50%; box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 4px #f0436a; color: #f0436a; font-style: normal; font-family: var(--head); font-size: 12px; font-weight: 700; line-height: 1.05; text-align: center; transform: rotate(-14deg); background: rgba(255, 255, 255, .55); }
 .mtoast { top: 70px; }
 
 /* ---------- 호감도 ---------- */
