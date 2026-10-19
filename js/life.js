@@ -704,7 +704,7 @@ const Life = {
     if (left() <= 0) return;
     banner('보너스 타임!', 500);
     await sleep(600);
-    const cells = pickTiles(Math.min(left(), 12));
+    const cells = pickTiles(Math.min(left(), 10));
     const from = centerOf($('.lh-limit'));
     let skip = false, skipNow;
     const tapped = new Promise(ok => (skipNow = ok));
@@ -741,7 +741,16 @@ const Life = {
     cells.forEach(([r, c], i) => make(r, c, i));
     await sleep(skip ? 120 : 200);
     const rest = left();
-    await cascade(null, cells);
+    // 한꺼번에 다 터뜨리면 버벅이고 맛이 없어서: 두 개씩 차례로 펑. 그 사이 누르면 남은 걸 한 번에
+    const items = cells.map(([r, c]) => B.grid[r][c]);
+    const where = t => { let at = null; Board.each(B.grid, (x, r, c) => { if (x === t) at = [r, c]; }); return at; };
+    const onTap2 = () => (skip = true);
+    window.addEventListener('pointerdown', onTap2, { capture: true });
+    while (items.length) {
+      const batch = items.splice(0, skip ? items.length : 2).map(where).filter(p => p && B.grid[p[0]][p[1]]?.special);
+      if (batch.length) await cascade(null, batch);
+    }
+    window.removeEventListener('pointerdown', onTap2, { capture: true });
     if (rest > 0) {
       L.score += rest * 500;
       if (L.st.time) L.time = 0; else L.moves = 0;

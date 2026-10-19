@@ -1,6 +1,22 @@
 // 화면, 입력, 전투 연출
 const $ = s => document.querySelector(s);
-const sleep = ms => new Promise(r => setTimeout(r, ms / Prefs.speed())); // 빠른 진행이면 기다림도 짧게
+const SLEEPS = new Set(); // 기다리는 중인 sleep (빨리 감기 때 남은 시간을 줄이려고)
+const sleep = ms => new Promise(r => { // 빠른 진행이면 기다림도 짧게
+  const s = { r, end: performance.now() + ms / Prefs.speed() };
+  s.t = setTimeout(() => { SLEEPS.delete(s); r(); }, ms / Prefs.speed());
+  SLEEPS.add(s);
+});
+// 스킬 연출 빨리 감기: 지금 도는 움직임과 기다림을 한꺼번에 몇 배 빠르게
+const FastFwd = {
+  on(x = 6) {
+    if (Prefs.boost !== 1) return;
+    Prefs.boost = x;
+    document.getAnimations().forEach(a => { try { if (a.effect?.getTiming().iterations !== Infinity) a.updatePlaybackRate(a.playbackRate * x); } catch {} });
+    const now = performance.now();
+    SLEEPS.forEach(s => { clearTimeout(s.t); s.t = setTimeout(() => { SLEEPS.delete(s); s.r(); }, Math.max(0, s.end - now) / x); });
+  },
+  off() { Prefs.boost = 1; },
+};
 const app = $('#app'), fx = $('#fx'), boardEl = $('#board');
 
 // ---------- 저장 ----------
@@ -38,6 +54,8 @@ const goRoute = k => (ROUTE[k][0] === 'b' ? openFormation(ROUTE[k][1]) : Life.st
 // ---------- 공통 ----------
 function show(id) {
   if (typeof Spot !== 'undefined') Spot.close(); // 화면이 바뀌면 떠 있던 안내는 닫음 (안 보이는 버튼을 기다리며 멈추지 않게)
+  Prefs.boost = 1; // 혹시 빨리 감기가 남아 있어도 화면이 바뀌면 원래 속도로
+  document.querySelector('.skip-hint')?.remove();
   document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
   fitText($('#' + id));
 }
@@ -327,12 +345,12 @@ function burst(x, y, color, n = 6) {
   }
 }
 
-// '+숫자'(점수·보너스·회복·코인, '+3초')와 몇몇 말은 콤보 숫자와 같은 그림 글자로
+// '+숫자'(점수·보너스·회복·코인, '+3초')와 몇몇 말은 그림 글자로. 콤보(노랑→분홍)와 헷갈리지 않게 점수 숫자는 하늘→라벤더
 const NUM_WORD = { '선물!': 'w_gift' };
 function spriteText(text) {
   if (NUM_WORD[text]) return `<img class="w" src="${CIMG(NUM_WORD[text])}">`;
   if (!/^\+\d+초?$/.test(text)) return null;
-  return [...text].map(ch => `<img src="${CIMG(ch === '+' ? 'plus' : ch === '초' ? 'sec' : 'd' + ch)}"${ch === '+' ? ' class="pl"' : ''}>`).join('');
+  return [...text].map(ch => `<img src="${CIMG(ch === '+' ? 'plus' : ch === '초' ? 'sec' : 'n' + ch)}"${ch === '+' ? ' class="pl"' : ''}>`).join('');
 }
 function floatNum(x, y, text, color, cls = '') {
   const n = addFx('num ' + cls, x, y);
@@ -1770,10 +1788,10 @@ async function fall(moves) {
     // 새로 생긴 얼굴은 첫 칸 동안 서서히 나타남 (판 위쪽이 빈 모양이면 그 자리에 뿅 생기는 것처럼 보여서)
     const frames = path.map(([r, c, k], i) => ({ transform: tf(r, c), offset: (k - t0) / span, ...(fresh ? { opacity: i ? 1 : 0 } : {}) }));
     // 떨어지는 게 눈에 보이게: 칸마다 조금 더 천천히, 점점 빨라지다 톡 착지
-    return t.el.animate(frames, { duration: 130 + Math.sqrt(span) * 95, delay: t0 * 58, easing: 'cubic-bezier(.45,0,.9,.55)', fill: 'backwards' })
+    return t.el.animate(frames, { duration: 150 + span * 85, delay: t0 * 72, easing: 'cubic-bezier(.45,0,.9,.55)', fill: 'backwards' })
       .finished.then(() => squish(t));
   });
-  if (moves.length) setTimeout(() => Sound.play('land', 1.3, 0.25), 260);
+  if (moves.length) setTimeout(() => Sound.play('land', 1.3, 0.25), 320);
   await Promise.all(ps);
 }
 
@@ -2374,6 +2392,13 @@ async function useSkill(k) {
   if (life) { L.hg = 0; Life.hud(); } else { B.gauge[k] = 0; updateGauges(); }
   const sk = skillOf(ch.id); // 장착한 스킬
   skStyle = SKFX[sk.style || sk.id] || SKFX.random8;
+  let lastTap = 0;
+  const onTap = () => { const now = performance.now(); if (now - lastTap < 400) { FastFwd.on(); hint.remove(); } lastTap = now; };
+  window.addEventListener('pointerdown', onTap, { capture: true });
+  const hint = document.createElement('div');
+  hint.className = 'skip-hint';
+  hint.textContent = '두 번 톡 ▶▶ 빨리 감기';
+  app.appendChild(hint);
   await cutIn(ch);
   const auraOff = skillAura(ch.ring);
   let finAt = null; // 마무리 펑 자리 (없으면 맞은 칸들 가운데)
@@ -2621,6 +2646,9 @@ async function useSkill(k) {
   }
   if (!finAt) { const b = cachedRect(boardEl), a = cachedRect(app); finAt = { x: b.left - a.left + b.width / 2, y: b.top - a.top + b.height / 2 }; }
   skillFinish(ch, finAt);
+  window.removeEventListener('pointerdown', onTap, { capture: true });
+  hint.remove();
+  FastFwd.off();
   await cascade(null, cells);
   await Promise.all(B.pending);
   B.pending = [];

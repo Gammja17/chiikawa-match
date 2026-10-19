@@ -402,6 +402,8 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 
 /* ---------- 스킬 컷인: 집중선 + 캐릭터 색 띠 두 줄 + 튀어나오는 친구 + 한 글자씩 스킬 이름 ---------- */
 .cutin { position: absolute; inset: 0; z-index: 25; pointer-events: none; overflow: hidden; }
+/* 스킬 연출 중 '두 번 톡 → 빨리 감기' 안내 */
+.skip-hint { position: absolute; left: 50%; bottom: 14px; z-index: 30; transform: translateX(-50%); padding: 3px 12px 1px; border-radius: 99px; background: rgba(42, 36, 64, .55); color: #fff; font-family: var(--head); font-size: 14px; pointer-events: none; white-space: nowrap; }
 .cutin .dim { position: absolute; inset: 0; background: #2a2440; opacity: 0; }
 /* 스페셜 옷: 애니 장면 그림을 뒤에 깔고, 띠는 살짝 비치게 */
 .cutin .scene { position: absolute; inset: 0; background: var(--scene) center / cover no-repeat; opacity: 0; will-change: transform, opacity; }

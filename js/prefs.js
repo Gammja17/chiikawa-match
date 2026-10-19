@@ -9,7 +9,8 @@ const Prefs = {
   },
   save() { try { localStorage.setItem(Prefs.KEY, JSON.stringify(Prefs.d)); } catch {} },
   set(k, v) { Prefs.d[k] = v; Prefs.save(); if (k === 'theme') Prefs.applyTheme(); },
-  speed: () => (Prefs.d.fast ? 1.5 : 1),
+  boost: 1, // 스킬 연출을 두 번 톡해서 빨리 감을 때만 잠깐 커짐
+  speed: () => (Prefs.d.fast ? 1.5 : 1) * Prefs.boost,
   // 테마 색: 친구 상징색(ring)을 강조색으로. 없으면 기본 분홍
   THEME_DEFAULT: '#ff6fa5',
   themeColor: () => (Prefs.d.theme && CHARS.find(c => c.id === Prefs.d.theme)?.ring) || Prefs.THEME_DEFAULT,
