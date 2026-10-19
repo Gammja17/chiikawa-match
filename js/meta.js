@@ -114,7 +114,7 @@ const Meta = {
   owned: id => !!Save.data.own[id],
   lv: id => Save.data.own[id] || 0,
   // 레벨마다 공격·회복 8%씩
-  mult: id => lvMult(id) * (Save.data.outfit?.[id] ? 1.05 : 1), // 레벨마다 +8% (간식으로 데려온 친구는 +12%), 옷을 입으면 +5%
+  mult: id => lvMult(id) * (Save.data.outfit?.[id] ? 1.05 : 1) * (1 + (trainLv('atk') * TRAIN.atk.per) / 100), // 레벨마다 +8% (간식으로 데려온 친구는 +12%), 옷을 입으면 +5%, 라멘 공격 수련 +1.5%씩
   addCoins(n) {
     Save.data.coins += n;
     Save.save();

@@ -263,7 +263,7 @@ const Board = {
       grp.locked = new Set([...grp.keys].filter(k => { const [r, c] = unkey(k); return g[r][c]?.lock; }));
       if (hasSyrup([...grp.keys])) grp.keys.forEach(k => syrupKeys.add(k));
       const sp = Board.specialFor(grp, swapped);
-      if (sp) creates.push(sp);
+      if (sp) creates.push({ ...sp, keys: grp.keys }); // keys: 같이 맞춘 칸 (아이템 자리로 모이는 연출)
     });
     let forcedKeys = forced.filter(([r, c]) => inside(r, c)).map(([r, c]) => key(r, c));
     // 매치로 새 아이템이 생기는 단계면, 밀어 쓴 아이템은 다음 단계로 미룸 (새 아이템이 먼저 생기고, 남은 칸에서 터짐)
@@ -325,7 +325,7 @@ const Board = {
     const created = creates.map(sp => {
       const t = newTile(sp.type, sp.kind);
       g[sp.pos[0]][sp.pos[1]] = t;
-      return { r: sp.pos[0], c: sp.pos[1], tile: t };
+      return { r: sp.pos[0], c: sp.pos[1], tile: t, keys: sp.keys };
     });
     if (Board._deferred) Board._protect = new Set([...(protect || []), ...created.map(x => x.tile.id)]); // 또 미뤄지면 앞서 지킨 아이템도 계속 지킴
     syrupKeys.forEach(k => {

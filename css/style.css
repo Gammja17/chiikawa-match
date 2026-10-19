@@ -427,6 +427,45 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 #storyLine { font-family: var(--hand); font-weight: 700; font-size: 19px; line-height: 1.4; }
 /* 말풍선 글: 낱말 중간에서 안 끊기고, 줄 길이를 고르게 */
 #storyLine, .cutin .say, .hero-say, .sheet-say, .rsay, #shopSay { word-break: keep-all; overflow-wrap: anywhere; text-wrap: balance; }
+/* 라멘 가게 메뉴: 붉은 카운터 위 노렌 탭 + 종이 차림표 + 식권 버튼 (탭을 바꿔도 위 가게 그림이 들썩이지 않게 높이 고정) */
+#shopScene { border-radius: var(--r) var(--r) 0 0; }
+#ramenMenu { margin: 0 12px 12px; padding: 0 10px 10px; border-radius: 0 0 var(--r) var(--r); background: #dd8481; }
+#ramenMenu .rm-tabs { position: relative; display: flex; gap: 5px; height: 47px; margin: 0 -10px 4px; padding: 7px 10px 0; }
+#ramenMenu .rm-tabs::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 7px; background: #a8703f; }
+#ramenMenu .rm-tabs button { flex: 1; height: 30px; padding: 0; border-radius: 0 0 6px 6px; background: #6d70a0; color: #e7e6f3; font-family: var(--head); font-size: 17px; line-height: 30px; }
+#ramenMenu .rm-tabs button.on { height: 40px; background: #3b3f73; color: #fff; font-size: 19px; line-height: 42px; }
+.rm-paper { padding: 6px 12px 4px; border-radius: 4px; background: #fffaf1; box-shadow: inset 0 0 0 1.5px rgba(74, 66, 98, .35); }
+.rm-paper h4 { display: flex; align-items: center; gap: 10px; margin: 0 0 2px; font-family: var(--head); font-weight: 400; font-size: 15px; color: var(--ink2); }
+.rm-paper h4::before, .rm-paper h4::after { content: ''; flex: 1; border-top: 1.5px solid rgba(74, 66, 98, .25); }
+#ramenMenu .rm-btns { height: 30vh; overflow-y: auto; }
+.rm-row { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 0; border-bottom: 1.5px dashed rgba(74, 66, 98, .18); }
+.rm-row:last-child { border-bottom: 0; }
+.rm-row > img { flex: none; width: 36px; height: 36px; object-fit: contain; }
+.rm-row .tx { flex: 1; min-width: 0; }
+.rm-row .tx b { display: block; font-family: var(--head); font-weight: 400; font-size: 19px; line-height: 1.15; white-space: nowrap; }
+.rm-row .tx b i { font-style: normal; font-size: 14px; color: var(--ink2); margin-left: 3px; }
+.rm-row .tx small { display: block; font-size: 12.5px; color: var(--ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rm-row .tx small em { font-style: normal; color: #2f9a5e; }
+.rm-row .stamps { display: flex; gap: 2px; margin-top: 3px; }
+.rm-row .stamps i { width: 8px; height: 8px; border-radius: 50%; box-shadow: inset 0 0 0 1.2px rgba(74, 66, 98, .3); }
+.rm-row .stamps i.on { background: #e2543f; box-shadow: none; }
+.rm-row .stamps i.cap { box-shadow: inset 0 0 0 1.4px #e2543f; }
+/* 식권: 노란 종이 표(양옆 반달 홈 + 절취선), 그림자 없이 테두리로 */
+.tk { position: relative; flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 64px; height: 44px; padding: 0 9px 0 14px; border: 2px solid var(--ink); border-radius: 7px; background: #ffd95a; color: var(--ink); font-family: var(--head); line-height: 1; }
+.tk::before, .tk::after { content: ''; position: absolute; top: 50%; width: 10px; height: 10px; margin-top: -5px; border: 2px solid var(--ink); border-radius: 50%; background: #fffaf1; box-sizing: border-box; }
+.tk::before { left: -6px; clip-path: inset(0 0 0 50%); }
+.tk::after { right: -6px; clip-path: inset(0 50% 0 0); }
+.tk .cut { position: absolute; left: 8px; top: 5px; bottom: 5px; border-left: 2px dashed rgba(74, 66, 98, .35); }
+.tk small { margin-bottom: 2px; font-size: 11px; opacity: .75; }
+.tk b { display: flex; align-items: center; gap: 2px; font-weight: 400; font-size: 18px; white-space: nowrap; }
+.tk b img { width: 14px; height: 14px; }
+.tk.free { background: #ff8c8c; color: #fff; }
+.tk.use { background: #3b3f73; color: #fff; }
+.tk.lock { background: #ece6f1; color: var(--ink2); border-color: #b9b1cc; }
+.tk.lock::before, .tk.lock::after { border-color: #b9b1cc; }
+.tk:active { transform: translateY(1px); }
+#ramenNote { height: 2.6em; margin: 4px 0 0; overflow: hidden; text-align: center; font-size: 12.5px; color: var(--ink2); }
+#ramenNote b { font-weight: 400; color: #e2543f; }
 .story-next { position: absolute; right: 16px; bottom: 6px; width: 12px; height: 10px; background: var(--ink); clip-path: polygon(0 0, 100% 0, 50% 100%); animation: bob .8s infinite; font-size: 0; }
 
 /* ---------- 결과 창 ---------- */
@@ -935,27 +974,7 @@ img.shadow { filter: brightness(0) opacity(.15); }
 #shopScene .guest.ready > img { animation: hop .9s ease-in-out infinite; }
 .bowl { position: absolute; left: 50%; bottom: 31%; width: 22%; z-index: 5; pointer-events: none; }
 #shopSay { position: absolute; z-index: 6; left: 50%; top: 20%; max-width: 72%; padding: 6px 14px; border-radius: 14px; background: #fff; color: var(--ink); font-family: var(--hand); font-weight: 700; font-size: 17px; line-height: 1.25; text-align: center; opacity: 0; pointer-events: none; box-shadow: var(--sh); }
-#ramenMenu { padding: 12px 12px 14px; }
-/* 메뉴가 늘어서 두 줄씩, 넘치면 스크롤 */
-.rm-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-height: 34vh; overflow-y: auto; padding: 2px; }
-.rm-btns button { flex: 1; display: grid; grid-template-columns: 48px 1fr; grid-template-rows: auto auto; align-items: center; column-gap: 8px; padding: 10px 12px; border-radius: 16px; background: var(--paper); box-shadow: var(--sh); text-align: left; }
-.rm-btns img { grid-row: span 2; width: 48px; }
-.rm-btns b { font-family: var(--head); font-size: 22px; font-weight: 400; line-height: 1.1; }
-.rm-btns small { font-size: 13px; color: var(--ink2); }
-#ramenMenu.off .rm-btns button { opacity: .45; }
-.rm-btns button { position: relative; }
-.rm-btns button.locked { opacity: .45; }
-.rm-btns button.on { box-shadow: 0 0 0 3px var(--gold, #ffcf3f), var(--sh); }
-.rm-btns em { position: absolute; right: 8px; top: 6px; display: flex; align-items: center; gap: 2px; font-style: normal; font-family: var(--head); font-size: 14px; color: var(--ink); }
-.rm-btns em img { width: 14px; grid-row: auto; }
-.rm-btns em.free { color: #e2543f; }
-.rm-btns b { font-size: 18px; }
-/* 라멘 / 포장 코너 탭, 아이템 개수·쓰기, 친구 고르는 창의 시작 아이템 */
-.rm-tabs { display: flex; gap: 6px; margin-bottom: 8px; }
-.rm-tabs button { flex: 1; height: 34px; border-radius: 12px; background: var(--paper); box-shadow: var(--sh); font-family: var(--head); font-size: 18px; color: var(--ink2); }
-.rm-tabs button.on { background: var(--pink); color: #fff; }
-.rm-btns .have { font-style: normal; font-size: 15px; color: var(--pink); }
-.rm-btns .use { position: absolute; right: 8px; bottom: 8px; padding: 2px 10px 0; border-radius: 10px; background: #3fae4f; color: #fff; font-family: var(--head); font-size: 15px; }
+/* 친구 고르는 창의 시작 아이템 */
 .boost-row { display: flex; align-items: center; gap: 8px; margin: -4px 0 10px; font-size: 13px; color: var(--ink2); }
 .boost-row button { position: relative; width: 44px; height: 44px; border-radius: 12px; background: var(--paper); box-shadow: var(--sh); opacity: .55; }
 .boost-row button.on { opacity: 1; box-shadow: 0 0 0 3px var(--gold, #ffcf3f), var(--sh); }
@@ -963,10 +982,7 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .boost-row i.price { display: flex; align-items: center; gap: 1px; right: 50%; bottom: -8px; transform: translateX(50%); padding: 0 5px; background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(74, 66, 98, .3); white-space: nowrap; }
 .boost-row i.price img { width: 11px; height: 11px; }
 #modalRows .mini-btn { float: none; }
-#ramenMenu .rm-btns { height: 34vh; } /* 라멘·포장 코너 칸 높이를 같게: 위 가게 그림이 들썩이지 않게 */
-#ramenNote { height: 2.8em; overflow: hidden; }
 .boost-row i { position: absolute; right: -4px; bottom: -4px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--ink); color: #fff; font-style: normal; font-size: 12px; line-height: 18px; }
-#ramenNote { margin: 8px 0 0; text-align: center; font-size: 14px; color: var(--ink2); }
 
 /* ---------- 스포트라이트 안내 ---------- */
 .spot { position: absolute; inset: 0; z-index: 60; pointer-events: none; }

@@ -994,7 +994,7 @@ async function startStage(i) {
   Board.spawnIng = null;
   B.stage = i; B.wave = 0; B.over = false; B.busy = true; B.inSkill = false; B.sel = null; B.pending = [];
   const bowl = Ramen.takeBattle(); // 먹고 온 라멘
-  B.teamHp = B.teamMax = bowl && (bowl.id === 'hp' || bowl.id === 'okinawa') ? 150 : 120;
+  B.teamHp = B.teamMax = (bowl && (bowl.id === 'hp' || bowl.id === 'okinawa') ? 150 : 120) + trainLv('hp') * TRAIN.hp.per; // + 라멘 체력 수련
   B.fever = 0;
   B.rally = 0;
   B.cont = false; // 이어하기는 스테이지마다 한 번
@@ -1488,6 +1488,19 @@ function effectFx(ef) {
 
 // 얼굴은 깨지지 않음: 꾹 눌렸다가 쭈욱 기지개 → 뿅 연기 → 괴물(또는 목표)에게 날아가 박치기
 // to: { at: {x, y}, hit } 날아갈 곳. 없으면 하트나 별로 뿅 사라짐. push: 아이템에 맞으면 통째로 튕겨 나감
+// 아이템이 될 얼굴: 살짝 부풀었다가 아이템 자리로 쏙 빨려 들어감
+const GATHER_MS = 180;
+function gatherTile(t, from, to, delay) {
+  if (!t.el.isConnected) return;
+  const dx = to.x - from.x, dy = to.y - from.y;
+  t.el.style.zIndex = 4;
+  t.inner.animate([
+    { transform: 'translate(0, 0) scale(1)' },
+    { transform: `translate(${-dx * 0.08}px, ${-dy * 0.08}px) scale(1.12)`, offset: 0.3 },
+    { transform: `translate(${dx}px, ${dy}px) scale(.4)`, opacity: 0.8 },
+  ], { duration: GATHER_MS, delay: Math.min(delay, 40), easing: 'cubic-bezier(.55,0,.85,.4)', fill: 'forwards' });
+  setTimeout(() => t.el.remove(), (Math.min(delay, 40) + GATHER_MS + 20) / Prefs.speed());
+}
 function popTile(t, delay, push = null, to = null, at = null) {
   const { x, y } = at || centerOf(t.el);
   if (t.el.isConnected && t.type >= 0) {
@@ -1808,11 +1821,15 @@ async function stepFx(res, combo, from = null) {
   const pushAt = new Map(), POWER = { bomb: 1.7, h: 1.3, v: 1.3, plane: 1.2, rainbow: 0.8 };
   res.effects.forEach(ef => { const o = tileCenter(ef.r, ef.c); ef.times.forEach((_, k) => !pushAt.has(k) && pushAt.set(k, { ...o, power: POWER[ef.kind] || 1 })); });
   if (from) { const o = tileCenter(from.at[0], from.at[1]); res.cleared.forEach(({ r, c }) => !pushAt.has(key(r, c)) && pushAt.set(key(r, c), { ...o, power: 1.5 })); }
+  // 4·5매치로 아이템이 생기면 같이 맞춘 얼굴들은 터지지 않고 아이템 자리로 모임
+  const gatherTo = new Map();
+  res.created.forEach(cr => cr.keys?.forEach(k => gatherTo.set(k, tileCenter(cr.r, cr.c))));
   res.cleared.forEach(({ r, c, tile }) => {
     const p = tileCenter(r, c);
     const color = tile.type >= 0 ? teamCh(tile.type).ring : '#ffd84d';
     const delay = T.get(key(r, c)) ?? Math.min(i++ * 10, 150);
     last = Math.max(last, delay);
+    if (gatherTo.has(key(r, c))) return gatherTile(tile, p, gatherTo.get(key(r, c)), delay);
     setTimeout(() => {
       // 캐릭터 색 고리 + 반짝이 + 같은 색 방울이 포물선으로 톡톡
       if (n < 16 || Math.random() < 0.5) ringFx(p.x, p.y, B.S * 1.5, color, 300);
@@ -1884,12 +1901,16 @@ async function stepFx(res, combo, from = null) {
     setTimeout(() => Tutor.onCreate(tile.special), 500);
     makeTile(tile);
     place(tile, r, c);
+    // 얼굴들이 다 모인 뒤(0.18초)에 아이템이 톡
     tile.inner.animate([{ transform: 'scale(0) rotate(-90deg)' }, { transform: 'scale(1.35) rotate(10deg)', offset: 0.6 }, { transform: 'scale(1)' }],
-      { duration: 380, easing: 'ease-out' });
+      { duration: 380, delay: GATHER_MS, easing: 'ease-out', fill: 'backwards' });
     const p = tileCenter(r, c);
-    burst(p.x, p.y, '#ffffff', 10);
-    Sound.play('special', 1.1, 0.8);
-    kp('star_09', p.x, p.y, B.S * 2.2, '#ffe680', [{ transform: 'scale(.2) rotate(0)', opacity: 1 }, { transform: 'scale(1) rotate(90deg)', opacity: 0 }], { duration: 520, easing: 'ease-out' });
+    setTimeout(() => {
+      ringFx(p.x, p.y, B.S * 1.8, '#ffe680', 320);
+      burst(p.x, p.y, '#ffffff', 10);
+      Sound.play('special', 1.1, 0.8);
+      kp('star_09', p.x, p.y, B.S * 2.2, '#ffe680', [{ transform: 'scale(.2) rotate(0)', opacity: 1 }, { transform: 'scale(1) rotate(90deg)', opacity: 0 }], { duration: 520, easing: 'ease-out' });
+    }, GATHER_MS / Prefs.speed());
   });
 }
 
@@ -3069,25 +3090,32 @@ function openRamen() {
 const RAMEN_MENU = [
   { id: 'hp', name: '곱빼기', icon: 'ramen', desc: '토벌 체력 150', mode: 'b', price: 60, at: 0, say: '곱빼기다. 남기지 마라.' },
   { id: 'gauge', name: '진한 국물', icon: 'pot', desc: '토벌 스킬 게이지 반', mode: 'b', price: 60, at: 0, say: '진한 국물이다. 힘이 날 거다.' },
-  { id: 'naruto', name: '나루토 토핑', icon: 'naruto', desc: '퍼즐: 랏코 검 2개 깔고 시작', mode: 'l', price: 50, at: 10, say: '나루토 듬뿍. 판이 술술 풀릴 거다.' },
-  { id: 'egg', name: '반숙 달걀', icon: 'egg', desc: '퍼즐: 이동 +3 (시간 스테이지 +10초)', mode: 'l', price: 70, at: 20, say: '반숙이다. 터뜨리지 말고 먹어라.' },
-  { id: 'onigiri', name: '주먹밥 세트', icon: 'onigiri', desc: '퍼즐: 폭탄·종이비행기 깔고 시작', mode: 'l', price: 90, at: 30, say: '주먹밥도 같이 먹어라. 든든할 거다.' },
+  { id: 'naruto', hide: 1, name: '나루토 토핑', icon: 'naruto', desc: '퍼즐: 랏코 검 2개 깔고 시작', mode: 'l', price: 50, at: 10, say: '나루토 듬뿍. 판이 술술 풀릴 거다.' },
+  { id: 'egg', hide: 1, name: '반숙 달걀', icon: 'egg', desc: '퍼즐: 이동 +3 (시간 스테이지 +10초)', mode: 'l', price: 70, at: 20, say: '반숙이다. 터뜨리지 말고 먹어라.' },
+  { id: 'onigiri', hide: 1, name: '주먹밥 세트', icon: 'onigiri', desc: '퍼즐: 폭탄·종이비행기 깔고 시작', mode: 'l', price: 90, at: 30, say: '주먹밥도 같이 먹어라. 든든할 거다.' },
   { id: 'okinawa', name: '사타안다기 세트', icon: 'donut', desc: '토벌: 체력 150 + 게이지 반', mode: 'b', price: 120, at: 40, say: '시사가 튀긴 거다. 맛있게 먹어라.' },
-  { id: 'secret', name: '사부님 비밀 메뉴', icon: 'dango', desc: '퍼즐: 경단 깔고 + 이동 +2', mode: 'l', price: 150, at: 50, say: '…아무한테도 말하지 마라.' },
+  { id: 'secret', hide: 1, name: '사부님 비밀 메뉴', icon: 'dango', desc: '퍼즐: 경단 깔고 + 이동 +2', mode: 'l', price: 150, at: 50, say: '…아무한테도 말하지 마라.' },
 ];
 const ramenOf = id => RAMEN_MENU.find(m => m.id === id);
 const ramenFree = () => Save.data.ramen !== false;
+// 라멘 가게 차림표 한 줄: 그림 · 이름(가진 개수) · 한 줄 설명 · 식권 버튼
+const rmTicket = (label, val, cls = '', data = '') => `<button class="tk ${cls}" ${data}><i class="cut"></i><small>${label}</small><b>${val}</b></button>`;
+const rmCoin = n => `<img src="${ITEM('coin')}" alt="">${n}`;
+const rmRow = ({ icon, name, n = 0, desc, extra = '', tickets }) =>
+  `<div class="rm-row"><img src="${ITEM(icon)}" alt=""><div class="tx"><b>${name}${n ? `<i>×${n}</i>` : ''}</b><small>${desc}</small>${extra}</div>${tickets}</div>`;
 function renderRamenMenu() {
   if (ramenTab === 'items') return renderShopItems(); // 포장 코너 칸
+  if (ramenTab === 'train') return renderTrain(); // 수련 칸
   const cur = Save.data.buff ? ramenOf(Save.data.buff) : null, prog = unlockedIdx();
   const wrap = $('#ramenMenu .rm-btns');
-  wrap.innerHTML = RAMEN_MENU.map(m => {
-    const locked = prog < m.at && !(m.at === 0);
-    const price = ramenFree() ? '<em class="free">서비스</em>' : `<em><img src="${ITEM('coin')}">${m.price}</em>`;
-    return `<button data-b="${m.id}" class="${locked ? 'locked' : ''}${cur?.id === m.id ? ' on' : ''}">` +
-      `<img src="${ITEM(m.icon)}" alt=""><b>${m.name}</b><small>${locked ? `스테이지 ${m.at + 1}까지 열면 메뉴에 나와요` : m.desc}</small>${locked ? '' : price}</button>`;
+  $('#ramenTitle').textContent = '차림표';
+  wrap.innerHTML = RAMEN_MENU.filter(m => !m.hide).map(m => { // 퍼즐 그릇(hide)은 포장 코너 시작 아이템으로 바뀜 (먹어 둔 건 그대로 씀)
+    const locked = prog < m.at, d = `data-b="${m.id}"`;
+    const tk = locked ? rmTicket('스테이지', m.at + 1, 'lock', d) : cur?.id === m.id ? rmTicket('먹었다', '다음 토벌', 'use', d)
+      : ramenFree() ? rmTicket('한 그릇', '서비스', 'free', d) : rmTicket('사기', rmCoin(m.price), '', d);
+    return rmRow({ icon: m.icon, name: m.name, desc: locked ? `스테이지 ${m.at + 1}까지 열면 메뉴에 나와요` : m.desc, tickets: tk });
   }).join('');
-  wrap.querySelectorAll('button').forEach(b => (b.onclick = () => orderRamen(b.dataset.b)));
+  wrap.querySelectorAll('[data-b]').forEach(b => (b.onclick = () => orderRamen(b.dataset.b)));
   const stamp = Save.data.ramenStamp || 0;
   $('#ramenNote').innerHTML = cur
     ? `먹은 효과: <b>${cur.name}</b> · 다음 ${cur.mode === 'b' ? '토벌' : '퍼즐'}에서 써요`
@@ -3157,6 +3185,45 @@ const Ramen = {
     return m;
   },
 };
+// ---------- 스승님 수련: 코인으로 올리는 영구 강화 (Save.data.train = { hp, atk }) ----------
+// 다음 레벨 값 = 100 × 1.18^레벨 (10원 단위), 최대 Lv20. 깬 스테이지 15개마다 올릴 수 있는 레벨이 1씩 열림 (코인을 몰아서 확 세지지 않게)
+const TRAIN = {
+  hp: { name: '체력 수련', icon: 'heart', per: 4, val: lv => `토벌 체력 ${120 + lv * 4}`, num: lv => 120 + lv * 4, say: '곱빼기를 매일 먹어라. 몸이 버틴다.' },
+  atk: { name: '공격 수련', icon: 'rocket', per: 1.5, val: lv => `공격·회복 ${+(100 + lv * 1.5).toFixed(1)}%`, num: lv => `${+(100 + lv * 1.5).toFixed(1)}%`, say: '국물이 진할수록 주먹도 세진다.' },
+};
+const TRAIN_MAX = 20;
+const trainLv = id => Save.data.train?.[id] || 0;
+const trainCost = lv => Math.round((100 * 1.18 ** lv) / 10) * 10;
+const trainCap = () => Math.min(TRAIN_MAX, 1 + Math.floor(clearedCount() / 15));
+function renderTrain() {
+  const cap = trainCap(), wrap = $('#ramenMenu .rm-btns');
+  $('#ramenTitle').textContent = '수련 장부';
+  wrap.innerHTML = Object.entries(TRAIN).map(([id, t]) => {
+    const lv = trainLv(id), max = lv >= TRAIN_MAX, capped = !max && lv >= cap, d = `data-tr="${id}"`;
+    // 레벨은 라멘 도장처럼: 찍힌 칸 = 지금 레벨, 테두리 칸 = 지금 올릴 수 있는 데까지
+    const stamps = `<div class="stamps">${Array.from({ length: TRAIN_MAX }, (_, k) => `<i class="${k < lv ? 'on' : k < cap ? 'cap' : ''}"></i>`).join('')}</div>`;
+    const desc = `Lv${lv} · ${t.val(lv)}${max ? ' (최고)' : capped ? '' : ` → <em>${t.num(lv + 1)}</em>`}`;
+    const tk = max ? rmTicket('수련', '끝', 'lock', d) : capped ? rmTicket('스테이지', `${lv * 15}개`, 'lock', d) : rmTicket('수련', rmCoin(trainCost(lv)), '', d);
+    return rmRow({ icon: t.icon, name: t.name, desc, extra: stamps, tickets: tk });
+  }).join('');
+  wrap.querySelectorAll('[data-tr]').forEach(b => (b.onclick = () => doTrain(b.dataset.tr)));
+  $('#ramenNote').innerHTML = `수련은 영원히 남아요 · 지금은 <b>Lv${cap}</b>까지 (스테이지 15개마다 +1)`;
+}
+function doTrain(id) {
+  const t = TRAIN[id], lv = trainLv(id), shopkeep = $('#shopMaster');
+  if (lv >= TRAIN_MAX) { Sound.play('bad'); shopSay(shopkeep, '더 가르칠 게 없다.'); return; }
+  if (lv >= trainCap()) { Sound.play('bad'); shopSay(shopkeep, '아직 이르다. 토벌하고 와라.'); return; }
+  const cost = trainCost(lv);
+  if (Save.data.coins < cost) { Sound.play('bad'); shopSay(shopkeep, '코인이 모자라다. 토벌하고 와라.'); return; }
+  Meta.addCoins(-cost);
+  (Save.data.train = Save.data.train || {})[id] = lv + 1;
+  Save.save();
+  Sound.play('star', 1.1, 0.9);
+  shopSay(shopkeep, t.say);
+  const b = $(`#ramenMenu [data-tr="${id}"]`);
+  if (b) { const c = centerOf(b); floatNum(c.x, c.y - 20, `Lv${lv + 1}!`, '#e07b39'); }
+  renderRamenMenu();
+}
 // ---------- 라멘 가게 포장 코너: 사 두고 필요할 때 쓰는 아이템 (Save.data.items = { id: 개수 }) ----------
 // 하트 도시락·무한 리필권: 하트가 없을 때 창이나 가게에서 / 이어하기권: 실패 창에서 / 시작 아이템: 친구 고르는 창에서 켜면 판에 깔고 시작
 const SHOP_ITEMS = [
@@ -3195,12 +3262,14 @@ document.querySelectorAll('.rm-tabs button').forEach(b => (b.onclick = () => {
 }));
 function renderShopItems() {
   const wrap = $('#ramenMenu .rm-btns');
+  $('#ramenTitle').textContent = '포장 메뉴';
   wrap.innerHTML = SHOP_ITEMS.map(it => {
     const n = Items.n(it.id), use = n && ((it.id === 'lunch' && Hearts.n() < HEART_MAX) || it.id === 'refill');
-    return `<button data-i="${it.id}"><img src="${ITEM(it.icon)}" alt=""><b>${it.name}${n ? ` <i class="have">×${n}</i>` : ''}</b><small>${it.desc}</small>` +
-      `<em><img src="${ITEM('coin')}">${it.price}</em>${use ? `<span class="use" data-use>${it.id === 'lunch' ? '먹기' : '쓰기'}</span>` : ''}</button>`;
+    return rmRow({ icon: it.icon, name: it.name, n, desc: it.desc,
+      tickets: (use ? rmTicket(`${n}개`, it.id === 'lunch' ? '먹기' : '쓰기', 'use', `data-use="${it.id}"`) : '') + rmTicket('사기', rmCoin(it.price), '', `data-i="${it.id}"`) });
   }).join('');
-  wrap.querySelectorAll('button').forEach(b => (b.onclick = e => (e.target.closest('[data-use]') ? useShopItem(b.dataset.i) : buyShopItem(b.dataset.i))));
+  wrap.querySelectorAll('[data-i]').forEach(b => (b.onclick = () => buyShopItem(b.dataset.i)));
+  wrap.querySelectorAll('[data-use]').forEach(b => (b.onclick = () => useShopItem(b.dataset.use)));
   $('#ramenNote').innerHTML = Hearts.inf() ? `무한 리필 중 · <b>${Hearts.infLeft()}</b> 남음` : '사 두면 필요할 때 써요 · 하트가 없을 때, 실패했을 때, 스테이지 시작 전 (종류마다 스테이지에 한 번)';
 }
 function buyShopItem(id) {
