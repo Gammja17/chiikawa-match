@@ -292,7 +292,7 @@ window.__errs = [];
 addEventListener('error', e => window.__errs.push(['error', e.message, (e.filename || '') + ':' + e.lineno + ':' + e.colno + '\n' + (e.error?.stack || '')]));
 addEventListener('unhandledrejection', e => window.__errs.push(['promise', String(e.reason?.message || e.reason), e.reason?.stack || '']));
 </script>
-<script src="js/data.js?v=46"></script>
+<script src="js/data.js?v=47"></script>
 <script src="js/audio.js?v=31"></script>
 <script src="js/board.js?v=31"></script>
 <script src="js/prefs.js?v=3"></script>

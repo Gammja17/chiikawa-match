@@ -140,30 +140,33 @@ const POCKETS = ['chiikawa', 'hachiware', 'usagi', 'momonga', 'rakko', 'shisa', 
 
 const MONSTERS = {
   chimera:   { name: '키메라',   img: 'assets/img/monsters/chimera.png' },
-  mimic:     { name: '미믹',     img: 'assets/img/monsters/mimic.png' },
-  dekatsuyo: { name: '데카츠요', img: 'assets/img/monsters/dekatsuyo.png' },
+  mimic:     { name: '미믹',     img: 'assets/img/monsters/mimic.png?v=2' },
+  dekatsuyo: { name: '데카츠요', img: 'assets/img/monsters/dekatsuyo.png?v=2' },
   // 4~6장 보스 (Chiikawa Wiki 그림에서 배경을 지움)
   elephant:  { name: '한밤의 코끼리', img: 'assets/img/monsters/elephant.png' },
   blackstar: { name: '까만별',   img: 'assets/img/monsters/blackstar.png' },
-  ode:       { name: '오데',     img: 'assets/img/monsters/ode.png' },
+  ode:       { name: '오데',     img: 'assets/img/monsters/ode.png?v=2' },
+  // 원작에 나온 괴물 더 (Chiikawa Wiki 그림에서 배경을 지움)
+  anoko:     { name: '아노코',   img: 'assets/img/monsters/anoko.png' },
+  sphinx:    { name: '스핑크스', img: 'assets/img/monsters/sphinx.png' },
 };
 
 // a: 속성, m: 몬스터 종류, hp, atk: 공격력, cd: 몇 턴마다 공격, hue: 색 변형, title: 이름 앞말, boss
 // 토벌 hp·atk: 자동 플레이 봇으로 맞춤 (처음 100% → 보통 80~95% → HARD 50% 안팎 깸). 카니 회복을 줄인 뒤 기준
 const STAGES = [
   { name: '풀숲 토벌',      waves: [{ a: 'odd', m: 'chimera', hp: 880, atk: 26, cd: 3 }] },
-  { name: '두 마리 출몰',   waves: [{ a: 'odd', m: 'chimera', hp: 570, atk: 39, cd: 3 }, { a: 'cry', m: 'chimera', hp: 650, atk: 48, cd: 3, hue: 200, title: '푸른' }] },
+  { name: '두 마리 출몰',   waves: [{ a: 'odd', m: 'chimera', hp: 570, atk: 39, cd: 3 }, { a: 'cry', m: 'anoko', hp: 650, atk: 48, cd: 3 }] },
   { name: '수상한 상자',    waves: [{ a: 'brave', m: 'mimic', hp: 2260, atk: 48, cd: 3 }] },
   { name: '숲 속 순찰',     waves: [{ a: 'odd', m: 'chimera', hp: 1090, atk: 52, cd: 3 }, { a: 'brave', m: 'mimic', hp: 1500, atk: 68, cd: 3 }] },
   { name: '데카츠요 습격',  waves: [{ a: 'brave', m: 'dekatsuyo', hp: 3820, atk: 76, cd: 4, boss: true }] },
   { name: '푸른 무리',      waves: [{ a: 'cry', m: 'chimera', hp: 1500, atk: 51, cd: 3, hue: 200, title: '푸른' }, { a: 'cry', m: 'chimera', hp: 1620, atk: 51, cd: 3, hue: 200, title: '푸른' }] },
   { name: '붉은 미믹',      waves: [{ a: 'brave', m: 'mimic', hp: 1760, atk: 54, cd: 3 }, { a: 'light', m: 'mimic', hp: 2110, atk: 60, cd: 3, hue: 320, title: '붉은' }] },
-  { name: '연속 토벌',      waves: [{ a: 'odd', m: 'chimera', hp: 1450, atk: 56, cd: 3 }, { a: 'brave', m: 'mimic', hp: 1740, atk: 66, cd: 3 }, { a: 'brave', m: 'chimera', hp: 1960, atk: 66, cd: 3, hue: 100, title: '초록' }] },
+  { name: '연속 토벌',      waves: [{ a: 'odd', m: 'chimera', hp: 1450, atk: 56, cd: 3 }, { a: 'brave', m: 'mimic', hp: 1740, atk: 66, cd: 3 }, { a: 'brave', m: 'anoko', hp: 1960, atk: 66, cd: 3 }] },
   { name: '성급한 녀석',    waves: [{ a: 'dark', m: 'chimera', hp: 5340, atk: 50, cd: 2, hue: 250, title: '보라' }] },
   { name: '토벌 대작전',    waves: [{ a: 'brave', m: 'mimic', hp: 1360, atk: 80, cd: 3 }, { a: 'cry', m: 'chimera', hp: 1520, atk: 80, cd: 3, hue: 200, title: '푸른' }, { a: 'dark', m: 'dekatsuyo', hp: 2700, atk: 95, cd: 4, hue: 30, title: '진·', boss: true }] },
   // 4장
   { name: '밤의 키메라',    waves: [{ a: 'dark', m: 'chimera', hp: 5000, atk: 52, cd: 3, hue: 240, title: '밤의' }] },
-  { name: '시끄러운 상자',  waves: [{ a: 'brave', m: 'mimic', hp: 2470, atk: 64, cd: 3 }, { a: 'odd', m: 'chimera', hp: 2290, atk: 60, cd: 3 }] },
+  { name: '시끄러운 상자',  waves: [{ a: 'brave', m: 'mimic', hp: 2470, atk: 64, cd: 3 }, { a: 'odd', m: 'sphinx', hp: 2290, atk: 60, cd: 3 }] },
   { name: '한밤의 코끼리',  waves: [{ a: 'cry', m: 'chimera', hp: 1910, atk: 75, cd: 3, hue: 200, title: '푸른' }, { a: 'light', m: 'elephant', hp: 4370, atk: 105, cd: 4, boss: true }] },
   // 5장
   { name: '또 같은 키메라', waves: [{ a: 'odd', m: 'chimera', hp: 3010, atk: 62, cd: 3 }, { a: 'odd', m: 'chimera', hp: 3010, atk: 62, cd: 3, title: '또' }] },
