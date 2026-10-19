@@ -311,7 +311,7 @@ function monsterPeck() {
   if (now - peckAt < 45) return;
   peckN = now - peckAt > 600 ? 0 : peckN + 1;
   peckAt = now;
-  $('#monster').animate([{ transform: 'scale(1)' }, { transform: `scale(.93,1.06) translate(${(Math.random() - 0.5) * 10}px, 2px)`, filter: 'brightness(1.8)' }, { transform: 'scale(1)' }], { duration: 120 });
+  monImg().animate([{ transform: 'scale(1)' }, { transform: `scale(.93,1.06) translate(${(Math.random() - 0.5) * 10}px, 2px)`, filter: 'brightness(1.8)' }, { transform: 'scale(1)' }], { duration: 120 });
   Sound.play('hit' + (1 + (peckN % 3)), 1.15 + Math.min(peckN, 8) * 0.05, 0.35);
   Haptic.tap(6);
 }
@@ -698,7 +698,65 @@ function modal({ title, stars = null, char, img = null, photo = false, rows = []
 
 // ---------- 전투 ----------
 const B = { mode: 'battle', team: [], gauge: [], grid: null, stage: 0, wave: 0, monHp: 0, monMax: 0, cd: 0, teamHp: 120, teamMax: 120, busy: true, over: false, sel: null, S: 56, pending: [] };
-const curWave = () => STAGES[B.stage].waves[B.wave];
+// ---------- 괴물 여럿: 3장부터 보스가 아닌 첫 웨이브는 2~3마리가 한꺼번에 (각자 카운트다운), 누르면 그 괴물부터 때림 ----------
+// B.mons = [{ w: 웨이브 정보, hp, max, cd, el: {img, hp, cd, name, sprite, card} }], B.pick = 고른 괴물 (안 고르면 왼쪽부터)
+const GROUP_AT = 20, TRIO_AT = 140; // 모험 지도 21판(3장)부터 둘, 141판(15장)부터 가끔 셋
+const aliveMons = () => (B.mons || []).filter(m => m.hp > 0);
+const tgt = () => { const al = aliveMons(); return al.includes(B.pick) ? B.pick : al[0] || null; };
+Object.defineProperty(B, 'monHp', { get: () => tgt()?.hp ?? 0, set: v => { const m = tgt(); if (m) m.hp = v; } });
+Object.defineProperty(B, 'monMax', { get: () => tgt()?.max ?? 1 });
+const monImg = () => (tgt() || B.lastMon || B.mons?.[0])?.el.img || $('#monster');
+const cdEl = () => (tgt() || B.mons?.[0])?.el.cd || $('#countdown');
+// 지금 때리는 괴물의 정보 (속성·공격력 등)
+const curWave = () => tgt()?.w || STAGES[B.stage].waves[B.wave];
+// 이 웨이브에 나오는 괴물들: 둘이면 체력 55%씩(합 1.1배), 셋이면 38%씩. 공격은 나눠서 약하게, 카운트다운은 1씩 어긋나게
+function waveMembers(stage, wv) {
+  const w = STAGES[stage].waves[wv], k = routeIdx('b', stage);
+  let n = w.group || 0;
+  if (!n && !w.boss && wv === 0 && k >= GROUP_AT) n = k >= TRIO_AT && stage % 2 === 0 ? 3 : 2;
+  if (n < 2) return [w];
+  const others = STAGES[stage].waves.filter(x => !x.boss && x !== w);
+  const share = n === 2 ? 0.55 : 0.38, atkK = n === 2 ? 0.6 : 0.45;
+  return Array.from({ length: n }, (_, j) => {
+    const base = j === 0 ? w : others[j - 1] || { ...w, hue: ((w.hue || 0) + 50 * j) % 360 };
+    return { ...base, hp: Math.round(w.hp * share), atk: Math.round(w.atk * atkK), cd: w.cd + j, boss: false };
+  });
+}
+// 괴물 하나 고르기 (다시 누르면 풀기)
+function pickMon(m) {
+  if (m.hp <= 0 || B.mode !== 'battle') return;
+  B.pick = B.pick === m ? null : m;
+  Sound.play('pop', 1.3, 0.5);
+  m.el.card.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.06)' }, { transform: 'scale(1)' }], { duration: 200 });
+  markPick();
+  markMatchup();
+}
+function markPick() {
+  const t = tgt(), many = (B.mons || []).length > 1;
+  (B.mons || []).forEach(m => { m.el.card.classList.toggle('pick', many && m === t); m.el.card.classList.toggle('chosen', many && m === B.pick); });
+}
+// 여럿 중 하나가 쓰러짐 (마지막 한 마리는 monsterDefeated가 크게 처리)
+function killMon(mon) {
+  if (mon.w.boss) Achieve.add('boss');
+  const c = centerOf(mon.el.img);
+  Sound.play('defeat', 1.25, 0.7);
+  burst(c.x, c.y, '#ffcf3f', 10);
+  shake(5, 200);
+  mon.el.img.animate([
+    { transform: 'scale(1) rotate(0)', opacity: 1, filter: 'brightness(2)' },
+    { transform: 'scale(.2) rotate(160deg) translateY(-40px)', opacity: 0 },
+  ], { duration: 480, easing: 'ease-in', fill: 'forwards' });
+  mon.el.card.classList.add('dead');
+  if (B.pick === mon) B.pick = null;
+  markPick();
+  markMatchup();
+  updateCd();
+}
+// 괴물들 카운트다운을 다 같이 늦춤 (방해 스킬)
+function delayMons(n) {
+  aliveMons().forEach(m => { m.cd += n; m.el.cd.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.3)' }, { transform: 'scale(1)' }], { duration: 300 }); });
+  updateCd();
+}
 // 구슬 type(편성 순번) → 캐릭터
 const teamCh = type => CHARS[B.team[type]];
 const attrTag = a => `<span class="attr-tag" style="--ac:${ATTR[a].color}">${attrIcon(a)}${ATTR[a].name}</span>`;
@@ -856,42 +914,72 @@ function updateTeam() {
   $('#teamHp').classList.toggle('low', B.teamHp <= B.teamMax * 0.3);
 }
 function updateMon() {
-  $('#monHp .fill').style.width = (B.monHp / B.monMax) * 100 + '%';
-  $('#monHp span').textContent = `${B.monHp} / ${B.monMax}`;
+  (B.mons || []).forEach(m => {
+    const hp = Math.max(0, m.hp);
+    m.el.hp.querySelector('.fill').style.width = (hp / m.max) * 100 + '%';
+    m.el.hp.querySelector('span').textContent = `${hp} / ${m.max}`;
+  });
 }
 function updateCd() {
-  const el = $('#countdown');
-  el.innerHTML = `<b>${Math.max(B.cd, 0)}</b>`;
-  el.classList.toggle('danger', B.cd <= 1);
+  (B.mons || []).forEach(m => {
+    m.el.cd.innerHTML = `<b>${Math.max(m.cd, 0)}</b>`;
+    m.el.cd.classList.toggle('danger', m.hp > 0 && m.cd <= 1);
+  });
 }
 
 function spawnMonster(animated) {
-  const w = curWave(), M = MONSTERS[w.m];
-  const img = $('#monster');
-  img.src = M.img;
-  img.style.maxWidth = w.boss ? '86%' : '70%';
-  $('#monSprite').style.filter = w.hue ? `hue-rotate(${w.hue}deg) saturate(1.3)` : '';
-  const title = w.title ? (w.title.endsWith('·') ? w.title : w.title + ' ') : '';
-  $('#monName').innerHTML = attrIcon(w.a) + (w.boss ? '<img class="crown-ic" src="assets/img/ui/crown.png" alt="">' : '') + title + M.name;
-  $('#monName').classList.toggle('boss', !!w.boss);
-  Sound.music(w.boss ? 'boss' : 'battle'); // 보스가 나오면 곡이 바뀜
-  B.monHp = B.monMax = w.hp;
-  B.cd = w.cd;
+  const list = waveMembers(B.stage, B.wave), group = list.length > 1;
+  let box = $('#monGroup');
+  if (!box) { box = document.createElement('div'); box.id = 'monGroup'; $('#arena').appendChild(box); }
+  box.innerHTML = '';
+  box.style.display = group ? '' : 'none';
+  $('#monsterWrap').style.display = group ? 'none' : '';
+  B.pick = null;
+  B.lastMon = null;
+  B.mons = list.map(w => {
+    const M = MONSTERS[w.m];
+    let el;
+    if (!group) {
+      el = { img: $('#monster'), hp: $('#monHp'), cd: $('#countdown'), name: $('#monName'), sprite: $('#monSprite'), card: $('#monsterWrap') };
+      el.img.style.maxWidth = w.boss ? '86%' : '70%';
+    } else {
+      const card = document.createElement('div');
+      card.className = 'mon';
+      card.innerHTML = '<div class="mon-name"></div><div class="hp"><div class="fill"></div><span></span></div><div class="mon-sprite"><img alt="" draggable="false"></div><div class="mon-cd"></div>';
+      box.appendChild(card);
+      el = { img: card.querySelector('img'), hp: card.querySelector('.hp'), cd: card.querySelector('.mon-cd'), name: card.querySelector('.mon-name'), sprite: card.querySelector('.mon-sprite'), card };
+    }
+    el.img.src = M.img;
+    el.sprite.style.filter = w.hue ? `hue-rotate(${w.hue}deg) saturate(1.3)` : '';
+    const title = w.title ? (w.title.endsWith('·') ? w.title : w.title + ' ') : '';
+    el.name.innerHTML = attrIcon(w.a) + (w.boss ? '<img class="crown-ic" src="assets/img/ui/crown.png" alt="">' : '') + (group ? '' : title) + M.name;
+    el.name.classList.toggle('boss', !!w.boss);
+    el.img.style.opacity = 1;
+    const m = { w, hp: w.hp, max: w.hp, cd: w.cd, el };
+    if (group) el.card.onclick = () => pickMon(m);
+    return m;
+  });
+  Sound.music(list.some(w => w.boss) ? 'boss' : 'battle'); // 보스가 나오면 곡이 바뀜
   const nw = STAGES[B.stage].waves.length;
   $('#waveInfo').innerHTML = nw > 1 ? Array.from({ length: nw }, (_, k) => `<i class="${k <= B.wave ? 'on' : ''}"></i>`).join('') : '';
   markMatchup();
+  markPick();
   updateMon();
   updateCd();
-  img.style.opacity = 1;
   if (animated) {
     Sound.play('wave');
-    img.animate([
+    B.mons.forEach((m, j) => m.el.img.animate([
       { transform: 'translateY(-220px) scale(.6)', opacity: 0 },
       { transform: 'translateY(0) scale(1.15,.85)', opacity: 1, offset: 0.6 },
       { transform: 'translateY(-14px) scale(.95,1.05)', offset: 0.8 },
       { transform: 'translateY(0) scale(1)' },
-    ], { duration: 600, easing: 'ease-out' });
+    ], { duration: 600, delay: j * 120, easing: 'ease-out', fill: 'backwards' }));
   }
+  if (group && !Tutor.seen('monGroup')) setTimeout(() => {
+    if (B.mode !== 'battle' || B.over) return;
+    Tutor.mark('monGroup');
+    Spot.show(box, '괴물이 여럿이면 왼쪽부터 때려. 괴물을 톡 누르면 그 괴물부터! 숫자는 괴물마다 따로 줄어');
+  }, animated ? 900 : 1600);
 }
 
 async function startStage(i) {
@@ -1706,7 +1794,7 @@ async function stepFx(res, combo, from = null) {
   const n = res.cleared.length;
   let i = 0, last = 0;
   // 얼굴이 날아갈 곳: 토벌이면 괴물(회복 친구는 체력바), 일상 퍼즐이면 그 캐릭터 목표 칩
-  const monC = B.mode === 'battle' ? centerOf($('#monster')) : null, teamC = B.mode === 'battle' ? centerOf($('#teamHp')) : null;
+  const monC = B.mode === 'battle' ? centerOf(monImg()) : null, teamC = B.mode === 'battle' ? centerOf($('#teamHp')) : null;
   const targetOf = tile => {
     if (tile.type < 0) return null;
     const ch = teamCh(tile.type);
@@ -1817,10 +1905,20 @@ function fxImage(name, x, y, size, dur) {
 }
 
 function hitMonster(dmg, ch, crit, k, eff = 1) {
-  B.dmgBy[ch.id] = (B.dmgBy[ch.id] || 0) + Math.min(dmg, B.monHp);
-  B.monHp = Math.max(0, B.monHp - dmg);
+  const mon = tgt();
+  if (!mon) return;
+  B.lastMon = mon;
+  const dealt = Math.min(dmg, mon.hp);
+  B.dmgBy[ch.id] = (B.dmgBy[ch.id] || 0) + dealt;
+  mon.hp = Math.max(0, mon.hp - dmg);
   updateMon();
-  const m = $('#monster');
+  // 여럿 중 하나가 쓰러지면: 쓰러지는 연출 + 남은 데미지는 다음 괴물에게 (속성 상성은 다시 따짐)
+  if (mon.hp <= 0 && aliveMons().length) {
+    killMon(mon);
+    const nx = tgt(), rest = dmg - dealt;
+    if (nx && rest > 0) setTimeout(() => { const e2 = attrMult(ch.attr, nx.w.a); hitMonster(Math.max(1, Math.round((rest / eff) * e2)), ch, crit, k + 1, e2); }, 160);
+  }
+  const m = mon.el.img;
   m.animate([
     { transform: 'translateX(0) scale(1)', filter: 'brightness(2.2)' },
     { transform: 'translateX(-10px) scale(.9,1.08)', filter: 'brightness(1.6)', offset: 0.3 },
@@ -1874,21 +1972,22 @@ async function endTurn() {
   await Promise.all(B.pending);
   B.pending = [];
   if (B.mode === 'life') { await Life.endTurn(); return; }
-  if (B.monHp <= 0) { await monsterDefeated(); return; }
+  if (!aliveMons().length) { await monsterDefeated(); return; }
   if (B.fever) { B.fever--; updateFever(); }
   if (B.rally) B.rally--;
-  B.cd--;
+  aliveMons().forEach(m => m.cd--);
   updateCd();
-  if (B.cd <= 0) {
-    await monsterAttack();
-    B.cd = curWave().cd;
+  for (const m of aliveMons()) {
+    if (m.cd > 0) continue;
+    await monsterAttack(m);
+    m.cd = m.w.cd;
     updateCd();
-    if (B.teamHp <= 0) await lose();
+    if (B.teamHp <= 0) { await lose(); return; }
   }
 }
 
-async function monsterAttack() {
-  const m = $('#monster');
+async function monsterAttack(mon = tgt()) {
+  const m = mon.el.img;
   Sound.play('enemy', 0.85, 0.5);
   m.animate([
     { transform: 'scale(1)' },
@@ -1900,19 +1999,18 @@ async function monsterAttack() {
   Sound.play('enemy', 1, 1);
   flash();
   shake(12, 380);
-  const atk = curWave().atk;
+  const atk = mon.w.atk;
   B.teamHp = Math.max(0, B.teamHp - atk);
   updateTeam();
   const c = centerOf($('#teamHp'));
   floatNum(c.x, c.y - 10, `-${atk}`, '#e2543f', 'crit');
   $('#party').animate([{ transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'none' }], { duration: 240 });
   await sleep(450);
-  if (curWave().m === 'mimic') await throwBoxes(curWave().boss ? 3 : 2);
+  if (mon.w.m === 'mimic') await throwBoxes(mon.w.boss ? 3 : 2, centerOf(m));
 }
 
 // 미믹은 공격하면서 판에 상자를 던짐. 옆에서 터뜨리면 깨짐
-async function throwBoxes(n) {
-  const from = centerOf($('#monster'));
+async function throwBoxes(n, from = centerOf(monImg())) {
   const drops = Board.dropBlocks(B.grid, n);
   await Promise.all(drops.map(({ r, c, old, tile }, i) => {
     const to = tileCenter(r, c);
@@ -1940,7 +2038,7 @@ async function throwBoxes(n) {
 }
 
 async function monsterDefeated() {
-  const m = $('#monster');
+  const last = B.lastMon || B.mons?.[0], m = last ? last.el.img : $('#monster');
   Sound.play('defeat', 1);
   const c = centerOf(m);
   Juice.stop(120);
@@ -1958,7 +2056,7 @@ async function monsterDefeated() {
   await out.finished;
   m.style.opacity = 0;
   out.cancel();
-  if (curWave().boss) Achieve.add('boss');
+  if (last?.w.boss) Achieve.add('boss');
   B.wave++;
   if (B.wave < STAGES[B.stage].waves.length) {
     await banner(`WAVE ${B.wave + 1}`, 400);
@@ -2010,7 +2108,7 @@ async function lose() {
   await banner('후퇴…', 600);
   modal({
     title: '실패…', stars: 0, img: 'assets/img/art/scene_scared.jpg', photo: true, text: '치이카와: (훌쩍…) 상성 좋은 친구랑 다시 가 보자',
-    rows: [['괴물 체력', Math.ceil((B.monHp / B.monMax) * 100) + '%'], ['웨이브', `${B.wave + 1} / ${STAGES[B.stage].waves.length}`], [`<img class="row-ic" src="${ITEM('heart')}">`, '-1']],
+    rows: [['괴물 체력', Math.ceil((aliveMons().reduce((t, m) => t + m.hp, 0) / Math.max(1, (B.mons || []).reduce((t, m) => t + m.max, 0))) * 100) + '%'], ['웨이브', `${B.wave + 1} / ${STAGES[B.stage].waves.length}`], [`<img class="row-ic" src="${ITEM('heart')}">`, '-1']],
     btn2: '🏠 지도로', on2: () => { Hearts.lose(); go(openMap); },
     btn1: '다시 하기', on1: () => { Hearts.lose(); Hearts.need(() => go(() => startStage(B.stage)), () => go(openMap)); },
   });
@@ -2507,12 +2605,10 @@ async function useSkill(k) {
     await rakkoSlash(ch, r0, c0);
     if (!life) {
       const eff = attrMult(ch.attr, curWave().a);
-      const m = centerOf($('#monster'));
+      const m = centerOf(monImg());
       Juice.zoom(m.x, m.y, 1.1, 500);
       hitMonster(Math.round(ch.dmg * 10 * eff * Meta.mult(ch.id)), ch, true, 0, eff);
-      B.cd += 2;
-      updateCd();
-      $('#countdown').animate([{ transform: 'scale(1)' }, { transform: 'scale(1.3)' }, { transform: 'scale(1)' }], { duration: 300 });
+      delayMons(2);
     }
   } else if (id === 'bighit' && life) {
     // 일상: 제일 귀찮은 칸에 폭탄을 꽂음
@@ -2523,7 +2619,7 @@ async function useSkill(k) {
     await sleep(200);
   } else if (id === 'bighit') {
     const eff = attrMult(ch.attr, curWave().a);
-    const m = (finAt = centerOf($('#monster')));
+    const m = (finAt = centerOf(monImg()));
     await actor(ch, [m], { hop: 2.2, dur: 320, size: 1.8 }); // 우사기: 괴물에게 높이 뛰어올라 쾅
     fxImage('boom', m.x, m.y, B.S * 4, 500);
     flash('#fff6a8', 0.5);
@@ -2592,12 +2688,9 @@ async function useSkill(k) {
     cs.forEach((c, j) => { for (let r = 0; r < ROWS; r++) cells.push([j ? ROWS - 1 - r : r, c]); });
     await actor(ch, linePath(cells), { dur: 55, hop: 0.15, onHit: i => actorHit(...cells[i], ch.ring, i % 7) });
   } else if (id === 'stall') {
-    const cd = (finAt = centerOf($('#countdown')));
+    const cd = (finAt = centerOf(cdEl()));
     await actor(ch, [cd, { x: cd.x - B.S * 0.7, y: cd.y }, { x: cd.x + B.S * 0.7, y: cd.y }, cd], { hop: 0.7, dur: 180, size: 1.2 }); // 고블린: 옴 빰 빰 춤
-    B.cd += 3;
-    updateCd();
-    const p = centerOf($('#countdown'));
-    $('#countdown').animate([{ transform: 'scale(1)' }, { transform: 'scale(1.3)' }, { transform: 'scale(1)' }], { duration: 300 });
+    delayMons(3);
     const eff = attrMult(ch.attr, curWave().a);
     hitMonster(Math.round(ch.dmg * 4 * eff), ch, false, 0, eff);
     await sleep(400);
@@ -2679,7 +2772,7 @@ async function useSkill(k) {
       await sleep(200);
     } else if (sk.fx === 'bighit') {
       const eff = attrMult(ch.attr, curWave().a);
-      const m = (finAt = centerOf($('#monster')));
+      const m = (finAt = centerOf(monImg()));
       await actor(ch, [m], { hop: 2.2, dur: 320, size: 1.8 });
       fxImage('boom', m.x, m.y, B.S * 4, 500);
       flash('#fff6a8', 0.5);
@@ -2687,11 +2780,9 @@ async function useSkill(k) {
       hitMonster(Math.round(ch.dmg * sk.mult * eff * Meta.mult(ch.id)), ch, true, 0, eff);
       await sleep(500);
     } else if (sk.fx === 'delay') {
-      const cd = (finAt = centerOf($('#countdown')));
+      const cd = (finAt = centerOf(cdEl()));
       await actor(ch, [cd, { x: cd.x - B.S * 0.7, y: cd.y }, { x: cd.x + B.S * 0.7, y: cd.y }, cd], { hop: 0.7, dur: 180, size: 1.2 });
-      B.cd += sk.n;
-      updateCd();
-      $('#countdown').animate([{ transform: 'scale(1)' }, { transform: 'scale(1.3)' }, { transform: 'scale(1)' }], { duration: 300 });
+      delayMons(sk.n);
       if (sk.hit) { const eff = attrMult(ch.attr, curWave().a); hitMonster(Math.round(ch.dmg * sk.hit * eff), ch, false, 0, eff); }
       await sleep(400);
     } else if (sk.fx === 'gauge' || sk.fx === 'half' || sk.fx === 'rally' || sk.fx === 'heal') {
