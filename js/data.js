@@ -149,6 +149,9 @@ const MONSTERS = {
   // 원작에 나온 괴물 더 (Chiikawa Wiki 그림에서 배경을 지움)
   anoko:     { name: '아노코',   img: 'assets/img/monsters/anoko.png' },
   sphinx:    { name: '스핑크스', img: 'assets/img/monsters/sphinx.png' },
+  // 인어섬 (『映画ちいかわ 人魚の島のひみつ』 공식 사이트 캐릭터 그림)
+  siren:     { name: '세이렌',   img: 'assets/img/monsters/siren.png' },
+  mermaid:   { name: '인어',     img: 'assets/img/monsters/mermaid.png' },
 };
 
 // a: 속성, m: 몬스터 종류, hp, atk: 공격력, cd: 몇 턴마다 공격, hue: 색 변형, title: 이름 앞말, boss

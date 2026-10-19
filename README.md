@@ -106,7 +106,7 @@ python -m http.server 8770
 
 ## 저작권과 출처
 
-- 캐릭터, 괴물 이미지: © nagano / chiikawa committee. 퍼즐 얼굴은 인터넷에서 모은 이미지, 전신·포즈 일러스트와 괴물은 [Chiikawa Wiki (Fandom)](https://chiikawa.fandom.com/)에서, 옷 그림은 Chiikawa Wiki의 애니메이션 장면·공식 일러스트에서 배경을 지워서, 춤추는 치이카와 GIF는 작가 nagano의 [GIPHY](https://giphy.com/ngntrtr)에서 가져왔습니다. 이미지의 권리는 원저작자에게 있으며, 이 저장소의 라이선스 대상이 아닙니다.
+- 캐릭터, 괴물 이미지: © nagano / chiikawa committee. 퍼즐 얼굴은 인터넷에서 모은 이미지, 전신·포즈 일러스트와 괴물은 [Chiikawa Wiki (Fandom)](https://chiikawa.fandom.com/)에서(인어섬의 세이렌·인어는 [『映画ちいかわ 人魚の島のひみつ』 공식 사이트](https://chiikawa.toho-movie.jp/) 캐릭터 그림에서), 옷 그림은 Chiikawa Wiki의 애니메이션 장면·공식 일러스트에서 배경을 지워서, 춤추는 치이카와 GIF는 작가 nagano의 [GIPHY](https://giphy.com/ngntrtr)에서 가져왔습니다. 이미지의 권리는 원저작자에게 있으며, 이 저장소의 라이선스 대상이 아닙니다.
 - 도전 화면 그림(인어섬, 제초 검정, 랏코), 타이틀 풀밭 그림: 원작 애니메이션·게임 이미지 (© nagano / chiikawa committee, 「映画ちいかわ」製作委員会, Applibot)
 - 배경, 터짐 조각, 체력바·점수바 틀과 스킬 고리: [VARCO](https://3d.varco.ai)로 생성
 - 점수 숫자(0~9)·'+'·'초'·'보너스 타임!'·'피버 타임!'·'선물!' 그림 글자: 콤보 숫자 그림과 같은 느낌(색은 저마다 다르게)으로 [Jua](https://fonts.google.com/specimen/Jua) 글꼴(SIL Open Font License)을 써서 코드로 그림
