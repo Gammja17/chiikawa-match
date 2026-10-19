@@ -64,7 +64,7 @@ const PAT_FOR = {
   lock: ['center', 'ring', 'checker', 'cols', 'middle', 'checkup'],
 };
 // 열린 칸 중 이만큼 (여러 장애물이 함께면 줄임)
-const DENS = { weed: 0.22, box: 0.17, bubble: 0.075, lock: 0.17 };
+const DENS = { weed: 0.22, box: 0.17, bubble: 0.09, lock: 0.17 };
 
 function parseGoals(str) {
   const out = { kinds: {}, goals: [], chars: [] };
@@ -86,7 +86,7 @@ function parseGoals(str) {
 }
 
 // 판 그림 만들기. knob: 장애물 양 배율
-function buildMap(sp, R, C, shape, knob, seed) {
+function buildMap(sp, R, C, shape, knob, seed, boost = 0) {
   const rnd = rng(seed);
   const g = parseGoals(sp.goals);
   const open = Array.from({ length: R }, (_, r) => Array.from({ length: C }, (_, c) => SHAPES[shape](r, c, R, C)));
@@ -118,7 +118,7 @@ function buildMap(sp, R, C, shape, knob, seed) {
     const cells = [];
     for (let r = 1; r < R; r++) for (let c = 0; c <= Math.floor(mc); c++) if (free(r, c) && free(r, C - 1 - c)) cells.push([r, c, PAT[pat](r, c, R, C) + rnd() * 1.5]);
     cells.sort((a, b) => b[2] - a[2]);
-    const big = g.kinds[k].big;
+    const big = Math.max(g.kinds[k].big, k === 'weed' || k === 'box' ? boost : 0);
     const ch = { weed: ['w', 'W'], box: ['b', 'g'], bubble: ['o', 'o'], lock: ['l', 'l'] }[k];
     let n = 0;
     for (const [r, c] of cells) {
@@ -150,7 +150,7 @@ function tuneLife(job, sim) {
   const sizes = sp.size ? [sp.size] : nObs + g.goals.length <= 1 ? [[7, 7], [7, 7], [8, 8]] : nObs + g.goals.length <= 3 ? [[7, 7], [8, 8], [8, 8], [9, 9], [8, 9]] : [[8, 8], [9, 9], [9, 9], [8, 9]];
   // 얼굴 6가지(맞추기 어려움)는 뒤로 갈수록 자주: HARD는 12장부터, 보통 판은 20장부터
   const six = sp.lv === 'hard' ? lerp(0.2, 0.8, (ch - 12) / 14) * (ch >= 12) : lerp(0, 0.45, (ch - 20) / 10) * (ch >= 20);
-  const types = sp.types || (rnd() < six ? 6 : 5);
+  let types = sp.types || (rnd() < six ? 6 : 5), boost = 0;
   const exam = !!sp.time;
   const ingN = hasIng ? Math.round(lerp(3, 5, (ch - 7) / 23)) : 0;
   const charN = g.chars.length ? Math.round((g.chars.length === 1 ? lerp(26, 36, (ch - 7) / 23) : g.chars.length === 2 ? 18 : g.chars.length === 3 ? 14 : 11)) : 0;
@@ -160,7 +160,7 @@ function tuneLife(job, sim) {
   let knob = 1, seed = hash(sp.name + '#'), last = null;
   let [R, C] = pick(rnd, sizes), shape = sp.shape || pick(rnd, SHAPE_FOR[hasIng ? 'ing' : hasSyrup ? 'syrup' : 'any']);
   const make = () => {
-    const map = buildMap(sp, R, C, shape, knob, seed);
+    const map = buildMap(sp, R, C, shape, knob, seed, boost);
     const goals = g.goals.map(x => ({ ...x, ...(x.k === 'char' ? { n: Math.max(6, Math.round(charN * knob)) } : x.k === 'score' ? { n: round(scoreN * Math.sqrt(knob), 500) } : {}) }));
     const st = { name: sp.name, ...(sp.done ? { done: sp.done } : {}), icon: sp.icon, types, moves: 99, host: sp.host, ...(exam ? { exam: true } : {}), intro: sp.intro, goals, stars: [0, 0, 0],
       ...(hasIng ? { ing: { n: Math.max(2, Math.round(ingN * Math.sqrt(knob))), max: 2, kinds: sp.ing || ['naruto', 'egg'] } } : {}), map };
@@ -174,20 +174,32 @@ function tuneLife(job, sim) {
     return { bad, m: need[Math.min(runs - 1, Math.ceil(tgt * runs) - 1)] };
   };
   // 장애물 양(knob)을 이분 탐색: 깨는 데 든 수가 [minM, maxM] 안에 들 때까지
-  let st, m, lo = 0, hi = Infinity, best = null;
+  let st, m;
   const off = x => (x < minM ? minM - x : x > maxM ? x - maxM : 0);
-  for (let it = 0; it < 10; it++) {
-    st = make();
-    const r = measure(st, 90);
-    // 안 채워지는 칸이 생김: 장애물을 늘리다 그랬으면 줄이고, 처음부터면 모양을 바꿈
-    if (r.bad) { if (lo) { hi = knob; knob = Math.sqrt(lo * hi); } else { shape = pick(rnd, ['full', 'corner1', 'corner2', 'octagon', 'round']); seed++; } continue; }
-    m = r.m;
-    if (!best || off(m) < off(best.m)) best = { knob, m, shape, seed };
-    if (!off(m)) break;
-    if (m > maxM) hi = knob; else lo = knob;
-    knob = isFinite(hi) && lo ? Math.sqrt(lo * hi) : m > maxM ? knob * (isFinite(m) ? Math.max(0.55, Math.pow(maxM / m, 1.2)) : 0.55) : knob * Math.min(1.7, Math.pow(minM / m, 1.1));
-  }
-  ({ knob, shape, seed } = best || { knob, shape, seed });
+  const search = () => {
+    let lo = 0, hi = Infinity, best = null;
+    knob = 1;
+    for (let it = 0; it < 10; it++) {
+      st = make();
+      const r = measure(st, 90);
+      // 안 채워지는 칸이 생김: 장애물을 늘리다 그랬으면 줄이고, 처음부터면 모양을 바꿈
+      if (r.bad) { if (lo) { hi = knob; knob = Math.sqrt(lo * hi); } else { shape = pick(rnd, ['full', 'corner1', 'corner2', 'octagon', 'round']); seed++; } continue; }
+      m = r.m;
+      if (!best || off(m) < off(best.m)) best = { knob, m, shape, seed, types, boost };
+      if (!off(m)) break;
+      if (m > maxM) hi = knob; else lo = knob;
+      knob = isFinite(hi) && lo ? Math.sqrt(lo * hi) : m > maxM ? knob * (isFinite(m) ? Math.max(0.55, Math.pow(maxM / m, 1.2)) : 0.55) : knob * Math.min(1.7, Math.pow(minM / m, 1.1));
+    }
+    return best || { knob, m: Infinity, shape, seed, types, boost };
+  };
+  let best = search();
+  const better = b => { if (off(b.m) < off(best.m)) best = b; };
+  // 장애물을 더 못 늘리는데도 너무 짧으면: 얼굴 6가지로, 그래도 짧으면 큰 잡초·선물 상자(두 번)로
+  if (best.m < minM && types < 6 && !sp.types) { types = 6; better(search()); }
+  if (best.m < minM && (g.kinds.weed || g.kinds.box)) { types = best.types; boost = 1; better(search()); }
+  // 너무 길면 얼굴 5가지로
+  if (best.m > maxM && types === 6 && !sp.types) { types = 5; boost = 0; better(search()); }
+  ({ knob, shape, seed, types, boost } = best);
   st = make();
   m = measure(st, 220).m;
   if (!isFinite(m)) m = 60;
@@ -207,7 +219,7 @@ function tuneLife(job, sim) {
   st.stars = [s1, s2, s3];
   if (exam) { delete st.moves; st.time = Math.max(40, round(m * 2.6, 5)); st = reorder(st); }
   else st.moves = m;
-  return { st, info: { m, knob: +knob.toFixed(2), tgt: +tgt.toFixed(2), shape, R, C } };
+  return { st, info: { m, knob: +knob.toFixed(2), tgt: +tgt.toFixed(2), types, boost, shape, R, C } };
 }
 // time을 moves 자리에 (보기 좋게)
 function reorder(st) {

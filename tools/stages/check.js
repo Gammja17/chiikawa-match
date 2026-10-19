@@ -14,6 +14,7 @@ G.LIFE.forEach((st, i) => {
   const R = st.map.length, C = st.map[0].length;
   if (R < 5 || R > 9 || C < 5 || C > 9) err(w, `판 크기 ${R}x${C}`);
   if (st.map.some(r => r.length !== C)) err(w, '줄 길이가 다름');
+  if (st.goals.length > 3) err(w, `목표 ${st.goals.length}개 (화면에 3개까지)`);
   const txt = st.map.join('');
   const has = ch => txt.includes(ch);
   for (const g of st.goals) {
