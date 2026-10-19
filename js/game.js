@@ -3012,7 +3012,7 @@ async function feverShow() {
 // 토벌을 새로 깰 때마다 한 그릇 (곱빼기: 다음 토벌 체력 150 / 진한 국물: 스킬 게이지 반부터)
 // 라멘 갑옷 씨: 가게 규칙에 엄격한 사장. 아이들은 이름 대신 생김새로 부름
 const MASTER_LINES = ['왔군. 주문은 순서대로.', '면 굵기, 기름 양, 국물 진하기. 정하고 말해라.', '가게 규칙은 지켜라.', '토벌 하나 끝냈으면 한 그릇 먹고 가라.', '국물은 새벽부터 끓인다.', '하얀 녀석, 오늘도 왔군.', '시사 녀석… 요즘 손이 빨라졌다.'];
-const SHISA_LINES = ['어서 와사~!', '여기서 수행 중이사! 스승님 라멘은 최고사~', '주문 들어가사~!', '언젠가 토벌에도 따라가 보고 싶사…!'];
+const SHISA_LINES = ['어서 오세요~!', '여기서 수행 중이에요! 사부님 라멘은 맛있는 시사~!', '주문 들어갑니다~!', '언젠가 토벌에도 따라가 보고 싶어요…!'];
 function shopSay(el, text) {
   const say = $('#shopSay'), r = el.getBoundingClientRect(), sc = $('#shopScene').getBoundingClientRect();
   say.textContent = text;
@@ -3073,7 +3073,7 @@ const RAMEN_MENU = [
   { id: 'egg', name: '반숙 달걀', icon: 'egg', desc: '퍼즐: 이동 +3 (시간 스테이지 +10초)', mode: 'l', price: 70, at: 20, say: '반숙이다. 터뜨리지 말고 먹어라.' },
   { id: 'onigiri', name: '주먹밥 세트', icon: 'onigiri', desc: '퍼즐: 폭탄·종이비행기 깔고 시작', mode: 'l', price: 90, at: 30, say: '주먹밥도 같이 먹어라. 든든할 거다.' },
   { id: 'okinawa', name: '사타안다기 세트', icon: 'donut', desc: '토벌: 체력 150 + 게이지 반', mode: 'b', price: 120, at: 40, say: '시사가 튀긴 거다. 맛있게 먹어라.' },
-  { id: 'secret', name: '스승님 비밀 메뉴', icon: 'dango', desc: '퍼즐: 경단 깔고 + 이동 +2', mode: 'l', price: 150, at: 50, say: '…아무한테도 말하지 마라.' },
+  { id: 'secret', name: '사부님 비밀 메뉴', icon: 'dango', desc: '퍼즐: 경단 깔고 + 이동 +2', mode: 'l', price: 150, at: 50, say: '…아무한테도 말하지 마라.' },
 ];
 const ramenOf = id => RAMEN_MENU.find(m => m.id === id);
 const ramenFree = () => Save.data.ramen !== false;

@@ -132,7 +132,7 @@ const Tutor = {
     Tutor.guide = [at, nb];
     Tutor.guideItem = at;
     Tutor.showHand([at, nb], true);
-    Spot.show([B.grid[at[0]][at[1]].el, B.grid[nb[0]][nb[1]].el], LESSON[k], { tap: 'external', pad: 4, who: k === 'rainbow' ? 'kurimanju' : 'hachiware' });
+    Spot.show([B.grid[at[0]][at[1]].el, B.grid[nb[0]][nb[1]].el], LESSON[k], { tap: 'external', pad: 4 });
     return true;
   },
   // 아이템 배우기 중에는 그 아이템을 톡톡 눌러 쓰는 것도 허락

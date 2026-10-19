@@ -294,22 +294,22 @@ window.__errs = [];
 addEventListener('error', e => window.__errs.push(['error', e.message, (e.filename || '') + ':' + e.lineno + ':' + e.colno + '\n' + (e.error?.stack || '')]));
 addEventListener('unhandledrejection', e => window.__errs.push(['promise', String(e.reason?.message || e.reason), e.reason?.stack || '']));
 </script>
-<script src="js/data.js?v=49"></script>
+<script src="js/data.js?v=50"></script>
 <script src="js/audio.js?v=31"></script>
 <script src="js/board.js?v=31"></script>
 <script src="js/prefs.js?v=3"></script>
-<script src="js/game.js?v=89"></script>
+<script src="js/game.js?v=91"></script>
 <script src="js/debuff.js?v=2"></script>
-<script src="js/life.js?v=57"></script>
-<script src="js/chapters.js?v=2"></script>
-<script src="js/tutor.js?v=46"></script>
-<script src="js/meta.js?v=53"></script>
+<script src="js/life.js?v=58"></script>
+<script src="js/chapters.js?v=3"></script>
+<script src="js/tutor.js?v=47"></script>
+<script src="js/meta.js?v=54"></script>
 <script src="js/firebase-config.js?v=28"></script>
 <script src="js/net.js?v=37"></script>
 <script src="js/daily.js?v=7"></script>
 <script src="js/achieve.js?v=3"></script>
 <script src="js/modes.js?v=4"></script>
-<script src="js/aff.js?v=3"></script>
+<script src="js/aff.js?v=4"></script>
 <script src="js/guard.js?v=2"></script>
 <script src="js/survey.js?v=4"></script>
 <script>if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(() => {});</script>

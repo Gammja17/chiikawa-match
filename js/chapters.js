@@ -19,16 +19,16 @@ addChapter('7장 라멘 가게 대작전', [
     goals: [{ k: 'box' }], stars: [5500, 6500, 8500],
     map: ['........', '........', '#......#', '##....##', '##....##', '#......#', 'b......b', 'bbbbbbbb'],
     story: [
-      ['shisa', '스승님이 오늘은 가게를 나한테 맡긴대사…!'],
+      ['shisa', '사부님이 오늘은 가게를 저한테 맡기신대요…!'],
       ['hachiware', '진짜!? 대단하다는 거야!?'],
-      ['shisa', '근데 혼자서는 무리사… 도와줄 수 있사?'],
+      ['shisa', '근데 혼자서는 무리예요… 도와주실 수 있어요?'],
       ['chiikawa', '…!! (끄덕끄덕)'],
     ] },
   { name: '면 반죽', done: '반죽<br>완성!', icon: 'target', types: 5, moves: 14, host: 'hachiware', intro: '하치와레를 모아 반죽!',
     goals: [{ k: 'char', id: 'hachiware', n: 26 }], stars: [6500, 8500, 11000],
     map: ['##....##', '#......#', '........', '........', '........', '........', '........', '........'],
     story: [
-      ['shisa', '면은 힘껏 치대야 쫄깃해지사!'],
+      ['shisa', '면은 힘껏 치대야 쫄깃해져요!'],
       ['hachiware', '내가 해 볼게! 영차, 영차~'],
     ] },
   { b: 1, name: '가게 앞 키메라',
@@ -37,7 +37,7 @@ addChapter('7장 라멘 가게 대작전', [
     story: [
       ['usagi', '하아?!'],
       ['hachiware', '가게 앞에 키메라가 줄 서 있어! 손님이 못 들어오잖아~'],
-      ['rakko', '…장사 방해는 용서 못 한다.'],
+      ['rakko', '…장사 방해라니, 용서 못 해!'],
     ] },
   { name: '차슈 나르기', icon: 'ramen', types: 5, moves: 18, host: 'shisa', intro: '재료 내리고 잡초도!',
     goals: [{ k: 'ing' }, { k: 'weed' }], stars: [7500, 9000, 11500], ing: { n: 3, max: 2, kinds: ['naruto', 'egg'] },
@@ -49,7 +49,7 @@ addChapter('7장 라멘 가게 대작전', [
     waves: [{ a: 'brave', m: 'mimic', hp: 3280, atk: 65, cd: 3 },
       { a: 'light', m: 'mimic', hp: 3940, atk: 68, cd: 3, hue: 320, title: '붉은' }],
     story: [
-      ['shisa', '배달 가는 길에 상자가 길을 막았사…!'],
+      ['shisa', '배달 가는 길에 상자가 길을 막았어요…!'],
       ['hachiware', '저거 상자가 아니라 미믹이야!'],
     ] },
   { name: '설거지 거품', done: '설거지<br>끝!', icon: 'bubble', types: 5, moves: 13, host: 'chiikawa', intro: '그릇 거품 싹싹!',
@@ -59,7 +59,7 @@ addChapter('7장 라멘 가게 대작전', [
     goals: [{ k: 'ing' }, { k: 'box' }], stars: [9500, 12500, 15500], ing: { n: 3, max: 2, kinds: ['naruto', 'egg'] },
     map: ['#.i...i.#', 'g.......g', '.........', 'b.......b', 'g.......g', 'b.......b', '.........', '#bgbgbgb#'],
     story: [
-      ['shisa', '손님이 너무 많사~! 기쁘지만 정신없사!'],
+      ['shisa', '손님이 너무 많아요~! 기쁘지만 정신없어요!'],
       ['chiikawa', '…!! (그릇을 들고 뛴다)'],
     ] },
   { name: '시사의 첫 국물', done: '라멘<br>완성!', icon: 'pot', types: 5, moves: 27, host: 'shisa', intro: '시사 혼자 끓인 국물!',
@@ -70,14 +70,14 @@ addChapter('7장 라멘 가게 대작전', [
       { a: 'brave', m: 'dekatsuyo', hp: 5940, atk: 115, cd: 4, title: '배고픈', boss: true }],
     story: [
       ['hachiware', '라멘 냄새를 맡고… 데카츠요가 왔어!?'],
-      ['shisa', '가게는 내가 지킬 거사! 치바리요~!'],
+      ['shisa', '가게는 제가 지킬게요!'],
       ['usagi', '우라아아!!'],
     ],
     after: [
-      ['shisa', '해냈사…! 가게도 국물도 무사하사!'],
+      ['shisa', '해냈어요…! 가게도 국물도 무사해요!'],
       ['chiikawa', '(모구모구…) …!!'],
-      ['hachiware', '시사가 끓인 라멘, 진짜 맛있다~!'],
-      ['shisa', '스승님한테도 꼭 먹여 드릴 거사! 기쁘사~!'],
+      ['hachiware', '직접 끓인 라멘, 진짜 맛있다~!'],
+      ['shisa', '사부님께도 꼭 맛보여 드릴 거예요! 기쁜 시사~!'],
     ] },
 ]);
 
@@ -97,7 +97,7 @@ addChapter('8장 비 오는 날', [
     waves: [{ a: 'cry', m: 'chimera', hp: 5000, atk: 61, cd: 3, hue: 200, title: '비 맞은' }],
     story: [
       ['hachiware', '비 오는 날에도 토벌 의뢰가 왔어…'],
-      ['rakko', '비는 핑계가 안 된다. 간다.'],
+      ['rakko', '비 따위는 상관없어! 가자!'],
     ] },
   { name: '웅덩이 첨벙', icon: 'bubble', types: 5, moves: 13, host: 'usagi', intro: '웅덩이 거품과 잡초!',
     goals: [{ k: 'bubble' }, { k: 'weed' }], stars: [7500, 10000, 13500],
@@ -131,7 +131,7 @@ addChapter('8장 비 오는 날', [
     story: [
       ['hachiware', '천둥소리… 아니야, 저건 코끼리 울음소리야!'],
       ['usagi', '하아?!'],
-      ['rakko', '…기세를 타라!'],
+      ['rakko', '…지금이야! 밀어붙여!'],
     ],
     after: [
       ['chiikawa', '…!! (하늘을 가리킨다)'],
@@ -166,7 +166,7 @@ addChapter('9장 카니의 헌책방', [
     goals: [{ k: 'lock' }, { k: 'box' }], stars: [5000, 6500, 8000],
     map: ['........', '.l.ll.l.', '..bbbb..', '.l.ll.l.', '..b..b..', '..b..b..', '........', '........'],
     story: [
-      ['momonga', '카니가 그림책 찾는대. 내 단짝이니까 너네가 찾아.'],
+      ['momonga', '내 단짝이 그림책 찾는대. 그러니까 너네가 찾아.'],
       ['kani', '(수줍게 고개를 숙인다)'],
     ] },
   { b: 1, name: '밤의 책방 키메라', lv: 'challenge',
@@ -217,7 +217,7 @@ addChapter('10장 여름 축제', [
     waves: [{ a: 'brave', m: 'chimera', hp: 4090, atk: 60, cd: 3, hue: 30, title: '주황' },
       { a: 'odd', m: 'chimera', hp: 4090, atk: 56, cd: 3 }],
     story: [
-      ['rakko', '사람이 모이는 곳엔 놈들도 모인다.'],
+      ['rakko', '사람이 모이는 곳엔 놈들도 몰려들거든.'],
       ['hachiware', '축제 전에 얼른 끝내자!'],
     ] },
   { name: '노점 경단', done: '노점<br>개업!', icon: 'dango', types: 5, moves: 15, host: 'kurimanju', intro: '경단, 주먹밥 내리기!',
@@ -248,7 +248,7 @@ addChapter('10장 여름 축제', [
       { a: 'brave', m: 'dekatsuyo', hp: 6830, atk: 115, cd: 4, hue: 330, title: '불꽃', boss: true }],
     story: [
       ['hachiware', '불꽃놀이 하는 데 데카츠요가…!'],
-      ['rakko', '축제는 지킨다.'],
+      ['rakko', '축제는 우리가 지킬 거야!'],
       ['usagi', '우-라-!!'],
     ],
     after: [
@@ -292,7 +292,7 @@ addChapter('11장 바다로!', [
     goals: [{ k: 'ing' }, { k: 'bubble' }], stars: [8000, 11000, 13500], ing: { n: 3, max: 2, kinds: ['naruto', 'egg'] },
     map: ['..i...i..', '.........', '.........', '.........', '.o.....o.', '..o...o..', '..o...o..', '.........'],
     story: [
-      ['shisa', '바다까지 라멘 배달 왔사~!'],
+      ['shisa', '바다까지 라멘 배달 왔어요~!'],
       ['hachiware', '바다에서 먹는 라멘! 최고다~'],
     ] },
   { name: '밀물', icon: 'bubble', types: 6, moves: 23, host: 'chiikawa', intro: '물이 차오르기 전에!', lv: 'hard',
@@ -307,7 +307,7 @@ addChapter('11장 바다로!', [
     story: [
       ['usagi', '하아?!'],
       ['hachiware', '바위 위에서 노랫소리가 들려…!'],
-      ['rakko', '…발밑을 조심해라.'],
+      ['rakko', '…발밑 조심해!'],
     ],
     after: [
       ['hachiware', '(가리비를 귀에 대고) 파도 소리가 들려~'],
@@ -322,16 +322,16 @@ addChapter('12장 랏코 선생님의 수련', [
     goals: [{ k: 'char', id: 'rakko', n: 28 }], stars: [6500, 8000, 9500],
     map: ['##....##', '#......#', '........', '........', '........', '........', '#......#', '##....##'],
     story: [
-      ['rakko', '…오늘부터 특별 수련이다.'],
+      ['rakko', '…오늘부터 특별 수련이야!'],
       ['hachiware', '선생님한테 직접 배우는 거야!?'],
-      ['rakko', '해가 뜨기 전에 시작한다. 늦지 마라.'],
+      ['rakko', '해 뜨기 전에 시작할 거야. 늦지 마!'],
       ['chiikawa', '…!! (부들부들)'],
     ] },
   { b: 1, name: '수련 상대 키메라',
     waves: [{ a: 'odd', m: 'chimera', hp: 4930, atk: 63, cd: 3 },
       { a: 'odd', m: 'chimera', hp: 4930, atk: 61, cd: 3, title: '또' }],
     story: [
-      ['rakko', '실전만 한 수련은 없다. 간다.'],
+      ['rakko', '실전만 한 수련은 없지! 가자!'],
     ] },
   { name: '검 닦기', icon: 'ribbon', types: 6, moves: 27, host: 'rakko', intro: '검 끈을 풀자!',
     goals: [{ k: 'lock' }], stars: [8000, 10500, 13000],
@@ -342,14 +342,14 @@ addChapter('12장 랏코 선생님의 수련', [
   { b: 1, name: '바위 데카츠요', lv: 'challenge',
     waves: [{ a: 'brave', m: 'dekatsuyo', hp: 6580, atk: 64, cd: 3, hue: 30, title: '바위' }],
     story: [
-      ['rakko', '…저 바위 같은 녀석을 쓰러뜨리면 다음 단계다.'],
+      ['rakko', '…저 바위 같은 녀석을 쓰러뜨리면 다음 단계야!'],
       ['usagi', '우라!'],
     ] },
   { name: '단 과자 쉬는 시간', icon: 'dango', types: 6, moves: 23, host: 'rakko', intro: '과자를 내리자!',
     goals: [{ k: 'ing' }], stars: [5500, 6500, 7500], ing: { n: 3, max: 2, kinds: ['dango', 'donut'] },
     map: ['.i...i.', '.......', '.......', '.......', '#.....#', '##...##', '###.###'],
     story: [
-      ['rakko', '…쉬는 것도 수련이다.'],
+      ['rakko', '…쉬는 것도 수련이야.'],
       ['rakko', '(경단을 한 입) (좋아… 맛있다…! 쫄깃하고 달콤해…!)'],
       ['hachiware', '선생님 표정이 풀렸다…!'],
     ] },
@@ -367,15 +367,15 @@ addChapter('12장 랏코 선생님의 수련', [
     waves: [{ a: 'cry', m: 'chimera', hp: 2650, atk: 60, cd: 3, hue: 200, title: '푸른' },
       { a: 'dark', m: 'chimera', hp: 7270, atk: 90, cd: 3, hue: 250, title: '진·', boss: true }],
     story: [
-      ['rakko', '…마지막 시험이다. 저 녀석은 내가 예전에 놓친 놈이다.'],
+      ['rakko', '…마지막 시험이야. 저 녀석은… 내가 예전에 놓친 놈이거든.'],
       ['hachiware', '선생님이 놓친 괴물…!?'],
-      ['rakko', '이번엔 너희가 앞장서라. 기세를 타라!'],
+      ['rakko', '이번엔 너희가 앞장서! 용기를 내!'],
     ],
     after: [
-      ['rakko', '……강해졌구나.'],
+      ['rakko', '……좋아!! 강해졌어!'],
       ['chiikawa', '…!!! (울먹울먹)'],
       ['hachiware', '선생님이 칭찬해 줬다~!!'],
-      ['rakko', '(단 과자를 나눠 준다) …수련은 매일 하는 거다.'],
+      ['rakko', '(단 과자를 나눠 준다) …수련은 매일 하는 거야. 내일도 하자!'],
     ] },
 ]);
 
@@ -437,7 +437,7 @@ addChapter('13장 모몽가 소동', [
       ['momonga', '…케이크 찾아 줬으니까 특별히 칭찬하게 해 줄게.'],
       ['chiikawa', '…(짝짝짝)'],
       ['momonga', '(케이크를 한 조각씩 나눠 준다) …흥, 오늘만이야.'],
-      ['hachiware', '생일 축하해, 모몽가~!'],
+      ['hachiware', '생일 축하해~!'],
     ] },
 ]);
 
@@ -448,7 +448,7 @@ addChapter('14장 쿠리만쥬의 하루', [
     story: [
       ['kurimanju', '(목욕탕 문을 연다) ……'],
       ['kurimanju', '(냉탕에 몸을 담근다) ……하아~~'],
-      ['hachiware', '쿠리만쥬의 하루는 목욕으로 시작하는구나~'],
+      ['hachiware', '하루를 목욕으로 시작하는구나~'],
     ] },
   { name: '안주 사러', icon: 'dango', types: 5, moves: 17, host: 'kurimanju', intro: '안주를 내리자!',
     goals: [{ k: 'ing' }], stars: [6500, 8000, 10000], ing: { n: 4, max: 2, kinds: ['onigiri', 'dango'] },
@@ -489,7 +489,7 @@ addChapter('14장 쿠리만쥬의 하루', [
     story: [
       ['kurimanju', '(밤길에서 발을 멈춘다) ……!!'],
       ['hachiware', '집에 가는 길을 막고 있어!'],
-      ['rakko', '…간다.'],
+      ['rakko', '…가자!'],
     ],
     after: [
       ['kurimanju', '(안주를 슥 내민다)'],
@@ -659,7 +659,7 @@ addChapter('17장 할로윈 밤', [
       { a: 'dark', m: 'dekatsuyo', hp: 8460, atk: 115, cd: 4, hue: 270, title: '할로윈', boss: true }],
     story: [
       ['hachiware', '저 큰 그림자… 분장이 아니야!'],
-      ['rakko', '…진짜다. 간다.'],
+      ['rakko', '…진짜야. 가자!'],
     ],
     after: [
       ['hachiware', '과자 다 지켰다~!'],
@@ -764,7 +764,7 @@ addChapter('19장 가을 소풍', [
     story: [
       ['hachiware', '산이 움직인다…!?'],
       ['goblin', '(멀리서) 옴 빰… 빰…'],
-      ['rakko', '오데다. 기세를 타라!'],
+      ['rakko', '오데야! 밀어붙여!'],
     ],
     after: [
       ['chiikawa', '(군고구마를 호호 분다) …!!'],
@@ -810,7 +810,7 @@ addChapter('20장 제초 검정 특급', [
     goals: [{ k: 'ing' }], stars: [6000, 7500, 9000], ing: { n: 4, max: 2, kinds: ['naruto', 'egg'] },
     map: ['##...##', '#i...i#', '.......', '.......', '.......', '#.....#', '##...##'],
     story: [
-      ['shisa', '시험 응원 라멘이사~! 치바리요~!'],
+      ['shisa', '시험 응원 라멘이에요~! 힘내세요!'],
       ['chiikawa', '(모구모구…) …!!'],
     ] },
   { name: '특급 3차 시험', done: '3차<br>합격!', icon: 'medal', types: 6, time: 75, host: 'usagi', exam: true, intro: '최종! 전부 다!', lv: 'hard',
@@ -831,7 +831,7 @@ addChapter('20장 제초 검정 특급', [
       ['hachiware', '합격자 명단에… 우리 이름이 있어!!'],
       ['chiikawa', '…!!! (울먹울먹)'],
       ['usagi', '야하~!!'],
-      ['shisa', '특급 합격 축하 곱빼기사~! 기쁘사!'],
+      ['shisa', '특급 합격 축하 곱빼기예요~! 기쁜 시사~!'],
       ['hachiware', '울어도 돼! 오늘은 기쁜 날이니까~'],
     ] },
 ]);
@@ -879,7 +879,7 @@ addChapter('21장 눈 내리는 날', [
     story: [
       ['hachiware', '눈보라 속에서 뭔가 다가와…!'],
       ['chiikawa', '…(덜덜덜)'],
-      ['rakko', '…추위도 수련이다. 간다.'],
+      ['rakko', '…추위도 수련이야! 가자!'],
     ],
     after: [
       ['hachiware', '눈보라가 그쳤다~'],
@@ -937,7 +937,7 @@ addChapter('22장 산타의 밤', [
     story: [
       ['hachiware', '데카츠요가… 산타 모자를 썼어!?'],
       ['usagi', '하아?!'],
-      ['rakko', '…선물은 지킨다.'],
+      ['rakko', '…선물은 꼭 지킬 거야!'],
     ],
     after: [
       ['hachiware', '메리 크리스마스~!'],
@@ -968,7 +968,7 @@ addChapter('23장 새해 첫 해돋이', [
     goals: [{ k: 'ing' }, { k: 'weed' }], stars: [8000, 10000, 13000], ing: { n: 4, max: 2, kinds: ['naruto', 'egg'] },
     map: ['.i...i.', '.......', '.......', '.......', '.wwwww.', '.......', 'wwwwwww'],
     story: [
-      ['shisa', '새해 복 많이 받으사~!'],
+      ['shisa', '새해 복 많이 받으세요~!'],
       ['hachiware', '새해 첫 라멘이다~! 올해도 잘 부탁해!'],
     ] },
   { b: 1, name: '복주머니 미믹', lv: 'challenge',
@@ -999,7 +999,7 @@ addChapter('23장 새해 첫 해돋이', [
       ['chiikawa', '(떠오르는 해를 본다) …와아…!'],
       ['hachiware', '새해 첫 해다~! 올해도 다 같이 어떻게든 되겠지!'],
       ['usagi', '야하~!!'],
-      ['rakko', '…올해도 수련이다.'],
+      ['rakko', '…올해도 같이 수련하자!'],
     ] },
 ]);
 
@@ -1009,7 +1009,7 @@ addChapter('24장 우사기의 보물 돌', [
     map: ['.........', '.b..b..b.', '....b....', '.b.....b.', '....#....', '....b....', '.b.....b.', '.b..b..b.', '.b..b..b.'],
     story: [
       ['usagi', '(반짝이는 돌을 높이 든다) 야하~!!'],
-      ['hachiware', '우사기가 보물 돌 지도를 주웠대!'],
+      ['hachiware', '보물 돌 지도를 주웠다는 거야!?'],
       ['usagi', '우라!'],
     ] },
   { name: '반짝이는 돌 줍기', icon: 'target', types: 6, moves: 27, host: 'usagi', intro: '우사기를 잔뜩!',
@@ -1103,7 +1103,7 @@ addChapter('25장 온천 마을', [
     story: [
       ['kurimanju', '(탕에서 벌떡 일어난다) ……!!'],
       ['hachiware', '코끼리가 온천물을 다 마시고 있어!'],
-      ['rakko', '…간다.'],
+      ['rakko', '…가자!'],
     ],
     after: [
       ['kurimanju', '(다시 탕에 몸을 담근다) ……하아~~ 으어어…'],
@@ -1212,7 +1212,7 @@ addChapter('27장 하치와레의 첫 공연', [
       { a: 'light', m: 'elephant', hp: 11280, atk: 115, cd: 4, boss: true }],
     story: [
       ['hachiware', '그때 그 코끼리야…! 또 무대를 노리고 있어!'],
-      ['rakko', '노래는 너희가, 무대는 우리가 지킨다.'],
+      ['rakko', '노래는 너희가 해! 무대는 우리가 지킬게!'],
       ['usagi', '우라!!'],
     ],
     after: [
@@ -1229,7 +1229,7 @@ addChapter('28장 키메라의 숲', [
     goals: [{ k: 'weed' }], stars: [9000, 11500, 14500],
     map: ['.........', '.........', '.........', '.........', 'W.W.#.W.W', '.W.W.W.W.', '..W...W..', '.W.....W.', 'W...W...W'],
     story: [
-      ['rakko', '…이 숲은 키메라 둥지다. 각오해라.'],
+      ['rakko', '…이 숲은 키메라 둥지야. 각오해!'],
       ['hachiware', '토벌 게시판에서 제일 어려운 의뢰래…'],
       ['chiikawa', '…(꿀꺽)'],
     ] },
@@ -1254,7 +1254,7 @@ addChapter('28장 키메라의 숲', [
     goals: [{ k: 'char', id: 'chiikawa', n: 35 }, { k: 'weed' }], stars: [9000, 11500, 13500],
     map: ['#......#', '........', '........', '.W....W.', '........', '.w.WW.w.', 'w.W..W.w', '#w.WW.w#'],
     story: [
-      ['hachiware', '치이카와가 안 보여!'],
+      ['hachiware', '어, 어디 갔어!? 안 보여!'],
       ['chiikawa', '(멀리서) …우에에엥…'],
       ['usagi', '(소리 나는 쪽으로 달려간다) 우라!'],
     ] },
@@ -1272,16 +1272,16 @@ addChapter('28장 키메라의 숲', [
       { a: 'brave', m: 'chimera', hp: 3730, atk: 89, cd: 3, hue: 100, title: '초록' },
       { a: 'dark', m: 'chimera', hp: 11190, atk: 115, cd: 3, hue: 280, title: '왕', boss: true }],
     story: [
-      ['rakko', '…저게 둥지의 주인이다.'],
+      ['rakko', '…저게 둥지의 주인이야!'],
       ['hachiware', '엄청 커…!'],
       ['chiikawa', '(토벌봉을 꼭 쥔다) …!!'],
-      ['rakko', '강해졌다. 너희라면 할 수 있다. 기세를 타라!'],
+      ['rakko', '너희 강해졌어! 할 수 있어! 용기를 내!'],
     ],
     after: [
       ['hachiware', '숲이 조용해졌어…'],
-      ['rakko', '……잘했다.'],
+      ['rakko', '……좋아!! 잘했어!'],
       ['chiikawa', '…!!! (울먹울먹)'],
-      ['shisa', '토벌 대성공 곱빼기사~! 다 같이 와사~!'],
+      ['shisa', '토벌 대성공 곱빼기예요~! 다 같이 오세요~!'],
     ] },
 ]);
 
@@ -1330,7 +1330,7 @@ addChapter('29장 거인의 성', [
     story: [
       ['hachiware', '오데 왕이다…!!'],
       ['goblin', '옴 빰… 빰… (고블린들이 뒤에서 응원한다)'],
-      ['rakko', '마지막이다. 기세를 타라!'],
+      ['rakko', '마지막이야! 밀어붙여!'],
       ['usagi', '우라아아!!'],
     ],
     after: [
@@ -1347,7 +1347,7 @@ addChapter('30장 토벌 대축제', [
     map: ['...##...', '...##...', '..b##b..', '..b..b..', '.b....b.', '.w.ww.w.', 'w.wbbw.w', '.w.ww.w.'],
     story: [
       ['hachiware', '토벌 게시판에 공고가 붙었어. 토벌 대축제래!'],
-      ['shisa', '지금까지 도와준 친구들 다 모인대사~!'],
+      ['shisa', '지금까지 도와준 친구들이 다 모인대요~!'],
       ['chiikawa', '…!! (폴짝폴짝)'],
     ] },
   { name: '모두 모여', icon: 'sparkle', types: 6, moves: 19, host: 'chiikawa', intro: '친구들 다 모여!',
@@ -1358,15 +1358,15 @@ addChapter('30장 토벌 대축제', [
       { a: 'brave', m: 'mimic', hp: 4770, atk: 71, cd: 3 },
       { a: 'cry', m: 'chimera', hp: 5250, atk: 73, cd: 3, hue: 200, title: '푸른' }],
     story: [
-      ['rakko', '…축제 냄새를 맡고 놈들이 왔다.'],
+      ['rakko', '…축제 냄새를 맡고 놈들이 왔어!'],
       ['usagi', '우라!'],
     ] },
   { name: '라멘 국물 축제', icon: 'pot', types: 5, moves: 27, host: 'shisa', intro: '국물 바르고 재료!',
     goals: [{ k: 'syrup' }, { k: 'ing' }], stars: [18500, 21500, 25500], ing: { n: 5, max: 2, kinds: ['naruto', 'egg'] },
     map: ['##i...i##', '#.......#', '.........', '.........', '....s....', '.........', '.........', '.........'],
     story: [
-      ['shisa', '스승님이랑 같이 끓인 국물이사! 축제 특별 라멘이사~!'],
-      ['hachiware', '스승님도 오셨구나~!'],
+      ['shisa', '사부님이랑 같이 끓인 국물이에요! 축제 특별 라멘이에요~!'],
+      ['hachiware', '라멘 갑옷 씨도 오셨구나~!'],
     ] },
   { name: '제초 검정 명인', done: '명인<br>합격!', icon: 'medal', types: 6, time: 95, host: 'usagi', exam: true, intro: '명인 시험!',
     goals: [{ k: 'weed' }, { k: 'bubble' }, { k: 'score', n: 13000 }], stars: [13000, 16000, 18500],
@@ -1394,7 +1394,7 @@ addChapter('30장 토벌 대축제', [
       { a: 'brave', m: 'ode', hp: 6500, atk: 115, cd: 4, boss: true }],
     story: [
       ['hachiware', '지금까지 만난 큰 녀석들이… 한꺼번에!?'],
-      ['rakko', '…너희는 강해졌다. 마지막 토벌이다.'],
+      ['rakko', '…너희 정말 강해졌어. 마지막 토벌, 같이 가자!'],
       ['chiikawa', '…!! (토벌봉을 높이 든다)'],
       ['usagi', '우-라-!!'],
     ],
@@ -1403,7 +1403,7 @@ addChapter('30장 토벌 대축제', [
       ['hachiware', '토벌 대축제 대성공이라는 거야!?'],
       ['usagi', '야하~!! 푸루야 우라우라!'],
       ['momonga', '내가 제일 열심히 했지? 칭찬해!'],
-      ['shisa', '다들 라멘 먹으러 와사~! 오늘은 전부 곱빼기사!'],
+      ['shisa', '다들 라멘 드시러 오세요~! 오늘은 전부 곱빼기예요!'],
       ['kurimanju', '(건배) ……하아~~ 으어어…'],
       ['hachiware', '앞으로도 같이 일하고, 같이 먹고, 같이 놀자. 어떻게든 될 거야~!'],
       ['chiikawa', '…!! (끄덕끄덕)'],
