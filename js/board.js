@@ -174,7 +174,7 @@ const Board = {
   },
 
   each(g, fn) {
-    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (g[r][c]) fn(g[r][c], r, c);
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (g[r]?.[c]) fn(g[r][c], r, c);
   },
 
   // 특수 구슬끼리, 또는 무지개를 바꿨을 때. 강제로 지울 칸 목록을 돌려줌 (없으면 null)

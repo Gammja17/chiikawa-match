@@ -723,6 +723,7 @@ async function startStage(i) {
   B.mode = 'battle';
   app.classList.remove('life-mode', 'tower-mode');
   Board.setSize(7, 7);
+  B.grid = null; // 앞 판(크기가 다를 수 있음)은 버림
   Board.floor = null;
   Board.syrup = null;
   Board.mask = null;

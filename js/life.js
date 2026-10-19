@@ -448,6 +448,7 @@ const Life = {
     Object.assign(B, { real: B.team.length, played: false, dmgBy: {} });
     NTYPES = st.types;
     Board.setSize(st.map.length, st.map[0].length); // 판 그림 크기대로 (7x7 ~ 9x9)
+    B.grid = null; // 앞 판(크기가 다를 수 있음)은 버림. 남겨 두면 새 크기로 옛 판을 읽다가 멈춤
     const lay = parseLayout(st);
     Board.floor = lay.floor;
     Board.mask = lay.mask;
