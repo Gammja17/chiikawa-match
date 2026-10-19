@@ -104,7 +104,7 @@ const Meta = {
     Save.save();
     return [`<img class="row-ic" src="${ITEM(k)}">`, '+' + n];
   },
-  // 모험 지도 한 판을 깨면 MVP(토벌)나 같이 간 친구(일상)에게 조각을 별 수만큼(1~3). 최고 레벨이면 없음. 결과 창에 넣을 [아이콘, 글] 또는 null
+  // 모험 지도 판을 처음 깨면 MVP(토벌)나 같이 간 친구(일상)에게 조각을 별 수만큼(1~3). 최고 레벨이면 없음. 결과 창에 넣을 [아이콘, 글] 또는 null
   shardGift(id, stars) {
     if (!Meta.owned(id) || Meta.lv(id) >= LV_MAX) return null;
     Save.data.shards[id] = (Save.data.shards[id] || 0) + stars;
@@ -515,7 +515,7 @@ const isFresh = p => p.kind === 'new' || p.kind === 'skin';
 const pickOne = a => a[Math.floor(Math.random() * a.length)];
 
 // 뽑기 한 번: 결과를 정하고 저장까지. sure면 아직 없는 친구·옷 중에서 (10번 뽑기 확정)
-function drawPrize(kind, sure = false) {
+function drawPrize(kind, sure = false, force = null) { // force: 이 친구로 정해서 뽑음 (위시)
   if (kind === 'outfit') {
     const all = outfitPool(), fresh = all.filter(([c, s]) => !hasSkin(c, s));
     const [cid, s] = pickOne(sure && fresh.length ? fresh : all);
@@ -524,11 +524,41 @@ function drawPrize(kind, sure = false) {
     return { kind: 'skin', id: cid, skin: s };
   }
   const all = friendPool(), fresh = all.filter(c => !Meta.owned(c.id));
-  const c = pickOne(sure && fresh.length ? fresh : all), lv = Meta.lv(c.id);
+  const c = force ? CHARS[charIdx(force)] : pickOne(sure && fresh.length ? fresh : all), lv = Meta.lv(c.id);
   if (!lv) { Save.data.own[c.id] = 1; return { kind: 'new', id: c.id }; }
   if (lv < LV_MAX) { Save.data.shards[c.id] = (Save.data.shards[c.id] || 0) + SHARD_PER_DUP; return { kind: 'shard', id: c.id, n: SHARD_PER_DUP }; }
   Save.data.coins += 50;
   return { kind: 'max', id: c.id };
+}
+// 위시 친구: 캡슐에서 나오는 친구 하나를 골라 두면 10번 뽑기에서 꼭 한 번 나옴 (최고 레벨이 되면 풀림)
+const wishOf = () => { const w = Save.data.wish; return w && friendPool().some(c => c.id === w) && Meta.lv(w) < LV_MAX ? w : null; };
+function wishUI() {
+  const el = $('#gachaWish'), w = wishOf(), c = w && CHARS[charIdx(w)];
+  el.style.setProperty('--ring', c ? c.ring : 'var(--ink3)');
+  el.innerHTML = `<span class="wish-face${c ? '' : ' empty'}"><img src="${c ? FACE(w) : ITEM('star')}" class="${c && !Meta.owned(w) ? 'shadow' : ''}" alt=""></span>
+    <span class="wish-txt"><small>위시 친구</small><b>${c ? (Meta.owned(w) ? c.name : '???') : '아직 안 골랐어요'}</b><em>10번 뽑기에서 꼭 한 번 나와요</em></span>
+    <span class="wish-btn">${c ? '바꾸기' : '고르기'}</span>`;
+}
+function pickWish() {
+  if (gachaBusy) return;
+  Sound.play('click');
+  const el = $('#charSheet'), card = el.querySelector('.sheet-card');
+  card.style.setProperty('--ring', '#ff8ab8');
+  card.innerHTML = `<div class="mates-title">위시 친구 고르기 <small>10번 뽑기에서 꼭 한 번</small></div>
+    <div class="mates-grid">${friendPool().map(c => { const lv = Meta.lv(c.id), max = lv >= LV_MAX;
+      return `<button data-id="${c.id}" class="${Save.data.wish === c.id ? 'on' : ''}" style="--ring:${c.ring}" ${max ? 'disabled' : ''}><img src="${FACE(c.id)}" class="${lv ? '' : 'shadow'}" alt=""><span>${lv ? c.name : '???'}</span><i>${!lv ? 'NEW' : max ? 'MAX' : 'Lv' + lv}</i></button>`; }).join('')}</div>
+    <small class="sheet-hint">간식이나 모험으로 데려오는 친구는 데려온 뒤에 고를 수 있어요. 최고 레벨 친구는 못 골라요</small>
+    <div class="sheet-btns"><button class="big-btn ghost" data-close>닫기</button></div>`;
+  card.querySelectorAll('.mates-grid button').forEach(b => (b.onclick = () => {
+    Save.data.wish = b.dataset.id;
+    Save.save();
+    Sound.play('sparkle', 1.3, 0.6);
+    el.classList.remove('show');
+    syncGacha();
+  }));
+  card.querySelector('[data-close]').onclick = () => { Sound.play('click'); el.classList.remove('show'); };
+  el.classList.add('show');
+  fitText(el);
 }
 // 아직 안 가진 게 남아 있는지 (없으면 10번 뽑기 확정도 없음)
 const canFresh = kind => (kind === 'outfit' ? outfitPool().some(([c, s]) => !hasSkin(c, s)) : friendPool().some(c => !Meta.owned(c.id)));
@@ -549,6 +579,7 @@ function syncGacha() {
   document.querySelectorAll('.gacha-tabs button').forEach(b => b.classList.toggle('on', b.dataset.g === gachaKind));
   // 옷 탭은 뽑기 기계 대신 옷 가게
   $('#gacha .gacha-body').classList.toggle('shop-mode', gachaKind === 'outfit');
+  wishUI();
   if (gachaKind === 'outfit') return renderOutfitShop();
   const none = gachaKind === 'outfit' && !outfitPool().length;
   $('#gachaNote').textContent = none ? '옷이 있는 친구를 먼저 데려와요'
@@ -837,11 +868,13 @@ async function pullGacha(n = 1) {
   else Meta.addCoins(-cost);
   Daily.add('gacha', n);
   syncGacha();
-  const prizes = [];
-  for (let i = 0; i < n - 1; i++) prizes.push(drawPrize(gachaKind));
+  const prizes = [], wish = n === 10 && gachaKind === 'friend' && wishOf();
+  if (wish) prizes.push(drawPrize(gachaKind, false, wish)); // 10번 뽑기: 위시 친구 한 번은 꼭 (자리는 아래에서 섞임)
+  while (prizes.length < n - 1) prizes.push(drawPrize(gachaKind));
   // 10번 뽑기: 앞의 9번에 새 친구(새 옷)가 없으면 마지막은 확정, 자리는 아무 데나
   const last = drawPrize(gachaKind, n === 10 && !prizes.some(isFresh));
-  prizes.splice(Math.floor(Math.random() * (prizes.length + 1)), 0, last);
+  prizes.push(last);
+  for (let i = prizes.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [prizes[i], prizes[j]] = [prizes[j], prizes[i]]; } // 위시·확정 칸이 늘 같은 자리에 오지 않게
   Save.save();
   gachaSkip = { on: false, fns: [] };
   const skipBtn = document.createElement('button');
@@ -1052,6 +1085,7 @@ $('#btnGacha').onclick = () => { Sound.play('click'); go(openGacha); };
 $('#btnFriends').onclick = () => { Sound.play('click'); go(openFriends); };
 $('#btnPull').onclick = () => pullGacha(1);
 $('#btnPull10').onclick = () => pullGacha(10);
+$('#gachaWish').onclick = pickWish;
 document.querySelectorAll('.gacha-tabs button').forEach(b => (b.onclick = () => { if (gachaBusy) return; Sound.play('pop', 1.2, 0.5); gachaKind = b.dataset.g; syncGacha(); }));
 document.querySelectorAll('.btn-tomap').forEach(b => (b.onclick = () => { Sound.play('click'); go(openMap); }));
 Meta.init();

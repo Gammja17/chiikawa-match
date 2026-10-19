@@ -1962,7 +1962,7 @@ async function win() {
   const k = routeIdx('b', B.stage), isLast = k === ROUTE.length - 1;
   if (STORY_AFTER[B.stage] && firstClear) await playStory(STORY_AFTER[B.stage]); // 장 끝 대사
   if (firstClear) await Meta.stageJoin('b', B.stage);
-  const ch = mvp(), shard = Meta.shardGift(ch.id, stars);
+  const ch = mvp(), shard = firstClear && Meta.shardGift(ch.id, stars);
   Sound.music(null);
   const from = k;
   modal({

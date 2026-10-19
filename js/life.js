@@ -788,7 +788,7 @@ const Life = {
     if (LIFE_STORY_AFTER[i] && first) await playStory(LIFE_STORY_AFTER[i]); // 장 끝 대사
     if (first) await Meta.stageJoin('l', i);
     Sound.music(null);
-    const ch = mvp(), shard = L.run.kind === 'route' && Meta.shardGift(ch.id, stars);
+    const ch = mvp(), shard = first && L.run.kind === 'route' && Meta.shardGift(ch.id, stars);
     modal({
       title: st.exam ? '합격!' : '클리어!', stars, char: ch.id, text: `${ch.name}: "${lineOf(ch.id)}"`,
       rows: [['점수', L.score], [`<img class="row-ic" src="${ITEM('coin')}">`, '+' + coins], treat, shard].filter(Boolean),
