@@ -336,8 +336,10 @@ Tutor.mapFlow = async function (delay) {
       for (const [sel, text] of UNLOCK_INTRO[u.id]()) await Spot.show($(sel), text);
       return;
     }
-    if (clearedCount() >= 5 && !Tutor.seen('google') && window.Net && Net.on && (!Net.user || Net.user.isAnonymous)) {
-      Tutor.mark('google');
+    // 게스트로 5판, 15판을 깼을 때 한 번씩 (나중에를 눌러도 그 단계는 다시 안 물어봄)
+    const linkTip = clearedCount() >= 15 ? 'google15' : clearedCount() >= 5 ? 'google' : null;
+    if (linkTip && !Tutor.seen(linkTip) && typeof Net !== 'undefined' && Net.ready && (!Net.user || Net.user.isAnonymous)) {
+      Tutor.mark(linkTip);
       modal({
         title: '기록 지키기', char: 'hachiware', text: '하치와레: 구글 계정을 연결하면 폰을 바꿔도 이어서 할 수 있어! 랭킹에도 올라가고~',
         btn2: '나중에', on2: () => {}, btn1: '연결하기', on1: () => Net.google(),

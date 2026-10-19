@@ -440,7 +440,7 @@ const Life = {
     Life.stopTimer();
     // 같이 갈 친구 한 명 (인어섬은 1층에서만 고름)
     if (run.kind === 'route' && run.i < 2 && !Save.data.helper) L.helper = CHARS.findIndex(c => c.id === 'hachiware'); // 처음 두 판은 하치와레가 알아서 따라옴
-    else if (run.kind !== 'tower' || run.floor === 1 || L.helper == null) await pickHelper(st);
+    else if ((run.kind !== 'tower' || run.floor === 1 || L.helper == null) && !(await pickHelper(st))) return go(run.kind === 'route' ? openMap : openChallenge); // 고르다가 돌아가기
     const buddy = !!st.host && CHARS[L.helper]?.id === st.host; // 단짝 보너스
     Object.assign(L, { hg: 0, run, ending: false, st, i, moves: (st.moves || 0) + (buddy && st.moves ? 2 : 0), time: (st.time || 0) + (buddy && st.time ? 6 : 0), score: 0, ing: 0, chars: {}, popped: false, extra: false, goalsHtml: '' });
     Object.assign(B, { mode: 'life', stage: i, over: false, busy: true, inSkill: false, sel: null, pending: [], maxCombo: 0, fever: 0 });
@@ -748,6 +748,7 @@ const Life = {
     setTimeout(() => Net.submit(), 0);
     if (first) Save.data.ramen = true;
     Save.save();
+    const rank = first && L.run.kind === 'route' && Net.clearRank();
     Sound.play('win', 1);
     await clearShow(st.exam ? '검정<br>합격!' : doneWord(st));
     const k = routeIdx('l', i), last = k === ROUTE.length - 1;
@@ -762,6 +763,7 @@ const Life = {
       btn1: last ? '🏠 지도로' : '다음 판 ▶',
       on1: () => (last ? go(() => openMap(first ? k : null)) : Hearts.need(() => go(() => goRoute(k + 1)), () => go(() => openMap(first ? k : null)))),
     });
+    Net.rankLine(rank);
   },
 
   async fail() {
@@ -773,7 +775,6 @@ const Life = {
     Sound.play('jingle_lose', 1, 0.9);
     await banner(L.st.time ? '시간 끝…' : '이동 끝…', 600);
     if (L.run.kind === 'tower' && L.extra) return Tower.over();
-    const left = L.st.goals.filter(g => Life.remain(g) > 0).map(g => `${GOAL_NAME[g.k](g)} ${Life.remain(g)}`).join(', ');
     // 모험 지도 스테이지를 포기하면 하트 하나
     const route = L.run.kind === 'route';
     const retry = () => {
@@ -781,10 +782,12 @@ const Life = {
       Hearts.lose();
       Hearts.need(() => go(() => Life.start(L.i)), () => go(openMap));
     };
-    const card = { title: '아쉬워…', img: 'assets/img/art/scene_crying.jpg', photo: true, text: `남은 목표: ${left}` };
+    // 못 모은 목표를 아이콘과 남은 수로 (결과 창처럼)
+    const left = L.st.goals.filter(g => Life.remain(g) > 0).slice(0, 3).map(g => [`<img class="row-ic" src="${GOAL_ICON[g.k](g)}">`, Life.remain(g)]);
+    const card = { title: L.st.exam ? '불합격…' : '실패…', stars: 0, img: 'assets/img/art/scene_crying.jpg', photo: true, rows: left };
     if (!L.extra) {
       modal({
-        ...card,
+        ...card, text: `조금만 더! ${L.st.time ? '15초' : '5번'} 더 해 볼까요?`,
         btn1: L.st.time ? '+15초 더!' : '+5번 더!',
         on1: () => {
           L.extra = true;
@@ -798,7 +801,7 @@ const Life = {
         btn2: L.run.kind === 'tower' ? '여기까지' : '다시 하기', on2: retry,
       });
     } else {
-      modal({ ...card, btn1: '다시 하기', on1: retry, btn2: '지도', on2: () => { if (route) Hearts.lose(); go(openMap); } });
+      modal({ ...card, text: '아깝다! 다음엔 꼭 깰 수 있어', rows: route ? [...left, [`<img class="row-ic" src="${ITEM('heart')}">`, '-1']] : left, btn1: '다시 하기', on1: retry, btn2: '🏠 지도로', on2: () => { if (route) Hearts.lose(); go(openMap); } });
     }
   },
 };
@@ -888,7 +891,7 @@ function pickHelper(st = L.st) {
         <div class="helper-pick"><span class="fig">${Meta.figure(ch.id, art(ch.id))}</span><div><b>${ch.name}</b><small>${ch.skill.name}</small><p>${ch.skill.desc}</p></div></div>
         ${host ? `<div class="buddy-note${CHARS[pick].id === st.host ? ' on' : ''}">이 판 단짝: <b>${host.name}</b> · 데려가면 ${st.time ? '+6초' : '이동 +2'}${Meta.owned(host.id) ? '' : ' (아직 없는 친구)'}</div>` : ''}
         <div class="mates-grid">${list.map(([c, k]) => `<button class="${k === pick ? 'on' : ''}${c.id === st?.host ? ' buddy' : ''}" data-k="${k}" style="--ring:${c.ring}"><img src="${FACE(c.id)}"><span>${c.name}</span></button>`).join('')}</div>
-        <div class="sheet-btns"><button class="big-btn" data-go>같이 가자!</button></div>`;
+        <div class="sheet-btns"><button class="big-btn ghost" data-back>◀ 돌아가기</button><button class="big-btn" data-go>같이 가자!</button></div>`;
       card.querySelectorAll('.mates-grid button').forEach(b => (b.onclick = () => { pick = +b.dataset.k; Sound.play('pop', 1.2, 0.5); draw(); }));
       card.querySelector('[data-go]').onclick = () => {
         L.helper = pick;
@@ -896,8 +899,9 @@ function pickHelper(st = L.st) {
         Save.save();
         Sound.voice(CHARS[pick].id, 'pick') || Sound.play('click');
         $('#charSheet').classList.remove('show');
-        done();
+        done(true);
       };
+      card.querySelector('[data-back]').onclick = () => { Sound.play('click'); $('#charSheet').classList.remove('show'); done(false); };
     };
     draw();
     $('#charSheet').classList.add('show');

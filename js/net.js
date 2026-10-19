@@ -14,7 +14,7 @@ const Net = {
       Net.db = firebase.firestore();
       Net.on = true;
       Net.auth.getRedirectResult().catch(() => {});
-      Net.auth.onAuthStateChanged(async u => { Net.user = u; Net.listeners.forEach(f => f()); if (u) { await Net.cloudLoad(); Net.submit(); } });
+      Net.auth.onAuthStateChanged(async u => { Net.user = u; Net.ready = true; Net.listeners.forEach(f => f()); if (u) { await Net.cloudLoad(); Net.submit(); } });
     } catch (e) { console.warn('랭킹 서버를 켜지 못했어요', e); }
   },
   onChange(f) { Net.listeners.push(f); },
@@ -75,11 +75,52 @@ const Net = {
       });
     } catch (e) { console.warn('기록을 못 올렸어요', e); }
   },
-  async top(field) {
+  // 50위까지. maxAge(ms) 안에 불러온 게 있으면 그걸 다시 씀 (Firestore 읽기를 아끼려고)
+  cache: {},
+  async top(field, maxAge = 0) {
+    const c = Net.cache[field];
+    if (c && Date.now() - c.at < maxAge) return c.rows;
     const q = await Net.db.collection('scores').orderBy(field, 'desc').limit(50).get();
-    return q.docs.map(d => ({ id: d.id, ...d.data() }));
+    const rows = q.docs.map(d => ({ id: d.id, ...d.data() }));
+    Net.cache[field] = { at: Date.now(), rows };
+    return rows;
+  },
+  // 판을 처음 깬 뒤: '깬 스테이지' 랭킹에서 내 자리 (지난번 자리보다 오르면 지도 랭킹 버튼에 점)
+  async clearRank() {
+    if (!Net.on || !Net.user) return null;
+    try {
+      const mine = clearedCount(), rows = (await Net.top('cleared', 3 * 60 * 1000)).filter(r => r.id !== Net.user.uid);
+      const rank = 1 + rows.filter(r => (r.cleared || 0) > mine).length;
+      if (rank > 50) return `50위까지 ${rows[49].cleared - mine}판 남았어요`;
+      const up = Save.data.rankLast ? Save.data.rankLast - rank : 0;
+      if (up > 0) Save.data.rankNew = true;
+      Save.data.rankLast = rank;
+      Save.save();
+      return `랭킹 <b>${rank}위</b>${up > 0 ? ` <em>↑${up}</em>` : ''}`;
+    } catch { return null; }
+  },
+  // 결과 창 글 아래에 랭킹 자리를 붙임 (그 사이 창이 바뀌었으면 안 붙임)
+  rankLine(p) {
+    if (!p) return;
+    const box = $('#modalText');
+    const el = document.createElement('span');
+    el.className = 'rank-pop';
+    el.hidden = true;
+    box.appendChild(el);
+    p.then(t => {
+      if (!t || !el.isConnected) return;
+      el.innerHTML = `<img src="${ITEM('medal')}">${t}`;
+      el.hidden = false;
+      el.animate([{ transform: 'scale(.6)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }], { duration: 300, easing: 'cubic-bezier(.3,1.6,.6,1)' });
+    });
   },
 };
+// 랭킹이 올랐으면 지도의 랭킹 버튼에 빨간 점
+function rankDot() {
+  const btn = $('#btnMapRank');
+  if (!btn.querySelector('.dot')) btn.insertAdjacentHTML('beforeend', '<i class="dot"></i>');
+  btn.classList.toggle('on', !!Save.data.rankNew);
+}
 
 // ---------- 도전 화면: 인어섬 탐험, 제초 대회, 랭킹 ----------
 function openChallenge() {
@@ -88,6 +129,8 @@ function openChallenge() {
   Meta.coinUI();
   $('#towerBest').textContent = Save.data.towerBest ? `최고 ${Save.data.towerBest}층` : '첫 도전!';
   $('#contestBest').textContent = Save.data.contestBest ? `최고 ${Save.data.contestBest}점` : '첫 도전!';
+  DayChal.card();
+  Dungeon.card();
 }
 $('#btnTower').onclick = () => { Sound.play('open'); go(() => Tower.start(1)); };
 $('#btnContest').onclick = () => { Sound.play('open'); go(() => Life.begin(CONTEST, { kind: 'contest' })); };
@@ -98,6 +141,7 @@ const BOARDS = { cleared: { label: '깬 스테이지', unit: '개' }, tower: { l
 let rankTab = 'cleared';
 async function openRanking(tab = rankTab) {
   rankTab = tab;
+  if (Save.data.rankNew) { Save.data.rankNew = false; Save.save(); }
   show('ranking');
   document.querySelectorAll('.rank-tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
   const me = $('#rankMe'), list = $('#rankList');

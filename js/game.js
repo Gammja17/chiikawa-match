@@ -390,6 +390,7 @@ function openMap(advanceFrom = null) {
   Sound.music('map');
   $('#btnRamen').classList.toggle('on', Save.data.ramen !== false && !Save.data.buff);
   friendsDot();
+  rankDot();
   const path = $('#mapPath');
   path.innerHTML = '';
   path.style.height = NODE_TOP + STAGES.length * NODE_GAP + 40 + 'px';
@@ -509,7 +510,7 @@ function modal({ title, stars = null, char, img = null, photo = false, rows = []
   $('#modalChar').src = img || artOf(char);
   $('#modalChar').classList.toggle('photo', photo);
   $('#modalChar').classList.remove('icon');
-  $('.modal-card').classList.toggle('has-photo', photo);
+  $('#modal .modal-card').classList.toggle('has-photo', photo);
   $('#modalRows').innerHTML = rows.map(([k, v]) => `<div>${k}<b>${v}</b></div>`).join('');
   $('#modalText').textContent = text;
   const st = $('#modalStars');
@@ -526,7 +527,7 @@ function modal({ title, stars = null, char, img = null, photo = false, rows = []
   b2.onclick = () => { if (!ready()) return; Sound.play('click'); close(); on2 && on2(); };
   $('#modal').classList.add('show');
   fitText($('#modal'));
-  $('.modal-card').animate([{ transform: 'scale(.5)', opacity: 0 }, { transform: 'scale(1.06)', opacity: 1, offset: 0.6 }, { transform: 'scale(1)' }],
+  $('#modal .modal-card').animate([{ transform: 'scale(.5)', opacity: 0 }, { transform: 'scale(1.06)', opacity: 1, offset: 0.6 }, { transform: 'scale(1)' }],
     { duration: 380, easing: 'ease-out' });
   if (stars) {
     [...st.children].slice(0, stars).forEach((s, i) => setTimeout(() => {
@@ -683,6 +684,7 @@ function markMatchup() {
 function updateTeam() {
   $('#teamHp .fill').style.width = (B.teamHp / B.teamMax) * 100 + '%';
   $('#teamHp span').textContent = `${B.teamHp} / ${B.teamMax}`;
+  $('#teamHp').classList.toggle('low', B.teamHp <= B.teamMax * 0.3);
 }
 function updateMon() {
   $('#monHp .fill').style.width = (B.monHp / B.monMax) * 100 + '%';
@@ -1699,6 +1701,7 @@ async function win() {
   Save.data.stars[B.stage] = Math.max(Save.data.stars[B.stage] || 0, stars);
   setTimeout(() => Net.submit(), 0);
   Save.save();
+  const rank = firstClear && Net.clearRank();
   Sound.play('win', 1);
   await clearShow();
   const k = routeIdx('b', B.stage), isLast = k === ROUTE.length - 1;
@@ -1714,6 +1717,7 @@ async function win() {
     btn1: isLast ? '🏠 지도로' : '다음 판 ▶',
     on1: () => (isLast ? go(() => openMap(firstClear ? from : null)) : Hearts.need(() => go(() => goRoute(k + 1)), () => go(() => openMap(firstClear ? from : null)))),
   });
+  Net.rankLine(rank);
 }
 
 async function lose() {
@@ -1723,8 +1727,9 @@ async function lose() {
   Sound.play('jingle_lose', 1, 0.9);
   await banner('후퇴…', 600);
   modal({
-    title: '후퇴…', img: 'assets/img/art/scene_scared.jpg', photo: true, text: '치이카와: (훌쩍…)',
-    btn2: '지도', on2: () => { Hearts.lose(); go(openMap); },
+    title: '실패…', stars: 0, img: 'assets/img/art/scene_scared.jpg', photo: true, text: '치이카와: (훌쩍…) 상성 좋은 친구랑 다시 가 보자',
+    rows: [['괴물 체력', Math.ceil((B.monHp / B.monMax) * 100) + '%'], ['웨이브', `${B.wave + 1} / ${STAGES[B.stage].waves.length}`], [`<img class="row-ic" src="${ITEM('heart')}">`, '-1']],
+    btn2: '🏠 지도로', on2: () => { Hearts.lose(); go(openMap); },
     btn1: '다시 하기', on1: () => { Hearts.lose(); Hearts.need(() => go(() => startStage(B.stage)), () => go(openMap)); },
   });
 }
@@ -1837,7 +1842,7 @@ $('#btnAuto').onclick = () => {
   renderFormation();
   $('#formSlots').animate([{ transform: 'scale(1)' }, { transform: 'scale(1.04)' }, { transform: 'scale(1)' }], { duration: 260 });
 };
-$('#btnFormBack').onclick = () => { Sound.play('click'); go(openMap); };
+$('#btnFormBack').onclick = $('#btnFormMap').onclick = () => { Sound.play('click'); go(openMap); };
 
 // ---------- 스킬 ----------
 // 캐릭터 색 스티커 띠가 찰싹 붙고, 그림이 튀어나와 대사, 빛줄기 남기고 빠짐 (약 1초)
