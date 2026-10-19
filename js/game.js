@@ -1756,11 +1756,13 @@ async function fall(moves) {
     const t0 = path[0][2], span = Math.max(1, path[path.length - 1][2] - t0);
     const [r1, c1] = path[path.length - 1];
     place(t, r1, c1);
-    const frames = path.map(([r, c, k]) => ({ transform: tf(r, c), offset: (k - t0) / span }));
-    return t.el.animate(frames, { duration: 90 + Math.sqrt(span) * 55, delay: t0 * 40, easing: 'cubic-bezier(.6,0,1,1)', fill: 'backwards' })
+    // 새로 생긴 얼굴은 첫 칸 동안 서서히 나타남 (판 위쪽이 빈 모양이면 그 자리에 뿅 생기는 것처럼 보여서)
+    const frames = path.map(([r, c, k], i) => ({ transform: tf(r, c), offset: (k - t0) / span, ...(fresh ? { opacity: i ? 1 : 0 } : {}) }));
+    // 떨어지는 게 눈에 보이게: 칸마다 조금 더 천천히, 점점 빨라지다 톡 착지
+    return t.el.animate(frames, { duration: 130 + Math.sqrt(span) * 95, delay: t0 * 58, easing: 'cubic-bezier(.45,0,.9,.55)', fill: 'backwards' })
       .finished.then(() => squish(t));
   });
-  if (moves.length) setTimeout(() => Sound.play('land', 1.3, 0.25), 180);
+  if (moves.length) setTimeout(() => Sound.play('land', 1.3, 0.25), 260);
   await Promise.all(ps);
 }
 
