@@ -673,6 +673,7 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .shop-item.have b { font-size: 20px; color: var(--mint); }
 .ccard, .fcard { -webkit-touch-callout: none; touch-action: manipulation; }
 .row-ic { display: block; width: 22px; height: 22px; margin: 0 auto; }
+.row-ic.face { border-radius: 50%; background: #fff; box-shadow: 0 0 0 1.5px var(--ink3); } /* 친구 조각: 그 친구 얼굴 */
 .tbadge { position: absolute; left: 50%; bottom: 14px; z-index: 2; transform: translateX(-50%); display: flex; align-items: center; gap: 2px; padding: 1px 8px 0 3px; border-radius: 10px; background: var(--paper); box-shadow: var(--sh); font-family: var(--head); font-size: 17px; line-height: 1.15; white-space: nowrap; }
 .tbadge img { width: 22px; height: 22px; }
 .tbadge.ready { background: var(--gold); animation: pulse .8s infinite; }

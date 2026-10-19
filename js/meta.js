@@ -104,6 +104,14 @@ const Meta = {
     Save.save();
     return [`<img class="row-ic" src="${ITEM(k)}">`, '+' + n];
   },
+  // 모험 지도 한 판을 깨면 MVP(토벌)나 같이 간 친구(일상)에게 조각을 별 수만큼(1~3). 최고 레벨이면 없음. 결과 창에 넣을 [아이콘, 글] 또는 null
+  shardGift(id, stars) {
+    if (!Meta.owned(id) || Meta.lv(id) >= LV_MAX) return null;
+    Save.data.shards[id] = (Save.data.shards[id] || 0) + stars;
+    Save.save();
+    friendsDot();
+    return [`<img class="row-ic face" src="${FACE(id)}">`, `조각+${stars}`];
+  },
   canRecruit(id) {
     const r = RECRUIT[id];
     return !!r && !Meta.owned(id) && (r.treat ? (Save.data.treats[r.treat] || 0) >= r.n : false);

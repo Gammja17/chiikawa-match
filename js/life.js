@@ -788,10 +788,10 @@ const Life = {
     if (LIFE_STORY_AFTER[i] && first) await playStory(LIFE_STORY_AFTER[i]); // 장 끝 대사
     if (first) await Meta.stageJoin('l', i);
     Sound.music(null);
-    const ch = mvp();
+    const ch = mvp(), shard = L.run.kind === 'route' && Meta.shardGift(ch.id, stars);
     modal({
       title: st.exam ? '합격!' : '클리어!', stars, char: ch.id, text: `${ch.name}: "${lineOf(ch.id)}"`,
-      rows: [['점수', L.score], [`<img class="row-ic" src="${ITEM('coin')}">`, '+' + coins], treat],
+      rows: [['점수', L.score], [`<img class="row-ic" src="${ITEM('coin')}">`, '+' + coins], treat, shard].filter(Boolean),
       btn2: '🏠 지도로', on2: () => go(() => openMap(first ? k : null)),
       btn1: last ? '🏠 지도로' : Unlock.fresh() ? '🎁 새 기능 보러 가기' : '다음 판 ▶', // 새 기능이 열렸으면 지도로 데려가서 안내
       on1: () => (last || Unlock.fresh() ? go(() => openMap(first ? k : null)) : Hearts.need(() => go(() => goRoute(k + 1)), () => go(() => openMap(first ? k : null)))),

@@ -1962,12 +1962,12 @@ async function win() {
   const k = routeIdx('b', B.stage), isLast = k === ROUTE.length - 1;
   if (STORY_AFTER[B.stage] && firstClear) await playStory(STORY_AFTER[B.stage]); // 장 끝 대사
   if (firstClear) await Meta.stageJoin('b', B.stage);
-  const ch = mvp();
+  const ch = mvp(), shard = Meta.shardGift(ch.id, stars);
   Sound.music(null);
   const from = k;
   modal({
     title: '토벌 성공!', stars, char: ch.id, text: `MVP ${ch.name}: "${lineOf(ch.id)}"`,
-    rows: [['남은 체력', Math.round(ratio * 100) + '%'], [`<img class="row-ic" src="${ITEM('coin')}">`, '+' + coins], treat],
+    rows: [['남은 체력', Math.round(ratio * 100) + '%'], [`<img class="row-ic" src="${ITEM('coin')}">`, '+' + coins], treat, shard].filter(Boolean),
     btn2: '🏠 지도로', on2: () => go(() => openMap(firstClear ? from : null)),
     btn1: isLast ? '🏠 지도로' : Unlock.fresh() ? '🎁 새 기능 보러 가기' : '다음 판 ▶', // 새 기능이 열렸으면 지도로 데려가서 안내
     on1: () => (isLast || Unlock.fresh() ? go(() => openMap(firstClear ? from : null)) : Hearts.need(() => go(() => goRoute(k + 1)), () => go(() => openMap(firstClear ? from : null)))),
