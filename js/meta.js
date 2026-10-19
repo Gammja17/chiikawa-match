@@ -12,20 +12,48 @@ const lvMult = (id, lv = Meta.lv(id)) => 1 + (RECRUIT[id]?.treat ? 0.12 : 0.08) 
 // 레벨 lv일 때 공격(회복) 숫자. 옷·친밀도 보너스는 지금 그대로 두고 레벨 몫만 바꿔 셈 (강화하면 얼마나 오르는지 미리 보여 주려고)
 const powAt = (id, lv) => { const ch = CHARS[charIdx(id)], m = Meta.mult(id) / lvMult(id) * lvMult(id, lv); return ch.heal ? Math.round(ch.heal * m * 10) / 10 : Math.round(ch.dmg * m); };
 const GACHA_COST = 100;
-// x, y: 방 안 위치(%), w: 너비(%)
+// x, y: 처음 놓일 자리(%, 가구 아래쪽 가운데), w: 너비(%). wall: 벽에 거는 것, flat: 바닥에 까는 것(늘 맨 아래)
 // 치이카와네 원룸에 있을 법한 살림 (VARCO로 원작 느낌 그림)
 const FURN = [
   { id: 'f_tissue', name: '휴지 상자', price: 50, x: 46, y: 60, w: 10 },
   { id: 'f_grass', name: '풀 화분', price: 60, x: 92, y: 62, w: 13 },
   { id: 'f_cushion', name: '방석', price: 70, x: 26, y: 86, w: 18 },
-  { id: 'f_clock', name: '자명종', price: 90, x: 72, y: 16, w: 13 },
-  { id: 'f_board', name: '스티커 게시판', price: 110, x: 32, y: 18, w: 20 },
+  { id: 'f_clock', name: '자명종', price: 90, x: 72, y: 16, w: 13, wall: true },
+  { id: 'f_board', name: '스티커 게시판', price: 110, x: 32, y: 18, w: 20, wall: true },
   { id: 'f_rice', name: '밥솥', price: 130, x: 10, y: 84, w: 15 },
   { id: 'f_table', name: '밥상', price: 150, x: 46, y: 74, w: 24 },
   { id: 'f_fridge', name: '작은 냉장고', price: 200, x: 9, y: 60, w: 17 },
   { id: 'f_tv', name: '옛날 TV', price: 240, x: 62, y: 60, w: 17 },
   { id: 'f_futon', name: '이불', price: 300, x: 78, y: 78, w: 30 },
+  { id: 'f_poster', name: '라멘 포스터', price: 60, x: 40, y: 44, w: 15, wall: true },
+  { id: 'f_garland', name: '깃발 장식', price: 70, x: 50, y: 16, w: 36, wall: true },
+  { id: 'f_wclock', name: '벽시계', price: 80, x: 76, y: 26, w: 12, wall: true },
+  { id: 'f_frame', name: '꽃 액자', price: 90, x: 60, y: 40, w: 13, wall: true },
+  { id: 'f_shelf', name: '벽 선반', price: 110, x: 80, y: 48, w: 22, wall: true },
+  { id: 'f_window', name: '창문', price: 120, x: 24, y: 40, w: 24, wall: true },
+  { id: 'f_stool', name: '나무 의자', price: 60, x: 34, y: 90, w: 11 },
+  { id: 'f_balloon', name: '풍선', price: 80, x: 14, y: 70, w: 14 },
+  { id: 'f_cake', name: '딸기 케이크', price: 90, x: 54, y: 80, w: 11 },
+  { id: 'f_lamp', name: '스탠드', price: 100, x: 8, y: 76, w: 12 },
+  { id: 'f_toybox', name: '장난감 상자', price: 130, x: 70, y: 94, w: 16 },
+  { id: 'f_rug', name: '둥근 러그', price: 140, x: 50, y: 97, w: 44, flat: true },
+  { id: 'f_monstera', name: '큰 화분', price: 150, x: 92, y: 94, w: 18 },
+  { id: 'f_bookcase', name: '책장', price: 180, x: 88, y: 72, w: 20 },
+  { id: 'f_sofa', name: '작은 소파', price: 260, x: 28, y: 76, w: 30 },
+  { id: 'f_kotatsu', name: '코타츠', price: 320, x: 56, y: 90, w: 30 },
 ];
+// 벽지·바닥: 산 건 모든 집에서 골라 쓸 수 있음 (id ''는 기본)
+const WALLS = [
+  { id: '', name: '기본 벽' }, { id: 'w_dot', name: '분홍 물방울', price: 120 }, { id: 'w_stripe', name: '민트 줄무늬', price: 120 }, { id: 'w_check', name: '복숭아 체크', price: 120 },
+  { id: 'w_star', name: '노란 별', price: 150 }, { id: 'w_heart', name: '라벤더 하트', price: 150 }, { id: 'w_daisy', name: '데이지', price: 150 },
+  { id: 'w_cloud', name: '구름 하늘', price: 180 }, { id: 'w_night', name: '밤하늘', price: 200 },
+];
+const FLOORS = [
+  { id: '', name: '기본 마루' }, { id: 'fl_wood', name: '꿀색 마루', price: 100 }, { id: 'fl_dark', name: '초코 마루', price: 100 }, { id: 'fl_tile', name: '분홍 타일', price: 120 },
+  { id: 'fl_carpet', name: '하늘 카펫', price: 120 }, { id: 'fl_tatami', name: '다다미', price: 150 }, { id: 'fl_stone', name: '디딤돌', price: 150 },
+  { id: 'fl_grass', name: '풀밭', price: 180 }, { id: 'fl_sand', name: '모래사장', price: 200 },
+];
+const DECO_IMG = id => `assets/img/house/${id}.webp`;
 // 예전 가구를 산 사람은 새 살림으로 바꿔 줌
 const FURN_OLD = { plant: 'f_grass', candle: 'f_tissue', sunflower: 'f_cushion', clock: 'f_clock', teddy: 'f_rice', frame: 'f_board', mirror: 'f_fridge', sofa: 'f_table', tv: 'f_tv', bed: 'f_futon' };
 // 레벨이 오르면 열리는 짧은 이야기 (팬 창작)
@@ -918,11 +946,36 @@ const homes = () => {
     Object.values(d.homes).forEach(h => (h.furn = [...new Set((h.furn || []).map(f => FURN_OLD[f] || f))]));
     d.furnV2 = 1;
   }
+  if (!d.furnV3) {
+    d.furnInv = d.furnInv || {};
+    Object.values(d.homes).forEach(h => {
+      h.items = (h.furn || []).map(k => FURN.find(f => f.id === k)).filter(Boolean).map(f => { d.furnInv[f.id] = (d.furnInv[f.id] || 0) + 1; return { k: f.id, x: f.x, y: f.y }; });
+      delete h.furn;
+    });
+    d.furnV3 = 1;
+  }
   return d.homes;
 };
-const home = id => (homes()[id] = homes()[id] || { furn: [], mates: [] });
+const home = id => (homes()[id] = homes()[id] || { items: [], mates: [] });
+const furnOf = k => FURN.find(f => f.id === k);
+const clampN = (v, a, b) => Math.max(a, Math.min(b, v));
+// 보관함에 남은 개수 = 산 개수 - 모든 집에 놓인 개수
+const furnLeft = k => (Save.data.furnInv?.[k] || 0) - Object.values(homes()).reduce((a, h) => a + (h.items || []).filter(it => it.k === k).length, 0);
+// 놓을 수 있는 높이: 벽 가구는 벽에, 러그는 바닥 맨 아래까지, 나머지는 바닥 위
+const furnY = (f, y) => (f.wall ? clampN(y, 14, 58) : f.flat ? clampN(y, 66, 100) : clampN(y, 60, 99));
+// 아늑함: 가구 종류마다 값의 1/10, 같은 가구를 더 놓으면 2씩, 벽지·바닥을 바꾸면 15씩. 아늑할수록 집주인이 하루 한 번 주는 선물 코인이 늘어남
+const cozyOf = h => {
+  const seen = new Set();
+  let n = (h.wall ? 15 : 0) + (h.floor ? 15 : 0);
+  (h.items || []).forEach(it => { const f = furnOf(it.k); if (!f) return; n += seen.has(it.k) ? 2 : Math.round(f.price / 10); seen.add(it.k); });
+  return n;
+};
+const houseGift = cozy => Math.min(60, 5 + Math.floor(cozy / 4));
+let houseEdit = false, shopTab = 'furn';
+const DECO_TIP = '꾸미기를 누르면 가구를 끌어서 옮기고 뒤집을 수 있어! 아늑할수록 매일 선물이 커져';
 
 function openHouse(id = homeOf) {
+  if (!$('#house').classList.contains('active')) houseEdit = false; // 다른 화면에서 들어오면 구경 모드로
   const owned = CHARS.filter(c => Meta.owned(c.id));
   if (!id || !Meta.owned(id)) id = owned[0].id;
   homeOf = id;
@@ -936,14 +989,62 @@ function openHouse(id = homeOf) {
   $('#homeTabs .on')?.scrollIntoView({ inline: 'center', block: 'nearest' });
   const room = $('#room');
   room.style.setProperty('--ring', ch.ring);
-  room.querySelectorAll('.furn, .resident').forEach(e => e.remove());
-  FURN.filter(f => h.furn.includes(f.id)).forEach(f => {
+  room.querySelectorAll('.furn, .resident, .furn-tools, .house-gift').forEach(e => e.remove());
+  room.querySelector('.wall').style.background = h.wall ? `url(${DECO_IMG(h.wall)}) center / cover` : '';
+  room.querySelector('.floor').style.background = h.floor ? `url(${DECO_IMG(h.floor)}) center / cover` : '';
+  h.items.forEach(it => {
+    const f = furnOf(it.k);
+    if (!f) return;
     const im = new Image();
     im.src = ITEM(f.id);
-    im.className = 'furn';
-    Object.assign(im.style, { left: f.x + '%', top: f.y + '%', width: f.w + '%' });
+    im.className = 'furn' + (f.wall ? ' on-wall' : '');
+    im.draggable = false;
+    const put = () => Object.assign(im.style, { left: it.x + '%', top: it.y + '%', width: f.w + '%', zIndex: f.wall ? 2 : f.flat ? 3 : Math.round(it.y), transform: `translate(-50%, -100%)${it.f ? ' scaleX(-1)' : ''}` });
+    put();
+    // 꾸미기 모드: 끌면 옮기고, 톡 하면 뒤집기·넣기 버튼
+    im.onpointerdown = e => {
+      if (!houseEdit) return;
+      e.preventDefault();
+      im.setPointerCapture(e.pointerId);
+      const rr = room.getBoundingClientRect(), sx = e.clientX, sy = e.clientY, ox = it.x, oy = it.y;
+      let moved = false;
+      im.classList.add('lift');
+      im.onpointermove = ev => {
+        if (!moved && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 6) return;
+        if (!moved) { moved = true; furnTools(); }
+        it.x = Math.round(clampN(ox + ((ev.clientX - sx) / rr.width) * 100, 4, 96) * 10) / 10;
+        it.y = Math.round(furnY(f, oy + ((ev.clientY - sy) / rr.height) * 100) * 10) / 10;
+        put();
+      };
+      im.onpointerup = im.onpointercancel = () => {
+        im.onpointermove = im.onpointerup = im.onpointercancel = null;
+        im.classList.remove('lift');
+        if (moved) { Sound.play('land', 1.3, 0.5); Save.save(); } else Sound.play('pop', 1.3, 0.4);
+        furnTools(im, it, put);
+      };
+    };
     room.appendChild(im);
   });
+  // 고른 가구 위에 뜨는 작은 버튼: 좌우 뒤집기, 보관함에 넣기
+  function furnTools(im, it, put) {
+    room.querySelector('.furn-tools')?.remove();
+    if (!im) return;
+    const t = document.createElement('div');
+    t.className = 'furn-tools';
+    t.innerHTML = '<button data-a="flip">뒤집기</button><button data-a="away">넣기</button>';
+    const rr = room.getBoundingClientRect(), r = im.getBoundingClientRect();
+    Object.assign(t.style, { left: clampN(r.left + r.width / 2 - rr.left, 60, rr.width - 60) + 'px', top: Math.max(6, r.top - rr.top - 44) + 'px' });
+    room.appendChild(t);
+    t.querySelector('[data-a="flip"]').onclick = () => { it.f = !it.f; put(); Save.save(); Sound.play('swap', 1.3, 0.5); };
+    t.querySelector('[data-a="away"]').onclick = () => { h.items.splice(h.items.indexOf(it), 1); Save.save(); Sound.play('pop', 1.1, 0.6); openHouse(id); };
+  }
+  room.onpointerdown = e => { if (houseEdit && !e.target.closest('.furn, .furn-tools')) furnTools(); }; // 빈 곳을 누르면 버튼 닫기
+  room.classList.toggle('edit', houseEdit);
+  $('#btnDeco').textContent = houseEdit ? '다 했어' : '꾸미기';
+  $('#btnDeco').onclick = () => { houseEdit = !houseEdit; Sound.play('click'); openHouse(id); };
+  const cozy = cozyOf(h);
+  $('#cozy').innerHTML = `아늑함 <b>${cozy}</b>`;
+  $('#cozy').onclick = () => { Sound.play('click'); banner(`아늑할수록 선물이 커져요 (하루 ${houseGift(cozy)}코인)`, 900); };
   // 집주인 + 같이 사는 친구들. 꾹 잡고 끌면 원하는 자리로 옮겨지고, 그 자리를 기억함
   h.pos = h.pos || {};
   [id, ...h.mates.filter(m => Meta.owned(m))].forEach((cid, k) => {
@@ -984,6 +1085,7 @@ function openHouse(id = homeOf) {
     let pokes = [];
     // 톡: 쫄깃 + 한마디 / 끌기: 들어 올리면 바둥바둥, 성격대로 반응 (바닥 안에서만)
     el.onpointerdown = e => {
+      if (houseEdit) return; // 꾸미기 중에는 친구는 그대로
       e.preventDefault();
       el.setPointerCapture(e.pointerId);
       const rr = room.getBoundingClientRect();
@@ -1037,28 +1139,84 @@ function openHouse(id = homeOf) {
       };
     };
     room.appendChild(el);
+    if (k === 0 && cozy >= 10 && h.gift !== today()) {
+      const g = document.createElement('button');
+      g.className = 'house-gift';
+      g.innerHTML = `<img src="${ITEM('gift')}" alt="">`;
+      g.onpointerdown = ev => ev.stopPropagation(); // 집주인을 끌지 않게
+      g.onclick = () => {
+        const n = houseGift(cozy), r = g.getBoundingClientRect(), a = app.getBoundingClientRect();
+        h.gift = today();
+        Meta.addCoins(n);
+        Sound.play('star', 1.2, 0.8);
+        burst(r.left - a.left + r.width / 2, r.top - a.top + r.height / 2, '#ffd84d', 14);
+        floatNum(r.left - a.left + r.width / 2, r.top - a.top, '+' + n, '#e0a020');
+        say('집이 아늑해서 좋아~ 이거 선물!');
+        g.remove();
+      };
+      el.appendChild(g);
+    }
   });
   Aff.bar(id);
-  // 아래쪽: 이 집 가구 가게
-  $('#shop').innerHTML = FURN.map(f => {
-    const have = h.furn.includes(f.id);
-    return `<button class="shop-item${have ? ' have' : ''}" data-id="${f.id}" ${have ? 'disabled' : ''}>
-      <img src="${ITEM(f.id)}"><span>${f.name}</span><b>${have ? '✓' : `<img src="${ITEM('coin')}">${f.price}`}</b></button>`;
-  }).join('');
-  $('#shop').querySelectorAll('.shop-item').forEach(b => (b.onclick = () => {
-    const f = FURN.find(x => x.id === b.dataset.id);
-    if (Save.data.coins < f.price) {
-      Sound.play('bad', 1.2, 0.6);
-      b.animate([{ transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' }, { transform: 'none' }], { duration: 200 });
-      return;
-    }
-    h.furn.push(f.id);
-    Meta.addCoins(-f.price);
-    Sound.play('star', 1.2, 0.8);
-    openHouse(id);
-    const r = room.getBoundingClientRect(), a = app.getBoundingClientRect();
-    burst(r.left - a.left + (r.width * f.x) / 100, r.top - a.top + (r.height * f.y) / 100, '#ffd84d', 14);
-  }));
+  // 꾸미기가 생긴 뒤 처음 들어오면 한 번 알려 줌 (집이 처음 열릴 때는 UNLOCK_INTRO가 같이 알려 줌)
+  if (!Tutor.seen('houseDeco') && !Tutor.busyFlow) { Tutor.mark('houseDeco'); setTimeout(() => $('#house').classList.contains('active') && Spot.show($('#btnDeco'), DECO_TIP), 500); }
+  // 아래쪽 가게: 가구 / 벽지 / 바닥
+  document.querySelectorAll('.shop-tabs button').forEach(b => {
+    b.classList.toggle('on', b.dataset.t === shopTab);
+    b.onclick = () => { shopTab = b.dataset.t; Sound.play('pop', 1.2, 0.5); openHouse(id); };
+  });
+  const coinTag = n => `<img src="${ITEM('coin')}">${n}`;
+  const poor = (b, price) => {
+    if (Save.data.coins >= price) return false;
+    Sound.play('bad', 1.2, 0.6);
+    b.animate([{ transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' }, { transform: 'none' }], { duration: 200 });
+    return true;
+  };
+  if (shopTab === 'furn') {
+    $('#shop').innerHTML = FURN.map(f => {
+      const left = furnLeft(f.id);
+      return `<button class="shop-item" data-id="${f.id}"><img src="${ITEM(f.id)}"><span>${f.name}</span><b>${left > 0 ? `<small>보관 ${left}</small>` : coinTag(f.price)}</b></button>`;
+    }).join('');
+    // 보관함에 있으면 바로 놓고, 없으면 사서 놓음. 놓으면 꾸미기 모드로 바뀌어서 바로 옮길 수 있음
+    $('#shop').querySelectorAll('.shop-item').forEach(b => (b.onclick = () => {
+      const f = furnOf(b.dataset.id);
+      if (furnLeft(f.id) <= 0) {
+        if (poor(b, f.price)) return;
+        Meta.addCoins(-f.price);
+        Save.data.furnInv[f.id] = (Save.data.furnInv[f.id] || 0) + 1;
+        Sound.play('star', 1.2, 0.8);
+      } else Sound.play('pop', 1.2, 0.6);
+      const same = h.items.filter(it => it.k === f.id).length; // 같은 가구는 조금씩 비켜서 놓음
+      h.items.push({ k: f.id, x: clampN(f.x + same * 8, 4, 96), y: f.y });
+      Save.save();
+      houseEdit = true;
+      const scroll = $('#shop').scrollLeft;
+      openHouse(id);
+      $('#shop').scrollLeft = scroll;
+      const r = room.getBoundingClientRect(), a = app.getBoundingClientRect(), it = h.items[h.items.length - 1];
+      burst(r.left - a.left + (r.width * it.x) / 100, r.top - a.top + (r.height * it.y) / 100, '#ffd84d', 14);
+    }));
+  } else {
+    const list = shopTab === 'wall' ? WALLS : FLOORS, invKey = shopTab === 'wall' ? 'wallInv' : 'floorInv', inv = (Save.data[invKey] = Save.data[invKey] || []);
+    $('#shop').innerHTML = list.map(d => {
+      const has = !d.id || inv.includes(d.id), on = (h[shopTab] || '') === d.id;
+      return `<button class="shop-item deco${on ? ' on' : ''}" data-id="${d.id}"><span class="swatch ${shopTab}"${d.id ? ` style="background-image:url(${DECO_IMG(d.id)})"` : ''}></span><span>${d.name}</span><b>${on ? '<small>쓰는 중</small>' : has ? '<small>바꾸기</small>' : coinTag(d.price)}</b></button>`;
+    }).join('');
+    $('#shop').querySelectorAll('.shop-item').forEach(b => (b.onclick = () => {
+      const d = list.find(x => x.id === b.dataset.id);
+      if (d.id && !inv.includes(d.id)) {
+        if (poor(b, d.price)) return;
+        Meta.addCoins(-d.price);
+        inv.push(d.id);
+        Sound.play('star', 1.2, 0.8);
+      } else Sound.play('pop', 1.2, 0.6);
+      if (d.id) h[shopTab] = d.id; else delete h[shopTab];
+      Save.save();
+      const scroll = $('#shop').scrollLeft;
+      openHouse(id);
+      $('#shop').scrollLeft = scroll;
+    }));
+  }
   $('#btnMates').onclick = () => pickMates(id);
 }
 
