@@ -124,7 +124,7 @@ const BODY = id => `assets/img/chars/${id}.png`;
 const TILE = id => `assets/img/tiles/${id}.png?v=2`; // 테두리를 매끈하게 다시 그려서 새로 받게
 // 아이템은 치이카와 원작 도구로: 줄폭탄=랏코 검, 폭탄=동글 폭탄, 무지개=경단, 비행기=종이비행기 (VARCO로 그림)
 const ITEM_ALIAS = { rocket: 'sword_o', bomb: 'bombball_o', rainbow: 'dango3_o', plane: 'paperplane_o' }; // _o: 테두리를 그림에 미리 그려 둔 판 (CSS 필터는 보너스 타임에 렉)
-const ITEM = name => `assets/img/items/${ITEM_ALIAS[name] || name}.png`;
+const ITEM = name => `assets/img/items/${ITEM_ALIAS[name] || name}.png?v=2`; // v: 그림을 바꾸면 올려서 폰에 남은 옛 그림 대신 새로 받게
 // 전신 그림이 없는 캐릭터는 얼굴로
 const NO_BODY = new Set(['kani', 'shooting', 'darkstar', 'goblin', 'beetle']);
 const FXI = n => `assets/img/fx/${n}.png`;

@@ -457,6 +457,7 @@ const Life = {
     Board.spawnIng = st.ing ? spawnIng : null;
     app.classList.add('life-mode');
     app.classList.toggle('tower-mode', run.kind === 'tower');
+    app.classList.toggle('broth', st.name.includes('국물')); // 국물 판은 시럽 대신 국물 무늬
     updateFever();
     Sound.music('map');
     show('battle');
@@ -474,7 +475,7 @@ const Life = {
     Life.hud();
     if (run.kind === 'route' && LIFE_STORY[i] && (Save.data.life || [])[i] == null) await playStory(LIFE_STORY[i]);
     await dropIn(run.kind === 'route' && routeLevel(routeIdx('l', i)) === 'hard' ? 'HARD!' : st.intro);
-    if (bowl) banner(`🍜 ${bowl.name}!`, 500);
+    if (bowl) banner(`${bowl.name}!`, 500);
     if (buddy) setTimeout(() => banner(`단짝 보너스! ${st.time ? '+6초' : '이동 +2'}`, 450), bowl ? 900 : 0);
     B.busy = false;
     Tutor.onStart();
@@ -520,7 +521,7 @@ const Life = {
     const html = st.contest ? `<div class="gchip best"><img src="${ITEM('medal')}"><b>${Save.data.contestBest || 0}</b></div>`
       : st.dungeon ? `<div class="gchip coin"><img src="${ITEM('coin')}"><b>${Dungeon.coins}</b></div>` : st.goals.map(g => {
       const n = Life.remain(g);
-      return `<div class="gchip ${g.k}${n ? '' : ' done'}" data-id="${g.id || ''}"><img src="${GOAL_ICON[g.k](g)}"><b>${n || '✓'}</b></div>`;
+      return `<div class="gchip ${g.k}${n ? '' : ' done'}" data-id="${g.id || ''}"><img src="${GOAL_ICON[g.k](g)}"><b>${n || '<img class="ck" src="assets/img/ui/check.png" alt="">'}</b></div>`;
     }).join('');
     if (html !== L.goalsHtml) {
       const was = L.goalsHtml;
@@ -669,7 +670,7 @@ const Life = {
     const c = centerOf(chip);
     chip.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.5) rotate(-8deg)', filter: 'brightness(1.4)', offset: 0.45 }, { transform: 'scale(.92)', offset: 0.75 }, { transform: 'scale(1)' }], { duration: 520, easing: 'ease-out' });
     const ck = addFx('goal-check', c.x, c.y);
-    ck.textContent = '✓';
+    ck.innerHTML = '<img src="assets/img/ui/check.png" alt="">';
     ck.animate([{ transform: 'translate(-50%,-50%) scale(2.6) rotate(-20deg)', opacity: 0 }, { transform: 'translate(-50%,-50%) scale(.9) rotate(0)', opacity: 1, offset: 0.55 }, { transform: 'translate(-50%,-50%) scale(1)', opacity: 1, offset: 0.8 }, { transform: 'translate(-50%,-70%) scale(1)', opacity: 0 }],
       { duration: 900, easing: 'ease-out' }).finished.then(() => ck.remove());
     kx('explosion01', 'star_09', c.x, c.y, B.S * 2.4, '#7be0a0', [{ transform: 'scale(.2)', opacity: 1 }, { transform: 'scale(1.1) rotate(30deg)', opacity: 0 }], { duration: 420, easing: 'ease-out' });
@@ -914,7 +915,7 @@ function pickHelper(st = L.st) {
         <div class="helper-pick"><span class="fig">${Meta.figure(ch.id, art(ch.id))}</span><div><b>${ch.name}</b><small>${skillOf(ch.id).name}</small><p>${skillOf(ch.id).desc}</p></div></div>
         ${host ? `<div class="buddy-note${CHARS[pick].id === st.host ? ' on' : ''}">이 판 단짝: <b>${host.name}</b> · 데려가면 ${st.time ? '+6초' : '이동 +2'}${Meta.owned(host.id) ? '' : ' (아직 없는 친구)'}</div>` : ''}
         <div class="mates-grid">${list.map(([c, k]) => `<button class="${k === pick ? 'on' : ''}${c.id === st?.host ? ' buddy' : ''}" data-k="${k}" style="--ring:${c.ring}"><img src="${FACE(c.id)}"><span>${c.name}</span></button>`).join('')}</div>
-        <div class="sheet-btns"><button class="big-btn ghost" data-back>◀ 돌아가기</button><button class="big-btn" data-go>같이 가자!</button></div>`;
+        <div class="sheet-btns"><button class="big-btn ghost" data-back><img class="b-ic" src="assets/img/ui/back.png" alt="">돌아가기</button><button class="big-btn" data-go>같이 가자!</button></div>`;
       card.querySelectorAll('.mates-grid button').forEach(b => (b.onclick = () => { pick = +b.dataset.k; Sound.play('pop', 1.2, 0.5); draw(); }));
       card.querySelector('[data-go]').onclick = () => {
         L.helper = pick;

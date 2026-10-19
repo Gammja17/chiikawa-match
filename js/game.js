@@ -505,6 +505,9 @@ function playStory(lines) {
 }
 
 // ---------- 모달 ----------
+// 버튼 글자 속 기호(🏠 ▶ ◀)를 손그림 아이콘으로 (버튼 글은 코드에 적힌 것만 들어옴)
+const UI_ICON = { '🏠': 'home', '▶': 'next', '◀': 'back' };
+const uiIcons = s => s.replace(/🏠|▶|◀/g, m => `<img class="b-ic" src="assets/img/ui/${UI_ICON[m]}.png" alt="">`);
 function modal({ title, stars = null, char, img = null, photo = false, rows = [], text, btn1, on1, btn2 = '', on2 = null }) {
   $('#modalTitle').textContent = title;
   $('#modalChar').src = img || artOf(char);
@@ -517,8 +520,8 @@ function modal({ title, stars = null, char, img = null, photo = false, rows = []
   st.innerHTML = stars == null ? '' : '<span>★</span><span>★</span><span>★</span>';
   st.style.display = stars == null ? 'none' : '';
   const b1 = $('#modalBtn1'), b2 = $('#modalBtn2');
-  b1.textContent = btn1;
-  b2.textContent = btn2;
+  b1.innerHTML = uiIcons(btn1);
+  b2.innerHTML = uiIcons(btn2);
   const close = () => $('#modal').classList.remove('show');
   // 뜨자마자 눌리지 않게 (연출을 넘기던 손가락이 바로 버튼을 누르는 걸 막음)
   const shownAt = performance.now();
@@ -703,7 +706,7 @@ function spawnMonster(animated) {
   img.style.maxWidth = w.boss ? '86%' : '70%';
   $('#monSprite').style.filter = w.hue ? `hue-rotate(${w.hue}deg) saturate(1.3)` : '';
   const title = w.title ? (w.title.endsWith('·') ? w.title : w.title + ' ') : '';
-  $('#monName').innerHTML = attrIcon(w.a) + (w.boss ? '👑 ' : '') + title + M.name;
+  $('#monName').innerHTML = attrIcon(w.a) + (w.boss ? '<img class="crown-ic" src="assets/img/ui/crown.png" alt="">' : '') + title + M.name;
   $('#monName').classList.toggle('boss', !!w.boss);
   B.monHp = B.monMax = w.hp;
   B.cd = w.cd;
@@ -761,7 +764,7 @@ async function startStage(i) {
   updateTeam();
   if (STORY[i] && Save.data.stars[i] == null) await playStory(STORY[i]);
   await dropIn(routeLevel(routeIdx('b', i)) === 'hard' ? 'HARD!' : '토벌 시작!');
-  if (bowl) banner(`🍜 ${bowl.name}!`, 500);
+  if (bowl) banner(`${bowl.name}!`, 500);
   B.busy = false;
   Tutor.onStart();
   Tutor.poke();
@@ -1292,6 +1295,43 @@ function flyOff(img, x, y, size) {
     { transform: `translate(calc(-50% + ${dx}px), calc(-50% + 60px)) scale(.7) rotate(${dx * 5}deg)`, opacity: 0 },
   ], { duration: 750, easing: 'ease-out' }).finished.then(() => im.remove());
 }
+// 장애물 연출용 그림 (잡초 뿌리째, 풀린 리본, 열린 상자, 거품 터짐 …)
+const OBST = n => `assets/img/obst/${n}.png`;
+['weed_pull', 'sprout_pull', 'ribbon_loose', 'box_open', 'box_flap', 'bubble_pop', 'dirt', 'leaf'].forEach(n => (new Image().src = OBST(n)));
+const at3 = (dx, dy, s = 1, r = 0) => `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(${s}) rotate(${r}deg)`;
+// 그림 하나를 (x, y)에 띄워 frames대로 움직인 뒤 지움
+function piece(src, x, y, size, frames, opts) {
+  const im = new Image();
+  im.src = src;
+  im.className = 'fximg';
+  Object.assign(im.style, { left: x + 'px', top: y + 'px', width: size + 'px', zIndex: 9 });
+  fx.appendChild(im);
+  const a = im.animate(frames, { fill: 'forwards', ...opts });
+  a.finished.then(() => im.remove(), () => im.remove());
+  return a;
+}
+// 뿌리째 쑥: 두 번 당기다가 흙덩이 달린 채로 뽑혀 위로 날아감
+function pullOut(src, x, y, size) {
+  const dx = (Math.random() < 0.5 ? -1 : 1) * (18 + Math.random() * 22);
+  piece(src, x, y, size, [
+    { transform: at3(0, 0), opacity: 1 },
+    { transform: at3(-3, -6, 1, -6), offset: 0.14 },
+    { transform: at3(2, 0, 1, 4), offset: 0.26 },
+    { transform: at3(-2, -12, 1.02, -8), offset: 0.4 },
+    { transform: at3(0, -4, 1, 2), offset: 0.5 },
+    { transform: at3(dx * 0.4, -size * 1.1, 1.12, dx * 0.6), opacity: 1, offset: 0.72 },
+    { transform: at3(dx, -size * 1.6, 0.9, dx * 1.6), opacity: 0 },
+  ], { duration: 720, easing: 'ease-out' });
+}
+// 조각 하나가 옆으로 튀어 빙글 떨어짐 (상자 날개, 잎, 흙, 풀린 리본)
+function tossPiece(src, x, y, size, dir, delay = 0) {
+  const dx = dir * (40 + Math.random() * 30);
+  piece(src, x, y, size, [
+    { transform: at3(0, 0, 0.8, 0), opacity: 1 },
+    { transform: at3(dx * 0.5, -size * 0.9, 1, dir * 120), opacity: 1, offset: 0.4 },
+    { transform: at3(dx, size * 0.9, 0.8, dir * 300), opacity: 0 },
+  ], { duration: 640, delay, easing: 'ease-out' });
+}
 // 장애물이 맞거나 깨짐, 리본이 풀림, 잡초가 뽑힘, 시럽이 번짐
 function hitFx(res, T) {
   const at = (r, c) => T.get(key(r, c)) ?? 60;
@@ -1299,6 +1339,7 @@ function hitFx(res, T) {
   res.unlocked.forEach(({ r, c, tile }) => setTimeout(() => {
     const p = tileCenter(r, c);
     flyOff(ITEM('ribbon'), p.x, p.y, S * 0.9);
+    tossPiece(OBST('ribbon_loose'), p.x, p.y, S * 0.8, Math.random() < 0.5 ? -1 : 1, 60);
     shards(p.x, p.y, ['#ff8ab8', '#ffc4dc', '#ff5d9e'], 8, 9);
     ringFx(p.x, p.y, S * 1.6, '#ff8ab8');
     refreshTile(tile);
@@ -1310,26 +1351,55 @@ function hitFx(res, T) {
   res.hits.forEach(({ r, c, tile, gone }) => setTimeout(() => {
     const p = tileCenter(r, c);
     if (tile.block === 'weed') {
-      // 잡초 쑥: 잎이 튀어 오르고 흙이 흩어짐
-      flyOff(ITEM(gone ? 'weed1' : 'weed2'), p.x, p.y, S * 0.9);
-      shards(p.x, p.y + S * 0.2, ['#9b6b3a', '#7a5230', '#6dbf57', '#8fd06a'], 10, 8, true);
+      // 잡초 쑥: 다 뽑히면 뿌리째 쑥 빠져 날아가고, 한 번 맞으면 잎만 우수수
+      if (gone) { tile.inner.style.opacity = 0; pullOut(OBST('weed_pull'), p.x, p.y, S); }
+      else {
+        tossPiece(OBST('leaf'), p.x, p.y - S * 0.1, S * 0.4, -1);
+        tossPiece(OBST('leaf'), p.x, p.y - S * 0.1, S * 0.36, 1, 50);
+        tile.inner.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-10%) rotate(-6deg)' }, { transform: 'translateY(0) rotate(4deg)' }, { transform: 'none' }], { duration: 260 });
+      }
+      tossPiece(OBST('dirt'), p.x, p.y + S * 0.25, S * 0.3, Math.random() < 0.5 ? -1 : 1, 220);
+      shards(p.x, p.y + S * 0.2, ['#9b6b3a', '#7a5230', '#6dbf57', '#8fd06a'], 8, 7, true);
       ringFx(p.x, p.y, S * 1.6, '#8fd06a', 300);
       Sound.play('swap', 1.5, 0.7);
       Sound.play('pop', 1.2, 0.6);
     } else if (tile.block === 'bubble') {
+      // 거품: 볼록 부풀었다가 퐁 터져 물방울이 둥글게 퍼짐
+      if (gone) {
+        tile.inner.style.opacity = 0;
+        piece(ITEM('bubble'), p.x, p.y, S * 0.86, [{ transform: at3(0, 0), opacity: 1 }, { transform: at3(0, 0, 1.25, 0), opacity: 1, offset: 0.7 }, { transform: at3(0, 0, 1.35, 0), opacity: 0 }], { duration: 140, easing: 'ease-in' });
+      }
+      piece(OBST('bubble_pop'), p.x, p.y, S * 1.1, [{ transform: at3(0, 0, 0.5, 0), opacity: 1 }, { transform: at3(0, 0, 1.3, 20), opacity: 0 }], { duration: 420, delay: 120, easing: 'ease-out' });
       ringFx(p.x, p.y, S * 2, '#9fdcff', 320);
       shards(p.x, p.y, ['#bfe9ff', '#e6f7ff', '#8fd3ff'], 10, 8, true);
       Sound.play('pop', 1.9, 0.9);
       Sound.play('sparkle', 1.8, 0.4);
     } else if (gone) {
-      shards(p.x, p.y, ['#c8955a', '#e2b77d', '#9b6b3a', '#f1d6a8'], 12, 13);
+      // 상자: 날개가 활짝 열리며 통 튀어 오르고, 날개 두 장은 양옆으로 날아감
+      tile.inner.style.opacity = 0;
+      const dir = Math.random() < 0.5 ? -1 : 1;
+      piece(OBST('box_open'), p.x, p.y, S * 0.95, [
+        { transform: at3(0, 0, 0.9, 0), opacity: 1 },
+        { transform: at3(0, -S * 0.25, 1.22, dir * -6), offset: 0.3 },
+        { transform: at3(dir * 30, -S * 1.1, 1, dir * 40), opacity: 1, offset: 0.65 },
+        { transform: at3(dir * 60, -S * 0.6, 0.7, dir * 110), opacity: 0 },
+      ], { duration: 620, easing: 'ease-out' });
+      tossPiece(OBST('box_flap'), p.x - S * 0.2, p.y - S * 0.2, S * 0.5, -1, 90);
+      tossPiece(OBST('box_flap'), p.x + S * 0.2, p.y - S * 0.2, S * 0.5, 1, 120);
+      shards(p.x, p.y, ['#c8955a', '#e2b77d', '#9b6b3a', '#f1d6a8'], 8, 11);
       ringFx(p.x, p.y, S * 1.8, '#e2b77d', 300);
       Sound.play('hit2', 0.7, 0.9);
       Sound.play('land', 0.8, 0.9);
       shake(4, 160);
     } else {
-      // 선물 포장이 벗겨지고 상자가 남음
-      flyOff(ITEM('gift'), p.x, p.y, S);
+      // 선물: 리본이 흔들흔들하다 스르륵 풀려 양옆으로 날아가고 상자가 남음
+      piece(ITEM('gift'), p.x, p.y, S * 0.86, [
+        { transform: at3(0, 0), opacity: 1 }, { transform: at3(0, 0, 1.05, -8), offset: 0.25 }, { transform: at3(0, 0, 1.05, 8), offset: 0.5 },
+        { transform: at3(0, -S * 0.1, 1.1, 0), opacity: 1, offset: 0.7 }, { transform: at3(0, -S * 0.2, 1.15, 0), opacity: 0 },
+      ], { duration: 320, easing: 'ease-in-out' });
+      flyOff(ITEM('ribbon'), p.x, p.y - S * 0.25, S * 0.6);
+      tossPiece(OBST('ribbon_loose'), p.x, p.y, S * 0.75, -1, 200);
+      tossPiece(OBST('ribbon_loose'), p.x, p.y, S * 0.75, 1, 230);
       shards(p.x, p.y, ['#ff6b6b', '#ffd84d', '#ff9f5a'], 10, 10);
       Sound.play('hit1', 1.2, 0.8);
     }
@@ -1344,8 +1414,8 @@ function hitFx(res, T) {
       cells[key(r, c)].className = cellClass(r, c);
       fgs[key(r, c)].className = fgClass(r, c);
       const p = tileCenter(r, c);
-      if (goalChip('weed')) flyToGoal(ITEM('weed1'), p, goalChip('weed'), '#8fd06a');
-      else flyOff(ITEM(left ? 'weed2' : 'weed1'), p.x, p.y + S * 0.2, S * 0.8);
+      if (fx.childElementCount < 50) pullOut(OBST(left ? 'weed_pull' : 'sprout_pull'), p.x, p.y + S * 0.1, S * (left ? 0.8 : 0.62));
+      if (goalChip('weed')) setTimeout(() => flyToGoal(ITEM('weed1'), p, goalChip('weed'), '#8fd06a'), 380);
       shards(p.x, p.y + S * 0.3, ['#9b6b3a', '#7a5230', '#6dbf57'], 6, 7, true);
     }, 40 + Math.min(i * 25, 250)));
     setTimeout(() => Sound.play('sparkle', 1.4, 0.5), 60);
@@ -2458,12 +2528,16 @@ function mvp() {
   const squad = B.team.slice(0, B.real).map(k => CHARS[k]);
   return squad.reduce((a, c) => ((B.dmgBy[c.id] || 0) > (B.dmgBy[a.id] || 0) ? c : a), squad[0]);
 }
+// 자주 나오는 클리어 도장은 손그림 글자 그림으로 (판마다 다른 문구는 글자 그대로)
+const SLAM_ART = { '토벌<br>성공!': 'battle', '제초<br>끝!!': 'weed', '상자<br>다 뜯었다!': 'box', '거품<br>싹싹!': 'bubble', '배달<br>완료!': 'ing',
+  '리본<br>풀었다!': 'lock', '시럽<br>듬뿍!': 'syrup', '모으기<br>끝!': 'char', '목표<br>달성!': 'score', '검정<br>합격!': 'exam', '클리어!': 'clear' };
+Object.values(SLAM_ART).forEach(n => (new Image().src = `assets/img/ui/words/${n}.webp`)); // 도장이 늦게 뜨지 않게 미리
 async function clearShow(text = '토벌<br>성공!') {
   const el = document.createElement('div');
   el.className = 'clear-show';
   const ch = mvp();
   el.innerHTML = `<div class="dim"></div>
-    <div class="slam">${text}</div>
+    <div class="slam${SLAM_ART[text] ? ' art' : ''}">${SLAM_ART[text] ? `<img src="assets/img/ui/words/${SLAM_ART[text]}.webp" alt="">` : text}</div>
     <img class="hero" src="${art(ch.id)}"><div class="hero-say">${B.mode === 'battle' ? '<b class="mvp">MVP</b>' : ''}${lineOf(ch.id)}</div>`;
   app.appendChild(el);
   const [dim, stamp, hero, say] = el.children;

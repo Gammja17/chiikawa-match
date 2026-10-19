@@ -257,7 +257,7 @@ const Sheet = {
     card.style.setProperty('--ring', ch.ring);
     const stat = ch.heal ? `회복 ${Math.round(ch.heal * Meta.mult(id) * 10) / 10}` : `공격 ${Math.round(ch.dmg * Meta.mult(id))}`;
     const stories = (CHAR_STORY[id] || []).map(([need], k) =>
-      `<button class="story-btn" data-k="${k}" ${lv >= need ? '' : 'disabled'}>📖 이야기 ${k + 1}${lv >= need ? '' : ` (Lv${need})`}</button>`).join('');
+      `<button class="story-btn" data-k="${k}" ${lv >= need ? '' : 'disabled'}><img class="b-ic" src="assets/img/ui/book.png" alt="">이야기 ${k + 1}${lv >= need ? '' : ` (Lv${need})`}</button>`).join('');
     card.innerHTML = `
       <div class="sheet-art${own && specialOf(id) ? ' special' : ''}"${own && specialOf(id) ? ` style="--scene:url(${SCENE(specialOf(id).special)})"` : ''}>${own ? Meta.figure(id, art(id), 'big') : `<span class="fig big"><img src="${art(id)}" class="shadow"></span>`}${own && specialOf(id) ? '<span class="sp-tag">✦ 스페셜</span>' : ''}<div class="sheet-say"></div></div>
       <div class="sheet-name">${ch.name} ${attrTag(ch.attr)}</div>
