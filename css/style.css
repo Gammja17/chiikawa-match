@@ -247,6 +247,14 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 .mon.chosen::before { content: '▼'; position: absolute; top: -4px; left: 50%; transform: translateX(-50%); color: #ff9f1a; font-size: 14px; text-shadow: 0 0 2px #fff; z-index: 1; }
 .mon.dead { pointer-events: none; }
 .mon.dead .hp, .mon.dead .mon-name, .mon.dead .mon-cd { opacity: .35; }
+/* 괴물이 건 디버프: 팀 체력바 아래 칩, 잠든 친구 얼굴에 zzz */
+#debuffs { display: flex; gap: 6px; justify-content: center; margin: 4px 12px 0; }
+.dbf { display: flex; align-items: center; gap: 3px; padding: 1px 8px 0 3px; border-radius: 10px; background: var(--paper); box-shadow: var(--sh); font-family: var(--head); font-size: 13px; line-height: 1.3; }
+.dbf img { width: 20px; height: 20px; }
+.dbf b { min-width: 16px; padding: 0 4px; border-radius: 7px; color: #fff; font-size: 12px; text-align: center; }
+.dbf.poison b { background: #9b5bd6; } .dbf.weak b { background: #5a4a86; } .dbf.sleep b { background: #6f84ef; }
+#party .pm.asleep .pm-face { filter: grayscale(.6) brightness(.85); }
+#party .pm.asleep::after { content: ''; position: absolute; right: -6px; top: -10px; width: 30px; height: 30px; background: url(../assets/img/ui/debuff_sleep.png) center / contain no-repeat; animation: bob 1.4s ease-in-out infinite; z-index: 3; }
 @keyframes cdRing { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-12deg); } 40% { transform: rotate(10deg); } 60% { transform: rotate(-7deg); } 80% { transform: rotate(4deg); } }
 #feverTag { position: absolute; left: 8px; bottom: 8px; z-index: 3; display: none; width: 150px; height: 27px; background: url(../assets/img/combo/ftag_cheer.png) left center / contain no-repeat; font-size: 0; color: transparent; transform-origin: 0 50%; animation: pulse .6s infinite; } /* 글자는 그림으로 (읽기 도우미용 글은 그대로) */
 #feverTag.on { display: block; }

@@ -999,6 +999,7 @@ async function startStage(i) {
   B.rally = 0;
   B.cont = false; // 이어하기는 스테이지마다 한 번
   B.maxCombo = 0;
+  Debuff.reset(); // 괴물이 건 잠·독·어둠은 새 판에서 다 풀림
   updateFever();
   // 편성이 5명보다 적으면 빈자리는 응원 친구 구슬로 채움 (공격 절반, 스킬 없음)
   B.squad = B.squad || B.team.slice();
@@ -1854,10 +1855,11 @@ async function stepFx(res, combo, from = null) {
     let k = 0;
     for (const [type, cells] of tally) {
       const ch = teamCh(type), cheer = type >= B.real;
-      if (!cheer && !noGauge) B.gauge[type] += cells.length;
+      const zz = Debuff.asleep(type); // 잠든 친구: 게이지가 안 차고 공격·회복이 반
+      if (!cheer && !noGauge && !zz) B.gauge[type] += cells.length;
       $('#party').children[type]?.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-10px) scale(1.15)' }, { transform: 'translateY(0)' }], { duration: 260 });
       if (ch.heal) {
-        const amt = Math.round(cells.length * ch.heal * mult * (cheer ? 0.5 : Meta.mult(ch.id)));
+        const amt = Math.round(cells.length * ch.heal * mult * (cheer ? 0.5 : Meta.mult(ch.id)) * (zz ? 0.5 : 1));
         B.dmgBy[ch.id] = (B.dmgBy[ch.id] || 0) + Math.min(amt, B.teamMax - B.teamHp);
         B.teamHp = Math.min(B.teamMax, B.teamHp + amt);
         updateTeam();
@@ -1866,7 +1868,7 @@ async function stepFx(res, combo, from = null) {
       } else if (B.monHp > 0) {
         const crit = ch.crit && Math.random() < ch.crit;
         const eff = cheer ? 1 : attrMult(ch.attr, curWave().a);
-        const dmg = Math.round(cells.length * ch.dmg * mult * eff * (cheer ? 0.5 : Meta.mult(ch.id)) * (crit ? 2.5 : 1));
+        const dmg = Math.round(cells.length * ch.dmg * mult * eff * (cheer ? 0.5 : Meta.mult(ch.id)) * (crit ? 2.5 : 1) * (zz ? 0.5 : 1));
         hitMonster(dmg, ch, crit, k++, eff);
       }
       await sleep(110);
@@ -1905,9 +1907,10 @@ function fxImage(name, x, y, size, dur) {
   ], { duration: dur, easing: 'ease-out' }).finished.then(() => im.remove());
 }
 
-function hitMonster(dmg, ch, crit, k, eff = 1) {
+function hitMonster(dmg, ch, crit, k, eff = 1, carried = false) {
   const mon = tgt();
   if (!mon) return;
+  if (!carried) dmg = Debuff.weaken(dmg); // 어둠이면 약하게 (넘어가는 남은 데미지엔 또 걸지 않음)
   B.lastMon = mon;
   const dealt = Math.min(dmg, mon.hp);
   B.dmgBy[ch.id] = (B.dmgBy[ch.id] || 0) + dealt;
@@ -1917,7 +1920,7 @@ function hitMonster(dmg, ch, crit, k, eff = 1) {
   if (mon.hp <= 0 && aliveMons().length) {
     killMon(mon);
     const nx = tgt(), rest = dmg - dealt;
-    if (nx && rest > 0) setTimeout(() => { const e2 = attrMult(ch.attr, nx.w.a); hitMonster(Math.max(1, Math.round((rest / eff) * e2)), ch, crit, k + 1, e2); }, 160);
+    if (nx && rest > 0) setTimeout(() => { const e2 = attrMult(ch.attr, nx.w.a); hitMonster(Math.max(1, Math.round((rest / eff) * e2)), ch, crit, k + 1, e2, true); }, 160);
   }
   const m = mon.el.img;
   m.animate([
@@ -1976,6 +1979,7 @@ async function endTurn() {
   if (!aliveMons().length) { await monsterDefeated(); return; }
   if (B.fever) { B.fever--; updateFever(); }
   if (B.rally) B.rally--;
+  await Debuff.tick(); // 독이 들고, 잠·어둠이 한 턴씩 풀림
   aliveMons().forEach(m => m.cd--);
   updateCd();
   for (const m of aliveMons()) {
@@ -2008,6 +2012,7 @@ async function monsterAttack(mon = tgt()) {
   $('#party').animate([{ transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'none' }], { duration: 240 });
   await sleep(450);
   if (mon.w.m === 'mimic') await throwBoxes(mon.w.boss ? 3 : 2, centerOf(m));
+  await Debuff.special(mon); // 괴물마다 특수 공격 (한 번 걸러 한 번)
 }
 
 // 미믹은 공격하면서 판에 상자를 던짐. 옆에서 터뜨리면 깨짐
