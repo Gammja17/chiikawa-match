@@ -266,7 +266,7 @@ const UNLOCKS = [
   { id: 'friends', btn: '#btnFriends', at: 2, text: '친구들 메뉴가 열렸어! 지금까지 만난 친구를 볼 수 있어' },
   { id: 'ramen', btn: '#btnRamen', at: 4, text: '라멘 가게가 열렸다는 거야!? 들어가 보자~' },
   { id: 'house', btn: '#btnHouse', at: 6, text: '친구네 집이 열렸어! 코인으로 집을 꾸밀 수 있어' },
-  { id: 'gacha', btn: '#btnGacha', at: 8, text: '캡슐 뽑기가 열렸어! 친구 뽑기랑 옷 뽑기가 있어' },
+  { id: 'gacha', btn: '#btnGacha', at: 8, text: '가게가 열렸어! 캡슐 뽑기랑 옷 가게가 있어' },
   { id: 'challenge', btn: '#btnChallenge', at: 10, text: '도전 모드가 열렸어! 인어섬 탐험이랑 제초 대회~' },
 ];
 // 들어가면 그 화면에서 비춰 줄 곳

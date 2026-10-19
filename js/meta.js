@@ -269,7 +269,7 @@ const Sheet = {
         return `<button data-sk="${k}" class="${on ? 'on' : ''}${open ? '' : ' locked'}"><b>${sk.name}</b><small>${open ? `게이지 ${sk.need}` : `Lv${sk.lv}에 열림`}</small></button>`; }).join('')}</div>
       <div class="sheet-skill">${skillOf(id).desc}</div>
       ${own && SKINS[id] ? `<div class="sheet-label">옷 <small>입으면 공격 +5%</small></div><div class="sheet-accs"><button data-s="" class="${Save.data.outfit[id] ? '' : 'on'}">기본</button>${(Save.data.skins[id] || []).map(s => `<button data-s="${s}" class="${Save.data.outfit[id] === s ? 'on' : ''}"><img src="${SKIN(id, s)}"></button>`).join('')}</div>
-        ${(Save.data.skins[id] || []).length ? '' : '<small class="sheet-hint">캡슐 뽑기 화면의 옷 가게에서 살 수 있어요</small>'}` : ''}
+        ${(Save.data.skins[id] || []).length ? '' : '<small class="sheet-hint">가게의 옷 가게에서 살 수 있어요</small>'}` : ''}
       <div class="sheet-stories">${own ? stories : ''}</div>
       <div class="sheet-btns"><button class="big-btn ghost" data-close>닫기</button>${opts.action && own ? `<button class="big-btn" data-act>${opts.action.label}</button>` : ''}</div>`;
     const say = () => {
