@@ -347,7 +347,7 @@ Tutor.mapFlow = async function (delay) {
       });
       return;
     }
-    // 15판을 깨면 설문 한 번 (js/survey.js)
+    // 12판을 깨면 설문 한 번 (js/survey.js, 15판의 구글 연결 안내와 안 겹치게)
     if (typeof Survey !== 'undefined' && Survey.due()) await Survey.open();
   } finally { Tutor.busyFlow = false; }
 };
