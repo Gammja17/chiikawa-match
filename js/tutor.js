@@ -374,7 +374,7 @@ const Cine = {
     return new Promise(done => {
       const el = document.createElement('div');
       el.className = 'cine';
-      el.innerHTML = '<div class="cine-img"></div><i class="bar top"></i><i class="bar bot"></i><p class="cine-text"></p><button class="cine-skip">건너뛰기 ▶▶</button><div class="cine-logo"><small>먼작귀</small><b>퍼즐 토벌<br>대작전!</b></div>';
+      el.innerHTML = '<div class="cine-img"></div><i class="bar top"></i><i class="bar bot"></i><p class="cine-text"></p><button class="cine-skip">건너뛰기 ▶▶</button><div class="cine-logo"><img src="assets/img/ui/logo.png" alt="퍼즐 토벌 대작전!"></div>';
       app.appendChild(el);
       const imgBox = el.querySelector('.cine-img'), txt = el.querySelector('.cine-text');
       let k = -1, timer = null, ended = false;
