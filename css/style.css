@@ -486,10 +486,10 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .gacha-btns .big-btn { display: flex; align-items: center; gap: 4px; min-width: 0; padding: 0 16px; font-size: 26px; }
 .gacha-btns .big-btn img { width: 26px; height: 26px; }
 /* 옷 가게 탭: 뽑기 기계 대신 옷 목록 */
-.gacha-body.shop-mode { justify-content: flex-start; gap: 10px; padding-top: 10px; }
+.gacha-body.shop-mode { justify-content: flex-start; gap: 10px; padding-top: 10px; min-height: 0; } /* 내용만큼 늘어나지 않게 해야 옷 목록이 스크롤됨 */
 .gacha-body.shop-mode #gachaMachine, .gacha-body.shop-mode #gachaNote, .gacha-body.shop-mode .gacha-btns { display: none; }
 .gacha-body:not(.shop-mode) #outfitShop { display: none; }
-#outfitShop { align-self: stretch; overflow-y: auto; padding: 0 12px 20px; }
+#outfitShop { flex: 1; min-height: 0; align-self: stretch; overflow-y: auto; padding: 0 12px 20px; }
 .os-note { margin: 0 0 8px; text-align: center; font-size: 14px; color: var(--ink2); }
 .os-row { margin-bottom: 12px; }
 .os-who { display: inline-block; margin: 0 0 6px 4px; padding: 1px 12px 0; border-radius: 10px; background: var(--ring); color: #fff; font-family: var(--head); font-size: 17px; }

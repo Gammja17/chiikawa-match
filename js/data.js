@@ -337,6 +337,8 @@ const SKINS = {
     squid:    { name: '오징어 옷',   img: 'squid.png',    price: 350 },
     tanuki:   { name: '너구리 옷',   img: 'tanuki.png',   price: 400 },
     magical:  { name: '마법소녀',    img: 'magical.png',  price: 600, special: 'magical_chiikawa' },
+    santa:    { name: '산타',        img: 'santa.png',    price: 600, special: 'santa_chiikawa' },
+    hotate:   { name: '가리비',      img: 'hotate.png',   price: 600, special: 'hotate_chiikawa' },
   },
   hachiware: {
     bugnet:   { name: '잠자리채',    img: 'bugnet.png',   price: 150 },
@@ -344,15 +346,21 @@ const SKINS = {
     guitar:   { name: '기타',        img: 'guitar.png',   price: 300 },
     tanuki:   { name: '너구리 옷',   img: 'tanuki.png',   price: 400 },
     magical:  { name: '마법소녀',    img: 'magical.png',  price: 600, special: 'magical_hachiware' },
+    santa:    { name: '산타',        img: 'santa.png',    price: 600, special: 'santa_hachiware' },
+    hotate:   { name: '가리비',      img: 'hotate.png',   price: 600, special: 'hotate_hachiware' },
   },
   usagi: {
     neckie:   { name: '시원한 넥밴드', img: 'neckie.png', price: 150 },
     squid:    { name: '오징어 옷',   img: 'squid.png',    price: 350 },
     magical:  { name: '마법소녀',    img: 'magical.png',  price: 600, special: 'magical_usagi' },
+    santa:    { name: '산타',        img: 'santa.png',    price: 600, special: 'santa_usagi' },
+    hotate:   { name: '가리비',      img: 'hotate.png',   price: 600, special: 'hotate_usagi' },
   },
-  // 마법소녀 MV(まじかるちいかわ) 장면에서
-  momonga:   { magical: { name: '마법소녀',      img: 'magical.png', price: 600, special: 'magical_momonga' } },
-  rakko:     { mask:    { name: '가면 히어로',   img: 'mask.png',    price: 600, special: 'rakko_mask' } },
+  // 마법소녀 MV(まじかるちいかわ) 장면에서. 산타는 공식 콜라보 영상 「サンタ・テル・ミー」, 가리비는 차르메라 광고 「ホタテ三重奏篇」
+  momonga:   { magical: { name: '마법소녀',      img: 'magical.png', price: 600, special: 'magical_momonga' },
+               santa:   { name: '산타',          img: 'santa.png',   price: 600, special: 'santa_momonga' } },
+  rakko:     { mask:    { name: '가면 히어로',   img: 'mask.png',    price: 600, special: 'rakko_mask' },
+               santa:   { name: '산타',          img: 'santa.png',   price: 600, special: 'santa_rakko' } },
   kurimanju: { magical: { name: '마법소녀',      img: 'magical.png', price: 600, special: 'magical_meadow' } },
   shisa:     { magical: { name: '마법소녀',      img: 'magical.png', price: 600, special: 'magical_meadow' } },
 };
