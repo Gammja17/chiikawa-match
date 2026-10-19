@@ -349,6 +349,9 @@ function burst(x, y, color, n = 6) {
 const NUM_WORD = { '선물!': 'w_gift' };
 function spriteText(text) {
   if (NUM_WORD[text]) return `<img class="w" src="${CIMG(NUM_WORD[text])}">`;
+  // 공격 데미지(괴물에게 '123 ▲', 우리 편이 맞으면 '-12'): 하양→장미 빨강 숫자
+  const dm = text.match(/^(-?)(\d+)( [▲▼])?$/);
+  if (dm) return (dm[1] ? `<img class="mi" src="${CIMG('mminus')}">` : '') + [...dm[2]].map(d => `<img src="${CIMG('m' + d)}">`).join('') + (dm[3] ? `<b class="mk">${dm[3].trim()}</b>` : '');
   if (!/^\+\d+초?$/.test(text)) return null;
   return [...text].map(ch => `<img src="${CIMG(ch === '+' ? 'plus' : ch === '초' ? 'sec' : 'n' + ch)}"${ch === '+' ? ' class="pl"' : ''}>`).join('');
 }
@@ -1323,7 +1326,8 @@ function effectFx(ef) {
       kp('magic_02', o.x, o.y, S * 5, '#ffb347', [{ transform: 'scale(.2) rotate(0)', opacity: 1 }, { transform: 'scale(1) rotate(60deg)', opacity: 0 }], { duration: 520, easing: 'ease-out' });
       kp('smoke_04', o.x, o.y, S * 3.4, '#e8dccb', [{ transform: 'scale(.3)', opacity: 0.9 }, { transform: 'scale(1.3)', opacity: 0 }], { duration: 800, easing: 'ease-out' });
       kp('circle_03', o.x, o.y, S * 5.5, '#ffe066', [{ transform: 'scale(.1)', opacity: 1 }, { transform: 'scale(1)', opacity: 0 }], { duration: 420, easing: 'cubic-bezier(.2,.8,.3,1)' });
-      burst(o.x, o.y, '#ffb347', 14);
+      burst(o.x, o.y, '#ffb347', 10);
+      confettiRing(o.x, o.y);
       shards(o.x, o.y, ['#4a4262', '#ff9a4d', '#ffd84d'], 10, 10);
       Juice.zoom(o.x, o.y, 1.06, 300);
       Juice.stop(70);
@@ -1379,6 +1383,7 @@ function popTile(t, delay, push = null, to = null, at = null) {
     ], { duration: fly ? 140 : 230, delay, easing: 'ease-out', fill: 'forwards' });
     return sleep(delay + (fly ? 140 : 150)).then(() => {
       kx('poof2', 'circle_05', x, y, S * 1.75, color, [{ transform: 'scale(.3) rotate(0)', opacity: 0.85 }, { transform: 'scale(1.1) rotate(30deg)', opacity: 0 }], { duration: 300, easing: 'ease-out' });
+      popSparkle(x, y, color);
       if (fly) {
         t.el.remove();
         flyTile(src, { x, y: y - S * 0.16 }, to.at, 0, color, to.hit);
@@ -1395,6 +1400,41 @@ function popTile(t, delay, push = null, to = null, at = null) {
     { transform: 'scale(1.38)', opacity: 1, offset: 0.45 },
     { transform: 'scale(0) rotate(30deg)', opacity: 0 },
   ], { duration: 260, delay, easing: 'ease-in', fill: 'forwards' }).finished.then(() => t.el.remove());
+}
+
+// 얼굴이 깨질 때: 하얀 번쩍 + 친구 색 고리 + 작은 별·하트 셋이 톡 튀었다 떨어짐
+// 한꺼번에 많이 터지면 앞의 10개만, 효과가 이미 많으면 건너뜀 (보너스 타임 버벅임 막기)
+const popBudget = { t: 0, n: 0 };
+function popSparkle(x, y, color) {
+  if (Prefs.d.light) return;
+  const now = performance.now();
+  if (now - popBudget.t > 120) { popBudget.t = now; popBudget.n = 0; }
+  if (++popBudget.n > 10 || fx.childElementCount > 70) return;
+  const S = B.S;
+  kp('light_02', x, y, S * 1.3, '#ffffff', [{ transform: 'scale(.3)', opacity: 0.9 }, { transform: 'scale(1.1)', opacity: 0 }], { duration: 200, easing: 'ease-out' });
+  kp('circle_03', x, y, S * 1.6, color, [{ transform: 'scale(.3)', opacity: 0.9 }, { transform: 'scale(1)', opacity: 0 }], { duration: 340, easing: 'cubic-bezier(.2,.8,.3,1)' });
+  for (let k = 0; k < 3; k++) {
+    const ang = -Math.PI / 2 + (k - 1) * 0.95 + (Math.random() - 0.5) * 0.5, d = S * (0.5 + Math.random() * 0.35), rot = (Math.random() - 0.5) * 240;
+    const dx = Math.cos(ang) * d, dy = Math.sin(ang) * d;
+    kp(k === 1 ? 'symbol_01' : 'star_04', x, y, S * (0.3 + Math.random() * 0.12), k === 1 ? color : ['#ffffff', '#fff3a8'][k >> 1], [
+      { transform: 'translate(0,0) scale(.3) rotate(0)', opacity: 1 },
+      { transform: `translate(${dx}px,${dy}px) scale(1) rotate(${rot / 2}deg)`, opacity: 1, offset: 0.45 },
+      { transform: `translate(${dx * 1.2}px,${dy + S * 0.55}px) scale(.4) rotate(${rot}deg)`, opacity: 0 },
+    ], { duration: 560, easing: 'cubic-bezier(.25,.7,.5,1)' });
+  }
+}
+// 폭탄이 터질 때 둘레로 파스텔 색종이 별이 둥글게
+function confettiRing(x, y, n = 10) {
+  if (Prefs.d.light || fx.childElementCount > 70) return;
+  const S = B.S, cols = ['#ff8ab8', '#ffd84d', '#7be0a0', '#7cc4ec', '#b99cf0'];
+  for (let k = 0; k < n; k++) {
+    const a = (k / n) * Math.PI * 2 + Math.random() * 0.3, d = S * (1.6 + Math.random() * 0.8);
+    kp(k % 3 ? 'star_06' : 'symbol_01', x, y, S * 0.5, cols[k % cols.length], [
+      { transform: 'translate(0,0) scale(.3) rotate(0)', opacity: 1 },
+      { transform: `translate(${Math.cos(a) * d * 0.8}px,${Math.sin(a) * d * 0.8}px) scale(1.1) rotate(120deg)`, opacity: 1, offset: 0.5 },
+      { transform: `translate(${Math.cos(a) * d}px,${Math.sin(a) * d + S * 0.6}px) scale(.3) rotate(220deg)`, opacity: 0 },
+    ], { duration: 700, easing: 'cubic-bezier(.2,.8,.4,1)' });
+  }
 }
 
 // 조각이 포물선으로 튀어 떨어짐 (상자 나무 조각, 포장지, 흙, 물방울)
@@ -2766,7 +2806,14 @@ async function clearShow(text = '토벌<br>성공!') {
 function updateFever() {
   $('#feverTag').classList.toggle('on', B.fever > 0);
   app.classList.toggle('fever', B.fever > 0);
-  if (B.mode === 'life' && B.fever) $('#lhScore').dataset.fever = `피버 ×1.5 · ${L.st.time ? Math.ceil(L.feverT) + '초' : B.fever + '턴'}`;
+  // 일상 퍼즐: 점수 막대 위에 '피버 ×1.5 3턴'(시간 판은 초) 그림 글자. 바뀔 때만 다시 그림 (시계가 0.1초마다 부름)
+  if (B.mode === 'life' && B.fever) {
+    let fb = $('#lhScore .fever-badge');
+    if (!fb) { fb = document.createElement('span'); fb.className = 'fever-badge'; $('#lhScore').appendChild(fb); }
+    const n = L.st.time ? Math.ceil(L.feverT) : B.fever;
+    const html = `<img src="${CIMG('fbadge')}" alt="피버 ×1.5">` + [...String(n)].map(d => `<img class="d" src="${CIMG('f' + d)}">`).join('') + `<img class="d" src="${CIMG(L.st.time ? 'fsec' : 'fturn')}" alt="${L.st.time ? '초' : '턴'}">`;
+    if (fb._h !== html) fb.innerHTML = fb._h = html;
+  }
 }
 // 일상 퍼즐: 점수 ×1.5 (이동 판은 3턴, 시간 판은 10초) + 첫 턴에 아이템 하나 선물
 async function feverShow() {
@@ -2777,7 +2824,7 @@ async function feverShow() {
   // 우후~! 빛줄기가 돌고, 파자마 파티즈가 통통 튀어 올라 춤추고, 하트·별이 쏟아짐
   const el = document.createElement('div');
   el.className = 'fever-show';
-  el.innerHTML = `<div class="rays"></div><img src="assets/img/art/pajama_uwawa.png"><img class="fever-txt" src="${CIMG('w_fever')}" alt="피버 타임!"><div class="fever-sub">${life ? `점수 ×1.5${L.st.time ? ' · 10초' : ''}` : '공격 ×1.5'}</div>`;
+  el.innerHTML = `<div class="rays"></div><img src="assets/img/art/pajama_uwawa.png"><img class="fever-txt" src="${CIMG('w_fever')}" alt="피버 타임!"><img class="fever-sub" src="${CIMG(life ? (L.st.time ? 'fsub_score10' : 'fsub_score') : 'fsub_atk')}" alt="${life ? '점수' : '공격'} ×1.5">`;
   app.appendChild(el);
   const [rays, img, txt, sub] = el.children;
   Sound.play('rainbow', 1.1, 1);
