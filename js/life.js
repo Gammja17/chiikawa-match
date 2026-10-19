@@ -462,6 +462,7 @@ const Life = {
     Sound.music('life');
     show('battle');
     stageTitle(run.kind === 'route' ? routeIdx('l', i) : -1, st.name);
+    stageBg(run.kind === 'route' ? routeIdx('l', i) : -1);
     $('#waveInfo').innerHTML = '';
     const hc = CHARS[L.helper];
     $('#lhHelper').style.setProperty('--ring', hc.ring);

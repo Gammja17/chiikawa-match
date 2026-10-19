@@ -499,26 +499,48 @@ function openProfile() {
   fitText($('#charSheet'));
 }
 
-function openMap(advanceFrom = null) {
+// 지도 지역: 30판(3장)마다 다른 그림 (assets/img/map/m1~10.jpg), 판 배경도 같은 지역 풍경 (assets/img/stage/s1~10.jpg)
+const MAP_PAGE = 30;
+const REGIONS = ['봄 들판', '숲과 고블린 동굴', '비 오는 마을', '여름 바닷가', '별똥별 언덕', '할로윈 밤', '가을 소풍길', '눈 내린 새해', '온천 꽃마을', '키메라 숲과 거인의 성'];
+const regionOf = k => Math.min(Math.floor(k / MAP_PAGE), REGIONS.length - 1);
+let mapPage = null;
+// 판 배경: 지도에서 고른 판만 그 지역 풍경 (오늘의 도전·탑 같은 건 원래 무늬). k는 지도 번호, 없으면 -1
+function stageBg(k) {
+  const el = $('#battle');
+  el.classList.toggle('has-bg', k >= 0);
+  el.style.setProperty('--stage-bg', k >= 0 ? `url(${new URL(`assets/img/stage/s${regionOf(k) + 1}.jpg`, location.href)})` : 'none'); // CSS 변수의 주소는 style.css 기준으로 풀려서 절대 주소로
+}
+
+function openMap(advanceFrom = null, paging = false) {
   Life.stopTimer();
   show('map');
   Meta.coinUI();
   Hearts.ui();
-  Meta.checkDaily();
+  if (!paging) Meta.checkDaily();
   const STAGES = ROUTE.map((_, k) => routeStage(k));
+  const cur = unlockedIdx(), pages = Math.ceil(STAGES.length / MAP_PAGE);
+  // 지도는 30판(3장)씩 한 지역: 위의 ◀ ▶로 넘김. 판을 깨고 오면 지금 판이 있는 지역으로
+  if (advanceFrom != null || mapPage == null) mapPage = Math.min(pages - 1, Math.floor(cur / MAP_PAGE));
+  if (advanceFrom != null && Math.floor(advanceFrom / MAP_PAGE) !== mapPage) advanceFrom = null; // 새 지역으로 넘어가면 걷는 연출 없이
+  const a0 = mapPage * MAP_PAGE, a1 = Math.min(STAGES.length, a0 + MAP_PAGE), r = regionOf(a0);
+  $('#mapRegion').textContent = REGIONS[r];
+  $('#mapRange').textContent = `${a0 + 1}~${a1}판`;
+  $('#mapPrev').disabled = mapPage === 0;
+  $('#mapNext').disabled = mapPage >= pages - 1 || mapPage > Math.floor(cur / MAP_PAGE); // 지금 지역의 다음 지역까지만 미리 보기
+  $('#mapScroll').style.backgroundImage = `url(assets/img/map/m${r + 1}.jpg)`;
   Sound.music('map');
   $('#btnRamen').classList.toggle('on', Save.data.ramen !== false && !Save.data.buff);
   friendsDot();
   rankDot();
-  Achieve.check();
+  if (!paging) Achieve.check();
   const path = $('#mapPath');
   path.innerHTML = '';
-  path.style.height = NODE_TOP + STAGES.length * NODE_GAP + 40 + 'px';
+  path.style.height = NODE_TOP + (a1 - a0) * NODE_GAP + 40 + 'px';
   const W = path.clientWidth;
-  const pts = STAGES.map((_, i) => nodePos(i, W));
+  const pts = STAGES.map((_, i) => ({ x: nodePos(i, W).x, y: nodePos(i - a0, W).y })); // 좌우 굽이는 판 번호대로, 높이는 지역 안에서
   // 길은 20판씩 잘라 그림 (300판이면 3만 px가 넘어서 한 장으로 그리면 폰에서 무거움)
-  for (let a = 0; a < pts.length - 1; a += 20) {
-    const b = Math.min(pts.length - 1, a + 20), top = pts[a].y - 20;
+  for (let a = a0; a < a1 - 1; a += 20) {
+    const b = Math.min(a1 - 1, a + 20), top = pts[a].y - 20;
     let d = `M${pts[a].x} ${pts[a].y - top}`;
     for (let i = a + 1; i <= b; i++) {
       const p = pts[i - 1], q = pts[i];
@@ -528,10 +550,9 @@ function openMap(advanceFrom = null) {
       `<svg style="top:${top}px;height:${pts[b].y - top + 20}px"><path d="${d}" fill="none" stroke="#fffaf2" stroke-width="14" stroke-linecap="round" opacity=".9"/><path d="${d}" fill="none" stroke="#4b3f3a" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 12" opacity=".45"/></svg>`);
   }
 
-  const cur = unlockedIdx();
   // 장이 시작되는 자리 위에 띠 ("4장 하치와레의 노래")
   CHAPTERS.forEach(([at, name]) => {
-    if (at >= STAGES.length) return;
+    if (at < a0 || at >= a1) return;
     const b = document.createElement('div');
     b.className = 'chapter-band' + (at > cur ? ' locked' : '');
     b.style.top = pts[at].y - NODE_GAP / 2 + 'px';
@@ -539,6 +560,7 @@ function openMap(advanceFrom = null) {
     path.appendChild(b);
   });
   STAGES.forEach((st, i) => {
+    if (i < a0 || i >= a1) return;
     const n = document.createElement('button');
     const locked = i > cur;
     const boss = st.waves?.some(w => w.boss);
@@ -548,7 +570,8 @@ function openMap(advanceFrom = null) {
     n.style.top = pts[i].y + 'px';
     const s = routeStars(i) || 0;
     const icon = st.icon ? ITEM(st.icon) : MONSTERS[st.waves[st.waves.length - 1].m].img;
-    n.innerHTML = (locked ? LOCK_SVG : `<img class="nicon" src="${icon}" loading="lazy"><span class="nnum">${i + 1}</span>`) +
+    const kind = st.exam ? ['exam', 'gradcap'] : st.icon ? ['life', 'plant'] : ['hunt', 'sword']; // 일상·토벌·시험 배지
+    n.innerHTML = `<i class="nkind ${kind[0]}"><img src="${ITEM(kind[1])}" alt=""></i>` + (locked ? LOCK_SVG : `<img class="nicon" src="${icon}" loading="lazy"><span class="nnum">${i + 1}</span>`) +
       (i === cur ? `<span class="nname">${st.name}</span>` : '') +
       (lv && !locked ? `<span class="ntag">${lv === 'hard' ? 'HARD' : '도전'}</span>` : '') +
       (s ? `<span class="nstars">${[0, 1, 2].map(k => `<i class="${k < s ? 'on' : ''}"></i>`).join('')}</span>` : '');
@@ -568,7 +591,8 @@ function openMap(advanceFrom = null) {
   path.appendChild(party);
   profileChip();
   const scroller = $('#mapScroll');
-  const goal = pts[cur];
+  const inPage = cur >= a0 && cur < a1, goal = pts[inPage ? cur : cur < a0 ? a0 : a1 - 1]; // 지나온 지역은 끝, 앞 지역은 처음을 보여 줌
+  party.style.display = inPage ? '' : 'none';
   party.style.left = goal.x + 'px';
   party.style.top = goal.y + 'px';
   if (advanceFrom != null && advanceFrom !== cur) {
@@ -587,9 +611,11 @@ function openMap(advanceFrom = null) {
   } else {
     scroller.scrollTop = goal.y - scroller.clientHeight / 2;
   }
-  Tutor.mapFlow(advanceFrom != null && advanceFrom !== cur ? 1500 : 950); // 오늘의 용돈 창(0.7초 뒤)이 먼저 뜨고 닫힌 뒤에
+  if (!paging) Tutor.mapFlow(advanceFrom != null && advanceFrom !== cur ? 1500 : 950); // 오늘의 용돈 창(0.7초 뒤)이 먼저 뜨고 닫힌 뒤에
 }
 $('#btnMapHome').onclick = () => { Sound.play('click'); go(() => show('title')); };
+$('#mapPrev').onclick = () => { if (mapPage > 0) { Sound.play('click'); mapPage--; openMap(null, true); } };
+$('#mapNext').onclick = () => { Sound.play('click'); mapPage++; openMap(null, true); };
 
 // ---------- 스토리 ----------
 // 입힌 옷이 있으면 그 그림, 없으면 기본 그림 (대화창·스킬 컷인·결과창)
@@ -871,6 +897,7 @@ function spawnMonster(animated) {
 async function startStage(i) {
   B.mode = 'battle';
   app.classList.remove('life-mode', 'tower-mode');
+  stageBg(routeIdx('b', i));
   Board.setSize(7, 7);
   B.grid = null; // 앞 판(크기가 다를 수 있음)은 버림
   Board.floor = null;
@@ -2876,11 +2903,12 @@ const SHISA_LINES = ['어서 와사~!', '여기서 수행 중이사! 스승님 �
 function shopSay(el, text) {
   const say = $('#shopSay'), r = el.getBoundingClientRect(), sc = $('#shopScene').getBoundingClientRect();
   say.textContent = text;
-  say.style.left = Math.max(70, Math.min(sc.width - 70, r.left - sc.left + r.width / 2)) + 'px';
-  say.style.top = Math.max(6, r.top - sc.top - 8) + 'px';
+  const hw = say.offsetWidth / 2 + 6, h = say.offsetHeight + 6; // 말풍선 크기만큼 안쪽으로 (가게 밖으로 잘리지 않게)
+  say.style.left = Math.max(hw, Math.min(sc.width - hw, r.left - sc.left + r.width / 2)) + 'px';
+  say.style.top = Math.max(h, r.top - sc.top - 8) + 'px';
   say.getAnimations().forEach(a => a.cancel());
   say.animate([{ opacity: 0, transform: 'translate(-50%, -90%) scale(.7)' }, { opacity: 1, transform: 'translate(-50%, -100%) scale(1)', offset: 0.12 }, { opacity: 1, transform: 'translate(-50%, -100%)', offset: 0.88 }, { opacity: 0, transform: 'translate(-50%, -100%)' }], { duration: 2600, fill: 'forwards' });
-  el.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-8px)' }, { transform: 'translateY(0)' }], { duration: 260 });
+  el.animate([{ translate: '0 0' }, { translate: '0 -8px' }, { translate: '0 0' }], { duration: 260 }); // transform을 덮으면 가운데 맞춤(translateX(-50%))이 풀려 반 칸 밀림
   Sound.play('pop', 1.1 + Math.random() * 0.3, 0.6);
 }
 // 문가 손님이 하는 말 (간식을 모아 오면 친구가 됨)
