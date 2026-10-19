@@ -767,14 +767,17 @@ function layoutBoard() {
   app.style.setProperty('--s', B.S + 'px');
   boardEl.style.setProperty('--cols', COLS);
   boardEl.style.setProperty('--rows', ROWS);
-  // 판 크기가 바뀌면 칸 바탕을 새로 깖
-  if (boardEl.querySelectorAll('.cellbg').length !== ROWS * COLS) boardEl.querySelectorAll('.cellbg, .cellfg').forEach(e => e.remove());
+  // 판 크기가 바뀌면 칸 바탕을 새로 깖 (칸 수가 같아도 7x9 ↔ 9x7처럼 모양이 다르면)
+  if (boardEl.dataset.dims !== `${ROWS}x${COLS}`) boardEl.querySelectorAll('.cellbg, .cellfg').forEach(e => e.remove());
+  boardEl.dataset.dims = `${ROWS}x${COLS}`;
   if (!boardEl.querySelector('.cellbg')) {
     for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
       const d = document.createElement('div');
       d.className = 'cellbg';
       d.style.left = `calc(var(--s) * ${c})`;
       d.style.top = `calc(var(--s) * ${r})`;
+      d.style.setProperty('--c', c); // 시럽 무늬를 판 전체 기준으로 맞출 때 씀
+      d.style.setProperty('--r', r);
       boardEl.appendChild(d);
     }
     // 구슬 위에 씌우는 층: 잡초가 반투명하게 덮임 (꿈의집 젤리처럼)

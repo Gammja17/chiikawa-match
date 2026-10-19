@@ -319,13 +319,17 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 .cellfg.w1::after, .cellfg.w2::after { content: ''; position: absolute; left: 24%; top: 24%; width: 52%; height: 52%; background: url(../assets/img/items/weed1.png?v=2) center / contain no-repeat; opacity: .85; filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 1px #fff); }
 .cellfg.w2::after { background-image: url(../assets/img/items/weed2.png?v=2); opacity: .92; }
 /* 시럽(꿀·국물): 이웃 시럽 칸과 이어져 한 덩어리로 보임. 바깥 테두리만 진하게 */
-.cellbg.syrup::after { background: url(../assets/img/obst/syrup_tex.webp) center / var(--s) var(--s), linear-gradient(180deg, #ffd56e, #ffbe45); border: 2.5px solid #d98a1e; box-shadow: inset 0 3px 0 rgba(255, 255, 255, .45); }
+.cellbg.syrup::after { --ox: 2px; --oy: 2px; background-image: url(../assets/img/obst/syrup_tex.webp?v=2), linear-gradient(180deg, #ffd56e, #ffbe45); border: 2.5px solid #d98a1e; box-shadow: inset 0 3px 0 rgba(255, 255, 255, .45);
+  /* 무늬(3칸 크기, 이음매 없는 그림: tools/make_syrup_tex.py)와 색 번짐을 칸마다가 아니라 판 전체 기준으로 깔아서 이웃 시럽 칸과 끊김 없이 이어짐 (--ox/--oy: 칸 안쪽으로 들어간 만큼) */
+  background-origin: border-box; background-repeat: repeat, no-repeat;
+  background-size: calc(var(--s) * 3) calc(var(--s) * 3), calc(var(--s) * var(--cols)) calc(var(--s) * var(--rows));
+  background-position: calc(var(--c) * var(--s) * -1 - var(--ox)) calc(var(--r) * var(--s) * -1 - var(--oy)); }
 /* 국물 판: 시럽 대신 맑은 라멘 국물 무늬 */
-.broth .cellbg.syrup::after { background-image: url(../assets/img/obst/broth_tex.webp), linear-gradient(180deg, #f2d59e, #e2b874); border-color: #b9884a; }
-.cellbg.syrup.n-t::after { top: 0; border-top: 0; border-top-left-radius: 0; border-top-right-radius: 0; box-shadow: none; }
-.cellbg.syrup.n-b::after { bottom: 0; border-bottom: 0; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
-.cellbg.syrup.n-l::after { left: 0; border-left: 0; border-top-left-radius: 0; border-bottom-left-radius: 0; }
-.cellbg.syrup.n-r::after { right: 0; border-right: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.broth .cellbg.syrup::after { background-image: url(../assets/img/obst/broth_tex.webp?v=2), linear-gradient(180deg, #f2d59e, #e2b874); border-color: #b9884a; }
+.cellbg.syrup.n-t::after { --oy: 0px; top: 0; border-top: 0; border-top-left-radius: 0; border-top-right-radius: 0; box-shadow: none; }
+.cellbg.syrup.n-b::after { bottom: -1px; border-bottom: 0; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.cellbg.syrup.n-l::after { --ox: 0px; left: 0; border-left: 0; border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.cellbg.syrup.n-r::after { right: -1px; border-right: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; }
 .cellbg.exit::before { content: ''; position: absolute; z-index: 1; left: 50%; bottom: -1px; width: 14px; height: 8px; margin-left: -7px; background: #ff9a4d; clip-path: polygon(0 0, 100% 0, 50% 100%); }
 .tile .inner.locked .band { position: absolute; inset: 1px; pointer-events: none; border-radius: 12px; background: rgba(255, 160, 200, .4); box-shadow: inset 0 0 0 3px rgba(240, 110, 165, .95); }
 .tile .inner.locked .lockimg { position: absolute; left: 18%; top: 18%; width: 64%; height: 64%; opacity: .95; filter: drop-shadow(0 0 2px #fff) drop-shadow(0 2px 0 #4a426240); }
