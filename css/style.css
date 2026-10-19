@@ -69,8 +69,14 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 .ai { position: relative; display: inline-grid; place-items: center; width: 22px; height: 22px; flex: none; border-radius: 50%; background: var(--ac); border: 2px solid #fff; box-shadow: 0 1px 3px rgba(74, 66, 98, .3); vertical-align: middle; }
 .ai svg { width: 14px; height: 14px; fill: #fff; }
 .attr-tag { display: inline-flex; align-items: center; gap: 4px; padding: 0 8px 0 0; font-family: var(--head); font-size: 17px; line-height: 1.15; vertical-align: middle; }
-.hp { position: relative; height: 22px; border-radius: 12px; background: #ddd5e8; border: 2.5px solid var(--ink); overflow: hidden; }
-.hp .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: var(--pink); transition: width .35s cubic-bezier(.3, 1.4, .6, 1); }
+.hp, #lhScore .bar { --h: 26px; position: relative; height: var(--h); box-sizing: border-box; padding: calc(var(--h) * .19);
+  border: 0 solid transparent; border-image: url(../assets/img/ui/bar_frame.png) 0 32 fill / 0 calc(var(--h) / 2); }
+.hp .fill, #lhScore .fill { position: relative; height: 100%; width: 100%; overflow: hidden; border-radius: 99px; transition: width .35s cubic-bezier(.3, 1.4, .6, 1);
+  border: 0 solid transparent; border-image: url(../assets/img/ui/bar_fill.png) 0 17 fill / 0 calc(var(--h) * .31); }
+/* 채움 위로 하얀 빛이 가끔 쓱 지나감 (transform만 움직임) */
+.hp .fill::after, #lhScore .fill::after { content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 45%; background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .6), transparent);
+  transform: translateX(-120%); animation: barShine 2.8s ease-in-out infinite; }
+@keyframes barShine { 0% { transform: translateX(-120%); } 55%, 100% { transform: translateX(330%); } }
 .hp span { position: absolute; inset: 0; display: grid; place-items: center; padding-top: 2px; font-family: var(--head); font-size: 18px; font-weight: 700; line-height: 1; color: #fff; -webkit-text-stroke: 4px var(--ink); paint-order: stroke fill; }
 .num, .node, #countdown b { font-family: var(--head); }
 
@@ -194,21 +200,22 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 #monsterWrap { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; padding-top: 8px; }
 #monName { box-shadow: var(--sh); display: flex; align-items: center; gap: 4px; padding: 2px 10px 0 3px; border-radius: 10px; background: var(--paper); font-family: var(--head); font-size: 18px; line-height: 1.15; }
 #monName.boss { background: #ffd2d2; }
-#monHp { width: 72%; margin-top: 6px; height: 24px; }
-#monHp .fill { background: var(--red); }
+#monHp { --h: 28px; width: 74%; margin-top: 5px; }
+#monHp .fill, #teamHp.low .fill { border-image-source: url(../assets/img/ui/bar_fill_red.png); }
 #monSprite { flex: 1; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 6px; min-height: 0; }
 #monster { max-height: 100%; max-width: 70%; animation: bob 1.6s ease-in-out infinite; transform-origin: 50% 100%; }
-#countdown { box-shadow: var(--sh); position: absolute; right: 10px; bottom: 10px; width: 52px; height: 52px; border-radius: 50%; background: var(--paper); border: 2.5px solid var(--ink); display: grid; place-items: center; }
-#countdown::before { content: ''; position: absolute; left: -9px; top: -7px; width: 22px; height: 22px; background: url(../assets/img/items/boom.png) center / contain no-repeat; }
-#countdown b { font-family: var(--head); }
-#countdown.danger { background: var(--red); color: #fff; animation: pulse .5s infinite; }
+#countdown { position: absolute; right: 8px; bottom: 6px; width: 62px; height: 62px; background: url(../assets/img/ui/cd_clock.png) center / contain no-repeat; transform-origin: 50% 80%; }
+#countdown b { position: absolute; left: 49.7%; top: 54.7%; transform: translate(-50%, -46%); font-family: var(--head); font-size: 27px; line-height: 1; color: var(--ink); }
+#countdown.danger { animation: cdRing .45s ease-in-out infinite; }
+#countdown.danger b { color: #e2543f; }
+@keyframes cdRing { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-12deg); } 40% { transform: rotate(10deg); } 60% { transform: rotate(-7deg); } 80% { transform: rotate(4deg); } }
 #feverTag { position: absolute; left: 10px; bottom: 10px; z-index: 3; display: none; padding: 2px 10px 0; border-radius: 10px; background: var(--pink); color: #fff; font-family: var(--head); font-size: 18px; line-height: 1.15; animation: pulse .6s infinite; }
 #feverTag.on { display: block; }
 
 /* 파티: 동그란 얼굴 둘레를 각자 상징 색 링이 빙 둘러 차오름 (스킬 게이지) */
 #team { padding: 12px 14px 2px; }
 #party { display: flex; gap: 10px; justify-content: space-between; }
-#party .pm { position: relative; flex: 1; max-width: 66px; aspect-ratio: 1; border-radius: 50%; cursor: pointer; transition: transform .1s; border: 2px solid var(--ink);
+#party .pm { position: relative; flex: 0 0 54px; aspect-ratio: 1; border-radius: 50%; cursor: pointer; transition: transform .1s; border: 2px solid var(--ink);
   background: color-mix(in srgb, var(--ring) 14%, #fff); }
 #party .pm:active { transform: scale(.94); }
 #party .pm-face { width: 100%; height: 100%; border-radius: 50%; display: grid; place-items: center; overflow: hidden; }
@@ -221,10 +228,9 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 #party .pm.ready { background: var(--ring); animation: bob 1s ease-in-out infinite; }
 #party .pm.ready::after { content: ''; position: absolute; right: -9px; bottom: -6px; width: 26px; height: 26px; background: url(../assets/img/items/sparkle.png?v=2) center / contain no-repeat; animation: spin 2.4s linear infinite; }
 #teamRow { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
-#teamRow .heart { width: 26px; height: 26px; flex: none; }
-#teamHp { flex: 1; height: 28px; border-radius: 14px; }
-#teamHp .fill { background: var(--mint); }
-#teamHp.low .fill { background: var(--red); }
+#teamRow .heart { width: 30px; height: 30px; flex: none; background: url(../assets/img/items/heart.png) center / contain no-repeat; }
+#teamRow .heart path { display: none; }
+#teamHp { --h: 32px; flex: 1; }
 #teamHp span { font-size: 21px; }
 
 /* ---------- 판 ---------- */
@@ -329,8 +335,8 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 .gchip.done b { background: var(--mint); color: #fff; }
 .gchip.done img { opacity: .5; }
 #lhChar { width: 76px; flex: none; object-fit: contain; object-position: bottom; animation: hop 1.6s ease-in-out infinite; }
-#lhScore .bar { position: relative; flex: 1; height: 20px; border-radius: 11px; background: var(--paper); border: 2.5px solid var(--ink); }
-#lhScore .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 9px; background: var(--gold); transition: width .35s; }
+#lhScore .bar { --h: 28px; flex: 1; }
+#lhScore .fill { width: 0; }
 #lhScore i { position: absolute; top: 50%; width: 32px; height: 32px; margin: -17px 0 0 -16px; background: url(../assets/img/ui/star_off.png) center / contain no-repeat; transition: transform .25s cubic-bezier(.3, 1.6, .6, 1); }
 #lhScore i.on { transform: scale(1.15); background-image: url(../assets/img/ui/star_on.png); }
 #lhScore b { min-width: 72px; text-align: right; font-family: var(--head); font-size: 30px; font-weight: 700; line-height: 1.1; }
@@ -826,15 +832,14 @@ img.shadow { filter: brightness(0) opacity(.15); }
 /* ---------- 스킬 게이지: 얼굴 바깥 고리가 스르륵 차오르고 끝에 빛나는 점, 다 차면 무지개 고리가 돎 ---------- */
 @property --g { syntax: '<number>'; inherits: true; initial-value: 0; }
 #party .pm, #lhHelper { transition: --g .45s cubic-bezier(.3,1.3,.6,1), transform .1s; }
-#party .pm::before, #lhHelper::before { content: ''; position: absolute; inset: -6px; border-radius: 50%; pointer-events: none;
-  background: conic-gradient(var(--ring) calc(var(--g, 0) * 360deg), #ece6f3 0);
-  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4.5px), #000 calc(100% - 4px)); mask: radial-gradient(farthest-side, transparent calc(100% - 4.5px), #000 calc(100% - 4px)); }
-#party .pm .g, #lhHelper .g { display: block; position: absolute; inset: -6px; border-radius: 50%; pointer-events: none; transform: rotate(calc(var(--g, 0) * 360deg)); }
-#party .pm .g b, #lhHelper .g b { position: absolute; left: 50%; top: -1px; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: #fff;
-  box-shadow: 0 0 0 2px var(--ring), 0 0 8px 2px #fff; opacity: min(1, calc(var(--g, 0) * 30)); }
-#party .pm.ready::before, #lhHelper.ready::before { background: conic-gradient(#ff8ab8, #ffd84d, #a6d96a, #7cc4ec, #b99cf0, #ff8ab8); animation: spin 1.4s linear infinite; }
-#party .pm.ready .g b, #lhHelper.ready .g b { display: none; }
-#party .pm.ready .g::after, #lhHelper.ready .g::after { content: '스킬!'; position: absolute; left: 50%; bottom: -10px; transform: translateX(-50%); padding: 0 6px; border-radius: 8px;
+#party .pm::before, #lhHelper::before { content: ''; position: absolute; inset: -16.9%; pointer-events: none; background: url(../assets/img/ui/ring_frame.png) center / 100% 100% no-repeat; }
+#party .pm .g, #lhHelper .g { display: block; position: absolute; inset: -16.9%; border-radius: 50%; pointer-events: none; background: url(../assets/img/ui/ring_fill.png) center / 100% 100% no-repeat;
+  -webkit-mask: conic-gradient(#000 calc(var(--g, 0) * 360deg), transparent calc(var(--g, 0) * 360deg + .5deg)); mask: conic-gradient(#000 calc(var(--g, 0) * 360deg), transparent calc(var(--g, 0) * 360deg + .5deg)); }
+#party .pm .g b, #lhHelper .g b { display: none; position: absolute; inset: 9%; border-radius: 50%;
+  background: conic-gradient(transparent 0 290deg, rgba(255, 255, 255, .95) 340deg, transparent 360deg);
+  -webkit-mask: radial-gradient(farthest-side, transparent 72%, #000 74% 96%, transparent 98%); mask: radial-gradient(farthest-side, transparent 72%, #000 74% 96%, transparent 98%); }
+#party .pm.ready .g b, #lhHelper.ready .g b { display: block; animation: spin 1.3s linear infinite; }
+#party .pm.ready .g::after, #lhHelper.ready .g::after { content: '스킬!'; position: absolute; left: 50%; bottom: 4%; z-index: 1; transform: translateX(-50%); padding: 0 6px; border-radius: 8px;
   background: var(--ink); color: #fff; font-family: var(--head); font-size: 12px; line-height: 1.4; white-space: nowrap; }
 
 /* ---------- 콤보: 숫자 + '콤보' + 칭찬 한마디 (전부 그림), 뒤에서 콤보 색 햇살이 돎 ---------- */

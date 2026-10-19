@@ -88,7 +88,7 @@ python -m http.server 8770
 
 - 캐릭터, 괴물 이미지: © nagano / chiikawa committee. 퍼즐 얼굴은 인터넷에서 모은 이미지, 전신·포즈 일러스트와 괴물은 [Chiikawa Wiki (Fandom)](https://chiikawa.fandom.com/)에서, 옷 그림은 Chiikawa Wiki의 애니메이션 장면·공식 일러스트에서 배경을 지워서, 춤추는 치이카와 GIF는 작가 nagano의 [GIPHY](https://giphy.com/ngntrtr)에서 가져왔습니다. 이미지의 권리는 원저작자에게 있으며, 이 저장소의 라이선스 대상이 아닙니다.
 - 도전 화면 그림(인어섬, 제초 검정, 랏코), 타이틀 풀밭 그림: 원작 애니메이션·게임 이미지 (© nagano / chiikawa committee, 「映画ちいかわ」製作委員会, Applibot)
-- 배경, 터짐 조각: [VARCO](https://3d.varco.ai)로 생성
+- 배경, 터짐 조각, 체력바·점수바 틀과 스킬 고리: [VARCO](https://3d.varco.ai)로 생성
 - 효과음: [Pixabay](https://pixabay.com/sound-effects/) (floraphonic, humordome / Pixabay Content License)와 [Mixkit](https://mixkit.co/free-sound-effects/) (Mixkit Sound Effects Free License). 크기를 맞추고 일부는 잘라서 mp3로 변환했습니다. 소리 파일만 따로 떼어 배포하는 것은 각 라이선스에서 허용하지 않습니다. 소리마다 볼륨은 `js/audio.js`의 `SFX_VOL`
 - 파티클 이펙트: [Kenney Particle Pack](https://kenney.nl/assets/particle-pack) (CC0). 라이선스 원문은 `assets/img/fx/k/LICENSE-kenney-particles.txt`
 - 배경 음악: 코드(`js/audio.js`)로 직접 연주하는 오리지널 곡
