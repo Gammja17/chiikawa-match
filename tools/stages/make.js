@@ -8,7 +8,7 @@ const fs = require('fs'), path = require('path'), os = require('os');
 const { Worker, isMainThread, parentPort, workerData } = require('worker_threads');
 const ROOT = path.join(__dirname, '..', '..');
 const OUT = path.join(ROOT, 'js', 'chapters.js'), CACHE = path.join(__dirname, 'tuned.json');
-const VERSION = 5; // 만드는 법을 바꾸면 올려서 전부 다시 잼
+const VERSION = 6; // 만드는 법을 바꾸면 올려서 전부 다시 잼
 
 // ---------- 무작위 (판 이름으로 씨앗을 정해서 매번 같은 판) ----------
 const hash = s => { let h = 2166136261; for (const ch of s) h = Math.imul(h ^ ch.codePointAt(0), 16777619); return h >>> 0; };
@@ -134,7 +134,8 @@ function buildMap(sp, R, C, shape, knob, seed) {
 
 // ---------- 목표 수치 ----------
 const lerp = (a, b, t) => a + (b - a) * Math.max(0, Math.min(1, t));
-const target = (lv, ch) => { const t = (ch - 7) / 23; return lv === 'hard' ? lerp(0.64, 0.56, t) : lv === 'challenge' ? lerp(0.86, 0.82, t) : lerp(0.93, 0.88, t); };
+// 장이 갈수록 빡빡하게. 봇은 친구 스킬을 안 쓰니, 실제로는 강화한 친구 스킬(이동 +, 아이템)이 그 차이를 메움
+const target = (lv, ch) => { const t = (ch - 7) / 23; return lv === 'hard' ? lerp(0.6, 0.4, t) : lv === 'challenge' ? lerp(0.84, 0.68, t) : lerp(0.92, 0.78, t); };
 const teamLv = k => (k <= 60 ? Math.max(2, Math.min(6, 2 + (k - 20) / 10)) : 6 + (k - 60) / 60);
 const round = (x, s) => Math.round(x / s) * s;
 
@@ -147,7 +148,9 @@ function tuneLife(job, sim) {
   const nObs = Object.keys(g.kinds).length;
   // 판 크기: 장이 갈수록, 목표가 많을수록 크게 (최대 9x9)
   const sizes = sp.size ? [sp.size] : nObs + g.goals.length <= 1 ? [[7, 7], [7, 7], [8, 8]] : nObs + g.goals.length <= 3 ? [[7, 7], [8, 8], [8, 8], [9, 9], [8, 9]] : [[8, 8], [9, 9], [9, 9], [8, 9]];
-  const types = sp.types || (sp.lv === 'hard' && ch >= 16 && rnd() < 0.5 ? 6 : 5);
+  // 얼굴 6가지(맞추기 어려움)는 뒤로 갈수록 자주: HARD는 12장부터, 보통 판은 20장부터
+  const six = sp.lv === 'hard' ? lerp(0.2, 0.8, (ch - 12) / 14) * (ch >= 12) : lerp(0, 0.45, (ch - 20) / 10) * (ch >= 20);
+  const types = sp.types || (rnd() < six ? 6 : 5);
   const exam = !!sp.time;
   const ingN = hasIng ? Math.round(lerp(3, 5, (ch - 7) / 23)) : 0;
   const charN = g.chars.length ? Math.round((g.chars.length === 1 ? lerp(26, 36, (ch - 7) / 23) : g.chars.length === 2 ? 18 : g.chars.length === 3 ? 14 : 11)) : 0;
@@ -254,7 +257,8 @@ function tuneBattle(job, sim) {
     am = alo;
     r = run(H, am);
   }
-  return { st: stage, info: { H: Math.round(H), am: +am.toFixed(2), rate: +r.rate.toFixed(2), T: r.T, Tmax, tgt: +tgt.toFixed(2), lv: +lv.toFixed(1), team: team.join(',') } };
+  const weakLv = Math.max(1, lv - 3), weak = (() => { let w = 0; for (let n = 0; n < runs; n++) { sim.SIM.seed(hash(sp.name) + n * 7919); if (sim.SIM.battleRun(stage, team, weakLv).win) w++; } return w / runs; })();
+  return { st: stage, info: { H: Math.round(H), am: +am.toFixed(2), rate: +r.rate.toFixed(2), weak: +weak.toFixed(2), T: r.T, Tmax, tgt: +tgt.toFixed(2), lv: +lv.toFixed(1), team: team.join(',') } };
 }
 
 // ---------- JS 글로 ----------
