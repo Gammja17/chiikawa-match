@@ -91,6 +91,13 @@ function openSettings() {
     el.classList.remove('show');
     modal({ title: '만든 사람·출처', char: 'hachiware', text: CREDITS, btn1: '닫기', on1: openSettings });
   };
+  // 의견 보내기: 별점 + 하고 싶은 말 (js/survey.js)
+  el.querySelector('[data-s=feedback]').onclick = () => {
+    Sound.play('click');
+    el.classList.remove('show');
+    if (typeof Net !== 'undefined' && Net.on) Survey.open('settings');
+    else modal({ title: '의견 보내기', char: 'hachiware', text: '지금은 서버에 연결이 안 돼서 보낼 수 없어요. 인터넷을 확인해 주세요!', btn1: '닫기', on1: openSettings });
+  };
   const close = () => el.classList.remove('show');
   // 게임 초기화: 한 번 더 물어보고, 이 기기 기록(계정에 연결돼 있으면 계정 기록도)을 지우고 처음부터
   el.querySelector('[data-s=reset]').onclick = () => {

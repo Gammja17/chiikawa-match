@@ -345,7 +345,10 @@ Tutor.mapFlow = async function (delay) {
         title: '기록 지키기', char: 'hachiware', text: '하치와레: 구글 계정을 연결하면 폰을 바꿔도 이어서 할 수 있어! 랭킹에도 올라가고~',
         btn2: '나중에', on2: () => {}, btn1: '연결하기', on1: () => Net.google(),
       });
+      return;
     }
+    // 10판을 깨면 설문 한 번 (js/survey.js)
+    if (typeof Survey !== 'undefined' && Survey.due()) await Survey.open();
   } finally { Tutor.busyFlow = false; }
 };
 // 첫 편성: 슬롯과 출격 버튼

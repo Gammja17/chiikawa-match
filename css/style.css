@@ -1009,3 +1009,11 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .feed-none { text-align: center; color: var(--ink2); font-size: 14px; }
 /* 홈 화면 앱으로 켰을 때: 아이폰 아래 막대 자리만큼 띄움 */
 @media (display-mode: standalone) { #battle, #house, #gacha, #ramen, #friends, #formation, #challenge, #ranking { padding-bottom: env(safe-area-inset-bottom); box-sizing: border-box; } }
+/* 설문: 별 다섯 개 + 하고 싶은 말 */
+.survey-stars { display: flex; justify-content: center; gap: 6px; margin: 4px 0 12px; }
+.survey-stars button { width: 52px; height: 52px; padding: 0; border: 0; background: none; filter: grayscale(1) opacity(.35); transition: filter .15s; }
+.survey-stars button.on { filter: none; }
+.survey-stars img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+.survey-text { display: block; width: 100%; box-sizing: border-box; padding: 10px 12px; border: var(--line); border-radius: 14px; background: #fff; color: var(--ink); font: 16px/1.4 inherit; font-family: inherit; resize: none; }
+.survey-note { margin-top: 6px; font-size: 13px; color: var(--ink2); }
+.sheet-btns .big-btn:disabled { opacity: .45; }

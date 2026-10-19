@@ -75,6 +75,7 @@
 
 - 사파리에서 공유 → 「홈 화면에 추가」 하면 주소창 없이 앱처럼 켜짐 (`manifest.webmanifest`, `sw.js`). 코드는 켤 때마다 새로 받고, 인터넷이 없으면 저장해 둔 걸로 켬
 - 플레이어 폰에서 난 에러는 Firestore `errors` 컬렉션에 쌓임 (켤 때마다 최대 8개, 어떤 화면·판·판 크기였는지 함께). Firebase 콘솔 → Firestore → `errors`에서 봄
+- 설문: 10판을 깨면 지도에서 한 번 「게임 재밌어?」 (별 1~5 + 하고 싶은 말, 말은 안 써도 됨, 보내면 50코인). '나중에'면 10판 뒤 한 번 더. 설정 → 「의견 보내기」로는 언제든. Firebase 콘솔 → Firestore → `feedback`에서 봄 (`stars`, `text`, `cleared` 깬 판 수, `from` auto/settings, `at`) (`js/survey.js`)
 - 판이 20초 넘게 아무 연출 없이 멈춰 있으면 「앗, 판이 멈췄어요」 창이 뜨고 하트를 잃지 않고 다시 시작 (이것도 `errors`에 `stuck`으로 남음)
 
 ## 스테이지 만들기 (7장~)
