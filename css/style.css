@@ -564,6 +564,7 @@ img.shadow { filter: brightness(0) opacity(.15); }
   font-family: var(--head); font-size: 18px; white-space: nowrap; animation: bob 1s ease-in-out infinite; pointer-events: none; }
 .gacha-note { margin: -10px 16px 0; min-height: 20px; text-align: center; font-size: 14px; color: var(--ink2); }
 .gacha-btns { display: flex; gap: 10px; }
+.gacha-skip { position: absolute; right: 12px; top: 10px; z-index: 30; padding: 6px 14px 3px; border-radius: 99px; background: rgba(42, 36, 64, .55); color: #fff; font-family: var(--head); font-size: 16px; }
 .gacha-btns .big-btn { display: flex; align-items: center; gap: 4px; min-width: 0; padding: 0 16px; font-size: 26px; }
 .gacha-btns .big-btn img { width: 26px; height: 26px; }
 /* 옷 가게 탭: 뽑기 기계 대신 옷 목록 */

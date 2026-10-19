@@ -808,6 +808,7 @@ function setGauge(el, v, ready) {
 }
 function updateGauges() {
   [...$('#party').children].forEach((el, k) => {
+    if (!teamCh(k)) return; // 토벌 연출이 늦게 끝나 일상 퍼즐 칸을 만질 때
     const need = skillNeed(teamCh(k).id);
     setGauge(el, Math.min(1, B.gauge[k] / need), B.gauge[k] >= need);
   });

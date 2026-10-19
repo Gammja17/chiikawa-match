@@ -471,6 +471,9 @@ const GACHA10_COST = 900;
 const MACHINE = { knob: { x: 0.65, y: 0.665, r: 0.13 }, chute: { x: 0.66, y: 0.85 } };
 const CHUTE = MACHINE.chute;
 let gachaKind = 'friend', gachaBusy = false;
+// 연출 건너뛰기: 뽑는 동안 '건너뛰기'를 누르면 손잡이·톡톡·10개 열기를 바로 넘기고 남은 움직임은 빨리 감음
+let gachaSkip = null;
+const onSkip = fn => { if (!gachaSkip) return; if (gachaSkip.on) fn(); else gachaSkip.fns.push(fn); };
 // 옷 뽑기 후보: 내가 가진 친구의 옷 전부 (이미 있는 옷이 나오면 코인 40)
 const outfitPool = () => Object.entries(SKINS).flatMap(([cid, ss]) => (Meta.owned(cid) ? Object.keys(ss).map(s => [cid, s]) : []));
 const hasSkin = (cid, s) => (Save.data.skins[cid] || []).includes(s);
@@ -597,6 +600,7 @@ function turnKnob() {
         done();
       }
     };
+    onSkip(() => { if (turned < 360) { turned = 360; set(); } });
     const ang = e => { const r = knob.getBoundingClientRect(); return Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)) * 180 / Math.PI; };
     let moved = 0;
     knob.onpointerdown = e => { e.preventDefault(); knob.setPointerCapture(e.pointerId); last = ang(e); moved = 0; };
@@ -719,6 +723,7 @@ async function openOne(p) {
       hint.remove();
       done();
     };
+    onSkip(() => { if (!cap.onclick) return; cap.onclick = null; hint.remove(); done(); });
   });
   await popCapsule(cap, p);
   const pe = prizeEl(p);
@@ -730,6 +735,7 @@ async function openOne(p) {
   const info = {
     new: () => ({ title: '새 친구!', char: p.id, text: `${ch.name}: "${lineOf(ch.id)}"`, rows: [['친구', ch.name], ['레벨', 'Lv1']] }),
     up: () => ({ title: '레벨 업!', char: p.id, text: `${ch.name}이(가) 더 강해졌어요!`, rows: [['친구', ch.name], ['레벨', `Lv${p.lv}`], ['공격·회복', `+${Math.round((Meta.mult(p.id) - 1) * 100)}%`]] }),
+    shard: () => ({ title: '조각 모음!', char: p.id, text: `${ch.name} 조각 +${p.n}! 친구 상세에서 코인이랑 같이 써서 강화할 수 있어요.`, rows: [['조각', `${Save.data.shards[p.id] || 0}${upCost(p.id) ? '/' + upCost(p.id).shards : ''}`]] }),
     max: () => ({ title: '이미 최고 레벨', char: p.id, text: '대신 코인 50개를 돌려받았어요.', rows: [['코인', '+50']] }),
     skin: () => ({ title: '새 옷!', img: SKIN(p.id, p.skin), text: `${ch.name}의 ${SKINS[p.id][p.skin].name}! 친구 상세에서 갈아입힐 수 있어요.`, rows: [] }),
     skindup: () => ({ title: '이미 있는 옷', img: SKIN(p.id, p.skin), text: '대신 코인 40개를 돌려받았어요.', rows: [['코인', '+40']] }),
@@ -783,6 +789,7 @@ async function openTen(prizes) {
     };
     caps.forEach((cap, i) => (cap.onclick = () => open(i)));
     btn.onclick = () => { Sound.play('click'); let k = 0; caps.forEach((c, i) => !c.opened && open(i, k++ * 140)); };
+    onSkip(() => caps.forEach((c, i) => open(i)));
   });
   st.innerHTML = '';
   st.className = '';
@@ -803,12 +810,24 @@ async function pullGacha(n = 1) {
   const last = drawPrize(gachaKind, n === 10 && !prizes.some(isFresh));
   prizes.splice(Math.floor(Math.random() * (prizes.length + 1)), 0, last);
   Save.save();
-  await turnKnob();
-  await crankMachine(n === 10);
-  if (n === 10) await openTen(prizes); else await openOne(prizes[0]);
-  Meta.coinUI();
-  gachaBusy = false;
-  syncGacha();
+  gachaSkip = { on: false, fns: [] };
+  const skipBtn = document.createElement('button');
+  skipBtn.className = 'gacha-skip';
+  skipBtn.textContent = '건너뛰기 ▶▶';
+  skipBtn.onclick = () => { Sound.play('click'); skipBtn.remove(); gachaSkip.on = true; FastFwd.on(12); gachaSkip.fns.splice(0).forEach(f => f()); };
+  $('.gacha-body').appendChild(skipBtn);
+  try {
+    await turnKnob();
+    await crankMachine(n === 10);
+    if (n === 10) await openTen(prizes); else await openOne(prizes[0]);
+  } finally { // 연출 중 에러가 나도 뽑기가 잠기지 않게
+    skipBtn.remove();
+    gachaSkip = null;
+    FastFwd.off();
+    Meta.coinUI();
+    gachaBusy = false;
+    syncGacha();
+  }
 }
 
 // ---------- 친구네 집: 친구마다 자기 집이 있고, 가구를 놓고, 같이 살 친구를 정함 ----------
