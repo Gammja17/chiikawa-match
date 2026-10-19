@@ -4,8 +4,9 @@ const LV_MAX = 10;
 // 강화: 뽑기에서 이미 있는 친구가 나오면 조각. Lv n → n+1 에 조각 SHARD_NEED[n]개 + 코인 n×80
 const SHARD_PER_DUP = 10;
 const SHARD_NEED = [0, 10, 15, 20, 25, 30, 40, 50, 60, 80];
-const upCost = id => { const lv = Meta.lv(id); return lv >= LV_MAX ? null : { shards: SHARD_NEED[lv], coins: lv * 80 }; };
-const canUp = id => { const c = upCost(id); return !!c && Meta.owned(id) && (Save.data.shards[id] || 0) >= c.shards && Save.data.coins >= c.coins; };
+// 간식으로 데려온 친구(모몽가·쿠리만쥬·고블린)는 좋아하는 간식도 Lv×2개 더 듦 (대신 레벨마다 더 많이 오름)
+const upCost = id => { const lv = Meta.lv(id), t = RECRUIT[id]?.treat; return lv >= LV_MAX ? null : { shards: SHARD_NEED[lv], coins: lv * 80, treat: t, tn: t ? lv * 2 : 0 }; };
+const canUp = id => { const c = upCost(id); return !!c && Meta.owned(id) && (Save.data.shards[id] || 0) >= c.shards && Save.data.coins >= c.coins && (!c.treat || (Save.data.treats[c.treat] || 0) >= c.tn); };
 const GACHA_COST = 100;
 // x, y: 방 안 위치(%), w: 너비(%)
 // 치이카와네 원룸에 있을 법한 살림 (VARCO로 원작 느낌 그림)
@@ -41,9 +42,9 @@ const CHAR_STORY = {
 // 몇몇 친구는 좋아하는 간식을 모아서 데려옴 (간식은 스테이지를 깨면 받음)
 const TREATS = { parfait: '딸기 파르페', dango: '경단', onigiri: '주먹밥' };
 const RECRUIT = {
-  momonga: { treat: 'parfait', n: 8, story: [['momonga', '딸기 파르페다! 이리 내. 전부.'], ['momonga', '(순식간에 다 먹어 치운다) …흥, 같이 다녀 줄게. 대신 매일 칭찬해. 안 하면 운다?'], ['chiikawa', '…!! (끄덕끄덕)']] },
-  kurimanju: { treat: 'dango', n: 8, story: [['kurimanju', '……(경단을 바라본다)'], ['kurimanju', '(한 입) ……하아~~'], ['hachiware', '같이 가 준다는 거야!?']] },
-  goblin: { treat: 'onigiri', n: 6, story: [['goblin', '(주먹밥 냄새를 킁킁)'], ['goblin', '옴 빰 빰~ 예 예 예~!'], ['usagi', '야하!']] },
+  momonga: { treat: 'parfait', n: 10, story: [['momonga', '딸기 파르페다! 이리 내. 전부.'], ['momonga', '(순식간에 다 먹어 치운다) …흥, 같이 다녀 줄게. 대신 매일 칭찬해. 안 하면 운다?'], ['chiikawa', '…!! (끄덕끄덕)']] },
+  kurimanju: { treat: 'dango', n: 30, story: [['kurimanju', '……(경단을 바라본다)'], ['kurimanju', '(한 입) ……하아~~'], ['hachiware', '같이 가 준다는 거야!?']] },
+  goblin: { treat: 'onigiri', n: 50, story: [['goblin', '(주먹밥 냄새를 킁킁)'], ['goblin', '옴 빰 빰~ 예 예 예~!'], ['usagi', '야하!']] },
   // 모험을 하다 보면 차례로 합류
   hachiware: { stage: ['l', 0], story: [['hachiware', '같이 하니까 금방 끝났다!'], ['hachiware', '앞으로도 같이 일하자. 둘이면 어떻게든 될 거야~!'], ['chiikawa', '…!! (끄덕끄덕)']] },
   usagi: { stage: ['l', 1], story: [['usagi', '우라!'], ['hachiware', '너도 같이 다니고 싶다는 거야!?'], ['usagi', '야하~!!']] },
@@ -79,7 +80,7 @@ const Meta = {
   owned: id => !!Save.data.own[id],
   lv: id => Save.data.own[id] || 0,
   // 레벨마다 공격·회복 8%씩
-  mult: id => (1 + 0.08 * Math.max(0, Meta.lv(id) - 1)) * (Save.data.outfit?.[id] ? 1.05 : 1), // 레벨마다 +8%, 옷을 입으면 +5%
+  mult: id => (1 + (RECRUIT[id]?.treat ? 0.12 : 0.08) * Math.max(0, Meta.lv(id) - 1)) * (Save.data.outfit?.[id] ? 1.05 : 1), // 레벨마다 +8% (간식으로 데려온 친구는 +12%), 옷을 입으면 +5%
   addCoins(n) {
     Save.data.coins += n;
     Save.save();
@@ -261,8 +262,8 @@ const Sheet = {
     card.innerHTML = `
       <div class="sheet-art${own && specialOf(id) ? ' special' : ''}"${own && specialOf(id) ? ` style="--scene:url(${SCENE(specialOf(id).special)})"` : ''}>${own ? Meta.figure(id, art(id), 'big') : `<span class="fig big"><img src="${art(id)}" class="shadow"></span>`}${own && specialOf(id) ? '<span class="sp-tag">✦ 스페셜</span>' : ''}<div class="sheet-say"></div></div>
       <div class="sheet-name">${ch.name} ${attrTag(ch.attr)}</div>
-      ${own ? `<div class="sheet-lv"><b>Lv ${lv}</b><div class="lvbar"><i style="width:${(lv / LV_MAX) * 100}%"></i></div><small>${lv >= LV_MAX ? 'MAX' : `조각 ${Save.data.shards[id] || 0}/${upCost(id).shards}`}</small></div>
-        ${lv < LV_MAX ? `<button class="up-btn${canUp(id) ? ' ready' : ''}" data-up>강화 <img src="${ITEM('coin')}">${upCost(id).coins}</button><small class="up-hint">조각은 캡슐 뽑기에서 같은 친구가 또 나오면 모여요</small>` : ''}` : Sheet.recruitHtml(id)}
+      ${own ? `<div class="sheet-lv"><b>Lv ${lv}</b><div class="lvbar"><i style="width:${(lv / LV_MAX) * 100}%"></i></div><small>${lv >= LV_MAX ? 'MAX' : `조각 ${Save.data.shards[id] || 0}/${upCost(id).shards}${upCost(id).treat ? ` · ${TREATS[upCost(id).treat]} ${Save.data.treats[upCost(id).treat] || 0}/${upCost(id).tn}` : ''}`}</small></div>
+        ${lv < LV_MAX ? `<button class="up-btn${canUp(id) ? ' ready' : ''}" data-up>강화 <img src="${ITEM('coin')}">${upCost(id).coins}</button><small class="up-hint">조각은 캡슐 뽑기에서 같은 친구가 또 나오면 모여요${RECRUIT[id]?.treat ? ' · 간식은 도전의 간식 창고에서' : ''}</small>` : ''}` : Sheet.recruitHtml(id)}
       <div class="sheet-rows"><div>${ch.heal ? '회복' : '공격'}<b>${stat.split(' ')[1]}</b></div><div>속성<b>${ATTR[ch.attr].icon}${ATTR[ch.attr].name}</b></div><div>스킬 게이지<b>${skillNeed(id, false)}</b><small>일상 ${skillNeed(id, true)}</small></div></div>
       <div class="sheet-label">스킬 <small>하나 골라 장착</small></div>
       <div class="sheet-skills">${ch.skills.map((sk, k) => { const open = own && lv >= sk.lv, on = skillOf(id) === sk;
@@ -297,6 +298,7 @@ const Sheet = {
       const c = upCost(id);
       if (!canUp(id)) { Sound.play('bad'); up.animate([{ transform: 'translateX(-4px)' }, { transform: 'translateX(4px)' }, { transform: 'none' }], { duration: 180 }); return; }
       Save.data.shards[id] -= c.shards;
+      if (c.treat) Save.data.treats[c.treat] -= c.tn;
       Save.data.own[id] = Meta.lv(id) + 1;
       Meta.addCoins(-c.coins);
       Sound.play('star', 1.2); Sound.voice(id, 'pick');

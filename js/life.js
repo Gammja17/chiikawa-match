@@ -519,7 +519,7 @@ const Life = {
     $('#lhLimit').textContent = st.time ? Math.ceil(L.time) : L.moves;
     $('.lh-limit').classList.toggle('danger', st.time ? L.time <= 10 : L.moves <= 3);
     const html = st.contest ? `<div class="gchip best"><img src="${ITEM('medal')}"><b>${Save.data.contestBest || 0}</b></div>`
-      : st.dungeon ? `<div class="gchip coin"><img src="${ITEM('coin')}"><b>${Dungeon.coins}</b></div>` : st.goals.map(g => {
+      : st.dungeon ? Dungeon.chip() : st.goals.map(g => {
       const n = Life.remain(g);
       return `<div class="gchip ${g.k}${n ? '' : ' done'}" data-id="${g.id || ''}"><img src="${GOAL_ICON[g.k](g)}"><b>${n || '<img class="ck" src="assets/img/ui/check.png" alt="">'}</b></div>`;
     }).join('');
