@@ -2101,6 +2101,15 @@ function slashLine(a, b, cells, color) {
   fx.appendChild(cut);
   cut.animate([{ clipPath: 'inset(0 100% 0 0)', opacity: 1 }, { clipPath: 'inset(0 0 0 0)', opacity: 1, offset: 0.35 }, { clipPath: 'inset(0 0 0 0)', opacity: 0, transform: `translateY(-50%) rotate(${ang}deg) scaleY(.2)` }],
     { duration: 420, easing: 'ease-out', fill: 'forwards' }).finished.then(() => cut.remove());
+  // 줄 아이템처럼: 칼을 따라 빛기둥이 쭉 뻗고, 은은한 빛이 잠깐 남았다가 사라짐
+  const rot = `rotate(${ang}deg)`;
+  const tr = addFx('rtrail', sx, sy);
+  Object.assign(tr.style, { width: len + 'px', height: S * 0.9 + 'px', marginTop: -S * 0.45 + 'px', transformOrigin: 'left center' });
+  tr.animate([{ transform: `${rot} scaleX(0)`, opacity: 1 }, { transform: `${rot} scaleX(1)`, opacity: 1, offset: 0.3 }, { transform: `${rot} scaleX(1) scaleY(.15)`, opacity: 0 }],
+    { duration: 540, easing: 'ease-out' }).finished.then(() => tr.remove());
+  const after = addFx('afterline', sx, sy);
+  Object.assign(after.style, { width: len + 'px', transformOrigin: 'left center', transform: rot });
+  after.animate([{ opacity: 0 }, { opacity: 0.9, offset: 0.25 }, { opacity: 0 }], { duration: 700, easing: 'ease-out' }).finished.then(() => after.remove());
   const sw = new Image();
   sw.src = ITEM('rocket');
   sw.className = 'slash-sword';
@@ -2111,7 +2120,11 @@ function slashLine(a, b, cells, color) {
     { duration: 160, easing: 'cubic-bezier(.3,0,.2,1)', fill: 'forwards' }).finished.then(() => sw.remove());
   Sound.play('swap', 1.4, 0.9);
   shake(5, 180);
-  cells.forEach(([r, c], i) => setTimeout(() => actorHit(r, c, color, i % 7), 20 + i * (130 / cells.length)));
+  cells.forEach(([r, c], i) => setTimeout(() => {
+    actorHit(r, c, color, i % 7);
+    const p = tileCenter(r, c); // 지나간 칸마다 줄 아이템 같은 불꽃
+    kp('spark_05', p.x, p.y, S * 1.1, '#bfe9ff', [{ transform: `rotate(${ang + 90}deg) scale(.5)`, opacity: 1 }, { transform: `rotate(${ang + 90}deg) scale(1.2)`, opacity: 0 }], { duration: 260 });
+  }, 20 + i * (130 / cells.length)));
 }
 // 칸 목록 → 친구가 지나갈 길
 const linePath = cs => cs.map(([r, c]) => tileCenter(r, c));
