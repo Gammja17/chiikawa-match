@@ -911,7 +911,7 @@ function pickHelper(st = L.st) {
       const ch = CHARS[pick];
       card.style.setProperty('--ring', ch.ring);
       card.innerHTML = `<div class="mates-title">같이 갈 친구 한 명</div>
-        <div class="helper-pick"><span class="fig">${Meta.figure(ch.id, art(ch.id))}</span><div><b>${ch.name}</b><small>${ch.skill.name}</small><p>${ch.skill.desc}</p></div></div>
+        <div class="helper-pick"><span class="fig">${Meta.figure(ch.id, art(ch.id))}</span><div><b>${ch.name}</b><small>${skillOf(ch.id).name}</small><p>${skillOf(ch.id).desc}</p></div></div>
         ${host ? `<div class="buddy-note${CHARS[pick].id === st.host ? ' on' : ''}">이 판 단짝: <b>${host.name}</b> · 데려가면 ${st.time ? '+6초' : '이동 +2'}${Meta.owned(host.id) ? '' : ' (아직 없는 친구)'}</div>` : ''}
         <div class="mates-grid">${list.map(([c, k]) => `<button class="${k === pick ? 'on' : ''}${c.id === st?.host ? ' buddy' : ''}" data-k="${k}" style="--ring:${c.ring}"><img src="${FACE(c.id)}"><span>${c.name}</span></button>`).join('')}</div>
         <div class="sheet-btns"><button class="big-btn ghost" data-back>◀ 돌아가기</button><button class="big-btn" data-go>같이 가자!</button></div>`;

@@ -468,7 +468,7 @@ $('#btnMapHome').onclick = () => { Sound.play('click'); go(() => show('title'));
 // ---------- 스토리 ----------
 // 입힌 옷이 있으면 그 그림, 없으면 기본 그림 (대화창·스킬 컷인·결과창)
 // 스킬 게이지 요구치: 일상 퍼즐(친구 한 명)은 2.5배, 친구 레벨 1마다 4%씩 줄어듦 (Lv10이면 64%)
-const skillNeed = (id, life = B.mode === 'life') => Math.round(CHARS[charIdx(id)].skill.need * (life ? 2.5 : 1) * (1 - 0.04 * Math.max(0, Meta.lv(id) - 1)));
+const skillNeed = (id, life = B.mode === 'life') => Math.round(skillOf(id).need * (life ? 2.5 : 1) * (1 - 0.04 * Math.max(0, Meta.lv(id) - 1)));
 const artOf = id => { const s = Save.data.outfit?.[id]; return s && SKINS[id]?.[s] ? SKIN(id, s) : art(id); };
 function playStory(lines) {
   return new Promise(done => {
@@ -737,6 +737,7 @@ async function startStage(i) {
   const bowl = Ramen.takeBattle(); // 먹고 온 라멘
   B.teamHp = B.teamMax = bowl && (bowl.id === 'hp' || bowl.id === 'okinawa') ? 150 : 120;
   B.fever = 0;
+  B.rally = 0;
   B.maxCombo = 0;
   updateFever();
   Sound.music('battle');
@@ -1482,7 +1483,7 @@ async function stepFx(res, combo, from = null) {
     if (!tally.has(tile.type)) tally.set(tile.type, []);
     tally.get(tile.type).push([r, c]);
   });
-  const mult = (1 + 0.25 * (combo - 1)) * (B.fever ? 1.5 : 1), noGauge = B.inSkill;
+  const mult = (1 + 0.25 * (combo - 1)) * (B.fever ? 1.5 : 1) * (B.rally ? 1.3 : 1), noGauge = B.inSkill;
   B.pending.push((async () => {
     await sleep(Math.min(1100, last + 560));
     let k = 0;
@@ -1597,6 +1598,7 @@ async function endTurn() {
   if (B.mode === 'life') { await Life.endTurn(); return; }
   if (B.monHp <= 0) { await monsterDefeated(); return; }
   if (B.fever) { B.fever--; updateFever(); }
+  if (B.rally) B.rally--;
   B.cd--;
   updateCd();
   if (B.cd <= 0) {
@@ -1852,9 +1854,10 @@ async function cutIn(ch) {
   const el = document.createElement('div');
   el.className = 'cutin';
   el.style.setProperty('--ring', ch.ring);
-  const letters = [...ch.skill.name].map((t, k) => `<i style="animation-delay:${0.32 + k * 0.05}s">${t === ' ' ? '&nbsp;' : t}</i>`).join('');
+  const sk = skillOf(ch.id);
+  const letters = [...sk.name].map((t, k) => `<i style="animation-delay:${0.32 + k * 0.05}s">${t === ' ' ? '&nbsp;' : t}</i>`).join('');
   el.innerHTML = `<div class="dim"></div><div class="lines"></div><div class="band"><span></span></div><div class="band2"></div>
-    <img class="body" src="${artOf(ch.id)}"><div class="say">${ch.skill.say}</div><div class="sname">${letters}</div><div class="streak"></div>`;
+    <img class="body" src="${artOf(ch.id)}"><div class="say">${sk.say}</div><div class="sname">${letters}</div><div class="streak"></div>`;
   app.appendChild(el);
   const [dim, lines, band, band2, body, say, sname, streak] = el.children;
   Sound.play('jingle_skill', 1, 0.9);
@@ -2145,7 +2148,8 @@ async function useSkill(k) {
   clearSel();
   Tutor.hideHand();
   if (life) { L.hg = 0; Life.hud(); } else { B.gauge[k] = 0; updateGauges(); }
-  skStyle = SKFX[ch.skill.id] || SKFX.random8;
+  const sk = skillOf(ch.id); // 장착한 스킬
+  skStyle = SKFX[sk.style || sk.id] || SKFX.random8;
   await cutIn(ch);
   const auraOff = skillAura(ch.ring);
   let finAt = null; // 마무리 펑 자리 (없으면 맞은 칸들 가운데)
@@ -2157,7 +2161,7 @@ async function useSkill(k) {
     floatNum(p.x, p.y, L.st.time ? `+${n * 3}초` : `+${n}`, color, 'crit');
     Sound.play('heal', 1.2, 0.9);
   };
-  const id = ch.skill.id;
+  const id = sk.id;
   let cells = [];
   if (id === 'random8') {
     // 치이카와: 8칸을 울면서 콩콩 뛰어다니며 휘두름
@@ -2295,6 +2299,95 @@ async function useSkill(k) {
       fxImage('sparkle', p.x, p.y, B.S * 2, 500);
       Sound.play('special', 1.2, 0.9);
       await sleep(450);
+    }
+  } else if (sk.fx) {
+    // ---------- Lv4·Lv7 스킬: 이미 있는 효과를 짜 맞춤 ----------
+    const ITEMS_ANY = ['h', 'v', 'bomb', 'plane'];
+    const lifeMoves = n => bonusMoves(n, ch.ring);
+    const mixBoard = async () => {
+      const mid = ROWS >> 1;
+      await actor(ch, [tileCenter(mid, 0), tileCenter(mid, COLS >> 1), tileCenter(mid, COLS - 1)], { hop: 0.5, dur: 200 });
+      Board.shuffle(B.grid);
+      await settleAll(420);
+    };
+    if (sk.fx === 'drop') {
+      if (sk.shuffle) await mixBoard();
+      const kinds = sk.items.map(x => (x === 'any' ? ITEMS_ANY[Math.floor(Math.random() * 4)] : x));
+      const spots = pickTiles(kinds.length);
+      await actor(ch, linePath(spots), { onHit: i => {
+        const [r, c] = spots[i], t = B.grid[r][c];
+        t.special = kinds[i]; t.type = -1; refreshTile(t); squish(t); actorHit(r, c, ch.ring, i);
+      } });
+      Sound.play('special', 1.2, 0.8);
+      if (sk.fire) cells = spots; // 유성우: 놓자마자 터짐
+      await sleep(250);
+    } else if (sk.fx === 'blocks') {
+      // 장애물·잡초를 전부 한 대씩. 없으면 구슬 10개
+      Board.each(B.grid, (t, r, c) => { if (t.block || t.lock || Board.floor?.[r][c] > 0) cells.push([r, c]); });
+      if (Board.floor) for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (Board.floor[r][c] > 0 && !cells.some(([a, b]) => a === r && b === c)) cells.push([r, c]);
+      if (!cells.length) cells = pickTiles(10);
+      const path = cells.slice().sort(() => Math.random() - 0.5).slice(0, 10);
+      await actor(ch, linePath(path), { dur: 120, onHit: i => actorHit(...path[i], ch.ring, i) });
+    } else if (sk.fx === 'lines') {
+      const okRows = [...Array(ROWS).keys()].filter(r => [...Array(COLS).keys()].some(c => !hole(r, c))).sort(() => Math.random() - 0.5);
+      const okCols = [...Array(COLS).keys()].filter(c => [...Array(ROWS).keys()].some(r => !hole(r, c))).sort(() => Math.random() - 0.5);
+      okRows.slice(0, sk.rows).forEach(r => { for (let c = 0; c < COLS; c++) cells.push([r, c]); });
+      okCols.slice(0, sk.cols).forEach((c, j) => { for (let r = 0; r < ROWS; r++) cells.push([j ? ROWS - 1 - r : r, c]); });
+      await actor(ch, linePath(cells), { dur: 45, hop: 0.15, onHit: i => actorHit(...cells[i], ch.ring, i % 7) });
+    } else if (sk.fx === 'convert') {
+      const into = life ? Math.max(0, B.team.indexOf(L.helper)) : k;
+      const picks = pickTiles(sk.n, t => !t.special && t.type >= 0 && t.type !== into);
+      picks.forEach(([r, c]) => (B.grid[r][c].type = into));
+      await actor(ch, linePath(picks), { dur: 140, onHit: i => { const [r, c] = picks[i]; refreshTile(B.grid[r][c]); actorHit(r, c, ch.ring, i); } });
+      if (sk.heal && !life) { B.teamHp = Math.min(B.teamMax, B.teamHp + Math.round(B.teamMax * sk.heal)); updateTeam(); Sound.play('heal', 1.1, 0.8); }
+      await sleep(150);
+    } else if (life && sk.life) {
+      // 일상 퍼즐에서는 괴물이 없으니 이동(시간)으로 바꿔 줌
+      const p = (finAt = centerOf($('.lh-limit')));
+      await actor(ch, [p, { x: p.x + B.S * 0.6, y: p.y }, p], { hop: 0.6, dur: 200, size: 1.2 });
+      if (sk.shuffle) { Board.shuffle(B.grid); await settleAll(420); }
+      lifeMoves(sk.life);
+      await sleep(400);
+    } else if (sk.fx === 'bighit' && life) {
+      // 일상: 귀찮은 칸 두 곳에 폭탄
+      const spots = [Board.pickTarget(B.grid), Board.pickTarget(B.grid)].filter(Boolean);
+      if (spots.length) await actor(ch, linePath(spots), { hop: 1.4, onHit: i => { const [r, c] = spots[i], t = B.grid[r][c]; if (t && !t.block) { t.special = 'bomb'; t.type = -1; refreshTile(t); squish(t); } } });
+      await sleep(200);
+    } else if (sk.fx === 'bighit') {
+      const eff = attrMult(ch.attr, curWave().a);
+      const m = (finAt = centerOf($('#monster')));
+      await actor(ch, [m], { hop: 2.2, dur: 320, size: 1.8 });
+      fxImage('boom', m.x, m.y, B.S * 4, 500);
+      flash('#fff6a8', 0.5);
+      shake(14, 420);
+      hitMonster(Math.round(ch.dmg * sk.mult * eff * Meta.mult(ch.id)), ch, true, 0, eff);
+      await sleep(500);
+    } else if (sk.fx === 'delay') {
+      const cd = (finAt = centerOf($('#countdown')));
+      await actor(ch, [cd, { x: cd.x - B.S * 0.7, y: cd.y }, { x: cd.x + B.S * 0.7, y: cd.y }, cd], { hop: 0.7, dur: 180, size: 1.2 });
+      B.cd += sk.n;
+      updateCd();
+      $('#countdown').animate([{ transform: 'scale(1)' }, { transform: 'scale(1.3)' }, { transform: 'scale(1)' }], { duration: 300 });
+      if (sk.hit) { const eff = attrMult(ch.attr, curWave().a); hitMonster(Math.round(ch.dmg * sk.hit * eff), ch, false, 0, eff); }
+      await sleep(400);
+    } else if (sk.fx === 'gauge' || sk.fx === 'half' || sk.fx === 'rally' || sk.fx === 'heal') {
+      const hp = (finAt = centerOf($('#teamHp')));
+      await actor(ch, [hp, { x: hp.x + B.S, y: hp.y }, hp], { hop: 0.7, dur: 200, size: 1.2 });
+      if (sk.shuffle) { Board.shuffle(B.grid); await settleAll(420); }
+      if (sk.heal) {
+        const amt = Math.round(B.teamMax * sk.heal);
+        B.teamHp = Math.min(B.teamMax, B.teamHp + amt);
+        updateTeam();
+        floatNum(hp.x, hp.y - 10, `+${amt}`, '#3fae4f', 'crit');
+        Sound.play('heal', 1.1, 0.9);
+      }
+      const plus = sk.fx === 'gauge' ? sk.n : sk.fx === 'rally' ? 5 : sk.gauge || 0;
+      if (plus) B.gauge = B.gauge.map((g, j) => (j === k || j >= B.real ? g : g + plus));
+      if (sk.fx === 'half') B.gauge = B.gauge.map((g, j) => (j === k || j >= B.real ? g : Math.max(g, Math.ceil(skillNeed(teamCh(j).id) / 2))));
+      if (sk.fx === 'rally') { B.rally = 3; banner('공격 ×1.3!', 450); }
+      updateGauges();
+      Sound.play('sparkle', 1.1, 0.8);
+      await sleep(400);
     }
   }
   auraOff();

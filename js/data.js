@@ -26,6 +26,56 @@ const CHARS = [
   { id: 'beetle',    name: '풍뎅이',   ring: '#a5683a', attr: 'cry',   dmg: 10, line: '냐하~',
     skill: { id: 'cheer',    name: '꼬옥 안기', desc: '판 섞고 다른 멤버 게이지 +4', need: 13, say: '냐하~! (꼬옥)' } },
 ];
+// ---------- 스킬 3개: Lv1(기본) · Lv4 · Lv7에 열리고, 친구 카드에서 하나 골라 장착 ----------
+// fx: drop(아이템 놓기) blocks(장애물 한 대씩) gauge(모두 게이지) convert(구슬 바꾸기) delay(괴물 늦추기)
+//     bighit(큰 한 방) rally(공격 ×1.3) heal(회복) half(게이지 반까지) lines(줄 지우기)
+// style: 스킬 빛 모양(SKFX 키), life: 일상 퍼즐에서 대신 주는 이동 수
+const MORE_SKILLS = {
+  chiikawa: [
+    { id: 'c_sword', name: '랏코 검 찌르기', desc: '판에 랏코 검 2개를 놓음', need: 14, say: '…!! 에잇!', fx: 'drop', items: ['h', 'v'], style: 'random8' },
+    { id: 'c_weed', name: '풀 뽑기 장인', desc: '모든 장애물·잡초를 한 대씩 (없으면 구슬 10개)', need: 18, say: '(소매를 걷어붙인다) …!!', fx: 'blocks', style: 'random8' }],
+  hachiware: [
+    { id: 'h_guitar', name: '기타 둥가둥가', desc: '모두 스킬 게이지 +4 (일상: 이동 +2)', need: 14, say: '(기타 둥가둥가~) 흐흥~ ♪', fx: 'gauge', n: 4, life: 2, style: 'rows2' },
+    { id: 'h_song', name: '노래의 힘', desc: '구슬 6개를 하치와레로 바꾸고 체력 15% 회복', need: 17, say: '다 같이 불러 보자~!', fx: 'convert', n: 6, heal: 0.15, style: 'convert6' }],
+  usagi: [
+    { id: 'u_ura', name: '우라! 연타', desc: '폭탄 3개를 놓음', need: 16, say: '우라! 우라! 우라!!', fx: 'drop', items: ['bomb', 'bomb', 'bomb'], style: 'bighit' },
+    { id: 'u_yaha', name: '야하! 대폭주', desc: '세로 2줄 + 가로 1줄을 쓸어버림', need: 18, say: '야하~!! 이얏하!!', fx: 'lines', rows: 1, cols: 2, style: 'rows2' }],
+  momonga: [
+    { id: 'm_fake', name: '우는 척', desc: '괴물 공격을 2턴 늦춤 (일상: 이동 +2)', need: 13, say: '(우는 척) …흑. 봤지?', fx: 'delay', n: 2, life: 2, style: 'convert6' },
+    { id: 'm_praise', name: '칭찬해!', desc: '구슬 10개를 모몽가로 바꿈', need: 17, say: '빨리 칭찬해! 전부 내 거야!', fx: 'convert', n: 10, style: 'convert6' }],
+  rakko: [
+    { id: 'r_one', name: '일도양단', desc: '괴물에게 아주 큰 한 방 (일상: 폭탄 2개)', need: 18, say: '…베어 낸다.', fx: 'bighit', mult: 25, style: 'cross' },
+    { id: 'r_rally', name: '강해졌구나', desc: '모두 게이지 +5, 3턴 동안 공격 ×1.3 (일상: 이동 +3)', need: 18, say: '강해졌구나. 기세를 타라!', fx: 'rally', life: 3, style: 'cross' }],
+  kani: [
+    { id: 'k_mark', name: '책갈피', desc: '괴물 공격을 2턴 늦춤 (일상: 이동 +2)', need: 13, say: '(책갈피를 슬쩍 꽂는다)', fx: 'delay', n: 2, life: 2, style: 'heal40' },
+    { id: 'k_read', name: '함께 읽기', desc: '체력 20% 회복, 모두 게이지 +3 (일상: 이동 +4)', need: 16, say: '(다 같이 책을 펼친다)', fx: 'heal', heal: 0.2, gauge: 3, life: 4, style: 'heal40' }],
+  kurimanju: [
+    { id: 'q_snack', name: '안주 한 접시', desc: '폭탄 2개를 놓음', need: 15, say: '(안주를 슥 내민다) ……하아~', fx: 'drop', items: ['bomb', 'bomb'], style: 'rainbow' },
+    { id: 'q_two', name: '두 잔째', desc: '경단 2개를 놓음', need: 20, say: '(꿀꺽꿀꺽) ……하아~~ 으어어…', fx: 'drop', items: ['rainbow', 'rainbow'], style: 'rainbow' }],
+  shisa: [
+    { id: 's_deliver', name: '라멘 배달', desc: '아무 아이템 3개를 놓음', need: 15, say: '배달 왔사~!', fx: 'drop', items: ['any', 'any', 'any'], style: 'ramen' },
+    { id: 's_train', name: '수행의 성과', desc: '체력 30% 회복, 모두 게이지 +5 (일상: 이동 +5)', need: 19, say: '스승님, 보고 계사!? 치바리요~!', fx: 'heal', heal: 0.3, gauge: 5, life: 5, style: 'ramen' }],
+  shooting: [
+    { id: 'st_wish', name: '소원 하나', desc: '경단 1개를 놓음', need: 14, say: '소원 하나, 들어줄게!', fx: 'drop', items: ['rainbow'], style: 'meteor' },
+    { id: 'st_shower', name: '유성우', desc: '폭탄 5개가 떨어져 바로 터짐', need: 22, say: '반짝반짝~! 다 같이 소원 빌어!', fx: 'drop', items: ['bomb', 'bomb', 'bomb', 'bomb', 'bomb'], fire: true, style: 'meteor' }],
+  darkstar: [
+    { id: 'd_prank', name: '장난', desc: '판을 섞고 랏코 검 2개를 놓음', need: 15, say: '히히, 섞어 버릴 거야~', fx: 'drop', shuffle: true, items: ['h', 'v'], style: 'cols2' },
+    { id: 'd_again', name: '오늘 한 번 더', desc: '모두 게이지를 반까지 채움 (일상: 이동 +3)', need: 20, say: '오늘이 한 번 더 오면 좋겠지? 히히.', fx: 'half', life: 3, style: 'cols2' }],
+  goblin: [
+    { id: 'g_chorus', name: '옴 빰 빰 합창', desc: '괴물 공격을 4턴 늦추고 작은 피해 (일상: 이동 +3)', need: 17, say: '옴 빰 빰~ 옴 빰 빰~ 제야!', fx: 'delay', n: 4, hit: 4, life: 3, style: 'stall' },
+    { id: 'g_cave', name: '동굴 춤', desc: '판을 섞고 아무 아이템 3개를 놓음', need: 18, say: '(다 같이 빙글빙글) 예 예 예~!', fx: 'drop', shuffle: true, items: ['any', 'any', 'any'], style: 'stall' }],
+  beetle: [
+    { id: 'b_hug', name: '꼬옥 꼬옥', desc: '체력 15% 회복하고 판을 섞음 (일상: 이동 +2)', need: 13, say: '냐하~ (꼬옥)', fx: 'heal', heal: 0.15, shuffle: true, life: 2, style: 'cheer' },
+    { id: 'b_nyaha', name: '냐하하~', desc: '모두 스킬 게이지 +6 (일상: 이동 +3)', need: 18, say: '냐하하~!', fx: 'gauge', n: 6, life: 3, style: 'cheer' }],
+};
+const SKILL_LV = [1, 4, 7];
+CHARS.forEach(c => (c.skills = [{ ...c.skill, lv: 1 }, ...(MORE_SKILLS[c.id] || []).map((s, k) => ({ ...s, lv: SKILL_LV[k + 1] }))]));
+// 장착한 스킬 (레벨이 모자라면 기본 스킬)
+const skillOf = id => {
+  const c = CHARS.find(x => x.id === id), k = (typeof Save !== 'undefined' && Save.data?.skill?.[id]) || 0;
+  const s = c.skills[k];
+  return s && (typeof Meta === 'undefined' || Meta.lv(id) >= s.lv) ? s : c.skills[0];
+};
 const TEAM_SIZE = 5;
 const DEFAULT_TEAM = ['chiikawa', 'hachiware', 'usagi', 'rakko', 'kani']; // 아직 없는 친구는 편성에서 빠짐
 
