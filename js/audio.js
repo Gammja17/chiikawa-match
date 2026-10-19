@@ -127,7 +127,7 @@ const BGM = {
 };
 const BGM_V = 1; // 파일을 바꾸면 올림
 Object.assign(Sound, {
-  song: null, el: null, fade: null, turn: {},
+  song: null, el: null, fade: null, turn: {}, req: 0, blobs: {},
 
   music(name) {
     if (this.song === name) return;
@@ -151,20 +151,35 @@ Object.assign(Sound, {
     clearTimeout(this.fade);
     const swap = () => {
       el.pause();
-      const name = this.song;
+      el.removeAttribute('src'); // 받는 동안 다시 틀어도 지난 곡이 나오지 않게
+      el.load();
+      const name = this.song, n = ++this.req; // 받는 동안 곡이 또 바뀌면 늦게 온 곡은 안 틂
       if (!name || this.muted || document.hidden) return;
       const list = BGM[name], k = (this.turn[name] = ((this.turn[name] ?? -1) + 1) % list.length);
-      el.src = `assets/bgm/${list[k]}.mp3?v=${BGM_V}`;
       el.dataset.song = name;
-      const g = this.bgmGain.gain, t = this.ctx.currentTime;
-      g.cancelScheduledValues(t);
-      g.setValueAtTime(0, t);
-      g.linearRampToValueAtTime(1, t + 0.6);
-      el.play().catch(() => {});
+      this.bgmSrc(`assets/bgm/${list[k]}.mp3?v=${BGM_V}`).then(url => {
+        if (n !== this.req) return;
+        if (this.muted || document.hidden) { el.dataset.song = ''; return; } // 다시 켜면 bgmSync가 새로 틂
+        el.src = url;
+        const g = this.bgmGain.gain, t = this.ctx.currentTime;
+        g.cancelScheduledValues(t);
+        g.setValueAtTime(0, t);
+        g.linearRampToValueAtTime(1, t + 0.6);
+        el.play().catch(() => {});
+      }).catch(() => {});
     };
     if (el.paused) { swap(); return; }
     this.bgmGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.12);
     this.fade = setTimeout(swap, 450);
+  },
+
+  // 파일을 통째로 받아 blob 주소로 틂: 서버(Cloudflare)가 조각 받기(Range)를 안 해 줘서 아이폰 <audio>가 못 트는 걸 피함
+  // 받은 곡은 기억해 두고, 통째로 받으니 sw.js에 저장돼 오프라인에서도 나옴
+  bgmSrc(file) {
+    return (this.blobs[file] ||= fetch(file)
+      .then(r => { if (!r.ok) throw new Error(r.status); return r.blob(); })
+      .then(b => URL.createObjectURL(b))
+      .catch(e => { delete this.blobs[file]; throw e; }));
   },
 
   // 소리 끄기·앱 숨김·막혔던 자동 재생: 같은 곡이면 이어서, 바뀌었으면 새로
