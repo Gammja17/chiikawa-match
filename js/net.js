@@ -219,6 +219,7 @@ function titleLogin() {
   b.onclick = google ? null : () => { Sound.play('click'); Net.google(); };
 }
 Net.onChange(titleLogin);
+Net.onChange(profileChip); // 지도 왼쪽 위 이름표 (이름, 구글 표시)
 document.addEventListener('visibilitychange', () => document.hidden && Net.flush());
 window.addEventListener('pagehide', () => Net.flush());
 Net.init().then(titleLogin);

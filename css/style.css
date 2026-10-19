@@ -73,10 +73,6 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
   border: 0 solid transparent; border-image: url(../assets/img/ui/bar_frame.png) 0 32 fill / 0 calc(var(--h) / 2); }
 .hp .fill, #lhScore .fill { position: relative; height: 100%; width: 100%; overflow: hidden; border-radius: 99px; transition: width .35s cubic-bezier(.3, 1.4, .6, 1);
   border: 0 solid transparent; border-image: url(../assets/img/ui/bar_fill.png) 0 17 fill / 0 calc(var(--h) * .31); }
-/* 채움 위로 하얀 빛이 가끔 쓱 지나감 (transform만 움직임) */
-.hp .fill::after, #lhScore .fill::after { content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 45%; background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .6), transparent);
-  transform: translateX(-120%); animation: barShine 2.8s ease-in-out infinite; }
-@keyframes barShine { 0% { transform: translateX(-120%); } 55%, 100% { transform: translateX(330%); } }
 .hp span { position: absolute; inset: 0; display: grid; place-items: center; padding-top: 2px; font-family: var(--head); font-size: 18px; font-weight: 700; line-height: 1; color: #fff; -webkit-text-stroke: 4px var(--ink); paint-order: stroke fill; }
 .num, .node, #countdown b { font-family: var(--head); }
 
@@ -145,10 +141,22 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 .node .nstars { position: absolute; top: calc(100% + 4px); left: 50%; transform: translateX(-50%); display: flex; gap: 1px; }
 .node .nstars i { width: 17px; height: 17px; background: url(../assets/img/ui/star_off.png) center / contain no-repeat; }
 .node .nstars i.on { background-image: url(../assets/img/ui/star_on.png); }
-#mapParty { position: absolute; display: flex; align-items: flex-end; margin: -118px 0 0 -60px; width: 120px; justify-content: center; pointer-events: none; z-index: 3; }
+#mapParty { position: absolute; display: flex; align-items: flex-end; margin: -118px 0 0 -60px; width: 120px; justify-content: center; z-index: 3; cursor: pointer; }
 #mapParty img { width: 44px; margin: 0 -5px; animation: hop 1s ease-in-out infinite; }
 #mapParty img:nth-child(2) { animation-delay: .15s; }
 #mapParty img:nth-child(3) { animation-delay: .3s; }
+#mapParty img.fav { width: 56px; position: relative; z-index: 1; }
+/* 프로필 이름표 (지도 왼쪽 위) */
+#btnProfile { position: absolute; left: 12px; top: 62px; z-index: 5; display: flex; align-items: center; gap: 6px; max-width: 46%; padding: 3px 12px 3px 3px; border-radius: 99px; background: var(--paper); box-shadow: var(--sh); font-family: var(--head); font-size: 16px; line-height: 1.1; }
+.pf-ava { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; overflow: hidden; background: color-mix(in srgb, var(--ring) 22%, #fff); border: 2px solid var(--ring); }
+.pf-ava img { width: 92%; margin-top: 10%; }
+.pf-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf-g { flex: none; width: 16px; height: 16px; border-radius: 50%; background: #4285f4; color: #fff; font-style: normal; font-size: 11px; line-height: 16px; text-align: center; }
+.pf-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.pf-ava.big { width: 72px; height: 72px; border-width: 3px; }
+.pf-info { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; font-family: var(--head); font-size: 24px; }
+.pf-google { display: block; width: 100%; margin: 0 0 10px; padding: 8px 10px; border-radius: 12px; background: #eef3ff; color: #2f5fc4; font-family: var(--head); font-size: 16px; text-align: center; }
+.pf-google.on { background: #eaf8ea; color: #2f7a3a; }
 .dock { position: absolute; left: 10px; right: 10px; bottom: 0; z-index: 5; display: flex; padding: 6px 6px calc(10px + env(safe-area-inset-bottom)); background: var(--paper); border-radius: 18px 18px 0 0; box-shadow: 0 -2px 10px rgba(74, 66, 98, .12); }
 .dock button { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; padding: 2px 0 0; border-radius: 12px; font-family: var(--head); font-size: 17px; line-height: 1.15; }
 .dock button + button { border-left: 1.5px dashed var(--ink3); border-radius: 0; }
@@ -382,6 +390,10 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 /* ---------- 스킬 컷인: 집중선 + 캐릭터 색 띠 두 줄 + 튀어나오는 친구 + 한 글자씩 스킬 이름 ---------- */
 .cutin { position: absolute; inset: 0; z-index: 25; pointer-events: none; overflow: hidden; }
 .cutin .dim { position: absolute; inset: 0; background: #2a2440; opacity: 0; }
+/* 스페셜 옷: 애니 장면 그림을 뒤에 깔고, 띠는 살짝 비치게 */
+.cutin .scene { position: absolute; inset: 0; background: var(--scene) center / cover no-repeat; opacity: 0; will-change: transform, opacity; }
+.cutin.special .band { background: color-mix(in srgb, var(--ring) 78%, transparent); }
+.cutin .sp-tag { position: absolute; left: 50%; top: calc(36% + 132px); z-index: 2; padding: 3px 14px 1px; border-radius: 99px; background: #fff; border: 2.5px solid var(--ring); color: var(--ink); font-family: var(--head); font-size: 18px; white-space: nowrap; }
 .cutin .lines { position: absolute; left: 50%; top: 42%; width: 200vmax; height: 200vmax; border-radius: 50%; opacity: 0;
   background: repeating-conic-gradient(from 0deg, rgba(255, 255, 255, .22) 0 2deg, transparent 2deg 9deg); -webkit-mask: radial-gradient(circle, transparent 0 16%, #000 30%); mask: radial-gradient(circle, transparent 0 16%, #000 30%); }
 .cutin .band { position: absolute; left: -10%; right: -10%; top: 36%; height: 160px; transform: rotate(-8deg); background: var(--ring); border-top: 4px solid #fff; border-bottom: 4px solid #fff; overflow: hidden; }
@@ -915,7 +927,7 @@ img.shadow { filter: brightness(0) opacity(.15); }
   box-shadow: 0 0 0 3px #fff, 0 0 0 7px var(--c), 0 0 22px 9px var(--c), inset 0 0 16px 4px var(--c); }
 
 /* ---------- 오늘의 미션, 출석 도장 ---------- */
-#btnMission { position: absolute; left: 18px; top: 66px; z-index: 5; width: 58px; padding: 6px 0 4px; border-radius: 16px; background: var(--paper); box-shadow: var(--sh); display: flex; flex-direction: column; align-items: center; font-family: var(--head); font-size: 14px; line-height: 1.1; }
+#btnMission { position: absolute; left: 18px; top: 116px; z-index: 5; width: 58px; padding: 6px 0 4px; border-radius: 16px; background: var(--paper); box-shadow: var(--sh); display: flex; flex-direction: column; align-items: center; font-family: var(--head); font-size: 14px; line-height: 1.1; }
 #btnMission img { width: 30px; height: 30px; }
 #btnMission i { position: absolute; right: -4px; top: -4px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: #ff5d7e; color: #fff; font-style: normal; font-size: 13px; line-height: 20px; display: none; }
 #btnMission.ready i { display: block; }

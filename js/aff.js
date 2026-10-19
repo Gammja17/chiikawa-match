@@ -7,11 +7,11 @@ const AFF_STORY = {
   chiikawa: [['chiikawa', '(오늘도 같이 있어 줘서…)'], ['chiikawa', '…!! (헤헤…)'], ['hachiware', '치이카와, 엄청 좋아 보인다~']],
   hachiware: [['hachiware', '있잖아, 새 노래 만들었는데… 들어 줄래?'], ['hachiware', '흐흥~ ♪ 어때? 괜찮다는 거야!?'], ['chiikawa', '…!! (박수)']],
   usagi: [['usagi', '우라!'], ['usagi', '(간식을 반으로 뚝 나눠 내민다)'], ['usagi', '야하~!']],
-  momonga: [['momonga', '모몽가랑 제일 친한 거 맞지?'], ['momonga', '그럼 오늘도 칭찬해 줘! 많이!'], ['momonga', '에헤헤~ 착하지?']],
+  momonga: [['momonga', '나랑 제일 친한 거 맞지?'], ['momonga', '그럼 오늘도 칭찬해 줘! 많이!'], ['momonga', '에헤헤~ 착하지?']],
   kurimanju: [['kurimanju', '(안주를 슥 내민다)'], ['kurimanju', '……프하~'], ['kurimanju', '……(같이 먹자는 눈빛)']],
   rakko: [['rakko', '…요즘 많이 늘었군.'], ['rakko', '수련은 혼자보다 같이 하는 게 낫다.'], ['rakko', '…다음에도 같이 간다.']],
-  shisa: [['shisa', '마스터가 국물 내는 법 조금 알려 줬어요!'], ['shisa', '제일 먼저 맛보게 해 드릴게요~!'], ['chiikawa', '…!! (꿀꺽)']],
-  kani: [['kani', '요즘 다친 데 없지?'], ['kani', '다행이다~ 그래도 반창고는 늘 챙겨 둘게.']],
+  shisa: [['shisa', '스승님이 국물 내는 법을 조금 알려 줬사!'], ['shisa', '제일 먼저 맛보게 해 줄 거사~!'], ['chiikawa', '…!! (꿀꺽)']],
+  kani: [['kani', '(오늘 고른 책을 살며시 내민다)'], ['kani', '(책갈피를 하나 더 끼워 주고 꾸벅)']],
 };
 const Aff = {
   pts: id => (Save.data.aff || {})[id] || 0,

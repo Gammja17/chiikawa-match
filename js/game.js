@@ -400,6 +400,62 @@ const NODE_GAP = 112, NODE_TOP = 150;
 const LOCK_SVG = '<svg class="lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" fill="none" stroke-width="2.4"/></svg>';
 const nodePos = (i, W) => ({ x: (0.5 + Math.sin(i * 1.15) * 0.28) * W, y: NODE_TOP + i * NODE_GAP });
 
+// ---------- 프로필: 닉네임, 구글 연결, 최애 친구 (지도 왼쪽 위 이름표를 누르면 열림) ----------
+// 지도에서 다니는 친구: 최애가 가운데, 양옆은 기본 친구들. 입은 옷 그대로
+const walkImg = id => { const s = Save.data.outfit?.[id]; return s && SKINS[id]?.[s] ? SKIN(id, s) : portrait(id); };
+const favId = () => (Save.data.fav && Meta.owned(Save.data.fav) ? Save.data.fav : 'hachiware');
+function mapPartyHtml() {
+  const fav = favId(), side = ['chiikawa', 'usagi', 'hachiware'].filter(id => id !== fav).slice(0, 2);
+  return [side[0], fav, side[1]].map(id => `<img src="${walkImg(id)}"${id === fav ? ' class="fav"' : ''} draggable="false">`).join('');
+}
+const netName = () => (typeof Net !== 'undefined' ? Net.name() : (Save.data.nick || '이름 없는 친구')).replace(/[<>&]/g, '');
+const googleOn = () => typeof Net !== 'undefined' && Net.user && !Net.user.isAnonymous;
+function profileChip() {
+  const b = $('#btnProfile'), fav = CHARS[charIdx(favId())];
+  b.style.setProperty('--ring', fav.ring);
+  b.innerHTML = `<span class="pf-ava"><img src="${FACE(fav.id)}" alt=""></span><span class="pf-name">${netName()}</span>${googleOn() ? '<i class="pf-g" title="구글 연결됨">G</i>' : ''}`;
+}
+$('#btnProfile').onclick = () => { Sound.play('click'); openProfile(); };
+function openProfile() {
+  const card = $('#charSheet .sheet-card');
+  const draw = () => {
+    const fav = CHARS[charIdx(favId())], net = typeof Net !== 'undefined' && Net.on;
+    card.style.setProperty('--ring', fav.ring);
+    card.innerHTML = `<div class="mates-title">프로필</div>
+      <div class="pf-head"><span class="pf-ava big"><img src="${FACE(fav.id)}" alt=""></span>
+        <div class="pf-info"><b>${netName()}</b><button class="mini-btn" data-nick>이름 바꾸기</button></div></div>
+      ${net ? (googleOn() ? '<div class="pf-google on">✓ 구글 연결됨 · 진행이 계정에 저장돼요</div>'
+        : '<button class="pf-google" data-google>구글로 로그인하고 진행 저장</button>') : ''}
+      <div class="sheet-label">최애 친구 <small>지도에서 가운데로 같이 다녀요</small></div>
+      <div class="mates-grid">${CHARS.filter(c => Meta.owned(c.id)).map(c => `<button class="${c.id === fav.id ? 'on' : ''}" data-id="${c.id}" style="--ring:${c.ring}"><img src="${FACE(c.id)}"><span>${c.name}</span></button>`).join('')}</div>
+      <div class="sheet-btns"><button class="big-btn" data-go>닫기</button></div>`;
+    card.querySelectorAll('.mates-grid button').forEach(b => (b.onclick = () => {
+      Save.data.fav = b.dataset.id;
+      Save.save();
+      Sound.voice(b.dataset.id, 'pick') || Sound.play('pop', 1.2, 0.5);
+      draw();
+    }));
+    card.querySelector('[data-nick]').onclick = () => {
+      const n = prompt('랭킹에 보일 이름 (12자까지)', netName());
+      if (!n || !n.trim()) return;
+      Save.data.nick = n.trim().slice(0, 12);
+      Save.save();
+      if (typeof Net !== 'undefined') Net.submit();
+      draw();
+    };
+    card.querySelector('[data-google]')?.addEventListener('click', async () => { Sound.play('click'); await Net.google(); draw(); profileChip(); });
+    card.querySelector('[data-go]').onclick = () => {
+      Sound.play('click');
+      $('#charSheet').classList.remove('show');
+      profileChip();
+      if ($('#mapParty')) $('#mapParty').innerHTML = mapPartyHtml();
+    };
+  };
+  draw();
+  $('#charSheet').classList.add('show');
+  fitText($('#charSheet'));
+}
+
 function openMap(advanceFrom = null) {
   Life.stopTimer();
   show('map');
@@ -459,8 +515,10 @@ function openMap(advanceFrom = null) {
 
   const party = document.createElement('div');
   party.id = 'mapParty';
-  party.innerHTML = ['hachiware', 'chiikawa', 'usagi'].map(id => `<img src="${BODY(id)}" draggable="false">`).join('');
+  party.innerHTML = mapPartyHtml();
+  party.onclick = () => { Sound.play('click'); openProfile(); };
   path.appendChild(party);
+  profileChip();
   const scroller = $('#mapScroll');
   const goal = pts[cur];
   party.style.left = goal.x + 'px';
@@ -1954,17 +2012,54 @@ $('#btnFormBack').onclick = $('#btnFormMap').onclick = () => { Sound.play('click
 
 // ---------- 스킬 ----------
 // 캐릭터 색 스티커 띠가 찰싹 붙고, 그림이 튀어나와 대사, 빛줄기 남기고 빠짐 (약 1초)
+// 스페셜 옷 컷인 덧칠: 장면 그림이 서서히 다가오고, 친구가 커졌다 작아졌다, 둘레로 별이 퐁퐁 (transform/opacity만)
+function specialCut(el, dim, body, sp, ch) {
+  const scene = document.createElement('div');
+  scene.className = 'scene';
+  dim.after(scene);
+  scene.animate([{ opacity: 0, transform: 'scale(1.15)' }, { opacity: 0.9, transform: 'scale(1.05)', offset: 0.3 }, { opacity: 0.9, transform: 'scale(1)' }], { duration: 1200, easing: 'ease-out', fill: 'forwards' });
+  const tag = document.createElement('div');
+  tag.className = 'sp-tag';
+  tag.textContent = `✦ ${sp.name} ✦`;
+  el.appendChild(tag);
+  tag.animate([{ transform: 'translateX(-50%) scale(0) rotate(-10deg)', opacity: 0 }, { transform: 'translateX(-50%) scale(1.2) rotate(3deg)', opacity: 1, offset: 0.6 }, { transform: 'translateX(-50%) scale(1)', opacity: 1 }],
+    { duration: 320, delay: 520, easing: 'ease-out', fill: 'backwards' });
+  body.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.1, .92) translateY(4%)', offset: 0.3 }, { transform: 'scale(.95, 1.07) translateY(-6%)', offset: 0.6 }, { transform: 'scale(1)' }],
+    { duration: 340, delay: 560, iterations: 2, easing: 'ease-in-out' });
+  // 별: 컷인 위에 직접 띄움 (판 효과 층은 컷인 밑이라)
+  const star = (x, y, size, color, delay) => {
+    const s = document.createElement('i');
+    s.className = 'kp';
+    Object.assign(s.style, { left: x + 'px', top: y + 'px', width: size + 'px', height: size + 'px', marginLeft: -size / 2 + 'px', marginTop: -size / 2 + 'px', zIndex: 3 });
+    s.style.setProperty('--m', KP(Math.random() < 0.5 ? 'star_06' : 'star_04'));
+    s.style.setProperty('--c', color);
+    el.appendChild(s);
+    const a = Math.random() * Math.PI * 2, d = 50 + Math.random() * 70;
+    s.animate([{ transform: 'translate(0,0) scale(0) rotate(0)', opacity: 1 }, { transform: `translate(${Math.cos(a) * d * 0.7}px,${Math.sin(a) * d * 0.7}px) scale(1.2) rotate(90deg)`, opacity: 1, offset: 0.4 },
+      { transform: `translate(${Math.cos(a) * d}px,${Math.sin(a) * d}px) scale(0) rotate(180deg)`, opacity: 0 }], { duration: 650, delay, easing: 'cubic-bezier(.2,.8,.4,1)', fill: 'backwards' }).finished.then(() => s.remove());
+  };
+  setTimeout(() => {
+    const r = body.getBoundingClientRect(), a = el.getBoundingClientRect();
+    const x = r.left - a.left + r.width / 2, y = r.top - a.top + r.height / 2;
+    for (let k = 0; k < 14; k++) star(x, y, 18 + Math.random() * 16, [ch.ring, '#ffffff', '#ffd84d', '#ff9ec4'][k % 4], (k % 3) * 220);
+    Sound.play('sparkle', 1.4, 0.7);
+  }, 560);
+}
+
 async function cutIn(ch) {
   // 화면이 어두워지고 집중선이 돌며 → 캐릭터 색 띠가 쾅 → 친구가 튀어나와 한마디 → 스킬 이름이 한 글자씩 → 번쩍 하고 빠짐
   const el = document.createElement('div');
   el.className = 'cutin';
   el.style.setProperty('--ring', ch.ring);
+  const sp = specialOf(ch.id); // 스페셜 옷: 그 옷이 나온 애니 장면이 뒤에 깔리고, 친구가 통통 튀며 별이 터짐
+  if (sp) { el.classList.add('special'); el.style.setProperty('--scene', `url(${SCENE(sp.special)})`); }
   const sk = skillOf(ch.id);
   const letters = [...sk.name].map((t, k) => `<i style="animation-delay:${0.32 + k * 0.05}s">${t === ' ' ? '&nbsp;' : t}</i>`).join('');
   el.innerHTML = `<div class="dim"></div><div class="lines"></div><div class="band"><span></span></div><div class="band2"></div>
     <img class="body" src="${artOf(ch.id)}"><div class="say">${sk.say}</div><div class="sname">${letters}</div><div class="streak"></div>`;
   app.appendChild(el);
   const [dim, lines, band, band2, body, say, sname, streak] = el.children;
+  if (sp) specialCut(el, dim, body, sp, ch);
   Sound.play('jingle_skill', 1, 0.9);
   Haptic.tap(40);
   setTimeout(() => Sound.voice(ch.id, 'skill'), 200);
@@ -2572,7 +2667,7 @@ async function clearShow(text = '토벌<br>성공!') {
   const ch = mvp();
   el.innerHTML = `<div class="dim"></div>
     <div class="slam${SLAM_ART[text] ? ' art' : ''}">${SLAM_ART[text] ? `<img src="assets/img/ui/words/${SLAM_ART[text]}.webp" alt="">` : text}</div>
-    <img class="hero" src="${art(ch.id)}"><div class="hero-say">${B.mode === 'battle' ? '<b class="mvp">MVP</b>' : ''}${lineOf(ch.id)}</div>`;
+    <img class="hero" src="${artOf(ch.id)}"><div class="hero-say">${B.mode === 'battle' ? '<b class="mvp">MVP</b>' : ''}${lineOf(ch.id)}</div>`;
   app.appendChild(el);
   const [dim, stamp, hero, say] = el.children;
   // 차례가 올 때까지 숨겨 둠 (안 그러면 제자리에 먼저 한 번 보였다가, 애니메이션이 시작되며 다시 나옴)
@@ -2664,7 +2759,7 @@ async function feverShow() {
 // 토벌을 새로 깰 때마다 한 그릇 (곱빼기: 다음 토벌 체력 150 / 진한 국물: 스킬 게이지 반부터)
 // 라멘 갑옷 씨: 가게 규칙에 엄격한 사장. 아이들은 이름 대신 생김새로 부름
 const MASTER_LINES = ['왔군. 주문은 순서대로.', '면 굵기, 기름 양, 국물 진하기. 정하고 말해라.', '가게 규칙은 지켜라.', '토벌 하나 끝냈으면 한 그릇 먹고 가라.', '국물은 새벽부터 끓인다.', '하얀 녀석, 오늘도 왔군.', '시사 녀석… 요즘 손이 빨라졌다.'];
-const SHISA_LINES = ['어서 와사~!', '여기서 수행 중이사! 스승님 라멘은 최고사~', '주문 들어갑니다사~!', '언젠가 토벌에도 따라가 보고 싶사…!'];
+const SHISA_LINES = ['어서 와사~!', '여기서 수행 중이사! 스승님 라멘은 최고사~', '주문 들어가사~!', '언젠가 토벌에도 따라가 보고 싶사…!'];
 function shopSay(el, text) {
   const say = $('#shopSay'), r = el.getBoundingClientRect(), sc = $('#shopScene').getBoundingClientRect();
   say.textContent = text;
@@ -2676,7 +2771,7 @@ function shopSay(el, text) {
   Sound.play('pop', 1.1 + Math.random() * 0.3, 0.6);
 }
 // 문가 손님이 하는 말 (간식을 모아 오면 친구가 됨)
-const RECRUIT_ASK = { momonga: '딸기 파르페 5개 가져와. 그럼 같이 다녀 줄 수도 있고~ 흥.', kurimanju: '……(경단 쪽을 힐끔)', goblin: '옴 빰 빰~ (주먹밥 4개를 가리킨다)' };
+const RECRUIT_ASK = { momonga: '딸기 파르페 가져와. 많이. 그럼 같이 다녀 줄 수도 있고~ 흥.', kurimanju: '……(경단 쪽을 힐끔)', goblin: '옴 빰 빰~ (주먹밥을 가리킨다)' };
 function openRamen() {
   show('ramen');
   Meta.coinUI();
