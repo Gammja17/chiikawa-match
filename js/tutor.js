@@ -31,6 +31,7 @@ const Tutor = {
   guide: null, idle: null,
   seen(k) { return (Save.data.tips = Save.data.tips || {})[k]; },
   mark(k) { Save.data.tips[k] = 1; Save.save(); },
+  unmark(k) { delete (Save.data.tips || {})[k]; Save.save(); },
 
   // 맨 처음 시작하기를 누르면 짧은 이야기
   async opening() {
@@ -251,7 +252,9 @@ const Spot = {
         ended = true;
         Spot.finish = null;
         els.forEach(e => e.removeEventListener('click', finish));
+        ov.querySelectorAll('.blk').forEach(x => (x.style.pointerEvents = 'none')); // 사라지는 동안에도 터치를 막지 않게
         ov.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, fill: 'forwards' }).finished.then(() => ov.remove());
+        setTimeout(() => ov.remove(), 220); // 애니메이션이 멈춰도 확실히 지움 (화면 전환과 겹치지 않게)
         done();
       };
       Spot.finish = finish;
@@ -310,6 +313,9 @@ $('.dock').addEventListener('click', e => {
 }, true);
 
 // 지도를 열면: 처음이면 첫 칸을 비추고, 새로 열린 기능이 있으면 비추고, 5단계쯤엔 구글 계정 연결 권하기
+// 지도 안내는 지도를 보고 있을 때만: 화면이 넘어가는 중이거나 친구 고르기 창이 떴으면(판에 들어가는 중) 접음
+const onMap = () => $('#map').classList.contains('active') && !wiping && !$('#charSheet').classList.contains('show');
+const enteringGame = () => wiping || $('#charSheet').classList.contains('show') || ['battle', 'formation'].some(id => $('#' + id).classList.contains('active'));
 Tutor.mapFlow = async function (delay) {
   Unlock.init();
   Unlock.dock();
@@ -317,7 +323,7 @@ Tutor.mapFlow = async function (delay) {
   Tutor.busyFlow = true;
   try {
     await sleep(delay);
-    const ready = async () => { while ($('#modal').classList.contains('show') || $('#story').classList.contains('show') || $('#attend').classList.contains('show') || $('.join-show')) await sleep(300); return $('#map').classList.contains('active'); };
+    const ready = async () => { while ($('#modal').classList.contains('show') || $('#story').classList.contains('show') || $('#attend').classList.contains('show') || $('.join-show')) await sleep(300); return onMap(); };
     if (!(await ready())) return;
     if (!Tutor.seen('mapFirst') && clearedCount() === 0) {
       Tutor.mark('mapFirst');
@@ -333,13 +339,16 @@ Tutor.mapFlow = async function (delay) {
       const c = centerOf(b);
       burst(c.x, c.y, '#ffd84d', 14);
       await sleep(350);
+      if (!onMap()) { Tutor.unmark('u_' + u.id); return; } // 그 사이 판에 들어갔으면 다음에 지도로 오면 다시 알려 줌
       await Spot.show(b, u.text, { tap: true });
       await sleep(800); // 화면이 넘어갈 때까지
+      if (enteringGame()) return; // 새 메뉴 대신 판으로 들어갔으면 메뉴 안내는 건너뜀
       for (const [sel, text] of UNLOCK_INTRO[u.id]()) await Spot.show($(sel), text);
       return;
     }
     // 게스트로 5판, 15판을 깼을 때 한 번씩 (나중에를 눌러도 그 단계는 다시 안 물어봄)
     const linkTip = clearedCount() >= 15 ? 'google15' : clearedCount() >= 5 ? 'google' : null;
+    if (!onMap()) return;
     if (linkTip && !Tutor.seen(linkTip) && typeof Net !== 'undefined' && Net.ready && (!Net.user || Net.user.isAnonymous)) {
       Tutor.mark(linkTip);
       modal({

@@ -2723,6 +2723,7 @@ let wiping = false;
 async function go(fn) {
   if (wiping) return;
   wiping = true;
+  if (typeof Spot !== 'undefined') Spot.close(); // 넘어가는 순간 떠 있던 안내는 닫음 (화면 전환·친구 고르기 창 위에 겹치지 않게)
   const w = document.createElement('div');
   w.className = 'wipe';
   w.innerHTML = `<img src="${POCKETS[Math.floor(Math.random() * POCKETS.length)]}">`;
