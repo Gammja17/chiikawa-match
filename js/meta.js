@@ -1,6 +1,11 @@
 // 모으기와 꾸미기: 코인, 캡슐 뽑기(친구, 옷), 친구 레벨, 집 꾸미기, 매일 용돈, 친구 이야기, 목소리 칸
 const STARTERS = ['chiikawa']; // 처음엔 치이카와 혼자. 나머지는 스테이지, 간식, 라멘 가게, 뽑기로 한 명씩
 const LV_MAX = 10;
+// 강화: 뽑기에서 이미 있는 친구가 나오면 조각. Lv n → n+1 에 조각 SHARD_NEED[n]개 + 코인 n×80
+const SHARD_PER_DUP = 10;
+const SHARD_NEED = [0, 10, 15, 20, 25, 30, 40, 50, 60, 80];
+const upCost = id => { const lv = Meta.lv(id); return lv >= LV_MAX ? null : { shards: SHARD_NEED[lv], coins: lv * 80 }; };
+const canUp = id => { const c = upCost(id); return !!c && Meta.owned(id) && (Save.data.shards[id] || 0) >= c.shards && Save.data.coins >= c.coins; };
 const GACHA_COST = 100;
 // x, y: 방 안 위치(%), w: 너비(%)
 // 치이카와네 원룸에 있을 법한 살림 (VARCO로 원작 느낌 그림)
@@ -60,6 +65,7 @@ const Meta = {
     [...STARTERS, ...(d.team || [])].forEach(id => { if (!d.own[id]) d.own[id] = 1; });
     // 예전 액세서리는 하나에 40코인으로 돌려주고 정리 (옷 갈아입기로 바뀜)
     if (d.acc) { d.coins += d.acc.length * 40; delete d.acc; delete d.wear; }
+    d.shards = d.shards || {}; // 강화 조각 { 친구id: 개수 }
     d.skins = d.skins || {};   // 가진 옷 { 친구id: [옷id] }
     d.outfit = d.outfit || {}; // 입은 옷 { 친구id: 옷id }
     d.furn = d.furn || [];
@@ -252,7 +258,8 @@ const Sheet = {
     card.innerHTML = `
       <div class="sheet-art">${own ? Meta.figure(id, art(id), 'big') : `<span class="fig big"><img src="${art(id)}" class="shadow"></span>`}<div class="sheet-say"></div></div>
       <div class="sheet-name">${ch.name} ${attrTag(ch.attr)}</div>
-      ${own ? `<div class="sheet-lv"><b>Lv ${lv}</b><div class="lvbar"><i style="width:${(lv / LV_MAX) * 100}%"></i></div><small>${lv >= LV_MAX ? 'MAX' : '뽑기에서 또 만나면 레벨 업'}</small></div>` : Sheet.recruitHtml(id)}
+      ${own ? `<div class="sheet-lv"><b>Lv ${lv}</b><div class="lvbar"><i style="width:${(lv / LV_MAX) * 100}%"></i></div><small>${lv >= LV_MAX ? 'MAX' : `조각 ${Save.data.shards[id] || 0}/${upCost(id).shards}`}</small></div>
+        ${lv < LV_MAX ? `<button class="up-btn${canUp(id) ? ' ready' : ''}" data-up>강화 <img src="${ITEM('coin')}">${upCost(id).coins}</button><small class="up-hint">조각은 캡슐 뽑기에서 같은 친구가 또 나오면 모여요</small>` : ''}` : Sheet.recruitHtml(id)}
       <div class="sheet-rows"><div>${ch.heal ? '회복' : '공격'}<b>${stat.split(' ')[1]}</b></div><div>속성<b>${ATTR[ch.attr].icon}${ATTR[ch.attr].name}</b></div><div>스킬 게이지<b>${skillNeed(id, false)}</b><small>일상 ${skillNeed(id, true)}</small></div></div>
       <div class="sheet-skill"><b>${ch.skill.name}</b> ${ch.skill.desc}</div>
       ${own && SKINS[id] ? `<div class="sheet-label">옷 <small>입으면 공격 +5%</small></div><div class="sheet-accs"><button data-s="" class="${Save.data.outfit[id] ? '' : 'on'}">기본</button>${(Save.data.skins[id] || []).map(s => `<button data-s="${s}" class="${Save.data.outfit[id] === s ? 'on' : ''}"><img src="${SKIN(id, s)}"></button>`).join('')}</div>
@@ -279,6 +286,20 @@ const Sheet = {
       await playStory(CHAR_STORY[id][+b.dataset.k][1]);
       Sheet.open(id, opts);
     }));
+    const up = card.querySelector('[data-up]');
+    if (up) up.onclick = () => {
+      const c = upCost(id);
+      if (!canUp(id)) { Sound.play('bad'); up.animate([{ transform: 'translateX(-4px)' }, { transform: 'translateX(4px)' }, { transform: 'none' }], { duration: 180 }); return; }
+      Save.data.shards[id] -= c.shards;
+      Save.data.own[id] = Meta.lv(id) + 1;
+      Meta.addCoins(-c.coins);
+      Sound.play('star', 1.2); Sound.voice(id, 'pick');
+      const r = up.getBoundingClientRect(), ar = app.getBoundingClientRect();
+      burst(r.left - ar.left + r.width / 2, r.top - ar.top, ch.ring, 14);
+      Sheet.open(id, opts);
+      opts.onChange && opts.onChange();
+      friendsDot();
+    };
     card.querySelector('[data-close]').onclick = () => { Sound.play('click'); el.classList.remove('show'); };
     const rb = card.querySelector('[data-recruit]');
     if (rb) rb.onclick = async () => { el.classList.remove('show'); await Meta.recruit(id); Sheet.open(id, opts); opts.onChange && opts.onChange(); };
@@ -307,7 +328,7 @@ function openFriends() {
   $('#friendsCount').textContent = `${n} / ${CHARS.length}`;
   $('#friendsGrid').innerHTML = CHARS.map(c => `<button class="fcard${Meta.owned(c.id) ? '' : ' locked'}" style="--ring:${c.ring}" data-id="${c.id}">
     ${Meta.owned(c.id) ? Meta.figure(c.id, art(c.id)) : `<span class="fig"><img src="${art(c.id)}" class="shadow"></span>`}
-    <span class="fname">${Meta.owned(c.id) ? c.name : '???'}</span>${Meta.owned(c.id) ? `<span class="flv">Lv${Meta.lv(c.id)}</span>` : treatBadge(c.id)}</button>`).join('');
+    <span class="fname">${Meta.owned(c.id) ? c.name : '???'}</span>${Meta.owned(c.id) ? `<span class="flv">Lv${Meta.lv(c.id)}</span>${canUp(c.id) ? '<span class="fup">강화!</span>' : ''}` : treatBadge(c.id)}</button>`).join('');
   $('#friendsGrid').querySelectorAll('.fcard').forEach(b => (b.onclick = () => { Sound.play('click'); Sheet.open(b.dataset.id, { onChange: openFriends }); }));
   albumUI();
 }
@@ -348,7 +369,7 @@ function albumUI() {
 function friendsDot() {
   const btn = $('#btnFriends');
   if (!btn.querySelector('.dot')) btn.insertAdjacentHTML('beforeend', '<i class="dot"></i>');
-  btn.classList.toggle('on', albumReady().length > 0);
+  btn.classList.toggle('on', albumReady().length > 0 || CHARS.some(c => canUp(c.id)));
 }
 
 // ---------- 캡슐 뽑기: 친구 뽑기 / 옷 뽑기, 한 번(100) · 10번(900, 새 친구나 새 옷 하나 확정) ----------
@@ -376,16 +397,16 @@ function drawPrize(kind, sure = false) {
   const all = friendPool(), fresh = all.filter(c => !Meta.owned(c.id));
   const c = pickOne(sure && fresh.length ? fresh : all), lv = Meta.lv(c.id);
   if (!lv) { Save.data.own[c.id] = 1; return { kind: 'new', id: c.id }; }
-  if (lv < LV_MAX) { Save.data.own[c.id] = lv + 1; return { kind: 'up', id: c.id, lv: lv + 1 }; }
+  if (lv < LV_MAX) { Save.data.shards[c.id] = (Save.data.shards[c.id] || 0) + SHARD_PER_DUP; return { kind: 'shard', id: c.id, n: SHARD_PER_DUP }; }
   Save.data.coins += 50;
   return { kind: 'max', id: c.id };
 }
 // 아직 안 가진 게 남아 있는지 (없으면 10번 뽑기 확정도 없음)
 const canFresh = kind => (kind === 'outfit' ? outfitPool().some(([c, s]) => !hasSkin(c, s)) : friendPool().some(c => !Meta.owned(c.id)));
 
-const CAP_COLOR = { new: '#ff8ab8', up: '#ffd84d', max: '#d9d2e6', skin: '#8fd3ff', skindup: '#d9d2e6' };
+const CAP_COLOR = { new: '#ff8ab8', up: '#ffd84d', shard: '#ffd84d', max: '#d9d2e6', skin: '#8fd3ff', skindup: '#d9d2e6' };
 const prizeImg = p => (p.skin ? SKIN(p.id, p.skin) : FACE(p.id));
-const prizeTag = p => ({ new: 'NEW', up: `Lv${p.lv}`, max: '+50', skin: 'NEW', skindup: '+40' })[p.kind];
+const prizeTag = p => ({ new: 'NEW', up: `Lv${p.lv}`, shard: `조각+${p.n}`, max: '+50', skin: 'NEW', skindup: '+40' })[p.kind];
 
 function openGacha() {
   show('gacha');
@@ -585,7 +606,7 @@ async function openOne(p) {
     skin: () => ({ title: '새 옷!', img: SKIN(p.id, p.skin), text: `${ch.name}의 ${SKINS[p.id][p.skin].name}! 친구 상세에서 갈아입힐 수 있어요.`, rows: [] }),
     skindup: () => ({ title: '이미 있는 옷', img: SKIN(p.id, p.skin), text: '대신 코인 40개를 돌려받았어요.', rows: [['코인', '+40']] }),
   }[p.kind]();
-  if (p.kind === 'new' || p.kind === 'up') Sound.voice(p.id, 'pick');
+  if (p.kind === 'new' || p.kind === 'up' || p.kind === 'shard') Sound.voice(p.id, 'pick');
   await new Promise(done => modal({ ...info, btn1: '좋아!', on1: done }));
   st.innerHTML = '';
 }
