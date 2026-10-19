@@ -623,6 +623,18 @@ function makeTile(t) {
   boardEl.appendChild(el);
   return t;
 }
+// 거품 칸끼리 한 덩어리로: n-t/r/b/l = 그쪽 이웃도 거품이라 경계 없이 이어 그림 (시럽처럼)
+function foamJoin() {
+  const g = B.grid;
+  if (!g) return;
+  const fo = (r, c) => inside(r, c) && g[r][c]?.block === 'bubble';
+  Board.each(g, (t, r, c) => {
+    if (t?.block !== 'bubble' || !t.inner) return;
+    [['n-t', -1, 0], ['n-r', 0, 1], ['n-b', 1, 0], ['n-l', 0, -1]].forEach(([k, dr, dc]) => t.inner.classList.toggle(k, fo(r + dr, c + dc)));
+    // 무늬를 판 전체 기준으로 맞춰 칸이 바뀌어도 이어져 보이게
+    t.inner.style.backgroundPosition = `${-(c * B.S + (fo(r, c - 1) ? 0 : 1))}px ${-(r * B.S + (fo(r - 1, c) ? 0 : 1))}px`;
+  });
+}
 function refreshTile(t) {
   const inner = t.inner;
   inner.className = 'inner';
@@ -630,6 +642,7 @@ function refreshTile(t) {
     inner.classList.add('block', t.block);
     const img = t.block === 'bubble' ? 'bubble' : t.block === 'weed' ? (t.hp >= 2 ? 'weed2' : 'weed1') : t.hp >= 2 ? 'gift' : 'box';
     inner.innerHTML = `<img src="${ITEM(img)}" draggable="false">`;
+    if (t.block === 'bubble') foamJoin();
     return;
   }
   if (t.type === ING) {
@@ -1405,7 +1418,7 @@ function hitFx(res, T) {
     }
     const k = tile.block === 'weed' ? 'weed' : tile.block === 'bubble' ? 'bubble' : 'box';
     if (gone || k !== 'box') flyToGoal(ITEM(tile.block === 'weed' ? 'weed1' : tile.block === 'bubble' ? 'bubble' : 'box'), p, goalChip(k), '#ffd84d');
-    if (gone) popTile(tile, 0);
+    if (gone) { popTile(tile, 0); if (tile.block === 'bubble') foamJoin(); }
     else { refreshTile(tile); squish(tile); }
   }, at(r, c)));
   if (res.weeds.length) {
