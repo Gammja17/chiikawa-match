@@ -220,8 +220,9 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 #party .pm:active { transform: scale(.94); }
 #party .pm-face { width: 100%; height: 100%; border-radius: 50%; display: grid; place-items: center; overflow: hidden; }
 #party .pm .fig { width: 92%; height: 92%; margin-top: 8%; }
-#party .pm > .ai { position: absolute; left: -5px; top: -5px; }
-#party .pm .up { display: none; position: absolute; right: -5px; top: -5px; width: 20px; height: 20px; border-radius: 50%; background: var(--red); border: 2px solid #fff; }
+#party .pm > .ai { position: absolute; left: -7px; top: -7px; z-index: 2; width: 19px; height: 19px; }
+#party .pm > .ai svg { width: 12px; height: 12px; }
+#party .pm .up { display: none; position: absolute; right: -7px; top: -7px; z-index: 2; width: 19px; height: 19px; border-radius: 50%; background: var(--red); border: 2px solid #fff; }
 #party .pm .up::after { content: ''; position: absolute; inset: 3px 3px 4px; background: #fff; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
 #party .pm.strong .up { display: block; }
 #party .pm.weak .fig { opacity: .55; }
@@ -839,8 +840,10 @@ img.shadow { filter: brightness(0) opacity(.15); }
   background: conic-gradient(transparent 0 290deg, rgba(255, 255, 255, .95) 340deg, transparent 360deg);
   -webkit-mask: radial-gradient(farthest-side, transparent 72%, #000 74% 96%, transparent 98%); mask: radial-gradient(farthest-side, transparent 72%, #000 74% 96%, transparent 98%); }
 #party .pm.ready .g b, #lhHelper.ready .g b { display: block; animation: spin 1.3s linear infinite; }
-#party .pm.ready .g::after, #lhHelper.ready .g::after { content: '스킬!'; position: absolute; left: 50%; bottom: 4%; z-index: 1; transform: translateX(-50%); padding: 0 6px; border-radius: 8px;
-  background: var(--ink); color: #fff; font-family: var(--head); font-size: 12px; line-height: 1.4; white-space: nowrap; }
+#party .pm .glow, #lhHelper .glow { position: absolute; inset: -42%; border-radius: 50%; pointer-events: none; opacity: 0;
+  background: radial-gradient(closest-side, transparent 58%, rgba(255, 160, 215, .95) 69%, rgba(196, 160, 255, .55) 81%, transparent 100%); }
+#party .pm.ready .glow, #lhHelper.ready .glow { animation: skGlow 1s ease-in-out infinite alternate; }
+@keyframes skGlow { from { opacity: .4; transform: scale(.93); } to { opacity: 1; transform: scale(1.07); } }
 
 /* ---------- 콤보: 숫자 + '콤보' + 칭찬 한마디 (전부 그림), 뒤에서 콤보 색 햇살이 돎 ---------- */
 .combo { display: flex; flex-direction: column; align-items: center; pointer-events: none; z-index: 3; }

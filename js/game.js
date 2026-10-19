@@ -689,7 +689,7 @@ const ITEM_ICON = { h: 'rocket', v: 'rocket' };
 
 function buildParty() {
   $('#party').innerHTML = B.team.slice(0, B.real).map(i => CHARS[i]).map(c =>
-    `<div class="pm" style="--ring:${c.ring}"><div class="pm-face">${Meta.figure(c.id, FACE(c.id))}</div>${attrIcon(c.attr)}<i class="up"></i><i class="g"><b></b></i></div>`).join('');
+    `<div class="pm" style="--ring:${c.ring}"><i class="glow"></i><div class="pm-face">${Meta.figure(c.id, FACE(c.id))}</div>${attrIcon(c.attr)}<i class="up"></i><i class="g"><b></b></i></div>`).join('');
   [...$('#party').children].forEach((el, k) => (el.onclick = () => useSkill(k)));
   updateGauges();
 }
