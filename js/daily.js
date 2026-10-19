@@ -20,6 +20,8 @@ const MISSIONS = [
   { id: 'bubble', text: '거품 25개 터뜨리기', n: 25, icon: 'bubble' },
   { id: 'box', text: '상자 15개 뜯기', n: 15, icon: 'box' },
   { id: 'tower', text: '인어섬 3층 오르기', n: 3, icon: 'medal', need: 'challenge' },
+  { id: 'dchal', text: '오늘의 도전 깨기', n: 1, icon: 'star', need: 'challenge' },
+  { id: 'mimic', text: '미믹 보물창고 1번 끝까지', n: 1, icon: 'gift', need: 'challenge' },
   { id: 'ramen', text: '라멘 한 그릇 먹기', n: 1, icon: 'ramen', need: 'ramen' },
   { id: 'gacha', text: '캡슐 1번 뽑기', n: 1, icon: 'gift', need: 'gacha' },
   { id: 'pat', text: '집에서 친구 3명 쓰다듬기', n: 3, icon: 'house', need: 'house' },

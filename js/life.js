@@ -434,7 +434,7 @@ const Life = {
 
   start(i) { return Life.begin(LIFE[i], { kind: 'route', i }); },
 
-  // run: { kind: 'route', i } 모험 지도 / { kind: 'tower', floor } 인어섬 탐험 / { kind: 'contest' } 제초 대회
+  // run: { kind: 'route', i } 모험 지도 / { kind: 'tower', floor } 인어섬 탐험 / { kind: 'contest' } 제초 대회 / { kind: 'daily' } 오늘의 도전 / { kind: 'dungeon' } 미믹 보물창고
   async begin(st, run) {
     const i = run.i ?? -1;
     Life.stopTimer();
@@ -510,14 +510,15 @@ const Life = {
     if (g.k === 'score') return Math.max(0, g.n - L.score);
     return Life.count(g.k);
   },
-  done: () => !L.st.contest && L.st.goals.every(g => Life.remain(g) === 0),
+  done: () => !L.st.contest && !L.st.dungeon && L.st.goals.every(g => Life.remain(g) === 0),
 
   hud() {
     const st = L.st;
     $('#lhLimitLabel').innerHTML = st.time ? `<img src="${ITEM('timer')}">` : MOVE_SVG;
     $('#lhLimit').textContent = st.time ? Math.ceil(L.time) : L.moves;
     $('.lh-limit').classList.toggle('danger', st.time ? L.time <= 10 : L.moves <= 3);
-    const html = st.contest ? `<div class="gchip best"><img src="${ITEM('medal')}"><b>${Save.data.contestBest || 0}</b></div>` : st.goals.map(g => {
+    const html = st.contest ? `<div class="gchip best"><img src="${ITEM('medal')}"><b>${Save.data.contestBest || 0}</b></div>`
+      : st.dungeon ? `<div class="gchip coin"><img src="${ITEM('coin')}"><b>${Dungeon.coins}</b></div>` : st.goals.map(g => {
       const n = Life.remain(g);
       return `<div class="gchip ${g.k}${n ? '' : ' done'}" data-id="${g.id || ''}"><img src="${GOAL_ICON[g.k](g)}"><b>${n || '✓'}</b></div>`;
     }).join('');
@@ -553,6 +554,7 @@ const Life = {
       L.chars[id] = (L.chars[id] || 0) + 1;
     });
     if (res.hits.some(h => h.tile.block === 'bubble')) L.popped = true;
+    if (L.st.dungeon) Dungeon.loot(res);
     L.score += pts;
     // 터진 자리 한가운데에 점수가 톡 (콤보일수록 크게)
     if (pts && res.cleared.length) {
@@ -616,6 +618,7 @@ const Life = {
     }
     L.popped = false;
     if (L.st.contest && !Life.count('weed')) await Life.regrow();
+    if (L.st.dungeon && !Life.count('box') && L.moves > 0) await Dungeon.refill();
     Life.hud();
     await Life.check();
   },
@@ -655,6 +658,7 @@ const Life = {
   async check() {
     if (B.over || L.ending) return;
     if (L.st.contest) { if (L.time <= 0) return Life.contestEnd(); return; }
+    if (L.st.dungeon) { if (L.moves <= 0) return Dungeon.end(); return; }
     if (Life.done()) { L.ending = true; return Life.win(); }
     if (L.st.time ? L.time <= 0 : L.moves <= 0) return Life.fail();
   },
@@ -756,6 +760,7 @@ const Life = {
     await Life.bonus();
     B.over = true;
     if (L.run.kind === 'tower') return Tower.cleared();
+    if (L.run.kind === 'daily') return DayChal.cleared();
     const st = L.st, i = L.i;
     const stars = L.score >= st.stars[2] ? 3 : L.score >= st.stars[1] ? 2 : 1;
     const list = (Save.data.life = Save.data.life || []);
@@ -796,7 +801,7 @@ const Life = {
     // 모험 지도 스테이지를 포기하면 하트 하나
     const route = L.run.kind === 'route';
     const retry = () => {
-      if (!route) return go(() => (L.run.kind === 'tower' ? Tower.over() : Life.start(L.i)));
+      if (!route) return go(() => (L.run.kind === 'tower' ? Tower.over() : L.run.kind === 'daily' ? DayChal.start() : Life.start(L.i)));
       Hearts.lose();
       Hearts.need(() => go(() => Life.start(L.i)), () => go(openMap));
     };
@@ -819,7 +824,7 @@ const Life = {
         btn2: L.run.kind === 'tower' ? '여기까지' : '다시 하기', on2: retry,
       });
     } else {
-      modal({ ...card, text: '아깝다! 다음엔 꼭 깰 수 있어', rows: route ? [...left, [`<img class="row-ic" src="${ITEM('heart')}">`, '-1']] : left, btn1: '다시 하기', on1: retry, btn2: '🏠 지도로', on2: () => { if (route) Hearts.lose(); go(openMap); } });
+      modal({ ...card, text: '아깝다! 다음엔 꼭 깰 수 있어', rows: route ? [...left, [`<img class="row-ic" src="${ITEM('heart')}">`, '-1']] : left, btn1: '다시 하기', on1: retry, btn2: '🏠 지도로', on2: () => { if (route) Hearts.lose(); go(route ? openMap : openChallenge); } });
     }
   },
 };
