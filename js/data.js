@@ -121,7 +121,7 @@ const attrMult = (atk, def) => ((atk === 'light' && def === 'dark') || (atk === 
   : BEATS[atk] === def ? 1.5 : BEATS[def] === atk ? 0.5 : 1);
 const FACE = id => `assets/img/faces/${id}.png`;
 const BODY = id => `assets/img/chars/${id}.png`;
-const TILE = id => `assets/img/tiles/${id}.png`;
+const TILE = id => `assets/img/tiles/${id}.png?v=2`; // 테두리를 매끈하게 다시 그려서 새로 받게
 // 아이템은 치이카와 원작 도구로: 줄폭탄=랏코 검, 폭탄=동글 폭탄, 무지개=경단, 비행기=종이비행기 (VARCO로 그림)
 const ITEM_ALIAS = { rocket: 'sword_o', bomb: 'bombball_o', rainbow: 'dango3_o', plane: 'paperplane_o' }; // _o: 테두리를 그림에 미리 그려 둔 판 (CSS 필터는 보너스 타임에 렉)
 const ITEM = name => `assets/img/items/${ITEM_ALIAS[name] || name}.png`;
