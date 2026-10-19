@@ -259,7 +259,7 @@ const Sheet = {
     const stories = (CHAR_STORY[id] || []).map(([need], k) =>
       `<button class="story-btn" data-k="${k}" ${lv >= need ? '' : 'disabled'}>📖 이야기 ${k + 1}${lv >= need ? '' : ` (Lv${need})`}</button>`).join('');
     card.innerHTML = `
-      <div class="sheet-art">${own ? Meta.figure(id, art(id), 'big') : `<span class="fig big"><img src="${art(id)}" class="shadow"></span>`}<div class="sheet-say"></div></div>
+      <div class="sheet-art${own && specialOf(id) ? ' special' : ''}"${own && specialOf(id) ? ` style="--scene:url(${SCENE(specialOf(id).special)})"` : ''}>${own ? Meta.figure(id, art(id), 'big') : `<span class="fig big"><img src="${art(id)}" class="shadow"></span>`}${own && specialOf(id) ? '<span class="sp-tag">✦ 스페셜</span>' : ''}<div class="sheet-say"></div></div>
       <div class="sheet-name">${ch.name} ${attrTag(ch.attr)}</div>
       ${own ? `<div class="sheet-lv"><b>Lv ${lv}</b><div class="lvbar"><i style="width:${(lv / LV_MAX) * 100}%"></i></div><small>${lv >= LV_MAX ? 'MAX' : `조각 ${Save.data.shards[id] || 0}/${upCost(id).shards}`}</small></div>
         ${lv < LV_MAX ? `<button class="up-btn${canUp(id) ? ' ready' : ''}" data-up>강화 <img src="${ITEM('coin')}">${upCost(id).coins}</button><small class="up-hint">조각은 캡슐 뽑기에서 같은 친구가 또 나오면 모여요</small>` : ''}` : Sheet.recruitHtml(id)}
@@ -342,7 +342,7 @@ function openFriends() {
   show('friends');
   const n = CHARS.filter(c => Meta.owned(c.id)).length;
   $('#friendsCount').textContent = `${n} / ${CHARS.length}`;
-  $('#friendsGrid').innerHTML = CHARS.map(c => `<button class="fcard${Meta.owned(c.id) ? '' : ' locked'}" style="--ring:${c.ring}" data-id="${c.id}">
+  $('#friendsGrid').innerHTML = CHARS.map(c => `<button class="fcard${Meta.owned(c.id) ? '' : ' locked'}${Meta.owned(c.id) && specialOf(c.id) ? ' special' : ''}" style="--ring:${c.ring}${Meta.owned(c.id) && specialOf(c.id) ? `;--scene:url(${SCENE(specialOf(c.id).special)})` : ''}" data-id="${c.id}">
     ${Meta.owned(c.id) ? Meta.figure(c.id, art(c.id)) : `<span class="fig"><img src="${art(c.id)}" class="shadow"></span>`}
     <span class="fname">${Meta.owned(c.id) ? c.name : '???'}</span>${Meta.owned(c.id) ? `<span class="flv">Lv${Meta.lv(c.id)}</span>${canUp(c.id) ? '<span class="fup">강화!</span>' : ''}` : treatBadge(c.id)}</button>`).join('');
   $('#friendsGrid').querySelectorAll('.fcard').forEach(b => (b.onclick = () => { Sound.play('click'); Sheet.open(b.dataset.id, { onChange: openFriends }); }));
@@ -457,7 +457,7 @@ function renderOutfitShop() {
       const have = hasSkin(cid, s), wear = Save.data.outfit[cid] === s;
       const btn = !own ? '<em class="lock">친구를 먼저 만나요</em>' : wear ? '<em class="wear">입는 중</em>' : have ? '<button data-wear>입기</button>'
         : `<button data-buy class="${Save.data.coins >= k.price ? '' : 'poor'}"><img src="${ITEM('coin')}">${k.price}</button>`;
-      return `<div class="os-item${own ? '' : ' locked'}${have ? ' have' : ''}" data-c="${cid}" data-s="${s}"><img class="os-img" src="${SKIN(cid, s)}" draggable="false"><b>${k.name}</b>${btn}</div>`;
+      return `<div class="os-item${own ? '' : ' locked'}${have ? ' have' : ''}${k.special ? ' special' : ''}" data-c="${cid}" data-s="${s}"${k.special ? ` style="--scene:url(${SCENE(k.special)})"` : ''}>${k.special ? '<span class="sp-tag">✦ 스페셜</span>' : ''}<img class="os-img" src="${SKIN(cid, s)}" draggable="false"><b>${k.name}</b>${btn}</div>`;
     }).join('');
     return `<div class="os-row"><div class="os-who" style="--ring:${ch.ring}">${own ? ch.name : '???'}</div><div class="os-items">${items}</div></div>`;
   }).join('');

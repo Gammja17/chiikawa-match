@@ -336,22 +336,30 @@ const SKINS = {
     melon:    { name: '멜론 모자',   img: 'melon.png',    price: 300 },
     squid:    { name: '오징어 옷',   img: 'squid.png',    price: 350 },
     tanuki:   { name: '너구리 옷',   img: 'tanuki.png',   price: 400 },
-    magical:  { name: '마법소녀',    img: 'magical.png',  price: 600 },
+    magical:  { name: '마법소녀',    img: 'magical.png',  price: 600, special: 'magical_trio' },
   },
   hachiware: {
     bugnet:   { name: '잠자리채',    img: 'bugnet.png',   price: 150 },
     sasumata: { name: '토벌봉',      img: 'sasumata.png', price: 250 },
     guitar:   { name: '기타',        img: 'guitar.png',   price: 300 },
     tanuki:   { name: '너구리 옷',   img: 'tanuki.png',   price: 400 },
-    magical:  { name: '마법소녀',    img: 'magical.png',  price: 600 },
+    magical:  { name: '마법소녀',    img: 'magical.png',  price: 600, special: 'magical_trio' },
   },
   usagi: {
     neckie:   { name: '시원한 넥밴드', img: 'neckie.png', price: 150 },
     squid:    { name: '오징어 옷',   img: 'squid.png',    price: 350 },
-    magical:  { name: '마법소녀',    img: 'magical.png',  price: 600 },
+    magical:  { name: '마법소녀',    img: 'magical.png',  price: 600, special: 'magical_trio' },
   },
+  // 마법소녀 MV(まじかるちいかわ) 장면에서
+  momonga:   { magical: { name: '마법소녀',      img: 'magical.png', price: 600, special: 'magical_mv' } },
+  rakko:     { mask:    { name: '가면 히어로',   img: 'mask.png',    price: 600, special: 'rakko_mask' } },
+  kurimanju: { magical: { name: '마법소녀',      img: 'magical.png', price: 600, special: 'magical_meadow' } },
+  shisa:     { magical: { name: '마법소녀',      img: 'magical.png', price: 600, special: 'magical_meadow' } },
 };
 const SKIN = (id, s) => `assets/img/skins/${id}/${SKINS[id][s].img}`;
+// 스페셜 코스튬(special: 장면 그림 이름): 입고 있으면 카드·상세 창 배경이 그 옷이 나온 애니 장면으로 바뀜
+const SCENE = n => new URL(`assets/img/scenes/${n}.jpg`, location.href).href; // CSS 변수 안 url()은 css/ 기준으로 풀려서 절대 주소로
+const specialOf = id => { const s = Save.data.outfit?.[id], k = s && SKINS[id]?.[s]; return k?.special ? k : null; };
 // 표정: 기본 옷일 때만 잠깐 바꿔 끼움
 const MOODS = { chiikawa: { cry: 'cry.png', happy: 'dance.gif' } };
 // 집에서 들어 올렸을 때 반응: held=들고 있을 때 말, cry=오래 들면, drop=내려놨을 때 말, mood=들고 있을 때 표정

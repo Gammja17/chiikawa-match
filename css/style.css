@@ -485,6 +485,15 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .os-item button.poor { background: #c9bfd6; }
 .os-item em { font-style: normal; font-size: 12px; color: var(--ink2); }
 .os-item em.wear { color: #e2543f; font-family: var(--head); font-size: 14px; }
+/* 스페셜 코스튬: 무지개 테두리 + 애니 장면 배경 + 배지 (필터 없이 그림만) */
+.sp-tag { position: absolute; z-index: 2; padding: 1px 7px; border-radius: 8px; background: linear-gradient(90deg, #ff8ab8, #b99cf0, #7cc4ec); color: #fff; font-family: var(--head); font-size: 12px; line-height: 1.4; white-space: nowrap; }
+.os-item.special { position: relative; background: linear-gradient(rgba(255, 255, 255, .55), rgba(255, 255, 255, .8)), var(--scene) center / cover; box-shadow: 0 0 0 2.5px #fff, 0 0 0 4.5px #c9a6ff, var(--sh); }
+.os-item.special .sp-tag { left: 50%; top: -8px; transform: translateX(-50%); }
+.ccard.special, .fcard.special { background: linear-gradient(135deg, #ff9ed0, #b9a0ff 40%, #8fd8ff 70%, #ffe27a); }
+.ccard.special::before, .fcard.special::before { background: linear-gradient(rgba(255, 255, 255, .58), rgba(255, 255, 255, .7)), var(--scene) center / cover; } /* 카드에선 연하게, 상세 창에선 또렷하게 */
+.ccard.special::after, .fcard.special::after { content: '✦'; position: absolute; left: 8px; bottom: 8px; z-index: 1; color: #fff; font-size: 16px; text-shadow: 0 0 4px #b99cf0; }
+.sheet-art.special { background: linear-gradient(rgba(255, 255, 255, .05), rgba(255, 255, 255, .45)), var(--scene) center / cover; }
+.sheet-art.special .sp-tag { left: 12px; top: 10px; font-size: 14px; }
 /* 뽑기 무대: 캡슐과 결과가 뜨는 층 (10번 뽑기 때는 어둡게 깔림) */
 #gachaStage { position: absolute; inset: 0; pointer-events: none; }
 #gachaStage:not(:empty) { pointer-events: auto; }

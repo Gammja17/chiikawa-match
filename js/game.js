@@ -1775,7 +1775,8 @@ function renderFormation() {
   $('#formRoster').innerHTML = CHARS.map((c, k) => {
     const strong = [...foes].some(a => attrMult(c.attr, a) > 1), own = Meta.owned(c.id), good = own && strong;
     const wish = !own && strong && !RECRUIT[c.id]; // 아직 없지만 이 판에 유리한 친구 → 뽑기에서 만날 수 있음
-    return `<button class="ccard${formPick.includes(k) ? ' on' : ''}${own ? '' : ' locked'}" style="--ring:${c.ring}" data-k="${k}">
+    const sp = own && specialOf(c.id); // 스페셜 코스튬을 입었으면 카드 배경이 애니 장면
+    return `<button class="ccard${formPick.includes(k) ? ' on' : ''}${own ? '' : ' locked'}${sp ? ' special' : ''}" style="--ring:${c.ring}${sp ? `;--scene:url(${SCENE(sp.special)})` : ''}" data-k="${k}">
       ${own ? Meta.figure(c.id, art(c.id)) : `<span class="fig"><img src="${art(c.id)}" class="shadow"></span>`}
       <span class="nm">${own ? c.name : '???'}</span>
       <span class="meta">${own ? `${attrIcon(c.attr)}Lv${Meta.lv(c.id)}` : RECRUIT[c.id]?.treat ? '' : LOCK_SVG}</span>${own ? '' : treatBadge(c.id)}
