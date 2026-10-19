@@ -5,4 +5,5 @@ window.FIREBASE_CONFIG = {
   authDomain: 'chiikawa-3match.firebaseapp.com',
   projectId: 'chiikawa-3match',
   appId: '1:501917315755:web:10cea2c6ffbd052aaefdee',
+  measurementId: 'G-4MTFF29V0K', // Google Analytics (방문자 수·이용 시간)
 };

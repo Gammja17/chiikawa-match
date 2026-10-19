@@ -18,11 +18,20 @@ const Net = {
       Net.auth = firebase.auth();
       Net.db = firebase.firestore();
       Net.on = true;
+      Net.analytics();
       Net.auth.getRedirectResult().catch(() => {});
       Net.auth.onAuthStateChanged(async u => { Net.user = u; Net.ready = true; Net.synced = false; Net.listeners.forEach(f => f()); if (u) { await Net.cloudLoad(); Net.submit(); } });
     } catch (e) { console.warn('랭킹 서버를 켜지 못했어요', e); }
   },
   onChange(f) { Net.listeners.push(f); },
+  // 방문자 수·이용 시간 (Google Analytics). 진짜 사이트에서만 켬 (로컬에서 시험한 게 통계에 안 섞이게)
+  async analytics() {
+    if (!window.FIREBASE_CONFIG.measurementId || !location.hostname.endsWith('workers.dev')) return;
+    try {
+      await loadScript('assets/vendor/firebase-analytics-compat.js');
+      Net.ga = firebase.analytics();
+    } catch (e) { console.warn('방문 통계를 켜지 못했어요', e); }
+  },
   // 구글 로그인. 게스트로 하던 중이면 그 기록 그대로 구글 계정에 연결
   async google() {
     const p = new firebase.auth.GoogleAuthProvider();
