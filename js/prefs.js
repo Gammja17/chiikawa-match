@@ -42,4 +42,6 @@ const CREDITS = `먼작귀 퍼즐 토벌 대작전!은 팬이 만든 비공식 �
 그림: Chiikawa Wiki(Fandom)의 원작 애니메이션 장면과 공식 일러스트
 효과음: Pixabay, Mixkit · 이펙트: Kenney Particle Pack(CC0)
 아이콘: Noto Emoji(Google, Apache 2.0) · 글꼴: Poor Story(Google Fonts, OFL)
-배경 음악: 직접 만든 곡 · 배경 그림 일부: VARCO로 생성`;
+배경 음악(OpenGameArt, CC0): Caturday - iamoneabe · happy lofi day - Tarush Singhal
+  · Cat caffe, Florist, Countryside - Tad · Trouble in the Garden - Augmentality · Baby Black Magi - bobjt
+배경 그림 일부: VARCO로 생성`;

@@ -91,7 +91,7 @@ python -m http.server 8770
 - 배경, 터짐 조각, 체력바·점수바 틀과 스킬 고리: [VARCO](https://3d.varco.ai)로 생성
 - 효과음: [Pixabay](https://pixabay.com/sound-effects/) (floraphonic, humordome / Pixabay Content License)와 [Mixkit](https://mixkit.co/free-sound-effects/) (Mixkit Sound Effects Free License). 크기를 맞추고 일부는 잘라서 mp3로 변환했습니다. 소리 파일만 따로 떼어 배포하는 것은 각 라이선스에서 허용하지 않습니다. 소리마다 볼륨은 `js/audio.js`의 `SFX_VOL`
 - 파티클 이펙트: [Kenney Particle Pack](https://kenney.nl/assets/particle-pack) (CC0). 라이선스 원문은 `assets/img/fx/k/LICENSE-kenney-particles.txt`
-- 배경 음악: 코드(`js/audio.js`)로 직접 연주하는 오리지널 곡
+- 배경 음악: OpenGameArt의 CC0 곡 (`assets/bgm/`, 출처는 `js/prefs.js`의 CREDITS)
 - 아이템, 장애물, 재료, 가구, 액세서리 아이콘: [Noto Emoji](https://github.com/googlefonts/noto-emoji) (Google, Apache License 2.0). 라이선스 원문은 `assets/img/items/LICENSE-noto.txt`
 - 글꼴: [Dongle](https://fonts.google.com/specimen/Dongle), [Gowun Dodum](https://fonts.google.com/specimen/Gowun+Dodum), [Gaegu](https://fonts.google.com/specimen/Gaegu) (Google Fonts, SIL Open Font License)
 - 게임 코드(`js/`, `css/`, `index.html`): 팬 창작물

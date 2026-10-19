@@ -6,6 +6,7 @@ self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
+  if (req.headers.has('range')) return; // 배경음악은 조각(Range)으로 받아서 저장하면 깨짐 → 브라우저에 맡김
   const url = new URL(req.url);
   if (url.origin !== location.origin) return; // 폰트, 파이어베이스는 그대로
   const asset = url.pathname.includes('/assets/');

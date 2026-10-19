@@ -52,6 +52,7 @@ function fitText(root = document) {
 function updateMute() {
   document.querySelectorAll('.btn-set').forEach(b => b.classList.toggle('off', Sound.muted)); // 소리를 꺼 두면 ⚙가 흐려짐
   try { localStorage.setItem(SAVE_KEY + '.mute', Sound.muted ? '1' : '0'); } catch {}
+  Sound.bgmSync();
 }
 updateMute();
 const updateVib = () => document.querySelectorAll('.btn-vib').forEach(b => b.classList.toggle('off', !Haptic.on));
@@ -740,6 +741,7 @@ function spawnMonster(animated) {
   const title = w.title ? (w.title.endsWith('·') ? w.title : w.title + ' ') : '';
   $('#monName').innerHTML = attrIcon(w.a) + (w.boss ? '<img class="crown-ic" src="assets/img/ui/crown.png" alt="">' : '') + title + M.name;
   $('#monName').classList.toggle('boss', !!w.boss);
+  Sound.music(w.boss ? 'boss' : 'battle'); // 보스가 나오면 곡이 바뀜
   B.monHp = B.monMax = w.hp;
   B.cd = w.cd;
   const nw = STAGES[B.stage].waves.length;
@@ -775,7 +777,6 @@ async function startStage(i) {
   B.rally = 0;
   B.maxCombo = 0;
   updateFever();
-  Sound.music('battle');
   // 편성이 5명보다 적으면 빈자리는 응원 친구 구슬로 채움 (공격 절반, 스킬 없음)
   B.squad = B.squad || B.team.slice();
   B.real = B.squad.length;
@@ -2679,7 +2680,7 @@ const RECRUIT_ASK = { momonga: '딸기 파르페 5개 가져와. 그럼 같이 �
 function openRamen() {
   show('ramen');
   Meta.coinUI();
-  Sound.music('map');
+  Sound.music('ramen');
   const scene = $('#shopScene');
   scene.querySelectorAll('.guest, .seat').forEach(e => e.remove());
   let mi = 0, si = 0;

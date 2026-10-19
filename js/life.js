@@ -459,7 +459,7 @@ const Life = {
     app.classList.toggle('tower-mode', run.kind === 'tower');
     app.classList.toggle('broth', st.name.includes('국물')); // 국물 판은 시럽 대신 국물 무늬
     updateFever();
-    Sound.music('map');
+    Sound.music('life');
     show('battle');
     stageTitle(run.kind === 'route' ? routeIdx('l', i) : -1, st.name);
     $('#waveInfo').innerHTML = '';
@@ -819,7 +819,7 @@ const Life = {
           B.over = false;
           B.busy = false;
           Life.hud();
-          Sound.music('map');
+          Sound.music('life');
           if (L.st.time) Life.runTimer();
         },
         btn2: L.run.kind === 'tower' ? '여기까지' : '다시 하기', on2: retry,
