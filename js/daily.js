@@ -47,6 +47,7 @@ const Daily = {
   on: () => clearedCount() >= MISSION_AT,
   // 게임 곳곳에서 부름: Daily.add('weed', 3)
   add(id, n = 1) {
+    if (typeof Achieve !== 'undefined') Achieve.add(id, n); // 업적 기록도 같이 쌓음
     if (!n || !Daily.on()) return;
     const ms = Daily.roll();
     if (!ms.ids.includes(id) || ms.done[id]) return;

@@ -144,7 +144,7 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 #mapParty img { width: 44px; margin: 0 -5px; animation: hop 1s ease-in-out infinite; }
 #mapParty img:nth-child(2) { animation-delay: .15s; }
 #mapParty img:nth-child(3) { animation-delay: .3s; }
-#mapParty img.fav { width: 56px; position: relative; z-index: 1; }
+#mapParty img.fav { width: 62px; position: relative; z-index: 1; }
 /* 프로필 이름표 (지도 왼쪽 위) */
 #btnProfile { position: absolute; left: 12px; top: 62px; z-index: 5; display: flex; align-items: center; gap: 6px; max-width: 46%; padding: 3px 12px 3px 3px; border-radius: 99px; background: var(--paper); box-shadow: var(--sh); font-family: var(--head); font-size: 16px; line-height: 1.1; }
 .pf-ava { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; overflow: hidden; background: color-mix(in srgb, var(--ring) 22%, #fff); border: 2px solid var(--ring); }
@@ -715,7 +715,10 @@ img.shadow { filter: brightness(0) opacity(.15); }
 #rankList .rk.top1 { background: var(--gold); color: #fff; }
 #rankList .rk.top2 { background: #c9c9d6; color: #fff; }
 #rankList .rk.top3 { background: #e0a46a; color: #fff; }
-#rankList .nm { flex: 1; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#rankList .nm { flex: 1; display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* 랭킹 줄: 최애 친구 얼굴 + 칭호 */
+.rk-face { flex: none; width: 28px; height: 28px; border-radius: 50%; background: #f6f1fb; object-fit: contain; }
+.rk-title, .pf-title { flex: none; padding: 1px 7px 0; border-radius: 8px; background: #fff1c9; color: #b07a12; font-family: var(--head); font-size: 12px; line-height: 1.35; white-space: nowrap; }
 #rankList b { font-family: var(--head); font-size: 20px; }
 
 /* ---------- 처음 하는 사람 돕기 ---------- */
@@ -1057,3 +1060,20 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .survey-text { display: block; width: 100%; box-sizing: border-box; padding: 10px 12px; border: var(--line); border-radius: 14px; background: #fff; color: var(--ink); font: 16px/1.4 inherit; font-family: inherit; resize: none; }
 .survey-note { margin-top: 6px; font-size: 13px; color: var(--ink2); }
 .sheet-btns .big-btn:disabled { opacity: .45; }
+
+/* ---------- 업적·칭호 (프로필 창) ---------- */
+.ach-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.ach { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; padding: 8px 10px 7px; border-radius: 12px; background: #f6f1fb; text-align: left; }
+.ach b { font-family: var(--head); font-size: 16px; line-height: 1.2; color: var(--ink2); }
+.ach small { font-size: 11px; color: var(--ink2); line-height: 1.25; }
+.ach .mbar { width: 100%; margin-top: 3px; }
+.ach em { font-style: normal; font-size: 11px; color: var(--ink2); }
+.ach:disabled { opacity: 1; }
+.ach.got { background: #fff6d8; box-shadow: inset 0 0 0 2px #ffd36b; }
+.ach.got b { color: var(--ink); }
+.ach.got i { margin-top: 3px; padding: 1px 8px 0; border-radius: 8px; background: #ffd36b; color: #7a5410; font-style: normal; font-family: var(--head); font-size: 12px; }
+.ach.on { background: #ffe9a6; box-shadow: inset 0 0 0 3px #f2b52e; }
+.ach.on i { background: var(--pink); color: #fff; }
+.pf-name { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; }
+.pf-name .pf-title { font-size: 10px; margin-bottom: 1px; }
+.pf-info .pf-title { font-size: 13px; }

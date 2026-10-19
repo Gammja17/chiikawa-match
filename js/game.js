@@ -437,19 +437,19 @@ const LOCK_SVG = '<svg class="lock" viewBox="0 0 24 24"><rect x="5" y="10.5" wid
 const nodePos = (i, W) => ({ x: (0.5 + Math.sin(i * 1.15) * 0.28) * W, y: NODE_TOP + i * NODE_GAP });
 
 // ---------- 프로필: 닉네임, 구글 연결, 최애 친구 (지도 왼쪽 위 이름표를 누르면 열림) ----------
-// 지도에서 다니는 친구: 최애가 가운데, 양옆은 기본 친구들. 입은 옷 그대로
+// 지도에서 다니는 친구: 최애 한 명만 (입은 옷 그대로)
 const walkImg = id => { const s = Save.data.outfit?.[id]; return s && SKINS[id]?.[s] ? SKIN(id, s) : portrait(id); };
 const favId = () => (Save.data.fav && Meta.owned(Save.data.fav) ? Save.data.fav : 'hachiware');
 function mapPartyHtml() {
-  const fav = favId(), side = ['chiikawa', 'usagi', 'hachiware'].filter(id => id !== fav).slice(0, 2);
-  return [side[0], fav, side[1]].map(id => `<img src="${walkImg(id)}"${id === fav ? ' class="fav"' : ''} draggable="false">`).join('');
+  return `<img src="${walkImg(favId())}" class="fav" draggable="false">`;
 }
 const netName = () => (typeof Net !== 'undefined' ? Net.name() : (Save.data.nick || '이름 없는 친구')).replace(/[<>&]/g, '');
 const googleOn = () => typeof Net !== 'undefined' && Net.user && !Net.user.isAnonymous;
 function profileChip() {
   const b = $('#btnProfile'), fav = CHARS[charIdx(favId())];
   b.style.setProperty('--ring', fav.ring);
-  b.innerHTML = `<span class="pf-ava"><img src="${FACE(fav.id)}" alt=""></span><span class="pf-name">${netName()}</span>${googleOn() ? '<i class="pf-g" title="구글 연결됨">G</i>' : ''}`;
+  const t = Achieve.title();
+  b.innerHTML = `<span class="pf-ava"><img src="${FACE(fav.id)}" alt=""></span><span class="pf-name">${t ? `<small class="pf-title">${t}</small>` : ''}${netName()}</span>${googleOn() ? '<i class="pf-g" title="구글 연결됨">G</i>' : ''}`;
 }
 $('#btnProfile').onclick = () => { Sound.play('click'); openProfile(); };
 function openProfile() {
@@ -459,12 +459,14 @@ function openProfile() {
     card.style.setProperty('--ring', fav.ring);
     card.innerHTML = `<div class="mates-title">프로필</div>
       <div class="pf-head"><span class="pf-ava big"><img src="${FACE(fav.id)}" alt=""></span>
-        <div class="pf-info"><b>${netName()}</b><button class="mini-btn" data-nick>이름 바꾸기</button></div></div>
+        <div class="pf-info">${Achieve.title() ? `<small class="pf-title">${Achieve.title()}</small>` : ''}<b>${netName()}</b><button class="mini-btn" data-nick>이름 바꾸기</button></div></div>
       ${net ? (googleOn() ? '<div class="pf-google on">✓ 구글 연결됨 · 진행이 계정에 저장돼요</div>'
         : '<button class="pf-google" data-google>구글로 로그인하고 진행 저장</button>') : ''}
-      <div class="sheet-label">최애 친구 <small>지도에서 가운데로 같이 다녀요</small></div>
+      <div class="sheet-label">최애 친구 <small>지도에서 같이 다녀요 · 랭킹 얼굴도 이 친구</small></div>
       <div class="mates-grid">${CHARS.filter(c => Meta.owned(c.id)).map(c => `<button class="${c.id === fav.id ? 'on' : ''}" data-id="${c.id}" style="--ring:${c.ring}"><img src="${FACE(c.id)}"><span>${c.name}</span></button>`).join('')}</div>
+      ${Achieve.html()}
       <div class="sheet-btns"><button class="big-btn" data-go>닫기</button></div>`;
+    Achieve.bind(card, draw);
     card.querySelectorAll('.mates-grid button').forEach(b => (b.onclick = () => {
       Save.data.fav = b.dataset.id;
       Save.save();
@@ -503,6 +505,7 @@ function openMap(advanceFrom = null) {
   $('#btnRamen').classList.toggle('on', Save.data.ramen !== false && !Save.data.buff);
   friendsDot();
   rankDot();
+  Achieve.check();
   const path = $('#mapPath');
   path.innerHTML = '';
   path.style.height = NODE_TOP + STAGES.length * NODE_GAP + 40 + 'px';
@@ -1122,6 +1125,7 @@ async function cascade(swapped, forced, origin = null, depth = 0) {
     if (!res) break;
     combo++;
     B.maxCombo = Math.max(B.maxCombo || 0, combo);
+    Achieve.best('combo', combo);
     if (combo === 5) Daily.add('combo5');
     if (combo === 5 && !B.fever) await feverShow();
     await stepFx(res, combo, combo === 1 ? origin : null);
@@ -1884,6 +1888,7 @@ async function monsterDefeated() {
   await out.finished;
   m.style.opacity = 0;
   out.cancel();
+  if (curWave().boss) Achieve.add('boss');
   B.wave++;
   if (B.wave < STAGES[B.stage].waves.length) {
     await banner(`WAVE ${B.wave + 1}`, 400);
