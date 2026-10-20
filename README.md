@@ -110,12 +110,15 @@ node tools/sim.js route 100                    # 루트 전체를 봇으로 돌�
 - `level_end`: 끝 (`result`: clear 클리어 / fail 실패 / quit 중간에 나감 / closed 앱을 닫음)
 - `share`: 클리어 자랑하기
 
+끊김 기록 (`level_end`에 같이, 터지고 떨어지고 스킬 쓰는 동안만 잼): `fps`(평균 프레임, 60·120Hz 폰이면 그 근처가 정상), `jank_pct`(0.05초 넘게 걸린 프레임 %), `slow_pct`(30fps 밑 프레임 %), `worst_ms`(가장 긴 프레임), `light`(연출 가볍게 1/0), `dpr`(화면 배율). 기기·OS·브라우저는 GA가 따로 모읍니다.
+
 같이 가는 값: `stage`(1~300), `chapter`, `mode`(puzzle/battle), `difficulty`(normal/challenge/hard), `attempt`(몇 번째 도전), `help`(막힌 판 도움 단계 0~2), `moves_used`, `moves_left`(클리어 때 남은 이동·초), `continues`, `duration_sec`, `stars`, `goals_left`(실패 때 남은 목표 %), `monster_hp`(실패 때 남은 괴물 체력 %), `hp_left`(토벌 클리어 때 남은 체력 %), `wave`
 
 처음 한 번 GA 관리에서 맞춤 정의를 만들어야 보고서에서 스테이지별로 볼 수 있습니다:
 1. [GA](https://analytics.google.com) → 관리 → 데이터 표시 → **맞춤 정의** → 맞춤 측정기준 만들기 (범위: 이벤트): `stage`, `chapter`, `mode`, `difficulty`, `result`, `attempt`, `help`, `method`
-2. 같은 곳 **맞춤 측정항목**: `moves_used`, `moves_left`, `continues`, `duration_sec`, `goals_left`, `monster_hp`
+2. 같은 곳 **맞춤 측정항목**: `moves_used`, `moves_left`, `continues`, `duration_sec`, `goals_left`, `monster_hp`, `fps`, `jank_pct`, `slow_pct`, `worst_ms` (끊김은 맞춤 측정기준 `light`, `dpr`도)
 3. 탐색 → 자유 형식: 행 `stage`, 열 `result`, 값 `이벤트 수`, 필터 `이벤트 이름 = level_end` → 스테이지마다 클리어·실패·포기 수. 실패가 많은 스테이지는 `tools/stages/spec.js`에서 고치고 `node tools/stages/make.js "--only=이름"`
+4. 끊김 보기: 탐색 → 자유 형식, 행 `기기 모델`(또는 `stage`), 값 `fps`·`jank_pct` 평균, 필터 `이벤트 이름 = level_end`. `jank_pct`가 5를 넘는 기기·스테이지가 고칠 곳
 
 막힌 판 도와주기: 아직 못 깬 스테이지를 3번 실패하면 하치와레가 응원 선물(퍼즐 랏코 검 2개 / 토벌 스킬 게이지 반), 5번부터는 더(퍼즐 폭탄+이동 3번 / 토벌 체력 +20%). 클리어 자랑하기: 결과 창 '자랑하기' → 지역 풍경·로고·MVP 친구·별이 든 카드 그림을 공유 (`js/share.js`)
 

@@ -200,12 +200,36 @@ const Particles = {
 // 4초(약 240프레임)마다 보고, 34ms(30프레임 밑)를 넘는 프레임이 22% 넘게 두 번 이어지면 '연출 가볍게'를 켜고 한 번 알려 줌
 // 직접 설정에서 다시 끄면(autoLightOff) 그 뒤로는 안 건드림
 const PerfWatch = {
+  run: null,
+  // 판 하나 동안 프레임 기록 (js/stats.js가 시작·끝에 부름). 진짜 폰에서 어디가 끊기는지 GA로 보려고
+  // 움직이는 중(B.busy: 터지고 떨어지고 스킬 쓰는 동안)만 따로 셈: 가만히 있을 땐 다 부드러워서 평균이 가려짐
+  begin() { PerfWatch.run = { n: 0, t: 0, s34: 0, s50: 0, worst: 0 }; },
+  take() {
+    const r = PerfWatch.run;
+    PerfWatch.run = null;
+    if (!r || r.n < 30) return {};
+    return {
+      fps: Math.round((r.n * 1000) / r.t), // 움직이는 동안 평균 프레임 (60·120Hz 폰이면 그 근처가 정상)
+      jank_pct: Math.round((r.s50 / r.n) * 1000) / 10, // 0.05초 넘게 걸린 프레임 비율 (눈에 띄는 끊김)
+      slow_pct: Math.round((r.s34 / r.n) * 1000) / 10, // 30fps 밑으로 떨어진 프레임 비율
+      worst_ms: Math.round(r.worst),
+      light: Prefs.d.light ? 1 : 0,
+      dpr: Math.round((window.devicePixelRatio || 1) * 10) / 10,
+    };
+  },
   init() {
     let last = 0, n = 0, slow = 0, bad = 0;
     const loop = t => {
       const d = t - last;
       last = t;
       const on = document.getElementById('battle')?.classList.contains('active') && !document.hidden;
+      const r = PerfWatch.run;
+      if (r && on && d < 1000 && typeof B !== 'undefined' && B.busy) {
+        r.n++; r.t += d;
+        if (d > 34) r.s34++;
+        if (d > 50) r.s50++;
+        if (d > r.worst) r.worst = d;
+      }
       if (on && d < 300) {
         n++;
         if (d > 34) slow++;

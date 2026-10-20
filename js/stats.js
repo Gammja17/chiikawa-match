@@ -1,5 +1,6 @@
 // 스테이지 플레이 기록(Google Analytics)과 막힌 스테이지 도와주기
 // - 기록: 모험 지도 스테이지만. level_start(시작), level_continue(이어하기), level_end(클리어·실패·중간 포기)
+//   level_end에는 그 판 동안의 프레임 기록도 (fps, jank_pct, slow_pct, worst_ms, light, dpr: js/particles.js PerfWatch)
 //   GA4 권장 이벤트 이름이라 GA 보고서에 바로 잡힘. 진짜 사이트에서만 보냄(gtag는 workers.dev에서만 켜짐, net.js), 로컬에선 콘솔에만
 //   보는 법은 README '플레이 기록 보기'
 // - 도와주기: 아직 못 깬 스테이지를 3번 넘게 실패하면 하치와레가 응원 선물 (퍼즐: 랏코 검 2개 / 토벌: 스킬 게이지 반)
@@ -22,6 +23,7 @@ const Stats = {
     const tries = (Save.data.tries = Save.data.tries || {});
     tries[k] = (tries[k] || 0) + 1;
     Stats.run = { t, i, k, t0: Date.now(), attempt: tries[k], help, cont: 0, moves: 0, ended: false };
+    PerfWatch.begin();
     Stats.send('level_start', Stats.base());
   },
   turn() { if (Stats.run && !Stats.run.ended) Stats.run.moves++; },
@@ -35,7 +37,7 @@ const Stats = {
     const r = Stats.run;
     if (!r || r.ended) return;
     r.ended = true;
-    Stats.send('level_end', { ...Stats.base(), success: result === 'clear', result, moves_used: r.moves, continues: r.cont, duration_sec: Math.round((Date.now() - r.t0) / 1000), ...extra });
+    Stats.send('level_end', { ...Stats.base(), success: result === 'clear', result, moves_used: r.moves, continues: r.cont, duration_sec: Math.round((Date.now() - r.t0) / 1000), ...extra, ...PerfWatch.take() });
     const fails = (Save.data.fails = Save.data.fails || {});
     if (result === 'clear') delete fails[r.k];
     else if (r.moves > 0) fails[r.k] = (fails[r.k] || 0) + 1; // 한 수도 안 두고 나간 건 안 셈
@@ -43,7 +45,7 @@ const Stats = {
   },
 };
 // 앱을 닫거나 다른 앱으로 넘어가면 하던 판은 '중간 포기'로 (돌아와서 이어 하면 그대로 계속 셈)
-addEventListener('pagehide', () => { if (Stats.run && !Stats.run.ended && Stats.run.moves > 0) Stats.send('level_end', { ...Stats.base(), success: false, result: 'closed', moves_used: Stats.run.moves, continues: Stats.run.cont, duration_sec: Math.round((Date.now() - Stats.run.t0) / 1000) }); });
+addEventListener('pagehide', () => { if (Stats.run && !Stats.run.ended && Stats.run.moves > 0) Stats.send('level_end', { ...Stats.base(), success: false, result: 'closed', moves_used: Stats.run.moves, continues: Stats.run.cont, duration_sec: Math.round((Date.now() - Stats.run.t0) / 1000), ...PerfWatch.take() }); });
 
 const Help = {
   // 이 스테이지에서 받을 도움 단계: 0 없음, 1 (3번 실패), 2 (5번 실패). 이미 깬 스테이지는 없음
