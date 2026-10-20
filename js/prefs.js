@@ -24,6 +24,27 @@ const Prefs = {
 };
 Prefs.load();
 
+// 처음 켤 때는 타이틀에 필요한 것만 받고, 나머지 그림(괴물·이펙트·콤보 글자·화면마다 쓰는 그림)은 타이틀이 뜬 뒤 한가할 때 조금씩 받음
+// (예전엔 켜자마자 5MB를 한꺼번에 받아서 4G에서 타이틀이 늦게 떴음)
+const Preload = {
+  q: [], started: false,
+  add(src) { if (Preload.started) new Image().src = src; else Preload.q.push(src); },
+  start() {
+    if (Preload.started) return;
+    Preload.started = true;
+    // 숨은 화면의 <img loading=lazy>도 미리 받아 둠 (화면이 열릴 때 그림이 늦게 뜨지 않게)
+    const q = [...Preload.q, ...[...document.querySelectorAll('img[loading=lazy]')].map(im => im.src)];
+    Preload.q = [];
+    let i = 0;
+    const step = () => {
+      for (const end = i + 6; i < Math.min(end, q.length); i++) new Image().src = q[i];
+      if (i < q.length) setTimeout(step, 150);
+    };
+    step();
+  },
+};
+addEventListener('load', () => setTimeout(() => (window.requestIdleCallback ? requestIdleCallback(Preload.start, { timeout: 2000 }) : Preload.start()), 900));
+
 // 빠른 진행: 모든 움직임을 1.5배로 (계속 도는 반복 애니메이션은 그대로)
 {
   const animate = Element.prototype.animate;

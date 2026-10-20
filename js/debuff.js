@@ -9,8 +9,8 @@ const MON_SKILL = {
 const DEBUFF_INFO = {
   sleep: { name: '잠', img: 'debuff_sleep' }, poison: { name: '독', img: 'debuff_poison' }, weak: { name: '어둠', img: 'debuff_weak' },
 };
-const DBF = n => `assets/img/ui/${n}.png`;
-['debuff_sleep', 'debuff_poison', 'debuff_weak', 'debuff_drain', 'fx_sleep', 'fx_poison', 'fx_dark', 'fx_dust'].forEach(n => (new Image().src = DBF(n)));
+const DBF = n => `assets/img/ui/${n}.webp`;
+['debuff_sleep', 'debuff_poison', 'debuff_weak', 'debuff_drain', 'fx_sleep', 'fx_poison', 'fx_dark', 'fx_dust'].forEach(n => Preload.add(DBF(n)));
 
 const Debuff = {
   s: { sleep: {}, poison: 0, poisonDmg: 0, weak: 0 },

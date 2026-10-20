@@ -139,19 +139,19 @@ const POCKETS = ['chiikawa', 'hachiware', 'usagi', 'momonga', 'rakko', 'shisa', 
 
 
 const MONSTERS = {
-  chimera:   { name: '키메라',   img: 'assets/img/monsters/chimera.png' },
-  mimic:     { name: '미믹',     img: 'assets/img/monsters/mimic.png?v=2' },
-  dekatsuyo: { name: '데카츠요', img: 'assets/img/monsters/dekatsuyo.png?v=2' },
+  chimera:   { name: '키메라',   img: 'assets/img/monsters/chimera.webp' },
+  mimic:     { name: '미믹',     img: 'assets/img/monsters/mimic.webp' },
+  dekatsuyo: { name: '데카츠요', img: 'assets/img/monsters/dekatsuyo.webp' },
   // 4~6장 보스 (Chiikawa Wiki 그림에서 배경을 지움)
-  elephant:  { name: '한밤의 코끼리', img: 'assets/img/monsters/elephant.png' },
-  blackstar: { name: '까만별',   img: 'assets/img/monsters/blackstar.png' },
-  ode:       { name: '오데',     img: 'assets/img/monsters/ode.png?v=2' },
+  elephant:  { name: '한밤의 코끼리', img: 'assets/img/monsters/elephant.webp' },
+  blackstar: { name: '까만별',   img: 'assets/img/monsters/blackstar.webp' },
+  ode:       { name: '오데',     img: 'assets/img/monsters/ode.webp' },
   // 원작에 나온 괴물 더 (Chiikawa Wiki 그림에서 배경을 지움)
-  anoko:     { name: '아노코',   img: 'assets/img/monsters/anoko.png' },
-  sphinx:    { name: '스핑크스', img: 'assets/img/monsters/sphinx.png' },
+  anoko:     { name: '아노코',   img: 'assets/img/monsters/anoko.webp' },
+  sphinx:    { name: '스핑크스', img: 'assets/img/monsters/sphinx.webp' },
   // 인어섬 (『映画ちいかわ 人魚の島のひみつ』 공식 사이트 캐릭터 그림)
-  siren:     { name: '세이렌',   img: 'assets/img/monsters/siren.png' },
-  mermaid:   { name: '인어',     img: 'assets/img/monsters/mermaid.png' },
+  siren:     { name: '세이렌',   img: 'assets/img/monsters/siren.webp' },
+  mermaid:   { name: '인어',     img: 'assets/img/monsters/mermaid.webp' },
 };
 
 // a: 속성, m: 몬스터 종류, hp, atk: 공격력, cd: 몇 턴마다 공격, hue: 색 변형, title: 이름 앞말, boss

@@ -50,7 +50,7 @@ const goRoute = k => (ROUTE[k][0] === 'b' ? openFormation(ROUTE[k][1]) : Life.st
 [...CHARS.map(c => FACE(c.id)), ...CHARS.map(c => TILE(c.id)),
   ...['chiikawa', 'hachiware', 'usagi', 'momonga', 'rakko', 'shisa', 'kurimanju'].map(BODY), ...Object.values(MONSTERS).map(m => m.img),
   ...['h', 'v', 'bomb', 'rainbow', 'boom', 'sparkle', 'plane', 'box', 'gift', 'bubble', 'weed1', 'weed2'].map(ITEM)]
-  .forEach(src => (new Image().src = src));
+  .forEach(Preload.add);
 
 // ---------- 공통 ----------
 function show(id) {
@@ -242,7 +242,7 @@ const KMASK = {};
 }
 // 날카로운 모양(칼자국·충격 별·빛살, assets/img/fx/sharp, game-icons.net CC BY 3.0·Kenney CC0)을 진한 테두리 스티커로
 const SHARP = n => new URL(`assets/img/fx/sharp/${n}.png`, location.href).href;
-['quick-slash', 'claw-slashes', 'crossed-slashes', 'explosion-rays', 'gooey-impact', 'spiky-explosion', 'sparkles', 'burst'].forEach(n => Particles.img(SHARP(n)));
+['quick-slash', 'claw-slashes', 'crossed-slashes', 'explosion-rays', 'gooey-impact', 'spiky-explosion', 'sparkles', 'burst'].forEach(n => Preload.add(SHARP(n)));
 function sk(name, x, y, size, color, frames, opts, outline = '#4a4262') {
   if (Particles.count() > 300 || (Prefs.d.light && Math.random() < 0.4)) return Promise.resolve();
   return Particles.add({ src: SHARP(name), x, y, size, color, outline: Prefs.d.light ? null : outline }, frames, opts);
@@ -1239,7 +1239,7 @@ const settleAll = dur => {
 
 // ---------- 콤보: 연쇄가 이어지는 동안 한 덩어리로 쾅쾅 커지고, 끝나면 톡 튀어 사라짐 ----------
 // 콤보 글자는 그림으로 (숫자 + '콤보' + 칭찬 한마디)
-const CIMG = n => `assets/img/combo/${n}.png`;
+const CIMG = n => `assets/img/combo/${n}.webp`;
 const COMBO_WORDS = ['', '', 'w_good', 'w_nice', 'w_great', 'w_amazing'];
 const Combo = {
   el: null,
@@ -1334,7 +1334,7 @@ async function mergeFx(ta, tb, at) {
 const COMBO_ART = { rainbow: 'dango_any', rainbow2: 'dango_dango', 'bomb+bomb': 'bomb_bomb', 'bomb+h': 'bomb_sword', 'bomb+v': 'bomb_sword',
   'h+h': 'sword_sword', 'h+v': 'sword_sword', 'v+v': 'sword_sword', 'plane+plane': 'plane_plane', 'bomb+plane': 'bomb_plane', 'h+plane': 'sword_plane', 'plane+v': 'sword_plane' };
 [...Object.values(COMBO_ART), 'w_combo', 'w_good', 'w_nice', 'w_great', 'w_amazing', 'w_best', ...'0123456789'.split('').map(d => 'd' + d)]
-  .forEach(n => (new Image().src = CIMG(n)));
+  .forEach(n => Preload.add(CIMG(n)));
 function comboArt(kind, p) {
   const el = addFx('combo-art', p.x, p.y);
   el.style.width = B.S * 2.6 + 'px';
@@ -1671,7 +1671,7 @@ function flyOff(img, x, y, size) {
 }
 // 장애물 연출용 그림 (잡초 뿌리째, 풀린 리본, 열린 상자, 거품 터짐 …)
 const OBST = n => `assets/img/obst/${n}.png`;
-['weed_pull', 'sprout_pull', 'ribbon_loose', 'box_open', 'box_flap', 'bubble_pop', 'dirt', 'leaf'].forEach(n => (new Image().src = OBST(n)));
+['weed_pull', 'sprout_pull', 'ribbon_loose', 'box_open', 'box_flap', 'bubble_pop', 'dirt', 'leaf'].forEach(n => Preload.add(OBST(n)));
 const at3 = (dx, dy, s = 1, r = 0) => `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(${s}) rotate(${r}deg)`;
 // 그림 하나를 (x, y)에 띄워 frames대로 움직인 뒤 지움
 function piece(src, x, y, size, frames, opts) {
@@ -3036,7 +3036,7 @@ function mvp() {
 // 자주 나오는 클리어 도장은 손그림 글자 그림으로 (판마다 다른 문구는 글자 그대로)
 const SLAM_ART = { '토벌<br>성공!': 'battle', '제초<br>끝!!': 'weed', '상자<br>다 뜯었다!': 'box', '거품<br>싹싹!': 'bubble', '배달<br>완료!': 'ing',
   '리본<br>풀었다!': 'lock', '시럽<br>듬뿍!': 'syrup', '모으기<br>끝!': 'char', '목표<br>달성!': 'score', '검정<br>합격!': 'exam', '클리어!': 'clear' };
-Object.values(SLAM_ART).forEach(n => (new Image().src = `assets/img/ui/words/${n}.webp`)); // 도장이 늦게 뜨지 않게 미리
+Object.values(SLAM_ART).forEach(n => Preload.add(`assets/img/ui/words/${n}.webp`)); // 도장이 늦게 뜨지 않게 미리
 async function clearShow(text = '토벌<br>성공!') {
   const el = document.createElement('div');
   el.className = 'clear-show';

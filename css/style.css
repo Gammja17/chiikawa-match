@@ -254,9 +254,9 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 .dbf b { min-width: 16px; padding: 0 4px; border-radius: 7px; color: #fff; font-size: 12px; text-align: center; }
 .dbf.poison b { background: #9b5bd6; } .dbf.weak b { background: #5a4a86; } .dbf.sleep b { background: #6f84ef; }
 #party .pm.asleep .pm-face { filter: grayscale(.6) brightness(.85); }
-#party .pm.asleep::after { content: ''; position: absolute; right: -6px; top: -10px; width: 30px; height: 30px; background: url(../assets/img/ui/debuff_sleep.png) center / contain no-repeat; animation: bob 1.4s ease-in-out infinite; z-index: 3; }
+#party .pm.asleep::after { content: ''; position: absolute; right: -6px; top: -10px; width: 30px; height: 30px; background: url(../assets/img/ui/debuff_sleep.webp) center / contain no-repeat; animation: bob 1.4s ease-in-out infinite; z-index: 3; }
 @keyframes cdRing { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-12deg); } 40% { transform: rotate(10deg); } 60% { transform: rotate(-7deg); } 80% { transform: rotate(4deg); } }
-#feverTag { position: absolute; left: 8px; bottom: 8px; z-index: 3; display: none; width: 150px; height: 27px; background: url(../assets/img/combo/ftag_cheer.png) left center / contain no-repeat; font-size: 0; color: transparent; transform-origin: 0 50%; animation: pulse .6s infinite; } /* 글자는 그림으로 (읽기 도우미용 글은 그대로) */
+#feverTag { position: absolute; left: 8px; bottom: 8px; z-index: 3; display: none; width: 150px; height: 27px; background: url(../assets/img/combo/ftag_cheer.webp) left center / contain no-repeat; font-size: 0; color: transparent; transform-origin: 0 50%; animation: pulse .6s infinite; } /* 글자는 그림으로 (읽기 도우미용 글은 그대로) */
 #feverTag.on { display: block; }
 
 /* 파티: 동그란 얼굴 둘레를 각자 상징 색 링이 빙 둘러 차오름 (스킬 게이지) */
