@@ -192,8 +192,10 @@ function addFx(cls, x, y) {
 // CSS 변수 안의 url()은 css/ 기준으로 풀려서 절대 주소로 넣음
 const KP = n => `url(${new URL(`assets/img/fx/k/${n}.png`, location.href).href})`;
 const FX_MAX = 120;
+let FX_LOAD = 1; // 한 단계에서 같이 터지는 아이템 수 (많으면 반짝이를 덜 뿌림)
 function kp(name, x, y, size, color, frames, opts) {
-  if (fx.childElementCount > (Prefs.d.light ? 40 : FX_MAX) || (Prefs.d.light && Math.random() < 0.6)) return Promise.resolve(); // 연출 가볍게: 반짝이 줄임
+  // 연출 가볍게면 반짝이를 줄이고, 아이템 여럿이 한꺼번에 터지는 중이면 상한을 낮춤 (폰에서 프레임이 안 끊기게)
+  if (fx.childElementCount > (Prefs.d.light ? 40 : FX_LOAD > 2 ? 80 : FX_MAX) || (Prefs.d.light && Math.random() < 0.6)) return Promise.resolve();
   const el = addFx('kp', x, y);
   Object.assign(el.style, { width: size + 'px', height: size + 'px', marginLeft: -size / 2 + 'px', marginTop: -size / 2 + 'px' });
   el.style.setProperty('--m', KP(name));
@@ -397,10 +399,15 @@ function shake(power = 6, dur = 300) {
 }
 // 손맛: 멈칫(히트스톱), 슬로모션, 클로즈업
 const Juice = {
+  // 연달아 멈칫하면 툭툭 끊겨서 뻑뻑함 → 0.26초 안에는 한 번만, 길어도 0.08초
   stop(ms = 70) {
+    const now = performance.now();
+    if (now - (Juice.lastStop || 0) < 260) return;
+    Juice.lastStop = now;
+    ms = Math.min(ms, 80);
     const anims = document.getAnimations();
     anims.forEach(a => a.pause());
-    setTimeout(() => anims.forEach(a => { try { a.play(); } catch {} }), ms);
+    setTimeout(() => anims.forEach(a => { try { if (a.playState === 'paused') a.play(); } catch {} }), ms);
   },
   slow(ms = 450, rate = 0.3) {
     document.getAnimations().forEach(a => a.updatePlaybackRate(rate));
@@ -820,10 +827,11 @@ function slide(t, r, c, dur, easing = 'ease-out', delay = 0) {
 function squish(t, delay = 0) {
   t.inner.animate([
     { transform: 'scale(1)' },
-    { transform: 'scale(1.16,.82)', offset: 0.3 },
-    { transform: 'scale(.94,1.06)', offset: 0.65 },
+    { transform: 'scale(1.2,.78) translateY(6%)', offset: 0.22 },
+    { transform: 'scale(.92,1.1) translateY(-4%)', offset: 0.5 },
+    { transform: 'scale(1.04,.97)', offset: 0.76 },
     { transform: 'scale(1)' },
-  ], { duration: 280, delay, easing: 'ease-out' });
+  ], { duration: 320, delay, easing: 'ease-out' }); // 쫀득: 눌렸다 → 쭉 → 살짝 출렁
 }
 
 function makeTile(t) {
@@ -1245,7 +1253,7 @@ const Combo = {
 
 // ---------- 연쇄 ----------
 async function cascade(swapped, forced, origin = null, depth = 0) {
-  let combo = 0;
+  let combo = 0, landed = null;
   for (;;) {
     const res = Board.resolve(B.grid, combo === 0 ? swapped : null, combo === 0 ? forced : []);
     if (!res) break;
@@ -1255,9 +1263,11 @@ async function cascade(swapped, forced, origin = null, depth = 0) {
     if (combo === 5) Daily.add('combo5');
     if (combo === 5 && !B.fever) await feverShow();
     await stepFx(res, combo, combo === 1 ? origin : null);
-    await fall(Board.gravity(B.grid));
-    if (B.mode === 'life') await Life.collect();
+    landed = fall(Board.gravity(B.grid));
+    await Promise.race([landed, fall.soon]);
+    if (B.mode === 'life' && Life.hasIng()) { await landed; await Life.collect(); } // 재료는 다 내려앉은 뒤에 거둠
   }
+  await landed; // 다 내려앉은 뒤에 손을 댈 수 있게
   Combo.end();
   if (B.mode === 'life' && L.feverGift) { L.feverGift = false; await Life.feverGift(); } // 피버 첫 턴 선물
   if (!Board.hasMove(B.grid)) {
@@ -1387,81 +1397,101 @@ function beamTo(from, to, color, delay = 0) {
     { duration: 300, delay, fill: 'backwards' }).finished.then(() => el.remove());
 }
 
-// 아이템 발동 연출 (ef.base 시각에 불림, 칸이 터지는 시각은 ef.times)
+// 이 시간 뒤에 (빠른 진행이면 그만큼 빨리)
+const later = (fn, ms) => setTimeout(fn, ms / Prefs.speed());
+// 연쇄로 맞은 아이템: 하얗게 번쩍하며 움찔 → 짧은 심지 뒤 터짐. 이어질수록 소리가 높아짐 (따-따-딴-딴)
+function chainKick(ef) {
+  const S = B.S, o = tileCenter(ef.r, ef.c);
+  ef.tile?.inner?.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.35,.75)', offset: 0.35 }, { transform: 'scale(.9,1.15)', offset: 0.7 }, { transform: 'scale(1.12)' }],
+    { duration: CHAIN_BEAT, easing: 'ease-out' });
+  kp('circle_05', o.x, o.y, S * 1.8, '#ffffff', [{ transform: 'scale(.4)', opacity: 1 }, { transform: 'scale(1.15)', opacity: 0 }], { duration: 220, easing: 'ease-out' });
+  Sound.play('special', Math.min(2, 1.05 + ef.chain * 0.09), 0.5);
+  Haptic.tap(10);
+}
+
+// 랏코 검이 한쪽 끝까지 쫙 베고 나감: 칼이 휙 지나가고, 뒤로 하얀 칼자국이 그어지고, 지나간 칸마다 베인 자국이 번쩍
+function blade(o, dir, horiz, steps, light) {
+  const S = B.S, ang = horiz ? (dir > 0 ? 0 : 180) : (dir > 0 ? 90 : -90), len = (steps + 0.5) * S, dur = (steps + 0.5) * BLADE_MS;
+  const ux = horiz ? dir : 0, uy = horiz ? 0 : dir;
+  const cut = document.createElement('i');
+  cut.className = 'slash-cut';
+  Object.assign(cut.style, { left: o.x + 'px', top: o.y + 'px', width: len + 'px', height: S * 0.34 + 'px', transform: `translateY(-50%) rotate(${ang}deg)` });
+  fx.appendChild(cut);
+  cut.animate([{ clipPath: 'inset(0 100% 0 0)', opacity: 1 }, { clipPath: 'inset(0 0 0 0)', opacity: 1, offset: 0.45 }, { clipPath: 'inset(0 0 0 0)', opacity: 0, transform: `translateY(-50%) rotate(${ang}deg) scaleY(.15)` }],
+    { duration: dur / 0.45, easing: 'linear', fill: 'forwards' }).finished.then(() => cut.remove());
+  const sw = new Image();
+  sw.src = ITEM('rocket');
+  sw.className = 'slash-sword';
+  sw.style.width = S * 1.15 + 'px';
+  fx.appendChild(sw);
+  const pos = (d, sc = 1) => `translate(${o.x + ux * d}px, ${o.y + uy * d}px) translate(-50%, -50%) rotate(${ang + 45}deg) scale(${sc})`; // 그림은 칼끝이 오른쪽 위
+  sw.animate([{ transform: pos(0, 0.8) }, { transform: pos(S * 0.6, 1.25), offset: 0.12 }, { transform: pos(len + S * 0.6, 1.1), opacity: 1, offset: 0.9 }, { transform: pos(len + S, 0.9), opacity: 0 }],
+    { duration: dur + 60, easing: 'linear', fill: 'forwards' }).finished.then(() => sw.remove());
+  for (let k = 1; k <= steps; k++) if (!light || k % 2) later(() => {
+    const x = o.x + ux * k * S, y = o.y + uy * k * S, tilt = (k % 2 ? 1 : -1) * (25 + Math.random() * 20);
+    kp('slash_03', x, y, S * 1.25, '#ffffff', [{ transform: `rotate(${ang + 90 + tilt}deg) scale(.4, .2)`, opacity: 1 }, { transform: `rotate(${ang + 90 + tilt}deg) scale(1.15, 1)`, opacity: 1, offset: 0.4 }, { transform: `rotate(${ang + 90 + tilt}deg) scale(1.3, .6)`, opacity: 0 }], { duration: 230, easing: 'ease-out' });
+    if (!light) kp('spark_05', x, y, S * 0.9, '#bfe9ff', [{ transform: `rotate(${ang + 90}deg) scale(.5)`, opacity: 1 }, { transform: `rotate(${ang + 90}deg) scale(1.2)`, opacity: 0 }], { duration: 220 });
+  }, k * BLADE_MS);
+}
+
+// 아이템 발동 연출 (ef.base 시각에 불림, 칸이 터지는 시각은 ef.times, 심지는 ef.fuse)
 function effectFx(ef) {
   const S = B.S, o = tileCenter(ef.r, ef.c), inner = ef.tile?.inner;
+  const fuse = ef.fuse ?? FUSE[ef.kind], chain = ef.chain || 0, pitch = Math.min(1.6, 1 + chain * 0.07), heavy = FX_LOAD > 2;
   if (ef.kind === 'h' || ef.kind === 'v') {
     const horiz = ef.kind === 'h';
-    // 로켓이 부르르 → 양쪽 끝으로 쓩. 지나가는 칸이 차례로 터짐
-    inner?.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.25) rotate(-6deg)' }, { transform: 'scale(1.25) rotate(6deg)' }], { duration: FUSE.h });
-    setTimeout(() => {
-      Sound.play('line', 1.1, 0.8);
-      kp('flare_01', o.x, o.y, S * 2.8, '#ffffff', [{ transform: 'scale(.3)', opacity: 1 }, { transform: 'scale(1.2)', opacity: 0 }], { duration: 300, easing: 'ease-out' });
-      kx('poof2', 'circle_05', o.x, o.y, S * 2.4, '#bfe9ff', [{ transform: 'scale(.3)', opacity: 1 }, { transform: 'scale(1.15)', opacity: 0 }], { duration: 260, easing: 'ease-out' });
-      Juice.stop(40);
-      const cells = horiz ? COLS : ROWS, from = horiz ? ef.c : ef.r;
-      [-1, 1].forEach(dir => {
-        const im = new Image();
-        im.src = ITEM('rocket');
-        im.className = 'fximg';
-        Object.assign(im.style, { left: o.x + 'px', top: o.y + 'px', width: S * 0.95 + 'px', zIndex: 3 });
-        fx.appendChild(im);
-        const steps = dir > 0 ? cells - from + 0.5 : from + 1.5;
-        const dist = steps * S * dir;
-        const rot = horiz ? (dir > 0 ? 45 : -135) : (dir > 0 ? 135 : -45);
-        // 로켓 뒤로 하얀 꼬리가 쭉 그어졌다가 사라짐
-        const tr = addFx('rtrail', o.x, o.y), len = Math.abs(dist);
-        Object.assign(tr.style, horiz
-          ? { width: len + 'px', height: S * 0.42 + 'px', marginTop: -S * 0.21 + 'px', marginLeft: dir > 0 ? '0px' : -len + 'px', transformOrigin: dir > 0 ? 'left center' : 'right center' }
-          : { height: len + 'px', width: S * 0.42 + 'px', marginLeft: -S * 0.21 + 'px', marginTop: dir > 0 ? '0px' : -len + 'px', transformOrigin: dir > 0 ? 'center top' : 'center bottom' });
-        if (!horiz) tr.classList.add('v');
-        const sc = horiz ? 'scaleX' : 'scaleY';
-        tr.animate([{ transform: `${sc}(0)`, opacity: 1 }, { transform: `${sc}(1)`, opacity: 1, offset: 0.55 }, { transform: `${sc}(1) ${horiz ? 'scaleY' : 'scaleX'}(.2)`, opacity: 0 }],
-          { duration: steps * 32 / 0.55, easing: 'linear' }).finished.then(() => tr.remove());
-        im.animate([
-          { transform: `translate(-50%,-50%) rotate(${rot}deg) scale(.7)` },
-          { transform: `translate(calc(-50% + ${horiz ? dist : 0}px), calc(-50% + ${horiz ? 0 : dist}px)) rotate(${rot}deg) scale(1.1)` },
-        ], { duration: steps * 32, easing: 'linear' }).finished.then(() => im.remove());
-        // 불꽃 꼬리
-        for (let k = 1; k <= steps; k++) setTimeout(() => {
-          const x = o.x + (horiz ? dir * k * S : 0), y = o.y + (horiz ? 0 : dir * k * S);
-          kp('spark_05', x, y, S * 1.1, '#bfe9ff', [{ transform: `scale(.5) rotate(${horiz ? 90 : 0}deg)`, opacity: 1 }, { transform: `scale(1.2) rotate(${horiz ? 90 : 0}deg)`, opacity: 0 }], { duration: 260 });
-        }, k * 32);
-      });
-      shake(4, 200);
-    }, FUSE.h);
+    // 랏코 검: 칼날이 반짝 떨리며 기를 모았다가 → 양쪽 끝까지 쫙 벰. 칼 방향으로 화면이 툭
+    inner?.animate([{ transform: 'scale(1) rotate(0)' }, { transform: `scale(1.25) rotate(${horiz ? -12 : 12}deg)`, offset: 0.55 }, { transform: `scale(1.45) rotate(${horiz ? 6 : -6}deg)` }],
+      { duration: fuse, easing: 'ease-in', fill: 'forwards' });
+    kp('star_09', o.x + S * 0.22, o.y - S * 0.22, S * 0.9, '#ffffff', [{ transform: 'scale(0) rotate(0)', opacity: 1 }, { transform: 'scale(1) rotate(90deg)', opacity: 1, offset: 0.6 }, { transform: 'scale(0) rotate(180deg)', opacity: 0 }], { duration: fuse });
+    later(() => {
+      Sound.play('line', 1.15 * pitch, 0.85);
+      Sound.play('swap', 1.7 * pitch, 0.7); // 칼 소리 (슥-)
+      kp('flare_01', o.x, o.y, S * 2.6, '#ffffff', [{ transform: 'scale(.3)', opacity: 1 }, { transform: 'scale(1.2)', opacity: 0 }], { duration: 260, easing: 'ease-out' });
+      const at = horiz ? ef.c : ef.r, n = horiz ? COLS : ROWS;
+      blade(o, 1, horiz, n - 1 - at, heavy);
+      blade(o, -1, horiz, at, heavy);
+      if (!Prefs.d.noShake) {
+        const d = 7 + Math.min(chain, 4);
+        app.animate([{ transform: 'none' }, { transform: horiz ? `translateX(${d}px)` : `translateY(${d}px)` }, { transform: horiz ? `translateX(${-d * 0.5}px)` : `translateY(${-d * 0.5}px)` }, { transform: 'none' }], { duration: 170, easing: 'ease-out' });
+      }
+      Haptic.tap(18);
+      if (!chain) Juice.stop(40);
+    }, fuse);
   } else if (ef.kind === 'bomb') {
     // 폭탄이 부풀며 빨갛게 지지직 → 쾅! 충격파가 둥글게 퍼짐
-    Sound.play('swap', 0.6, 0.6);
+    Sound.play('swap', 0.6 * pitch, 0.6);
     inner?.animate([
       { transform: 'scale(1)', filter: 'brightness(1)' },
       { transform: 'scale(1.25) rotate(-8deg)', filter: 'brightness(1.3) sepia(.4) hue-rotate(-30deg)', offset: 0.3 },
       { transform: 'scale(1.3) rotate(8deg)', filter: 'brightness(1.6) sepia(.6) hue-rotate(-30deg)', offset: 0.6 },
       { transform: 'scale(1.55)', filter: 'brightness(2.5)' },
-    ], { duration: FUSE.bomb, fill: 'forwards' });
-    for (let k = 0; k < 4; k++) setTimeout(() => kp('star_06', o.x + S * 0.25, o.y - S * 0.35, S * 0.7, '#ffcf3f', [{ transform: 'scale(.3)', opacity: 1 }, { transform: 'scale(1)', opacity: 0 }], { duration: 120 }), k * 70);
-    setTimeout(() => {
-      Sound.play('thwack', 0.6, 1);
-      Sound.play('line', 0.6, 0.9);
-      kp('light_02', o.x, o.y, S * 5, '#fff6c8', [{ transform: 'scale(.2)', opacity: 1 }, { transform: 'scale(1)', opacity: 0 }], { duration: 320, easing: 'ease-out' });
+    ], { duration: fuse, fill: 'forwards' });
+    for (let k = 0; k < 4; k++) later(() => kp('star_06', o.x + S * 0.25, o.y - S * 0.35, S * 0.7, '#ffcf3f', [{ transform: 'scale(.3)', opacity: 1 }, { transform: 'scale(1)', opacity: 0 }], { duration: 120 }), (k * fuse) / 4.5);
+    later(() => {
+      Sound.play('thwack', 0.6 * pitch, 1);
+      Sound.play('line', 0.6 * pitch, 0.9);
+      if (!heavy) kp('light_02', o.x, o.y, S * 5, '#fff6c8', [{ transform: 'scale(.2)', opacity: 1 }, { transform: 'scale(1)', opacity: 0 }], { duration: 320, easing: 'ease-out' });
       kx('explosion01', 'star_09', o.x, o.y, S * 4.2, '#ffd25a', [{ transform: 'scale(.2) rotate(0)', opacity: 1 }, { transform: 'scale(1.05) rotate(20deg)', opacity: 0 }], { duration: 380, easing: 'cubic-bezier(.2,.9,.3,1)' });
-      kx('glowlines', 'spark_05', o.x, o.y, S * 6, '#ffffff', [{ transform: 'scale(.4)', opacity: 1 }, { transform: 'scale(1.2)', opacity: 0 }], { duration: 320 });
-      kp('magic_02', o.x, o.y, S * 5, '#ffb347', [{ transform: 'scale(.2) rotate(0)', opacity: 1 }, { transform: 'scale(1) rotate(60deg)', opacity: 0 }], { duration: 520, easing: 'ease-out' });
-      kp('smoke_04', o.x, o.y, S * 3.4, '#e8dccb', [{ transform: 'scale(.3)', opacity: 0.9 }, { transform: 'scale(1.3)', opacity: 0 }], { duration: 800, easing: 'ease-out' });
       kp('circle_03', o.x, o.y, S * 5.5, '#ffe066', [{ transform: 'scale(.1)', opacity: 1 }, { transform: 'scale(1)', opacity: 0 }], { duration: 420, easing: 'cubic-bezier(.2,.8,.3,1)' });
-      burst(o.x, o.y, '#ffb347', 10);
-      confettiRing(o.x, o.y);
-      shards(o.x, o.y, ['#4a4262', '#ff9a4d', '#ffd84d'], 10, 10);
-      Juice.zoom(o.x, o.y, 1.06, 300);
-      Juice.stop(70);
-      shake(9, 320);
-      flash('#fff6a8', 0.35);
-    }, FUSE.bomb);
+      burst(o.x, o.y, '#ffb347', heavy ? 5 : 10);
+      if (!heavy) { // 한꺼번에 많이 터질 땐 여운 조각은 빼서 폰에서 안 끊기게
+        kx('glowlines', 'spark_05', o.x, o.y, S * 6, '#ffffff', [{ transform: 'scale(.4)', opacity: 1 }, { transform: 'scale(1.2)', opacity: 0 }], { duration: 320 });
+        kp('magic_02', o.x, o.y, S * 5, '#ffb347', [{ transform: 'scale(.2) rotate(0)', opacity: 1 }, { transform: 'scale(1) rotate(60deg)', opacity: 0 }], { duration: 520, easing: 'ease-out' });
+        kp('smoke_04', o.x, o.y, S * 3.4, '#e8dccb', [{ transform: 'scale(.3)', opacity: 0.9 }, { transform: 'scale(1.3)', opacity: 0 }], { duration: 800, easing: 'ease-out' });
+        confettiRing(o.x, o.y);
+        shards(o.x, o.y, ['#4a4262', '#ff9a4d', '#ffd84d'], 10, 10);
+      }
+      if (!chain) { Juice.zoom(o.x, o.y, 1.06, 300); Juice.stop(60); }
+      shake(7 + Math.min(chain, 4), 300);
+      flash('#fff6a8', chain ? 0.2 : 0.35);
+      Haptic.tap(30);
+    }, fuse);
   } else if (ef.kind === 'rainbow') {
     // 무지개가 빙글빙글 모았다가 → 같은 얼굴마다 빛줄기가 하나씩 닿음
     Sound.play('rainbow', 1);
-    inner?.animate([{ transform: 'scale(1) rotate(0)' }, { transform: 'scale(1.45) rotate(360deg)' }], { duration: FUSE.rainbow, easing: 'ease-in', fill: 'forwards' });
-    kp('twirl_01', o.x, o.y, S * 3, '#ffb3d1', [{ transform: 'scale(1.2) rotate(0)', opacity: 0 }, { transform: 'scale(.4) rotate(-240deg)', opacity: 1 }], { duration: FUSE.rainbow, easing: 'ease-in' });
+    inner?.animate([{ transform: 'scale(1) rotate(0)' }, { transform: 'scale(1.45) rotate(360deg)' }], { duration: fuse, easing: 'ease-in', fill: 'forwards' });
+    kp('twirl_01', o.x, o.y, S * 3, '#ffb3d1', [{ transform: 'scale(1.2) rotate(0)', opacity: 0 }, { transform: 'scale(.4) rotate(-240deg)', opacity: 1 }], { duration: fuse, easing: 'ease-in' });
     const colors = ['#ff8ab8', '#ffd84d', '#7cc4ec', '#a6d96a', '#b99cf0'];
     let k = 0;
     ef.times.forEach((t, cell) => {
@@ -1469,23 +1499,23 @@ function effectFx(ef) {
       if (r === ef.r && c === ef.c) return;
       beamTo(o, tileCenter(r, c), colors[k++ % colors.length], Math.max(0, t - 150));
     });
-    setTimeout(() => { flash('#ffffff', 0.4); shake(6, 300); }, FUSE.rainbow);
+    later(() => { flash('#ffffff', 0.4); shake(6, 300); }, fuse);
   } else if (ef.kind === 'plane') {
     // 비행기가 붕 떠올라 → 활처럼 날아가 → 꽂히면서 쾅
-    inner?.animate([{ transform: 'scale(1) rotate(0)' }, { transform: 'scale(1.3) rotate(-15deg) translateY(-20%)' }], { duration: FUSE.plane, fill: 'forwards' });
-    setTimeout(() => {
+    inner?.animate([{ transform: 'scale(1) rotate(0)' }, { transform: 'scale(1.3) rotate(-15deg) translateY(-20%)' }], { duration: fuse, fill: 'forwards' });
+    later(() => {
       NEAR4.forEach(([dr, dc]) => inside(ef.r + dr, ef.c + dc) && burst(o.x + dc * S, o.y + dr * S, '#bff3ff', 3));
       if (ef.target) {
         const to = tileCenter(ef.target[0], ef.target[1]);
-        planeFly(o, to, null, 720 - FUSE.plane).then(() => {
+        planeFly(o, to, null, 600).then(() => {
           kp('flare_01', to.x, to.y, S * 2.6, '#ffffff', [{ transform: 'scale(.3)', opacity: 1 }, { transform: 'scale(1.2)', opacity: 0 }], { duration: 300 });
           ringFx(to.x, to.y, S * 2.4, '#7cc4ec', 320);
           burst(to.x, to.y, '#bff3ff', 10);
-          Sound.play('thwack', 1.1, 0.8);
+          Sound.play('thwack', 1.1 * pitch, 0.8);
           shake(4, 160);
         });
       }
-    }, FUSE.plane);
+    }, fuse);
   }
 }
 
@@ -1575,7 +1605,7 @@ function confettiRing(x, y, n = 10) {
 
 // 조각이 포물선으로 튀어 떨어짐 (상자 나무 조각, 포장지, 흙, 물방울)
 function shards(x, y, colors, n = 8, size = 10, round = false) {
-  if (Prefs.d.light) return;
+  if (Prefs.d.light || fx.childElementCount > 110) return;
   if (fx.childElementCount > 60) n = Math.ceil(n / 2);
   for (let i = 0; i < n; i++) {
     const el = addFx('shard' + (round ? ' round' : ''), x, y);
@@ -1749,26 +1779,31 @@ function hitFx(res, T) {
 
 // 아이템마다 터지는 순서: 칸마다 '언제 터질지(ms)'를 정해 두고 그 시각에 터뜨림
 // 로켓은 출발점에서 양 끝으로 쓸고 가고, 폭탄은 부풀었다가 둥글게 퍼지고, 무지개는 빛줄기가 하나씩 닿고, 비행기는 날아가 꽂힘
-const FUSE = { h: 90, v: 90, bomb: 320, rainbow: 260, plane: 120 };
+const FUSE = { h: 110, v: 110, bomb: 320, rainbow: 260, plane: 120 };
+const BLADE_MS = 26; // 랏코 검이 한 칸 가는 데 (ms)
+// 연쇄: 다른 아이템에 맞은 아이템은 움찔(CHAIN_BEAT) 하고 짧은 심지로 터짐 → 따-따-딴-딴 박자가 들리고 보이게
+const CHAIN_BEAT = 120;
 function effectTimes(res, from) {
-  const T = new Map();
+  const T = new Map(), chainOf = new Map();
   const dist = (a, b) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
   res.effects.forEach(e => {
-    const base = T.get(key(e.r, e.c)) ?? 0;
-    const o = [e.r, e.c];
+    const hitAt = T.get(key(e.r, e.c)), o = [e.r, e.c];
+    e.chain = hitAt == null ? 0 : (chainOf.get(key(e.r, e.c)) || 0) + 1; // 몇 번째로 이어 터지는지
+    const base = hitAt == null ? 0 : hitAt + CHAIN_BEAT;
+    e.fuse = e.chain ? Math.round(FUSE[e.kind] * 0.55) : FUSE[e.kind]; // 이어 터질 땐 심지가 짧게
     const order = e.kind === 'rainbow' ? e.cells.slice().sort((x, y) => dist(x, o) - dist(y, o)) : e.cells;
     e.base = base;
     e.times = new Map();
     order.forEach(([r, c], idx) => {
       let d;
-      if (e.kind === 'h' || e.kind === 'v') d = FUSE.h + Math.abs(e.kind === 'h' ? c - e.c : r - e.r) * 32;
-      else if (e.kind === 'bomb') d = FUSE.bomb + dist([r, c], o) * 45;
-      else if (e.kind === 'rainbow') d = r === e.r && c === e.c ? FUSE.rainbow + order.length * 38 : FUSE.rainbow + idx * 38;
-      else if (e.kind === 'plane') d = e.target && r === e.target[0] && c === e.target[1] ? 720 : FUSE.plane;
+      if (e.kind === 'h' || e.kind === 'v') d = e.fuse + Math.abs(e.kind === 'h' ? c - e.c : r - e.r) * BLADE_MS;
+      else if (e.kind === 'bomb') d = e.fuse + dist([r, c], o) * 45;
+      else if (e.kind === 'rainbow') d = r === e.r && c === e.c ? e.fuse + order.length * 38 : e.fuse + idx * 38;
+      else if (e.kind === 'plane') d = e.target && r === e.target[0] && c === e.target[1] ? 600 + e.fuse : e.fuse;
       else d = 60;
       const k = key(r, c);
       e.times.set(k, d);
-      if (!T.has(k) || base + d < T.get(k)) T.set(k, base + d);
+      if (!T.has(k) || base + d < T.get(k)) { T.set(k, base + d); chainOf.set(k, e.chain); }
     });
   });
   // 아이템 조합으로 지운 칸: 조합한 자리에서 물결처럼
@@ -1805,10 +1840,14 @@ async function stepFx(res, combo, from = null) {
     zoneCell(unkey(k), ef.base, T.get(k) ?? ef.base + d, ef.kind);
   }));
   if (from) res.cleared.forEach(({ r, c }) => { const k = key(r, c); if (!zoned.has(k)) { zoned.add(k); zoneCell([r, c], 0, T.get(k) ?? 60, 'combo'); } });
+  FX_LOAD = res.effects.length;
   res.effects.forEach(ef => {
-    setTimeout(() => effectFx(ef), ef.base);
-    setTimeout(() => afterFx(ef), ef.base + Math.max(...ef.times.values()) + 60);
+    if (ef.chain) later(() => chainKick(ef), ef.base - CHAIN_BEAT); // 맞은 순간 움찔
+    later(() => effectFx(ef), ef.base);
+    later(() => afterFx(ef), ef.base + Math.max(...ef.times.values()) + 60);
   });
+  // 아이템 자리는 그 아이템이 터지는 순간에 사라짐 (맞자마자 사라지면 연쇄가 안 보임)
+  const fireAt = new Map(res.effects.map(ef => [key(ef.r, ef.c), ef.base + ef.fuse]));
   const n = res.cleared.length;
   let i = 0, last = 0;
   // 얼굴이 날아갈 곳: 토벌이면 괴물(회복 친구는 체력바), 일상 퍼즐이면 그 캐릭터 목표 칩
@@ -1830,14 +1869,15 @@ async function stepFx(res, combo, from = null) {
   res.cleared.forEach(({ r, c, tile }) => {
     const p = tileCenter(r, c);
     const color = tile.type >= 0 ? teamCh(tile.type).ring : '#ffd84d';
-    const delay = T.get(key(r, c)) ?? Math.min(i++ * 10, 150);
+    const delay = fireAt.get(key(r, c)) ?? T.get(key(r, c)) ?? Math.min(i++ * 10, 150);
     last = Math.max(last, delay);
     if (gatherTo.has(key(r, c))) return gatherTile(tile, p, gatherTo.get(key(r, c)), delay);
     setTimeout(() => {
       // 캐릭터 색 고리 + 반짝이 + 같은 색 방울이 포물선으로 톡톡
-      if (n < 16 || Math.random() < 0.5) ringFx(p.x, p.y, B.S * 1.5, color, 300);
-      burst(p.x, p.y, color, n > 15 ? 3 : 5);
-      shards(p.x, p.y, [color, '#ffffff'], n > 12 ? 2 : 4, 9, true);
+      // 한꺼번에 많이 터지면 칸마다 뿌리는 걸 줄임 (칸이 많아 화면은 이미 가득 차 보임)
+      if (n < 16 || Math.random() < 0.4) ringFx(p.x, p.y, B.S * 1.5, color, 300);
+      burst(p.x, p.y, color, n > 24 ? 2 : n > 15 ? 3 : 5);
+      if (n <= 24) shards(p.x, p.y, [color, '#ffffff'], n > 12 ? 2 : 4, 9, true);
     }, delay + 50);
     popTile(tile, delay, pushAt.get(key(r, c)), targetOf(tile), p);
   });
@@ -1896,7 +1936,7 @@ async function stepFx(res, combo, from = null) {
     updateGauges();
   })());
 
-  await sleep(Math.max(Math.min(n * 10, 150), stepFx.wait) + 220);
+  await sleep(Math.max(Math.min(n * 10, 150), stepFx.wait) + 110); // 마지막 칸이 터지고 조금만 쉬고 바로 떨어짐
 
   // 아이템이 생기는 순간 아주 잠깐 멈칫 + 통 (손맛)
   if (res.created.length) { Juice.stop(55); shake(3, 140); Haptic.tap(20); }
@@ -1980,6 +2020,7 @@ function hitMonster(dmg, ch, crit, k, eff = 1, carried = false) {
 
 // 이동 경로(박자 단위)를 따라 떨어뜨림. 장애물을 비켜 비스듬히 가는 것도 한 번에
 async function fall(moves) {
+  let end = 0;
   const ps = moves.map(({ tile: t, path, fresh }) => {
     if (fresh) makeTile(t);
     const t0 = path[0][2], span = Math.max(1, path[path.length - 1][2] - t0);
@@ -1987,12 +2028,16 @@ async function fall(moves) {
     place(t, r1, c1);
     // 새로 생긴 얼굴은 첫 칸 동안 서서히 나타남 (판 위쪽이 빈 모양이면 그 자리에 뿅 생기는 것처럼 보여서)
     const frames = path.map(([r, c, k], i) => ({ transform: tf(r, c), offset: (k - t0) / span, ...(fresh ? { opacity: i ? 1 : 0 } : {}) }));
-    // 떨어지는 게 눈에 보이게: 칸마다 조금 더 천천히, 점점 빨라지다 톡 착지
-    return t.el.animate(frames, { duration: 150 + span * 85, delay: t0 * 72, easing: 'cubic-bezier(.45,0,.9,.55)', fill: 'backwards' })
+    // 중력처럼 점점 빨라지다 톡 착지 (멀리 떨어질수록 조금 더 걸리지만 칸 수만큼 늘지는 않게)
+    const dur = 120 + Math.sqrt(span) * 80, delay = t0 * 42;
+    end = Math.max(end, delay + dur);
+    return t.el.animate(frames, { duration: dur, delay, easing: 'cubic-bezier(.5,0,.8,.45)', fill: 'backwards' })
       .finished.then(() => squish(t));
   });
-  if (moves.length) setTimeout(() => Sound.play('land', 1.3, 0.25), 320);
-  await Promise.all(ps);
+  if (moves.length) later(() => Sound.play('land', 1.3, 0.25), 220);
+  const all = Promise.all(ps);
+  fall.soon = sleep(end * 0.8); // 거의 다 내려앉으면 다음 매치를 시작 (마지막 착지와 겹쳐서 이어지게)
+  return all;
 }
 
 // ---------- 턴 끝 ----------
@@ -2534,61 +2579,81 @@ function actorHit(r, c, color, i = 0) {
   burst(p.x, p.y, color, 3);
   Sound.pop(Math.min(i, 11));
 }
-// 랏코: 십자 가운데에 폴짝 나타나 칼을 가로로 한 번, 세로로 한 번 휘두름. 칼이 지나간 자리에 하얀 칼자국이 남고 칸이 차례로 베임
+// 랏코: 줄 끝으로 훌쩍 물러나 웅크렸다가 → 반대편 끝까지 쓱 돌진(잔상·속도선, 가는 칼선) → 잠깐 정적 → 싹! 칼선이 쫙 벌어지며 칸이 베임
+// 가로로 한 번(왼→오), 세로로 한 번(위→아래). 십자 세 줄 폭이 베이니까 벌어지는 빛도 세 줄 폭
 async function rakkoSlash(ch, r0, c0) {
-  const S = B.S, p = tileCenter(r0, c0), im = new Image();
+  const S = B.S, im = new Image();
   im.src = artOf(ch.id);
   im.className = 'actor';
   im.style.width = S * 1.7 + 'px';
   fx.appendChild(im);
-  const at = (extra = '') => `translate(${p.x}px, ${p.y}px) translate(-50%, -78%) ${extra}`;
-  await im.animate([{ transform: at('scale(.2)'), opacity: 0 }, { transform: at('scale(1.15, .85)'), opacity: 1, offset: 0.6 }, { transform: at() }],
-    { duration: 260, easing: 'ease-out', fill: 'forwards' }).finished;
-  const lines = [[[r0, 0], [r0, COLS - 1], [...Array(COLS).keys()].map(c => [r0, c])], [[0, c0], [ROWS - 1, c0], [...Array(ROWS).keys()].map(r => [r, c0])]];
-  for (const [k, [from, to, cells]] of lines.entries()) {
-    // 휘두르기 전 살짝 몸을 뒤로 젖힘
-    await im.animate([{ transform: at() }, { transform: at(`rotate(${k ? 10 : -12}deg) scale(1.05, .95)`) }], { duration: 90, easing: 'ease-out', fill: 'forwards' }).finished;
-    slashLine(tileCenter(...from), tileCenter(...to), cells, ch.ring);
-    im.animate([{ transform: at(`rotate(${k ? -16 : 18}deg) scale(1.1, .9)`) }, { transform: at() }], { duration: 220, easing: 'ease-out', fill: 'forwards' });
-    await sleep(260);
+  const at = (p, extra = '') => `translate(${p.x}px, ${p.y}px) translate(-50%, -70%) ${extra}`;
+  const mid = tileCenter(r0, c0);
+  await im.animate([{ transform: at(mid, 'scale(.2)'), opacity: 0 }, { transform: at(mid, 'scale(1.15, .85)'), opacity: 1, offset: 0.6 }, { transform: at(mid) }],
+    { duration: 220, easing: 'ease-out', fill: 'forwards' }).finished;
+  let here = mid;
+  for (const horiz of [true, false]) {
+    const a = horiz ? tileCenter(r0, 0) : tileCenter(0, c0), b = horiz ? tileCenter(r0, COLS - 1) : tileCenter(ROWS - 1, c0);
+    const ux = horiz ? 1 : 0, uy = horiz ? 0 : 1;
+    const from = { x: a.x - ux * S * 0.9, y: a.y - uy * S * 0.9 }, to = { x: b.x + ux * S * 0.9, y: b.y + uy * S * 0.9 };
+    const lean = horiz ? -14 : 0, flip = horiz ? '' : 'rotate(-8deg)';
+    // 1) 줄 끝으로 훌쩍 물러남
+    await im.animate([{ transform: at(here) }, { transform: at({ x: (here.x + from.x) / 2, y: Math.min(here.y, from.y) - S * 0.8 }, 'scale(.9)'), offset: 0.5 }, { transform: at(from) }],
+      { duration: 150, easing: 'ease-in-out', fill: 'forwards' }).finished;
+    // 2) 칼을 뒤로 빼며 낮게 웅크림 + 칼끝 반짝
+    Sound.play('swap', 0.8, 0.5);
+    kp('star_09', from.x - ux * S * 0.3 + S * 0.2, from.y - uy * S * 0.3 - S * 0.5, S * 1.1, '#ffffff', [{ transform: 'scale(0) rotate(0)', opacity: 1 }, { transform: 'scale(1) rotate(90deg)', opacity: 1, offset: 0.5 }, { transform: 'scale(0) rotate(180deg)', opacity: 0 }], { duration: 200 });
+    await im.animate([{ transform: at(from) }, { transform: at(from, `${flip} rotate(${lean}deg) scale(1.18, .78)`) }], { duration: 120, easing: 'ease-out', fill: 'forwards' }).finished;
+    // 3) 쓱: 반대편 끝까지 돌진. 몸이 길게 늘어나고 잔상·속도선, 가는 칼선이 따라 그어짐
+    Sound.play('swap', 1.9, 1);
+    Sound.play('line', 1.5, 0.5);
+    const DASH = 110, len = Math.hypot(to.x - from.x, to.y - from.y), ang = horiz ? 0 : 90;
+    const stretch = horiz ? 'scale(1.45, .8)' : 'scale(.8, 1.35)';
+    im.animate([{ transform: at(from, `${flip} ${stretch}`) }, { transform: at(to, `${flip} ${stretch}`) }], { duration: DASH, easing: 'cubic-bezier(.7,0,.3,1)', fill: 'forwards' });
+    for (let k = 1; k <= 3; k++) later(() => { // 잔상
+      const g = new Image();
+      g.src = im.src;
+      g.className = 'actor ghost';
+      g.style.width = im.style.width;
+      fx.appendChild(g);
+      const u = k / 4, p = { x: from.x + (to.x - from.x) * u, y: from.y + (to.y - from.y) * u };
+      g.animate([{ transform: at(p, `${flip} ${stretch}`), opacity: 0.55 }, { transform: at(p, `${flip} ${stretch} scale(.92)`), opacity: 0 }], { duration: 220, easing: 'ease-out' }).finished.then(() => g.remove());
+    }, (DASH * k) / 4);
+    [-0.32, 0.3, -0.12, 0.14].forEach((off, k) => { // 속도선
+      const ln = addFx('speedline', from.x - uy * off * S, from.y + ux * off * S);
+      Object.assign(ln.style, { width: len + 'px', transform: `rotate(${ang}deg)` });
+      ln.animate([{ clipPath: 'inset(0 100% 0 0)', opacity: 0.9 }, { clipPath: 'inset(0 0 0 0)', opacity: 0.9, offset: 0.4 }, { clipPath: 'inset(0 0 0 100%)', opacity: 0 }], { duration: DASH * 2.4, delay: k * 12, easing: 'ease-out' }).finished.then(() => ln.remove());
+    });
+    const cut = document.createElement('i');
+    cut.className = 'slash-cut';
+    Object.assign(cut.style, { left: from.x + 'px', top: from.y + 'px', width: len + 'px', height: '4px', transform: `translateY(-50%) rotate(${ang}deg)` });
+    fx.appendChild(cut);
+    cut.animate([{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0 0 0)' }], { duration: DASH, easing: 'cubic-bezier(.7,0,.3,1)', fill: 'forwards' });
+    await sleep(DASH);
+    here = to;
+    // 4) 칼을 휘두른 자세로 잠깐 정적
+    im.animate([{ transform: at(to, `${flip} ${stretch}`) }, { transform: at(to, `${flip} rotate(${horiz ? 16 : 10}deg) scale(1.05, .95)`) }], { duration: 90, easing: 'ease-out', fill: 'forwards' });
+    await sleep(90);
+    // 5) 싹! 칼선이 세 줄 폭으로 쫙 벌어지며 번쩍, 칸마다 베인 자국, 화면이 칼과 수직으로 툭
+    Sound.play('thwack', 1.5, 0.9);
+    Sound.play('line', 1.9, 0.8);
+    Sound.play('hit2', 1.3, 0.7);
+    cut.animate([{ height: '4px', opacity: 1, filter: 'brightness(1.5)' }, { height: S * 2.6 + 'px', opacity: 0.95, offset: 0.25 }, { height: S * 2.9 + 'px', opacity: 0 }], { duration: 360, easing: 'ease-out', fill: 'forwards' }).finished.then(() => cut.remove());
+    const band = [];
+    for (let d = -1; d <= 1; d++) for (let i = 0; i < (horiz ? COLS : ROWS); i++) band.push(horiz ? [r0 + d, i] : [i, c0 + d]);
+    band.filter(([r, c]) => inside(r, c) && !hole(r, c)).forEach(([r, c], i) => later(() => {
+      const p = tileCenter(r, c), tilt = (i % 2 ? 1 : -1) * (20 + Math.random() * 25);
+      kp('slash_03', p.x, p.y, S * 1.3, '#ffffff', [{ transform: `rotate(${ang + 90 + tilt}deg) scale(.3, .2)`, opacity: 1 }, { transform: `rotate(${ang + 90 + tilt}deg) scale(1.2, 1)`, opacity: 1, offset: 0.4 }, { transform: `rotate(${ang + 90 + tilt}deg) scale(1.3, .5)`, opacity: 0 }], { duration: 240, easing: 'ease-out' });
+      if (Math.abs(horiz ? r - r0 : c - c0) === 0) actorHit(r, c, ch.ring, i % 7);
+    }, Math.abs(horiz ? c - c0 : r - r0) * 14));
+    if (!Prefs.d.noShake) app.animate([{ transform: 'none' }, { transform: horiz ? 'translateY(9px)' : 'translateX(9px)' }, { transform: horiz ? 'translateY(-5px)' : 'translateX(-5px)' }, { transform: 'none' }], { duration: 220, easing: 'ease-out' });
+    flash('#ffffff', 0.35);
+    Haptic.tap(40);
+    Juice.stop(70);
+    await sleep(200);
   }
-  await im.animate([{ transform: at() }, { transform: at('translateY(-30%) scale(.6)'), opacity: 0 }], { duration: 240, easing: 'ease-in', fill: 'forwards' }).finished;
+  await im.animate([{ transform: at(here) }, { transform: at(here, 'translateY(-30%) scale(.6)'), opacity: 0 }], { duration: 220, easing: 'ease-in', fill: 'forwards' }).finished;
   im.remove();
-}
-// 칼자국 한 줄: a→b로 하얀 빛줄기가 쫙 그어지고, 칼이 그 위를 휙 지나가며 칸을 차례로 벰
-function slashLine(a, b, cells, color) {
-  const S = B.S, dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) + S, ang = Math.atan2(dy, dx) * 180 / Math.PI;
-  const sx = a.x - (dx / Math.hypot(dx, dy)) * S / 2, sy = a.y - (dy / Math.hypot(dx, dy)) * S / 2;
-  const cut = document.createElement('i');
-  cut.className = 'slash-cut';
-  Object.assign(cut.style, { left: sx + 'px', top: sy + 'px', width: len + 'px', height: S * 0.42 + 'px', transform: `translateY(-50%) rotate(${ang}deg)` });
-  fx.appendChild(cut);
-  cut.animate([{ clipPath: 'inset(0 100% 0 0)', opacity: 1 }, { clipPath: 'inset(0 0 0 0)', opacity: 1, offset: 0.35 }, { clipPath: 'inset(0 0 0 0)', opacity: 0, transform: `translateY(-50%) rotate(${ang}deg) scaleY(.2)` }],
-    { duration: 420, easing: 'ease-out', fill: 'forwards' }).finished.then(() => cut.remove());
-  // 줄 아이템처럼: 칼을 따라 빛기둥이 쭉 뻗고, 은은한 빛이 잠깐 남았다가 사라짐
-  const rot = `rotate(${ang}deg)`;
-  const tr = addFx('rtrail', sx, sy);
-  Object.assign(tr.style, { width: len + 'px', height: S * 0.9 + 'px', marginTop: -S * 0.45 + 'px', transformOrigin: 'left center' });
-  tr.animate([{ transform: `${rot} scaleX(0)`, opacity: 1 }, { transform: `${rot} scaleX(1)`, opacity: 1, offset: 0.3 }, { transform: `${rot} scaleX(1) scaleY(.15)`, opacity: 0 }],
-    { duration: 540, easing: 'ease-out' }).finished.then(() => tr.remove());
-  const after = addFx('afterline', sx, sy);
-  Object.assign(after.style, { width: len + 'px', transformOrigin: 'left center', transform: rot });
-  after.animate([{ opacity: 0 }, { opacity: 0.9, offset: 0.25 }, { opacity: 0 }], { duration: 700, easing: 'ease-out' }).finished.then(() => after.remove());
-  const sw = new Image();
-  sw.src = ITEM('rocket');
-  sw.className = 'slash-sword';
-  sw.style.width = S * 1.1 + 'px';
-  fx.appendChild(sw);
-  const pos = (x, y) => `translate(${x}px, ${y}px) translate(-50%, -50%) rotate(${ang + 45}deg)`; // 그림은 칼끝이 오른쪽 위
-  sw.animate([{ transform: pos(sx, sy), opacity: 0 }, { opacity: 1, offset: 0.1 }, { opacity: 1, offset: 0.85 }, { transform: pos(sx + dx + (dx / Math.hypot(dx, dy)) * S, sy + dy + (dy / Math.hypot(dx, dy)) * S), opacity: 0 }],
-    { duration: 160, easing: 'cubic-bezier(.3,0,.2,1)', fill: 'forwards' }).finished.then(() => sw.remove());
-  Sound.play('swap', 1.4, 0.9);
-  shake(5, 180);
-  cells.forEach(([r, c], i) => setTimeout(() => {
-    actorHit(r, c, color, i % 7);
-    const p = tileCenter(r, c); // 지나간 칸마다 줄 아이템 같은 불꽃
-    kp('spark_05', p.x, p.y, S * 1.1, '#bfe9ff', [{ transform: `rotate(${ang + 90}deg) scale(.5)`, opacity: 1 }, { transform: `rotate(${ang + 90}deg) scale(1.2)`, opacity: 0 }], { duration: 260 });
-  }, 20 + i * (130 / cells.length)));
 }
 // 칸 목록 → 친구가 지나갈 길
 const linePath = cs => cs.map(([r, c]) => tileCenter(r, c));

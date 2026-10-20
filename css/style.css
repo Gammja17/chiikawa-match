@@ -1232,3 +1232,6 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .pic-grid .pf-ava { width: 48px; height: 48px; }
 .pic-grid small { width: 100%; font-size: 10px; color: var(--ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pic-grid button.on { background: var(--pink-l); box-shadow: inset 0 0 0 2px var(--pink); }
+/* 랏코 돌진: 잔상과 속도선 */
+.actor.ghost { z-index: 3; filter: brightness(1.6) saturate(.4); }
+.speedline { position: absolute; z-index: 5; height: 3px; margin-top: -1.5px; transform-origin: 0 50%; pointer-events: none; border-radius: 2px; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .95) 30%, #fff); box-shadow: 0 0 6px 1px rgba(207, 227, 255, .9); }
