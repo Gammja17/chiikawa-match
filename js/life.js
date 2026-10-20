@@ -465,10 +465,12 @@ const Life = {
     stageBg(run.kind === 'route' ? routeIdx('l', i) : -1);
     $('#waveInfo').innerHTML = '';
     const hc = CHARS[L.helper];
+    Sticker.make(artOf(hc.id)); // 스킬 컷인 그림을 미리 구워 둠
+    setTimeout(speedLines, 600);
     $('#lhHelper').style.setProperty('--ring', hc.ring);
     $('#lhHelper .pm-face').innerHTML = Meta.figure(hc.id, FACE(hc.id));
     layoutBoard();
-    boardEl.querySelectorAll('.tile').forEach(e => e.remove());
+    TilePool.reset();
     fx.innerHTML = '';
     Particles.clear();
     boardRand = st.seed ? League.rand(st.seed) : Math.random; // 주간 리그: 그 주 씨앗
@@ -586,7 +588,7 @@ const Life = {
       const to = centerOf($('#lhGoals .ing') || $('#lhGoals'));
       await Promise.all(got.map(({ r, c, tile }, i) => {
         const p = tileCenter(r, c);
-        tile.el.remove();
+        TilePool.put(tile);
         Sound.play('star', 1.2 + i * 0.1, 0.8);
         burst(p.x, p.y, '#ffd84d', 10);
         const im = new Image();

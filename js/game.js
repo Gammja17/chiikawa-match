@@ -306,8 +306,8 @@ function flyTile(src, from, to, delay, color, onHit) {
 function knockTile(t, x, y, push, delay) {
   const S = B.S, src = t.inner.querySelector('img')?.src;
   return sleep(delay).then(() => {
-    if (!t.el.isConnected) return;
-    t.el.remove();
+    if (!liveTile(t)) return;
+    TilePool.put(t);
     if (!src) return;
     const im = new Image();
     im.src = src;
@@ -334,12 +334,12 @@ function monsterPeck() {
   if (now - peckAt < 45) return;
   peckN = now - peckAt > 600 ? 0 : peckN + 1;
   peckAt = now;
-  monImg().animate([{ transform: 'scale(1)' }, { transform: `scale(.93,1.06) translate(${(Math.random() - 0.5) * 10}px, 2px)`, filter: 'brightness(1.8)' }, { transform: 'scale(1)' }], { duration: 120 });
+  monImg().animate([{ transform: 'scale(1)' }, { transform: `scale(.93,1.06) translate(${(Math.random() - 0.5) * 10}px, 2px)` }, { transform: 'scale(1)' }], { duration: 120 });
   Sound.play('hit' + (1 + (peckN % 3)), 1.15 + Math.min(peckN, 8) * 0.05, 0.35);
   Haptic.tap(6);
 }
 function chipBump(el) {
-  el?.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.28)', filter: 'brightness(1.3)' }, { transform: 'scale(1)' }], { duration: 220, easing: 'ease-out' });
+  el?.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.28)' }, { transform: 'scale(1)' }], { duration: 220, easing: 'ease-out' });
   Sound.play('pop', 1.8, 0.35);
 }
 // 일상 퍼즐: 목표 칩 (k: weed, box, char …, id: 캐릭터)
@@ -420,8 +420,9 @@ function shake(power = 6, dur = 300) {
 }
 // 손맛: 멈칫(히트스톱), 슬로모션, 클로즈업
 const Juice = {
-  // 연달아 멈칫하면 툭툭 끊겨서 뻑뻑함 → 0.26초 안에는 한 번만, 길어도 0.08초
+  // 멈칫은 폰에선 그냥 끊김으로 보여서, 괴물을 쓰러뜨릴 때 같은 큰 순간(0.1초 이상)만
   stop(ms = 70) {
+    if (ms < 100) return;
     const now = performance.now();
     if (now - (Juice.lastStop || 0) < 260) return;
     Juice.lastStop = now;
@@ -436,10 +437,12 @@ const Juice = {
     document.getAnimations().forEach(a => a.updatePlaybackRate(rate));
     setTimeout(() => document.getAnimations().forEach(a => a.updatePlaybackRate(1)), ms);
   },
+  // 쾅 하는 곳으로 화면이 툭 밀렸다 돌아옴. 화면 전체를 키우면(scale) 폰이 그림을 전부 다시 그려서 끊겨서, 옮기기(translate)만 씀
   zoom(x, y, scale = 1.08, dur = 420) {
     if (Prefs.d.noShake) return;
-    app.style.transformOrigin = `${x}px ${y}px`;
-    app.animate([{ transform: 'scale(1)' }, { transform: `scale(${scale})`, offset: 0.25 }, { transform: 'scale(1)' }], { duration: dur, easing: 'cubic-bezier(.2,.8,.3,1)' });
+    const a = cachedRect(app), k = (scale - 1) * 90, dx = (x / a.width - 0.5) * k, dy = (y / a.height - 0.5) * k + k * 0.4;
+    app.animate([{ transform: 'translate(0,0)' }, { transform: `translate(${dx}px,${dy}px)`, offset: 0.2 }, { transform: `translate(${-dx * 0.3}px,${-dy * 0.3}px)`, offset: 0.55 }, { transform: 'translate(0,0)' }],
+      { duration: Math.min(dur, 360), easing: 'ease-out' });
   },
 };
 function flash(color = '#ff4d6d', peak = 0.45) {
@@ -861,14 +864,45 @@ function squish(t, delay = 0) {
   ], { duration: 320, delay, easing: 'ease-out' }); // 쫀득: 눌렸다 → 쭉 → 살짝 출렁
 }
 
+// 칸 그림 재활용: 터진 칸을 지우지 않고 숨겨 뒀다가 새 칸으로 다시 씀
+// 칸마다 GPU 레이어라서, 새로 만들고 지우면 폰이 레이어를 다시 짜고 판 위를 통째로 다시 그려 끊김
+// 숨긴 지 0.7초 지난 것만 다시 씀 (터지는 연출이 늦게 손대도 새 칸에 안 닿게). 주인(__owner)이 바뀐 그림은 옛 칸이 못 건드림
+const TilePool = {
+  free: [],
+  put(t) {
+    const el = t?.el;
+    if (!el || el.__owner !== t || el.__pooled || !el.isConnected) return;
+    el.__pooled = performance.now();
+    el.style.visibility = 'hidden';
+    if (TilePool.free.length < 64) TilePool.free.push(el);
+    else el.remove();
+  },
+  take() {
+    const now = performance.now(), i = TilePool.free.findIndex(e => now - e.__pooled > 700 / Prefs.speed());
+    if (i < 0) return null;
+    const el = TilePool.free.splice(i, 1)[0];
+    if (!el.isConnected) return null;
+    el.getAnimations({ subtree: true }).forEach(a => a.cancel());
+    el.__pooled = 0;
+    el.removeAttribute('style');
+    el.innerHTML = '<div class="inner"></div>';
+    return el;
+  },
+  reset() { TilePool.free = []; boardEl.querySelectorAll('.tile').forEach(e => e.remove()); },
+};
+const liveTile = t => !!t.el?.isConnected && !t.el.__pooled && t.el.__owner === t;
 function makeTile(t) {
-  const el = document.createElement('div');
-  el.className = 'tile';
-  el.innerHTML = '<div class="inner"></div>';
+  let el = TilePool.take();
+  if (!el) {
+    el = document.createElement('div');
+    el.className = 'tile';
+    el.innerHTML = '<div class="inner"></div>';
+    boardEl.appendChild(el);
+  }
+  el.__owner = t;
   t.el = el;
   t.inner = el.firstChild;
   refreshTile(t);
-  boardEl.appendChild(el);
   return t;
 }
 // 거품 칸끼리 한 덩어리로: n-t/r/b/l = 그쪽 이웃도 거품이라 경계 없이 이어 그림 (시럽처럼)
@@ -1055,11 +1089,13 @@ async function startStage(i) {
   stageTitle(routeIdx('b', i), STAGES[i].name);
   buildParty();
   layoutBoard();
-  boardEl.querySelectorAll('.tile').forEach(e => e.remove());
+  TilePool.reset();
   fx.innerHTML = '';
   Particles.clear();
   boardRand = Math.random;
   B.grid = Board.create();
+  B.team.slice(0, B.real).forEach(k => Sticker.make(artOf(CHARS[k].id))); // 스킬 컷인 그림을 미리 구워 둠
+  setTimeout(speedLines, 600);
   spawnMonster(false);
   updateTeam();
   if (STORY[i] && Save.data.stars[i] == null) await playStory(STORY[i]);
@@ -1294,7 +1330,7 @@ async function cascade(swapped, forced, origin = null, depth = 0) {
     B.maxCombo = Math.max(B.maxCombo || 0, combo);
     Achieve.best('combo', combo);
     if (combo === 5) Daily.add('combo5');
-    if (combo === 5 && !B.fever) await feverShow();
+    if (combo === 5 && !B.fever) feverShow(); // 연쇄는 멈추지 않고 그 위에 겹쳐서
     await stepFx(res, combo, combo === 1 ? origin : null);
     landed = fall(Board.gravity(B.grid));
     await Promise.race([landed, fall.soon]);
@@ -1361,7 +1397,8 @@ async function comboFx(combo) {
   flash('#fff6a8', 0.5);
   shake(8, 350);
   const ring = addFx('ring', p.x, p.y);
-  ring.animate([{ width: '0px', height: '0px', opacity: 1 }, { width: B.S * 8 + 'px', height: B.S * 8 + 'px', opacity: 0 }], { duration: 500, easing: 'ease-out' }).finished.then(() => ring.remove());
+  Object.assign(ring.style, { width: B.S * 8 + 'px', height: B.S * 8 + 'px', borderWidth: '2px' });
+  ring.animate([{ transform: 'translate(-50%,-50%) scale(0)', opacity: 1 }, { transform: 'translate(-50%,-50%) scale(1)', opacity: 0 }], { duration: 500, easing: 'ease-out' }).finished.then(() => ring.remove());
   comboArt(combo.kind, p);
   const k = combo.kind, big = k.startsWith('rainbow') ? 'sparkles' : k === 'bomb+bomb' ? 'spiky-explosion' : /h|v/.test(k.replace('rainbow', '')) ? 'crossed-slashes' : 'burst';
   sk(big, p.x, p.y, B.S * 4.6, big === 'sparkles' ? '#fff3a8' : '#ffffff', snapFrames(Math.random() * 20 - 10, 0.3, 1.1, 12), { duration: 420, easing: 'cubic-bezier(.2,.9,.3,1)' }, big === 'burst' ? null : '#4a4262');
@@ -1426,9 +1463,10 @@ function afterFx(ef) {
 function beamTo(from, to, color, delay = 0) {
   const el = addFx('ray', from.x, from.y);
   const dx = to.x - from.x, dy = to.y - from.y;
-  Object.assign(el.style, { width: Math.hypot(dx, dy) + 'px', transform: `rotate(${Math.atan2(dy, dx)}rad)` });
+  const rot = `rotate(${Math.atan2(dy, dx)}rad)`;
+  Object.assign(el.style, { width: Math.hypot(dx, dy) + 'px', transform: rot });
   el.style.setProperty('--c', color);
-  el.animate([{ clipPath: 'inset(0 100% 0 0)', opacity: 1 }, { clipPath: 'inset(0 0 0 0)', opacity: 1, offset: 0.5 }, { clipPath: 'inset(0 0 0 0)', opacity: 0 }],
+  el.animate([{ transform: `${rot} scaleX(0)`, opacity: 1 }, { transform: `${rot} scaleX(1)`, opacity: 1, offset: 0.5 }, { transform: `${rot} scaleX(1)`, opacity: 0 }],
     { duration: 300, delay, fill: 'backwards' }).finished.then(() => el.remove());
 }
 
@@ -1452,7 +1490,7 @@ function blade(o, dir, horiz, steps, light) {
   cut.className = 'slash-cut';
   Object.assign(cut.style, { left: o.x + 'px', top: o.y + 'px', width: len + 'px', height: S * 0.34 + 'px', transform: `translateY(-50%) rotate(${ang}deg)` });
   fx.appendChild(cut);
-  cut.animate([{ clipPath: 'inset(0 100% 0 0)', opacity: 1 }, { clipPath: 'inset(0 0 0 0)', opacity: 1, offset: 0.45 }, { clipPath: 'inset(0 0 0 0)', opacity: 0, transform: `translateY(-50%) rotate(${ang}deg) scaleY(.15)` }],
+  cut.animate([{ transform: `translateY(-50%) rotate(${ang}deg) scaleX(0)`, opacity: 1 }, { transform: `translateY(-50%) rotate(${ang}deg) scaleX(1)`, opacity: 1, offset: 0.45 }, { transform: `translateY(-50%) rotate(${ang}deg) scaleX(1) scaleY(.15)`, opacity: 0 }],
     { duration: dur / 0.45, easing: 'linear', fill: 'forwards' }).finished.then(() => cut.remove());
   const sw = new Image();
   sw.src = ITEM('rocket');
@@ -1563,7 +1601,7 @@ function effectFx(ef) {
 // 아이템이 될 얼굴: 살짝 부풀었다가 아이템 자리로 쏙 빨려 들어감
 const GATHER_MS = 180;
 function gatherTile(t, from, to, delay) {
-  if (!t.el.isConnected) return;
+  if (!liveTile(t)) return;
   const dx = to.x - from.x, dy = to.y - from.y;
   t.el.style.zIndex = 4;
   t.inner.animate([
@@ -1571,11 +1609,11 @@ function gatherTile(t, from, to, delay) {
     { transform: `translate(${-dx * 0.08}px, ${-dy * 0.08}px) scale(1.12)`, offset: 0.3 },
     { transform: `translate(${dx}px, ${dy}px) scale(.4)`, opacity: 0.8 },
   ], { duration: GATHER_MS, delay: Math.min(delay, 40), easing: 'cubic-bezier(.55,0,.85,.4)', fill: 'forwards' });
-  setTimeout(() => t.el.remove(), (Math.min(delay, 40) + GATHER_MS + 20) / Prefs.speed());
+  setTimeout(() => TilePool.put(t), (Math.min(delay, 40) + GATHER_MS + 20) / Prefs.speed());
 }
 function popTile(t, delay, push = null, to = null, at = null) {
   const { x, y } = at || centerOf(t.el);
-  if (t.el.isConnected && t.type >= 0) {
+  if (liveTile(t) && t.type >= 0) {
     if (push && !to) return knockTile(t, x, y, push, delay);
     const S = B.S, src = t.inner.querySelector('img')?.src, color = teamCh(t.type)?.ring || '#ffd84d';
     const fly = to && flyCount < 16;
@@ -1590,12 +1628,12 @@ function popTile(t, delay, push = null, to = null, at = null) {
       kx('poof2', 'circle_05', x, y, S * 1.75, color, [{ transform: 'scale(.3) rotate(0)', opacity: 0.85 }, { transform: 'scale(1.1) rotate(30deg)', opacity: 0 }], { duration: 300, easing: 'ease-out' });
       popSparkle(x, y, color);
       if (fly) {
-        t.el.remove();
+        TilePool.put(t);
         flyTile(src, { x, y: y - S * 0.16 }, to.at, 0, color, to.hit);
       } else {
         kx(Math.random() < 0.5 ? 'heart' : 'star', 'star_06', x, y - S * 0.2, S * 0.62, color,
           [{ transform: 'translateY(0) scale(.4)', opacity: 1 }, { transform: `translateY(${-S * 0.9}px) scale(1)`, opacity: 0 }], { duration: 520, easing: 'ease-out' });
-        setTimeout(() => t.el.remove(), 90);
+        setTimeout(() => TilePool.put(t), 90);
       }
     });
   }
@@ -1604,7 +1642,7 @@ function popTile(t, delay, push = null, to = null, at = null) {
     { transform: 'scale(1.18,.86)', opacity: 1, offset: 0.2 },
     { transform: 'scale(1.38)', opacity: 1, offset: 0.45 },
     { transform: 'scale(0) rotate(30deg)', opacity: 0 },
-  ], { duration: 260, delay, easing: 'ease-in', fill: 'forwards' }).finished.then(() => t.el.remove());
+  ], { duration: 260, delay, easing: 'ease-in', fill: 'forwards' }).finished.then(() => TilePool.put(t));
 }
 
 // 얼굴이 깨질 때: 하얀 번쩍 + 친구 색 고리 + 작은 별·하트 셋이 톡 튀었다 떨어짐
@@ -1805,7 +1843,7 @@ function hitFx(res, T) {
       const d = cells[key(r, c)];
       d.className = cellClass(r, c);
       NEAR4.forEach(([dr, dc]) => inside(r + dr, c + dc) && (cells[key(r + dr, c + dc)].className = cellClass(r + dr, c + dc))); // 이웃 시럽과 이어지게
-      d.animate([{ transform: 'scale(.3)', filter: 'brightness(1.6)' }, { transform: 'scale(1.18)', offset: 0.6 }, { transform: 'scale(1)', filter: 'brightness(1)' }], { duration: 360, easing: 'ease-out' });
+      d.animate([{ transform: 'scale(.3)' }, { transform: 'scale(1.18)', offset: 0.6 }, { transform: 'scale(1)' }], { duration: 360, easing: 'ease-out' });
       const p = tileCenter(r, c);
       shards(p.x, p.y, ['#ffb347', '#ffd27a', '#e8912d'], 4, 8, true);
     }, 80 + Math.min(i * 30, 300)));
@@ -2024,11 +2062,12 @@ function hitMonster(dmg, ch, crit, k, eff = 1, carried = false) {
   }
   const m = mon.el.img;
   m.animate([
-    { transform: 'translateX(0) scale(1)', filter: 'brightness(2.2)' },
-    { transform: 'translateX(-10px) scale(.9,1.08)', filter: 'brightness(1.6)', offset: 0.3 },
+    { transform: 'translateX(0) scale(1)' },
+    { transform: 'translateX(-10px) scale(.9,1.08)', offset: 0.3 },
     { transform: 'translateX(7px) scale(1.05,.95)', offset: 0.65 },
-    { transform: 'translateX(0) scale(1)', filter: 'brightness(1)' },
+    { transform: 'translateX(0) scale(1)' },
   ], { duration: 280 });
+  m.animate([{ filter: 'brightness(2)' }, { filter: 'none' }], { duration: 90, easing: 'step-end' }); // 하얗게 번쩍: 켰다 끔 (매 프레임 다시 그리지 않게)
   Sound.play('hit' + (1 + (k % 3)), 1 + Math.random() * 0.15, 0.8);
   Haptic.tap(crit ? 30 : 15);
   if (crit || eff > 1) Juice.stop(crit ? 90 : 50);
@@ -2046,10 +2085,7 @@ function hitMonster(dmg, ch, crit, k, eff = 1, carried = false) {
   ringFx(x, y, crit ? 150 : 90, crit ? '#ffd84d' : '#ffffff', 300);
   sk('spiky-explosion', x, y, crit ? 120 : eff > 1 ? 96 : 72, crit ? '#ffd84d' : ch.ring, snapFrames(Math.random() * 360, 0.3, 1.1, 20), { duration: 230, easing: 'ease-out' });
   if (crit) sk('explosion-rays', x, y, 210, '#fff6c8', snapFrames(Math.random() * 30, 0.4, 1.15, 15), { duration: 300, easing: 'ease-out' }, null);
-  if (crit || eff > 1) {
-    app.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.025)' }, { transform: 'scale(1)' }], { duration: 160, easing: 'ease-out' });
-    flash('#ffffff', 0.25);
-  }
+  if (crit || eff > 1) flash('#ffffff', 0.25);
   burst(x, y, ch.ring, 5);
   const mark = eff > 1 ? ' ▲' : eff < 1 ? ' ▼' : '';
   floatNum(x, y, `${dmg}` + mark, ch.ring, crit || eff > 1 ? 'crit' : '');
@@ -2397,6 +2433,58 @@ function specialCut(el, dim, body, sp, ch) {
   }, 560);
 }
 
+// 흰 테두리를 미리 구워 둔 친구 그림 (drop-shadow 필터 4겹은 폰이 움직일 때마다 다시 그려서 끊김)
+// make(src)로 미리 굽고, get(src)는 다 구웠으면 그림 주소, 아니면 null
+const Sticker = {
+  done: new Map(), busy: new Set(),
+  get: src => Sticker.done.get(src) || null,
+  make(src, px = 3, base = 250) {
+    if (Sticker.done.has(src) || Sticker.busy.has(src)) return;
+    Sticker.busy.add(src);
+    const im = new Image();
+    im.onload = () => {
+      const k = 2, t = Math.ceil(((px * im.naturalHeight) / base) * k) + 1, w = im.naturalWidth * k, h = im.naturalHeight * k;
+      const sil = document.createElement('canvas');
+      sil.width = w; sil.height = h;
+      const g = sil.getContext('2d');
+      g.drawImage(im, 0, 0, w, h);
+      g.globalCompositeOperation = 'source-in';
+      g.fillStyle = '#fff';
+      g.fillRect(0, 0, w, h);
+      const cv = document.createElement('canvas');
+      cv.width = w + t * 2; cv.height = h + t * 2;
+      const o = cv.getContext('2d');
+      for (let a = 0; a < 16; a++) o.drawImage(sil, t + Math.cos((a / 16) * Math.PI * 2) * t, t + Math.sin((a / 16) * Math.PI * 2) * t);
+      o.drawImage(im, t, t, w, h);
+      cv.toBlob(b => { Sticker.busy.delete(src); if (b) Sticker.done.set(src, { url: URL.createObjectURL(b), pad: t / (h + t * 2) }); });
+    };
+    im.onerror = () => Sticker.busy.delete(src);
+    im.src = src;
+  },
+};
+
+// 컷인 뒤 집중선: 한 번만 그림으로 그려 둠 (CSS 그라데이션+마스크로 화면 두 배 크기 원을 돌리면 폰이 매번 크게 다시 그림)
+function speedLines() {
+  if (speedLines.url) return speedLines.url;
+  const N = 1024, cv = document.createElement('canvas');
+  cv.width = cv.height = N;
+  const g = cv.getContext('2d'), c = N / 2;
+  g.fillStyle = 'rgba(255,255,255,.22)';
+  for (let k = 0; k < 40; k++) {
+    const a0 = (k * 9 * Math.PI) / 180, a1 = a0 + (2 * Math.PI) / 180;
+    g.beginPath(); g.moveTo(c, c); g.arc(c, c, c, a0, a1); g.closePath(); g.fill();
+  }
+  // 가운데는 비우고 바깥으로 갈수록 진하게 (예전 마스크와 같은 모양)
+  g.globalCompositeOperation = 'destination-in';
+  const m = g.createRadialGradient(c, c, 0, c, c, c);
+  m.addColorStop(0.16, 'rgba(0,0,0,0)');
+  m.addColorStop(0.3, 'rgba(0,0,0,1)');
+  m.addColorStop(1, 'rgba(0,0,0,1)');
+  g.fillStyle = m;
+  g.fillRect(0, 0, N, N);
+  return (speedLines.url = cv.toDataURL('image/png'));
+}
+
 async function cutIn(ch) {
   // 화면이 어두워지고 집중선이 돌며 → 캐릭터 색 띠가 쾅 → 친구가 튀어나와 한마디 → 스킬 이름이 한 글자씩 → 번쩍 하고 빠짐
   const el = document.createElement('div');
@@ -2404,10 +2492,10 @@ async function cutIn(ch) {
   el.style.setProperty('--ring', ch.ring);
   const sp = specialOf(ch.id); // 스페셜 옷: 그 옷이 나온 애니 장면이 뒤에 깔리고, 친구가 통통 튀며 별이 터짐
   if (sp) { el.classList.add('special'); el.style.setProperty('--scene', `url(${SCENE(sp.special)})`); }
-  const sk = skillOf(ch.id);
+  const sk = skillOf(ch.id), baked = Sticker.get(artOf(ch.id));
   const letters = [...sk.name].map((t, k) => `<i style="animation-delay:${0.32 + k * 0.05}s">${t === ' ' ? '&nbsp;' : t}</i>`).join('');
-  el.innerHTML = `<div class="dim"></div><div class="lines"></div><div class="band"><span></span></div><div class="band2"></div>
-    <img class="body" src="${artOf(ch.id)}"><div class="say">${sk.say}</div><div class="sname">${letters}</div><div class="streak"></div>`;
+  el.innerHTML = `<div class="dim"></div><img class="lines" src="${speedLines()}" alt=""><div class="band"><span></span></div><div class="band2"></div>
+    <img class="body${baked ? ' baked' : ''}" src="${baked ? baked.url : artOf(ch.id)}"><div class="say">${sk.say}</div><div class="sname">${letters}</div><div class="streak"></div>`;
   app.appendChild(el);
   const [dim, lines, band, band2, body, say, sname, streak] = el.children;
   if (sp) specialCut(el, dim, body, sp, ch);
@@ -2441,8 +2529,8 @@ async function cutIn(ch) {
   setTimeout(() => Sound.play('pop', 1.4, 0.7), 300);
   [...sname.children].forEach((_, k) => setTimeout(() => Sound.play('pop', 1.6 + k * 0.08, 0.35), 320 + k * 50));
   // 띠 위 물방울 무늬가 흐름
-  band.firstChild.animate([{ backgroundPosition: '0 0' }, { backgroundPosition: '120px 0' }], { duration: 1000, iterations: 2 });
-  await sleep(980);
+  band.firstChild.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(120px)' }], { duration: 1000, iterations: 2 }); // 무늬 판을 옮김 (배경 위치를 바꾸면 매 프레임 다시 그림)
+  await sleep(860);
   Sound.play('line', 1.3, 0.6);
   streak.animate([
     { opacity: 1, transform: 'rotate(-8deg) scaleX(0)' },
@@ -2667,13 +2755,15 @@ async function rakkoSlash(ch, r0, c0) {
     [-0.32, 0.3, -0.12, 0.14].forEach((off, k) => { // 속도선
       const ln = addFx('speedline', from.x - uy * off * S, from.y + ux * off * S);
       Object.assign(ln.style, { width: len + 'px', transform: `rotate(${ang}deg)` });
-      ln.animate([{ clipPath: 'inset(0 100% 0 0)', opacity: 0.9 }, { clipPath: 'inset(0 0 0 0)', opacity: 0.9, offset: 0.4 }, { clipPath: 'inset(0 0 0 100%)', opacity: 0 }], { duration: DASH * 2.4, delay: k * 12, easing: 'ease-out' }).finished.then(() => ln.remove());
+      ln.animate([{ transform: `rotate(${ang}deg) translateX(0) scaleX(0)`, opacity: 0.9 }, { transform: `rotate(${ang}deg) translateX(0) scaleX(1)`, opacity: 0.9, offset: 0.4 }, { transform: `rotate(${ang}deg) translateX(${len}px) scaleX(0)`, opacity: 0 }], { duration: DASH * 2.4, delay: k * 12, easing: 'ease-out', fill: 'backwards' }).finished.then(() => ln.remove());
     });
     const cut = document.createElement('i');
     cut.className = 'slash-cut';
-    Object.assign(cut.style, { left: from.x + 'px', top: from.y + 'px', width: len + 'px', height: '4px', transform: `translateY(-50%) rotate(${ang}deg)` });
+    // 높이를 바꾸면 매 프레임 다시 그려서, 처음부터 벌어진 크기로 두고 가늘게 눌러 둠 (scaleY)
+    const H = S * 2.9, thin = 4 / H, base = `translateY(-50%) rotate(${ang}deg)`;
+    Object.assign(cut.style, { left: from.x + 'px', top: from.y + 'px', width: len + 'px', height: H + 'px', transform: `${base} scale(0, ${thin})` });
     fx.appendChild(cut);
-    cut.animate([{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0 0 0)' }], { duration: DASH, easing: 'cubic-bezier(.7,0,.3,1)', fill: 'forwards' });
+    cut.animate([{ transform: `${base} scale(0, ${thin})` }, { transform: `${base} scale(1, ${thin})` }], { duration: DASH, easing: 'cubic-bezier(.7,0,.3,1)', fill: 'forwards' });
     await sleep(DASH);
     here = to;
     // 4) 칼을 휘두른 자세로 잠깐 정적
@@ -2683,7 +2773,7 @@ async function rakkoSlash(ch, r0, c0) {
     Sound.play('thwack', 1.5, 0.9);
     Sound.play('line', 1.9, 0.8);
     Sound.play('hit2', 1.3, 0.7);
-    cut.animate([{ height: '4px', opacity: 1, filter: 'brightness(1.5)' }, { height: S * 2.6 + 'px', opacity: 0.95, offset: 0.25 }, { height: S * 2.9 + 'px', opacity: 0 }], { duration: 360, easing: 'ease-out', fill: 'forwards' }).finished.then(() => cut.remove());
+    cut.animate([{ transform: `${base} scale(1, ${thin})`, opacity: 1 }, { transform: `${base} scale(1, .9)`, opacity: 0.95, offset: 0.25 }, { transform: `${base} scale(1, 1)`, opacity: 0 }], { duration: 360, easing: 'ease-out', fill: 'forwards' }).finished.then(() => cut.remove());
     const band = [];
     for (let d = -1; d <= 1; d++) for (let i = 0; i < (horiz ? COLS : ROWS); i++) band.push(horiz ? [r0 + d, i] : [i, c0 + d]);
     band.filter(([r, c]) => inside(r, c) && !hole(r, c)).forEach(([r, c], i) => later(() => {
@@ -3128,7 +3218,7 @@ async function feverShow() {
   const dim = document.createElement('div');
   dim.className = 'dim';
   el.appendChild(dim);
-  dim.animate([{ opacity: 0 }, { opacity: 0.6 }], { duration: 160, fill: 'forwards' });
+  dim.animate([{ opacity: 0 }, { opacity: 0.3 }], { duration: 160, fill: 'forwards' }); // 연쇄가 계속 보이게 옅게
   Sound.play('rainbow', 1.1, 1);
   Sound.play('jingle_skill', 1.25, 0.8);
   [0, 4, 7, 12, 16, 19, 24].forEach((s, i) => setTimeout(() => Sound.play('pop', Math.pow(2, s / 12), 0.7), 80 + i * 70));
@@ -3156,7 +3246,7 @@ async function feverShow() {
   const W = app.clientWidth, H = app.clientHeight;
   for (let i = 0; i < 6; i++) setTimeout(() => burst(W * (0.15 + Math.random() * 0.7), H * (0.2 + Math.random() * 0.5), ['#ff8ab8', '#ffd84d', '#9be7ff', '#b99cf0'][i % 4], 10), 150 + i * 140);
   shake(6, 300);
-  await sleep(1300);
+  await sleep(1150);
   await el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, fill: 'forwards' }).finished;
   el.remove();
 }
