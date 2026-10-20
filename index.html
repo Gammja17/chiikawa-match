@@ -24,7 +24,7 @@
 <link rel="icon" href="assets/img/app/icon-192.png?v=2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poor+Story&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=100">
+<link rel="stylesheet" href="css/style.css?v=101">
 </head>
 <body>
 <div id="app">
@@ -56,6 +56,7 @@
     <div id="mapScroll"><div id="mapPath"></div></div>
     <button id="btnProfile" aria-label="프로필"></button>
     <button id="btnMission" aria-label="오늘의 미션"><img src="assets/img/items/medal.png?v=2" alt=""><span>미션</span><i></i></button>
+    <button id="btnNotice" aria-label="공지사항"><img src="assets/img/items/star.png?v=2" alt=""><span>공지</span><i></i></button>
     <nav class="dock">
       <button id="btnHouse"><img src="assets/img/items/house.png?v=2" alt=""><span>집</span></button>
       <button id="btnGacha"><img src="assets/img/items/gift.png?v=2" alt=""><span>가게</span></button>
@@ -259,6 +260,7 @@
         <button data-s="fast">빠른 진행</button>
       </div>
       <button data-s="feedback" class="p-reset p-credits">의견 보내기</button>
+      <button data-s="install" class="p-reset p-credits">앱처럼 쓰기 (홈 화면에 추가)</button>
       <button data-s="credits" class="p-reset p-credits">만든 사람·출처</button>
       <button data-s="reset" class="p-reset">게임 초기화</button>
       <div class="modal-btns"><button data-s="close" class="big-btn">닫기</button></div>
@@ -295,11 +297,11 @@ addEventListener('unhandledrejection', e => window.__errs.push(['promise', Strin
 <script src="js/board.js?v=32"></script>
 <script src="js/particles.js?v=1"></script>
 <script src="js/prefs.js?v=3"></script>
-<script src="js/game.js?v=95"></script>
+<script src="js/game.js?v=96"></script>
 <script src="js/debuff.js?v=2"></script>
 <script src="js/life.js?v=59"></script>
 <script src="js/chapters.js?v=3"></script>
-<script src="js/tutor.js?v=47"></script>
+<script src="js/tutor.js?v=48"></script>
 <script src="js/meta.js?v=55"></script>
 <script src="js/firebase-config.js?v=29"></script>
 <script src="js/net.js?v=39"></script>
@@ -309,6 +311,7 @@ addEventListener('unhandledrejection', e => window.__errs.push(['promise', Strin
 <script src="js/aff.js?v=4"></script>
 <script src="js/guard.js?v=2"></script>
 <script src="js/survey.js?v=4"></script>
+<script src="js/notice.js?v=1"></script>
 <script>if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(() => {});</script>
 </body>
 </html>

@@ -116,6 +116,8 @@ function openSettings() {
     el.classList.remove('show');
     modal({ title: '만든 사람·출처', char: 'hachiware', text: CREDITS, btn1: '닫기', on1: openSettings });
   };
+  // 홈 화면에 추가하는 법 (js/notice.js)
+  el.querySelector('[data-s=install]').onclick = () => { Sound.play('click'); el.classList.remove('show'); Install.open('settings'); };
   // 의견 보내기: 별점 + 하고 싶은 말 (js/survey.js)
   el.querySelector('[data-s=feedback]').onclick = () => {
     Sound.play('click');

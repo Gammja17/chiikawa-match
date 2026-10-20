@@ -1239,3 +1239,19 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .speedline { position: absolute; z-index: 5; height: 3px; margin-top: -1.5px; transform-origin: 0 50%; pointer-events: none; border-radius: 2px; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .95) 30%, #fff); box-shadow: 0 0 6px 1px rgba(207, 227, 255, .9); }
 /* 잠깐 뜨는 알림 (자동 가볍게 등) */
 .toast { position: absolute; left: 50%; bottom: 88px; z-index: 60; width: max-content; max-width: 86%; padding: 9px 14px; border-radius: 14px; background: rgba(74, 66, 98, .92); color: #fff; font-size: 14px; line-height: 1.35; text-align: center; pointer-events: none; transform: translateX(-50%); }
+/* 공지사항: 미션 버튼 아래, 새 글이 있으면 빨간 점 */
+#btnNotice { position: absolute; left: 18px; top: 186px; z-index: 5; width: 58px; padding: 6px 0 4px; border-radius: 16px; background: var(--paper); box-shadow: var(--sh); display: flex; flex-direction: column; align-items: center; font-family: var(--head); font-size: 14px; line-height: 1.1; }
+#btnNotice img { width: 30px; height: 30px; }
+#btnNotice i { position: absolute; right: -3px; top: -3px; width: 14px; height: 14px; border-radius: 50%; background: #ff5d7e; border: 2px solid #fff; display: none; }
+#btnNotice.new i { display: block; }
+.notice-list { max-height: 52vh; overflow-y: auto; text-align: left; padding-right: 4px; }
+.notice { margin: 0 0 12px; padding: 10px 12px; border-radius: 14px; background: color-mix(in srgb, var(--ring) 10%, #fff); }
+.notice.first { background: color-mix(in srgb, var(--ring) 22%, #fff); }
+.notice h3 { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 0 0 6px; font-family: var(--head); font-size: 19px; }
+.notice h3 small { font-family: inherit; font-size: 13px; color: var(--ink2); white-space: nowrap; }
+.notice ul { margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.45; }
+.notice li + li { margin-top: 3px; }
+/* 홈 화면에 추가하는 법 */
+.install-steps { margin: 4px 0 0; padding: 10px 12px 10px 30px; border-radius: 14px; background: #f4f0fa; text-align: left; font-size: 15px; line-height: 1.5; }
+.install-steps li + li { margin-top: 4px; }
+.install-steps b { color: var(--pink); }

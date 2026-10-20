@@ -358,7 +358,10 @@ Tutor.mapFlow = async function (delay) {
       return;
     }
     // 12판을 깨면 설문 한 번 (js/survey.js, 15판의 구글 연결 안내와 안 겹치게)
-    if (typeof Survey !== 'undefined' && Survey.due()) await Survey.open();
+    if (typeof Survey !== 'undefined' && Survey.due()) { await Survey.open(); return; }
+    // 9판을 깨면 홈 화면에 추가 안내 한 번, 새 공지가 올라왔으면 한 번 (js/notice.js)
+    if (typeof Install !== 'undefined' && Install.due()) { await Install.open(); return; }
+    if (typeof Notice !== 'undefined' && Notice.dueAuto()) await Notice.open();
   } finally { Tutor.busyFlow = false; }
 };
 // 첫 편성: 슬롯과 출격 버튼
