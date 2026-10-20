@@ -470,6 +470,7 @@ const Life = {
     layoutBoard();
     boardEl.querySelectorAll('.tile').forEach(e => e.remove());
     fx.innerHTML = '';
+    Particles.clear();
     B.grid = Board.create(lay);
     const bowl = run.kind === 'route' ? Ramen.takeLife() : null; // 먹고 온 라멘: 아이템 깔기·이동 더하기
     const boosts = Items.applyBoost(); // 친구 고르는 창에서 켠 시작 아이템

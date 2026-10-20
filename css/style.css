@@ -356,6 +356,7 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 
 /* ---------- 효과 ---------- */
 #fx { position: absolute; inset: 0; pointer-events: none; z-index: 20; overflow: hidden; }
+#fxc { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; } /* 반짝이 캔버스 (js/particles.js), #fx 바로 밑 */
 #flash { position: absolute; inset: 0; pointer-events: none; z-index: 21; background: var(--red); opacity: 0; }
 .p { position: absolute; width: 10px; height: 10px; border-radius: 50%; margin: -5px 0 0 -5px; }
 .p.spr { width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 0; background: center / contain no-repeat; }
@@ -540,9 +541,10 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 .fever-show .fever-sub { position: absolute; left: 50%; top: calc(var(--fy) + 76px); z-index: 1; transform: translateX(-50%); padding: 2px 14px; border-radius: 12px; background: var(--gold); font-family: var(--head); font-size: 22px; color: var(--ink); }
 /* 피버 중: 판 테두리가 무지갯빛으로 반짝 */
 @keyframes feverGlow { 0% { box-shadow: 0 0 0 4px #ff8ab8, 0 0 18px 6px #ff8ab8; } 33% { box-shadow: 0 0 0 4px #ffd84d, 0 0 18px 6px #ffd84d; } 66% { box-shadow: 0 0 0 4px #7cc4ec, 0 0 18px 6px #7cc4ec; } 100% { box-shadow: 0 0 0 4px #ff8ab8, 0 0 18px 6px #ff8ab8; } }
-#app.fever #board { animation: feverGlow 1.2s linear infinite; }
+#app.fever #board::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: 16px; pointer-events: none; box-shadow: 0 0 0 4px #ff8ab8, 0 0 14px 5px #ffd84d; animation: feverPulse .6s ease-in-out infinite alternate; }
+@keyframes feverPulse { from { opacity: .55; } to { opacity: 1; } }
 /* 일상 퍼즐 피버: 큰 판에서 그림자를 매 프레임 바꾸면 버벅여서 빛은 고정, 점수 막대 위에 남은 턴·초 */
-#app.life-mode.fever #board { animation: none; box-shadow: 0 0 0 4px #ff8ab8, 0 0 18px 6px #ff8ab8; }
+#app.life-mode.fever #board::before { animation: none; opacity: 1; box-shadow: 0 0 0 4px #ff8ab8, 0 0 18px 6px #ff8ab8; }
 .life-mode #lhScore { position: relative; }
 .life-mode #lhScore .fever-badge { display: none; position: absolute; left: 0; top: calc(100% + 4px); z-index: 1; align-items: center; transform-origin: 0 50%; animation: pulse .6s infinite; }
 .life-mode.fever #lhScore .fever-badge { display: flex; }
@@ -636,7 +638,7 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .story-btn b { font-family: var(--head); font-weight: 400; font-size: 18px; line-height: 1.1; }
 .story-btn small { font-size: 11px; color: var(--ink2); }
 .story-btn:disabled { opacity: .45; }
-#app:has(#charSheet.show) #fx { z-index: 32; } /* 강화 반짝이가 상세 창 위로 보이게 */
+#app:has(#charSheet.show) #fx, #app:has(#charSheet.show) #fxc { z-index: 32; } /* 강화 반짝이가 상세 창 위로 보이게 */
 .sheet-btns { display: flex; gap: 10px; margin-top: 20px; }
 .sheet-btns .big-btn { flex: 1; min-width: 0; font-size: 30px; }
 
@@ -1235,3 +1237,5 @@ img.shadow { filter: brightness(0) opacity(.15); }
 /* 랏코 돌진: 잔상과 속도선 */
 .actor.ghost { z-index: 3; filter: brightness(1.6) saturate(.4); }
 .speedline { position: absolute; z-index: 5; height: 3px; margin-top: -1.5px; transform-origin: 0 50%; pointer-events: none; border-radius: 2px; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .95) 30%, #fff); box-shadow: 0 0 6px 1px rgba(207, 227, 255, .9); }
+/* 잠깐 뜨는 알림 (자동 가볍게 등) */
+.toast { position: absolute; left: 50%; bottom: 88px; z-index: 60; width: max-content; max-width: 86%; padding: 9px 14px; border-radius: 14px; background: rgba(74, 66, 98, .92); color: #fff; font-size: 14px; line-height: 1.35; text-align: center; pointer-events: none; transform: translateX(-50%); }

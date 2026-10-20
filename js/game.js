@@ -11,6 +11,7 @@ const FastFwd = {
   on(x = 6) {
     if (Prefs.boost !== 1) return;
     Prefs.boost = x;
+    Particles.speedUp(x);
     document.getAnimations().forEach(a => { try { if (a.effect?.getTiming().iterations !== Infinity) a.updatePlaybackRate(a.playbackRate * x); } catch {} });
     const now = performance.now();
     SLEEPS.forEach(s => { clearTimeout(s.t); s.t = setTimeout(() => { SLEEPS.delete(s); s.r(); }, Math.max(0, s.end - now) / x); });
@@ -101,7 +102,13 @@ function openSettings() {
   });
   el.querySelector('[data-s=mute]').onclick = () => { Sound.muted = !Sound.muted; updateMute(); Sound.play('click'); sync(); };
   el.querySelector('[data-s=vib]').onclick = () => { Haptic.toggle(); updateVib(); Sound.play('click'); sync(); };
-  el.querySelector('[data-s=light]').onclick = () => { Prefs.set('light', !Prefs.d.light); Sound.play('click'); sync(); };
+  el.querySelector('[data-s=light]').onclick = () => {
+    Prefs.set('light', !Prefs.d.light);
+    if (!Prefs.d.light) Prefs.set('autoLightOff', true); // 직접 끄면 자동으로 다시 켜지 않음
+    Particles.resize();
+    Sound.play('click');
+    sync();
+  };
   el.querySelector('[data-s=shake]').onclick = () => { Prefs.set('noShake', !Prefs.d.noShake); Sound.play('click'); sync(); shake(6, 260); };
   el.querySelector('[data-s=fast]').onclick = () => { Prefs.set('fast', !Prefs.d.fast); Sound.play('click'); sync(); };
   el.querySelector('[data-s=credits]').onclick = () => {
@@ -190,17 +197,17 @@ function addFx(cls, x, y) {
 
 // Kenney 파티클(CC0) 그림을 원하는 색으로 칠해서 씀
 // CSS 변수 안의 url()은 css/ 기준으로 풀려서 절대 주소로 넣음
-const KP = n => `url(${new URL(`assets/img/fx/k/${n}.png`, location.href).href})`;
+const KPU = n => new URL(`assets/img/fx/k/${n}.png`, location.href).href;
+const KP = n => `url(${KPU(n)})`;
 const FX_MAX = 120;
+// 효과가 얼마나 쌓였는지: 화면 요소(#fx) + 캔버스 반짝이(가벼워서 반만 셈)
+const fxLoad = () => fx.childElementCount + Particles.count() / 2;
 let FX_LOAD = 1; // 한 단계에서 같이 터지는 아이템 수 (많으면 반짝이를 덜 뿌림)
+// 반짝이는 캔버스 한 장에 그림 (js/particles.js). 화면 요소로 하나하나 만들면 폰에서 끊김
 function kp(name, x, y, size, color, frames, opts) {
-  // 연출 가볍게면 반짝이를 줄이고, 아이템 여럿이 한꺼번에 터지는 중이면 상한을 낮춤 (폰에서 프레임이 안 끊기게)
-  if (fx.childElementCount > (Prefs.d.light ? 40 : FX_LOAD > 2 ? 80 : FX_MAX) || (Prefs.d.light && Math.random() < 0.6)) return Promise.resolve();
-  const el = addFx('kp', x, y);
-  Object.assign(el.style, { width: size + 'px', height: size + 'px', marginLeft: -size / 2 + 'px', marginTop: -size / 2 + 'px' });
-  el.style.setProperty('--m', KP(name));
-  el.style.setProperty('--c', color);
-  return el.animate(frames, opts).finished.then(() => el.remove());
+  // 연출 가볍게면 반짝이를 줄이고, 아이템 여럿이 한꺼번에 터지는 중이면 상한을 낮춤
+  if (Particles.count() > (Prefs.d.light ? 60 : FX_LOAD > 2 ? 200 : 280) || (Prefs.d.light && Math.random() < 0.6)) return Promise.resolve();
+  return Particles.add({ src: KPU(name), x, y, size, color }, frames, opts);
 }
 // 유료 이펙트: js/king-pack.js(뒤섞은 팩)가 있으면 풀어서 메모리 안에서만 씀. 없으면(깃허브판) Kenney 그림으로 대신함
 let KING = false;
@@ -223,7 +230,7 @@ const KMASK = {};
         for (let i = 0; i < n; i++) { const o = i * 4; img.data[o] = img.data[o + 1] = img.data[o + 2] = 255; img.data[o + 3] = a[k * n + i]; }
         ctx.putImageData(img, 0, 0);
         const b = await new Promise(r => cv.toBlob(r));
-        KMASK[P.n[k]] = `url(${URL.createObjectURL(b)})`;
+        KMASK[P.n[k]] = URL.createObjectURL(b);
       }
       KING = true;
     } catch (e) { console.warn('이펙트 팩을 못 풀었어요', e); }
@@ -231,14 +238,10 @@ const KMASK = {};
   sc.onerror = () => sc.remove();
   document.head.appendChild(sc);
 }
-const KXU = n => KMASK[n];
 function kx(name, alt, x, y, size, color, frames, opts) {
-  if (!KING || Prefs.d.light) return kp(alt, x, y, size, color, frames, opts);
-  const el = addFx('kp', x, y);
-  Object.assign(el.style, { width: size + 'px', height: size + 'px', marginLeft: -size / 2 + 'px', marginTop: -size / 2 + 'px' });
-  el.style.setProperty('--m', KXU(name));
-  el.style.setProperty('--c', color);
-  return el.animate(frames, opts).finished.then(() => el.remove());
+  if (!KING || Prefs.d.light || !KMASK[name]) return kp(alt, x, y, size, color, frames, opts);
+  if (Particles.count() > (FX_LOAD > 2 ? 200 : 280)) return Promise.resolve();
+  return Particles.add({ src: KMASK[name], x, y, size, color }, frames, opts);
 }
 
 // 박치기 자국: 날아온 쪽을 향한 만화 효과선 + 별 모양 번쩍 (너무 잦으면 건너뜀)
@@ -334,7 +337,7 @@ function flyToGoal(src, p, chip, color = '#ffd84d') {
 
 // 반짝이 별과 불똥이 사방으로 튐
 function burst(x, y, color, n = 6) {
-  if (fx.childElementCount > 60) n = Math.ceil(n / 2); // 효과가 이미 많으면 반만
+  if (fxLoad() > 60) n = Math.ceil(n / 2); // 효과가 이미 많으면 반만
   for (let i = 0; i < n; i++) {
     const ang = Math.random() * Math.PI * 2, d = 24 + Math.random() * 44, rot = (Math.random() - 0.5) * 300;
     const star = i % 3 !== 2;
@@ -405,11 +408,13 @@ const Juice = {
     if (now - (Juice.lastStop || 0) < 260) return;
     Juice.lastStop = now;
     ms = Math.min(ms, 80);
+    Particles.pause(ms);
     const anims = document.getAnimations();
     anims.forEach(a => a.pause());
     setTimeout(() => anims.forEach(a => { try { if (a.playState === 'paused') a.play(); } catch {} }), ms);
   },
   slow(ms = 450, rate = 0.3) {
+    Particles.slow(ms, rate);
     document.getAnimations().forEach(a => a.updatePlaybackRate(rate));
     setTimeout(() => document.getAnimations().forEach(a => a.updatePlaybackRate(1)), ms);
   },
@@ -1027,6 +1032,7 @@ async function startStage(i) {
   layoutBoard();
   boardEl.querySelectorAll('.tile').forEach(e => e.remove());
   fx.innerHTML = '';
+  Particles.clear();
   B.grid = Board.create();
   spawnMonster(false);
   updateTeam();
@@ -1575,7 +1581,7 @@ function popSparkle(x, y, color) {
   if (Prefs.d.light) return;
   const now = performance.now();
   if (now - popBudget.t > 120) { popBudget.t = now; popBudget.n = 0; }
-  if (++popBudget.n > 10 || fx.childElementCount > 70) return;
+  if (++popBudget.n > 10 || fxLoad() > 90) return;
   const S = B.S;
   kp('light_02', x, y, S * 1.3, '#ffffff', [{ transform: 'scale(.3)', opacity: 0.9 }, { transform: 'scale(1.1)', opacity: 0 }], { duration: 200, easing: 'ease-out' });
   kp('circle_03', x, y, S * 1.6, color, [{ transform: 'scale(.3)', opacity: 0.9 }, { transform: 'scale(1)', opacity: 0 }], { duration: 340, easing: 'cubic-bezier(.2,.8,.3,1)' });
@@ -1591,7 +1597,7 @@ function popSparkle(x, y, color) {
 }
 // 폭탄이 터질 때 둘레로 파스텔 색종이 별이 둥글게
 function confettiRing(x, y, n = 10) {
-  if (Prefs.d.light || fx.childElementCount > 70) return;
+  if (Prefs.d.light || fxLoad() > 90) return;
   const S = B.S, cols = ['#ff8ab8', '#ffd84d', '#7be0a0', '#7cc4ec', '#b99cf0'];
   for (let k = 0; k < n; k++) {
     const a = (k / n) * Math.PI * 2 + Math.random() * 0.3, d = S * (1.6 + Math.random() * 0.8);
@@ -1605,19 +1611,16 @@ function confettiRing(x, y, n = 10) {
 
 // 조각이 포물선으로 튀어 떨어짐 (상자 나무 조각, 포장지, 흙, 물방울)
 function shards(x, y, colors, n = 8, size = 10, round = false) {
-  if (Prefs.d.light || fx.childElementCount > 110) return;
-  if (fx.childElementCount > 60) n = Math.ceil(n / 2);
+  if (Prefs.d.light || fxLoad() > 130) return;
+  if (fxLoad() > 70) n = Math.ceil(n / 2);
   for (let i = 0; i < n; i++) {
-    const el = addFx('shard' + (round ? ' round' : ''), x, y);
-    el.style.background = colors[i % colors.length];
-    el.style.width = size * (0.6 + Math.random() * 0.8) + 'px';
-    el.style.height = size * (round ? 1 : 0.5 + Math.random() * 0.5) + 'px';
+    const w = size * (0.6 + Math.random() * 0.8), h = size * (round ? 1 : 0.5 + Math.random() * 0.5);
     const dx = (Math.random() - 0.5) * 120, up = 40 + Math.random() * 60, rot = (Math.random() - 0.5) * 720;
-    el.animate([
-      { transform: 'translate(-50%,-50%) rotate(0)', opacity: 1 },
-      { transform: `translate(calc(-50% + ${dx * 0.5}px), calc(-50% - ${up}px)) rotate(${rot / 2}deg)`, opacity: 1, offset: 0.4 },
-      { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${up * 0.8}px)) rotate(${rot}deg)`, opacity: 0 },
-    ], { duration: 650 + Math.random() * 250, easing: 'cubic-bezier(.2,.6,.5,1)' }).finished.then(() => el.remove());
+    Particles.add({ shape: round ? 'circle' : 'rect', x, y, w: round ? w : w, h: round ? w : h, color: colors[i % colors.length] }, [
+      { transform: 'rotate(0)', opacity: 1 },
+      { transform: `translate(${dx * 0.5}px, ${-up}px) rotate(${rot / 2}deg)`, opacity: 1, offset: 0.4 },
+      { transform: `translate(${dx}px, ${up * 0.8}px) rotate(${rot}deg)`, opacity: 0 },
+    ], { duration: 650 + Math.random() * 250, easing: 'cubic-bezier(.2,.6,.5,1)' });
   }
 }
 function ringFx(x, y, size, color, dur = 380) {
