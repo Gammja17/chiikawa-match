@@ -31,6 +31,7 @@ jobs:
         if: env.CF_TOKEN != ''
         uses: cloudflare/wrangler-action@v3
         with:
+          wranglerVersion: '4' # 기본으로 깔리는 3.90은 wrangler.jsonc(그림만 올리는 설정)를 못 읽음
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       - name: 배포 건너뜀 안내
