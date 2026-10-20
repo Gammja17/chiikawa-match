@@ -1058,6 +1058,7 @@ async function startStage(i) {
   boardEl.querySelectorAll('.tile').forEach(e => e.remove());
   fx.innerHTML = '';
   Particles.clear();
+  boardRand = Math.random;
   B.grid = Board.create();
   spawnMonster(false);
   updateTeam();
@@ -2462,7 +2463,7 @@ function pickTiles(n, ok = t => !t.special && t.type >= 0) {
   const all = [];
   Board.each(B.grid, (t, r, c) => ok(t) && all.push([r, c]));
   for (let i = all.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(boardRand() * (i + 1)); // 판 난수 (주간 리그에선 같은 수면 같은 칸)
     [all[i], all[j]] = [all[j], all[i]];
   }
   return all.slice(0, n);

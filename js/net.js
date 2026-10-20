@@ -188,6 +188,7 @@ function openChallenge() {
   $('#contestBest').textContent = Save.data.contestBest ? `최고 ${Save.data.contestBest}점` : '첫 도전!';
   DayChal.card();
   Dungeon.card();
+  League.card();
 }
 $('#btnTower').onclick = () => { Sound.play('open'); go(() => Tower.start(1)); };
 $('#btnContest').onclick = () => { Sound.play('open'); go(() => Life.begin(CONTEST, { kind: 'contest' })); };

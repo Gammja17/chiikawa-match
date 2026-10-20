@@ -1,5 +1,5 @@
 rules_version = '2';
-// 진행 저장(users)은 본인만 읽고 씀. 에러(errors)는 누구나 쓰기만. 랭킹(scores)은 누구나 읽고, 본인 기록만 '올리는' 쪽으로만 바꿀 수 있음
+// 진행 저장(users)은 본인만 읽고 씀. 에러(errors)는 누구나 쓰기만. 랭킹(scores, league)은 누구나 읽고, 본인 기록만 '올리는' 쪽으로만 바꿀 수 있음
 service cloud.firestore {
   match /databases/{db}/documents {
     match /users/{uid} {
@@ -33,6 +33,13 @@ service cloud.firestore {
         && request.resource.data.uid is string && request.resource.data.uid.size() <= 128
         && request.resource.data.at == request.time;
     }
+    // 주간 리그: league/{그 주 월요일}/scores/{uid}. 누구나 읽고, 본인 점수만 '올리는' 쪽으로
+    match /league/{week}/scores/{uid} {
+      allow read: if true;
+      allow create: if request.auth != null && request.auth.uid == uid && week.matches('^20[0-9]{2}-[0-9]{2}-[0-9]{2}$') && league(request.resource.data);
+      allow update: if request.auth != null && request.auth.uid == uid && league(request.resource.data)
+        && request.resource.data.score >= resource.data.score;
+    }
     match /scores/{uid} {
       allow read: if true;
       allow create: if request.auth != null && request.auth.uid == uid && valid(request.resource.data);
@@ -41,6 +48,14 @@ service cloud.firestore {
         && request.resource.data.tower >= resource.data.tower
         && request.resource.data.contest >= resource.data.contest;
     }
+  }
+  function league(d) {
+    return d.keys().hasOnly(['name', 'score', 'title', 'fav', 'updated'])
+      && d.name is string && d.name.size() > 0 && d.name.size() <= 12
+      && d.score is int && d.score >= 0 && d.score <= 300000
+      && (!('title' in d) || (d.title is string && d.title.size() <= 12))
+      && (!('fav' in d) || (d.fav is string && d.fav.size() <= 40))
+      && d.updated == request.time;
   }
   function valid(d) {
     return d.keys().hasOnly(['name', 'cleared', 'tower', 'contest', 'title', 'fav', 'updated'])

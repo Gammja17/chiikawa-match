@@ -62,6 +62,7 @@ setInterval(() => {
         if (B.mode === 'battle') return startStage(B.stage);
         if (L.run?.kind === 'tower') return Tower.start(L.run.floor);
         if (L.run?.kind === 'contest') return Life.begin(CONTEST, { kind: 'contest' });
+        if (L.run?.kind === 'league') return League.start();
         return Life.start(L.i);
       });
     },

@@ -471,6 +471,7 @@ const Life = {
     boardEl.querySelectorAll('.tile').forEach(e => e.remove());
     fx.innerHTML = '';
     Particles.clear();
+    boardRand = st.seed ? League.rand(st.seed) : Math.random; // 주간 리그: 그 주 씨앗
     B.grid = Board.create(lay);
     const bowl = run.kind === 'route' ? Ramen.takeLife() : null; // 먹고 온 라멘: 아이템 깔기·이동 더하기
     const boosts = Items.applyBoost(); // 친구 고르는 창에서 켠 시작 아이템
@@ -478,6 +479,7 @@ const Life = {
     Help.life(help);
     L.goal0 = st.goals.map(g => Life.remain(g)); // 처음 목표 양 (실패했을 때 얼마나 남았는지 기록하려고)
     if (run.kind === 'route') Stats.start('l', i, help);
+    if (run.kind === 'league') League.began();
     renderFloor();
     Life.hud();
     if (run.kind === 'route' && LIFE_STORY[i] && (Save.data.life || [])[i] == null) await playStory(LIFE_STORY[i]);
@@ -520,7 +522,7 @@ const Life = {
     if (g.k === 'score') return Math.max(0, g.n - L.score);
     return Life.count(g.k);
   },
-  done: () => !L.st.contest && !L.st.dungeon && L.st.goals.every(g => Life.remain(g) === 0),
+  done: () => !L.st.contest && !L.st.dungeon && !L.st.league && L.st.goals.every(g => Life.remain(g) === 0),
 
   hud() {
     const st = L.st;
@@ -528,10 +530,11 @@ const Life = {
     $('#lhLimit').textContent = st.time ? Math.ceil(L.time) : L.moves;
     $('.lh-limit').classList.toggle('danger', st.time ? L.time <= 10 : L.moves <= 3);
     const html = st.contest ? `<div class="gchip best"><img src="${ITEM('medal')}"><b>${Save.data.contestBest || 0}</b></div>`
-      : st.dungeon ? Dungeon.chip() : st.goals.map(g => {
+      : st.dungeon ? Dungeon.chip() : st.league ? League.chip(L.score) : st.goals.map(g => {
       const n = Life.remain(g);
       return `<div class="gchip ${g.k}${n ? '' : ' done'}" data-id="${g.id || ''}"><img src="${GOAL_ICON[g.k](g)}"><b>${n || '<img class="ck" src="assets/img/ui/check.png" alt="">'}</b></div>`;
     }).join('');
+    if (st.league) League.watch(L.score);
     if (html !== L.goalsHtml) {
       const was = L.goalsHtml;
       $('#lhGoals').innerHTML = L.goalsHtml = html;
@@ -639,7 +642,7 @@ const Life = {
     const [rc] = pickTiles(1, t => !t.special && t.type >= 0 && !t.lock);
     if (!rc) return;
     const t = B.grid[rc[0]][rc[1]], p = tileCenter(rc[0], rc[1]);
-    t.special = ['h', 'v', 'bomb', 'plane'][Math.floor(Math.random() * 4)];
+    t.special = ['h', 'v', 'bomb', 'plane'][Math.floor(boardRand() * 4)];
     t.type = -1;
     refreshTile(t);
     t.inner.animate([{ transform: 'scale(0) rotate(-180deg)' }, { transform: 'scale(1.4)', offset: 0.6 }, { transform: 'scale(1)' }], { duration: 420 });
@@ -670,6 +673,7 @@ const Life = {
     if (B.over || L.ending) return;
     if (L.st.contest) { if (L.time <= 0) return Life.contestEnd(); return; }
     if (L.st.dungeon) { if (L.moves <= 0) return Dungeon.end(); return; }
+    if (L.st.league) { if (L.moves <= 0) return League.end(); return; }
     if (Life.done()) { L.ending = true; return Life.win(); }
     if (L.st.time ? L.time <= 0 : L.moves <= 0) return Life.fail();
   },
@@ -947,7 +951,7 @@ function pickHelper(st = L.st) {
       card.innerHTML = `<div class="mates-title">같이 갈 친구 한 명</div>
         <div class="helper-pick"><span class="fig">${Meta.figure(ch.id, art(ch.id))}</span><div><b>${ch.name}</b><small>${skillOf(ch.id).name}</small><p>${skillOf(ch.id).desc}</p></div></div>
         ${host ? `<div class="buddy-note${CHARS[pick].id === st.host ? ' on' : ''}"><img class="bn-face" src="${FACE(host.id)}" alt="">이 스테이지 단짝: <b>${host.name}</b> · 데려가면 ${st.time ? '+6초' : '이동 +2'}${Meta.owned(host.id) ? '' : ' (아직 없는 친구)'}</div>` : ''}
-        <div class="boost-row"><span>시작 아이템</span>${SHOP_ITEMS.filter(it => it.put).map(it => `<button data-bo="${it.id}" class="${L.boost.has(it.id) ? 'on' : ''}"><img src="${ITEM(it.icon)}" alt="">${Items.n(it.id) ? `<i>${Items.n(it.id)}</i>` : `<i class="price"><img src="${ITEM('coin')}" alt="">${it.price}</i>`}</button>`).join('')}</div>
+        ${st?.league ? '<div class="buddy-note">주간 리그는 모두 같은 판이라 시작 아이템 없이 겨뤄요</div>' : `<div class="boost-row"><span>시작 아이템</span>${SHOP_ITEMS.filter(it => it.put).map(it => `<button data-bo="${it.id}" class="${L.boost.has(it.id) ? 'on' : ''}"><img src="${ITEM(it.icon)}" alt="">${Items.n(it.id) ? `<i>${Items.n(it.id)}</i>` : `<i class="price"><img src="${ITEM('coin')}" alt="">${it.price}</i>`}</button>`).join('')}</div>`}
         <div class="mates-grid">${list.map(([c, k]) => `<button class="${k === pick ? 'on' : ''}${c.id === st?.host ? ' buddy' : ''}" data-k="${k}" style="--ring:${c.ring}"><img src="${FACE(c.id)}"><span>${c.name}</span></button>`).join('')}</div>
         <div class="sheet-btns"><button class="big-btn ghost" data-back><img class="b-ic" src="assets/img/ui/back.png" alt="">돌아가기</button><button class="big-btn" data-go>같이 가자!</button></div>`;
       card.querySelectorAll('.mates-grid button').forEach(b => (b.onclick = () => { pick = +b.dataset.k; Sound.play('pop', 1.2, 0.5); draw(); }));

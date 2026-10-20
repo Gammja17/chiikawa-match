@@ -10,7 +10,9 @@ let nextTileId = 1;
 const newTile = (type, special = null) => ({ id: nextTileId++, type, special });
 const newIng = ing => ({ id: nextTileId++, type: ING, special: null, ing });
 const newBlock = (block, hp = 1) => ({ id: nextTileId++, type: BLOCK, special: null, block, hp });
-const randType = () => Math.floor(Math.random() * NTYPES);
+// 판에서 쓰는 난수. 주간 리그는 그 주 씨앗으로 바꿔서 누구나 같은 판, 같은 수를 두면 같은 블록이 떨어짐 (js/league.js)
+let boardRand = Math.random;
+const randType = () => Math.floor(boardRand() * NTYPES);
 const key = (r, c) => r * COLS + c;
 const unkey = k => [Math.floor(k / COLS), k % COLS];
 const inside = (r, c) => r >= 0 && r < ROWS && c >= 0 && c < COLS;
@@ -164,7 +166,7 @@ const Board = {
       else if (t.type >= 0) tiers[3].push([r, c]);
     });
     const tier = tiers.find(x => x.length);
-    return tier ? tier[Math.floor(Math.random() * tier.length)] : null;
+    return tier ? tier[Math.floor(boardRand() * tier.length)] : null;
   },
 
   commonType(g) {
@@ -195,7 +197,7 @@ const Board = {
       const conv = other.special && other.special !== 'rainbow' ? other.special : null;
       Board.each(g, (t, r, c) => {
         if (t.type !== type) return;
-        if (conv && t !== other && !t.lock) t.special = conv === 'h' || conv === 'v' ? (Math.random() < 0.5 ? 'h' : 'v') : conv;
+        if (conv && t !== other && !t.lock) t.special = conv === 'h' || conv === 'v' ? (boardRand() < 0.5 ? 'h' : 'v') : conv;
         out.push([r, c]);
       });
       return { cells: out, kind: 'rainbow', at: rpos, type, converted: !!conv };
@@ -376,7 +378,7 @@ const Board = {
       if (moved) continue;
       for (let r = ROWS - 1; r >= 1 && !moved; r--) for (let c = 0; c < COLS; c++) {
         if (g[r][c] || hole(r, c) || openAbove(r, c)) continue;
-        for (const dc of Math.random() < 0.5 ? [-1, 1] : [1, -1]) {
+        for (const dc of boardRand() < 0.5 ? [-1, 1] : [1, -1]) {
           const t = inside(r - 1, c + dc) ? g[r - 1][c + dc] : null;
           if (!movable(t)) continue;
           g[r][c] = t; g[r - 1][c + dc] = null;
@@ -427,7 +429,7 @@ const Board = {
       });
     });
     if (!cand.length) return null;
-    const [r, c] = cand[Math.floor(Math.random() * cand.length)];
+    const [r, c] = cand[Math.floor(boardRand() * cand.length)];
     const old = g[r][c];
     g[r][c] = newBlock('bubble', 1);
     return { r, c, old, tile: g[r][c] };
@@ -464,7 +466,7 @@ const Board = {
     Board.each(g, (t, r, c) => { if (t.type >= 0 && !t.special && !t.lock) cand.push([r, c]); });
     const out = [];
     for (let i = 0; i < n && cand.length; i++) {
-      const [r, c] = cand.splice(Math.floor(Math.random() * cand.length), 1)[0];
+      const [r, c] = cand.splice(Math.floor(boardRand() * cand.length), 1)[0];
       out.push({ r, c, old: g[r][c], tile: (g[r][c] = newBlock(kind, hp)) });
     }
     return out;
@@ -477,7 +479,7 @@ const Board = {
     const tiles = cells.map(([r, c]) => g[r][c]);
     for (let tries = 0; tries < 200; tries++) {
       for (let i = tiles.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
+        const j = Math.floor(boardRand() * (i + 1));
         [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
       }
       cells.forEach(([r, c], i) => (g[r][c] = tiles[i]));

@@ -66,6 +66,7 @@ const dayTreat = day => ['dango', 'parfait', 'onigiri'][dayNo(day) % 3];
 
 // 도전 화면 카드 처음 볼 때 안내: [본 표시, 카드, 한 줄]. 도전이 처음 열릴 때는 tutor.js의 UNLOCK_INTRO가 이어서 보여 줌
 const CH_TIPS = [
+  ['chLeague', '#btnLeague', '주간 리그! 일주일 동안 모두 같은 판으로 점수를 겨뤄. 다음 주에 순위대로 코인을 줘'],
   ['chDaily', '#btnDayChal', '오늘의 도전! 하루에 한 스테이지, 날마다 스테이지가 바뀌어. 깨면 코인이랑 간식을 줘'],
   ['chDungeon', '#btnDungeon', '미믹 보물창고! 15번 움직이는 동안 상자를 깨면 코인이 나와. 하루 3번'],
   ['chSnack', '#btnSnack', '간식 창고! 받고 싶은 간식을 톡 골라 두고 들어가. 간식은 친구 데려오기랑 강화에 써'],

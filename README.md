@@ -70,6 +70,11 @@
 - 인어섬 탐험: 층마다 일상 퍼즐이 나오고 올라갈수록 이동 수가 줄어드는 무한 모드. 실패하면 거기까지 (층마다 +5번 한 번)
 - 제초 대회: 60초 동안 최대한 높은 점수. 판 전체 잡초를 다 뽑으면 +2000점과 함께 다시 자람
 - 랭킹: 깬 스테이지 수, 인어섬 최고 층, 제초 대회 최고 점수 (구글 로그인 또는 게스트)
+- 주간 리그 (`js/league.js`): 일주일(월요일 0시, 한국 시간) 동안 모두 같은 판으로 20번 움직여 점수 겨루기. 하루 5판, 그 주 최고 점수가 순위
+  - 판 모양과 블록은 그 주 씨앗으로 정해짐(`boardRand`). 같은 자리에서 같은 수를 두면 누구나 같은 블록이 떨어짐. 시작 아이템·라멘은 못 씀
+  - 판 중에는 바로 위 순위 점수가 목표 칸에 보이고, 넘기면 '추월!'
+  - 다음 주에 도전 화면을 열면 지난주 순위로 코인 (1위 1000, 2~3위 700, 10위까지 500, 30위까지 300, 100위까지 200, 참가 100)
+  - 판은 `WEEK_TWISTS`에 추가 (주마다 차례로 돎). Firestore `league/{그 주 월요일}/scores/{uid}`. **`firestore.rules`를 다시 올려야 순위가 저장됨**
 
 ### 홈 화면 앱과 안전장치
 
@@ -172,7 +177,7 @@ npx wrangler deploy
 1. [Firebase 콘솔](https://console.firebase.google.com)에서 프로젝트를 만들고 **웹 앱**을 추가합니다.
 2. **Authentication → 로그인 방법**에서 `Google`과 `익명`을 켭니다. 게스트로 하다가 구글을 연결하면 그 기록이 그대로 이어지고, 로그인하면 진행이 계정에 저장되어 다른 기기에서도 이어서 할 수 있습니다.
 3. **Authentication → 설정 → 승인된 도메인**에 `chiikawa.3match.workers.dev`(와 `gammja17.github.io`)를 추가합니다.
-4. **Firestore Database**를 만들고 저장소의 `firestore.rules`를 올립니다: `npx firebase-tools deploy --only firestore:rules` (또는 콘솔 **규칙**에 그 파일 내용을 붙여 넣기). 아래는 예전 요약이고, 에러 모으기(`errors`)까지 들어 있는 건 `firestore.rules`입니다.
+4. **Firestore Database**를 만들고 저장소의 `firestore.rules`를 올립니다: `npx firebase-tools deploy --only firestore:rules` (또는 콘솔 **규칙**에 그 파일 내용을 붙여 넣기). 아래는 예전 요약이고, 에러 모으기(`errors`)·설문(`feedback`)·주간 리그(`league`)까지 들어 있는 건 `firestore.rules`입니다.
 5. 웹 앱 설정값(`apiKey`, `authDomain`, `projectId`, `appId`)을 `js/firebase-config.js`의 `window.FIREBASE_CONFIG`에 넣습니다. 이 값은 공개되어도 되는 값이고, 실제 보호는 아래 규칙이 맡습니다.
 
 ```

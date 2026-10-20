@@ -833,17 +833,17 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .me-row .nm { flex: 1; font-family: var(--head); font-size: 20px; }
 .me-row .mini-btn { float: none; }
 #rankList { flex: 1; overflow-y: auto; touch-action: pan-y; margin: 0; padding: 0 14px 20px; list-style: none; }
-#rankList li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin-bottom: 6px; border-radius: 12px; background: #fff; }
-#rankList li.mine { background: var(--pink-l); }
-#rankList .rk { width: 30px; height: 30px; flex: none; display: grid; place-items: center; border-radius: 50%; background: #f1eaf8; font-family: var(--head); font-size: 16px; }
-#rankList .rk.top1 { background: var(--gold); color: #fff; }
-#rankList .rk.top2 { background: #c9c9d6; color: #fff; }
-#rankList .rk.top3 { background: #e0a46a; color: #fff; }
-#rankList .nm { flex: 1; display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#rankList li, .lg-list li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin-bottom: 6px; border-radius: 12px; background: #fff; }
+#rankList li.mine, .lg-list li.mine { background: var(--pink-l); }
+#rankList .rk, .lg-list .rk { width: 30px; height: 30px; flex: none; display: grid; place-items: center; border-radius: 50%; background: #f1eaf8; font-family: var(--head); font-size: 16px; }
+#rankList .rk.top1, .lg-list .rk.top1 { background: var(--gold); color: #fff; }
+#rankList .rk.top2, .lg-list .rk.top2 { background: #c9c9d6; color: #fff; }
+#rankList .rk.top3, .lg-list .rk.top3 { background: #e0a46a; color: #fff; }
+#rankList .nm, .lg-list .nm { flex: 1; display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* 랭킹 줄: 최애 친구 얼굴 + 칭호 */
 .rk-face { flex: none; width: 28px; height: 28px; border-radius: 50%; background: #f6f1fb; object-fit: contain; }
 .rk-title, .pf-title { flex: none; padding: 1px 7px 0; border-radius: 8px; background: #fff1c9; color: #b07a12; font-family: var(--head); font-size: 12px; line-height: 1.35; white-space: nowrap; }
-#rankList b { font-family: var(--head); font-size: 20px; }
+#rankList b, .lg-list b { font-family: var(--head); font-size: 20px; }
 
 /* ---------- 처음 하는 사람 돕기 ---------- */
 .tip { position: absolute; left: 50%; top: 64px; z-index: 29; width: calc(100% - 32px); display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 14px; background: #fff; box-shadow: 0 6px 18px rgba(74, 66, 98, .22); transform: translateX(-50%); font-size: 15px; line-height: 1.35; }
@@ -1265,3 +1265,22 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .skill-tag { position: absolute; left: 50%; top: 22%; z-index: 30; display: flex; align-items: center; gap: 8px; padding: 6px 18px 6px 8px; border-radius: 999px; background: var(--ring); color: #fff; font-family: var(--head); font-size: 24px; white-space: nowrap; box-shadow: 0 4px 0 rgba(74, 66, 98, .25); pointer-events: none; animation: skillTag 1s ease-out forwards; }
 .skill-tag img { width: 40px; height: 40px; border-radius: 50%; background: #fff; }
 @keyframes skillTag { 0% { transform: translateX(-50%) scale(.4); opacity: 0; } 15% { transform: translateX(-50%) scale(1.1); opacity: 1; } 25%, 75% { transform: translateX(-50%) scale(1); opacity: 1; } 100% { transform: translateX(-50%) translateY(-16px); opacity: 0; } }
+
+/* 주간 리그 (js/league.js) */
+.ch-card.league { background-image: url(../assets/img/art/ch_rank.jpg); background-position: center 35%; }
+.lg-head { text-align: center; margin: -4px 0 8px; }
+.lg-head b { display: block; font-family: var(--head); font-size: 24px; color: var(--ink); }
+.lg-head small { color: var(--ink2); font-size: 14px; }
+.lg-me { margin: 0 4px 8px; padding: 8px 12px; border-radius: 12px; background: #fff4d6; text-align: center; font-size: 16px; }
+.lg-me b { font-family: var(--head); font-size: 20px; color: #c98a10; }
+.lg-list { max-height: min(38vh, 320px); overflow-y: auto; touch-action: pan-y; margin: 0 0 8px; padding: 0 2px; list-style: none; }
+.lg-list li { box-shadow: 0 1px 0 #efe6f6; }
+.lg-list .rank-note .big-btn { display: block; margin: 10px auto 0; height: 44px; font-size: 18px; }
+.lg-prize { margin: 0 4px 10px; color: var(--ink2); font-size: 12.5px; text-align: center; line-height: 1.4; }
+.sheet-btns .big-btn[disabled] { opacity: .5; }
+.gchip.rival .rk-face { width: 100%; height: 100%; }
+.gchip.rival b { background: #ffb43f; }
+.gchip.rival.top b { background: var(--gold, #ffcf3f); }
+.lg-list li.rank-note { display: block; box-shadow: none; background: none; }
+.rank-pop small { display: block; font-size: 15px; color: var(--ink2); line-height: 1.2; }
+.rank-pop span { text-align: center; }
