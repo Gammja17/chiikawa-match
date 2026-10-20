@@ -1255,3 +1255,7 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .install-steps { margin: 4px 0 0; padding: 10px 12px 10px 30px; border-radius: 14px; background: #f4f0fa; text-align: left; font-size: 15px; line-height: 1.5; }
 .install-steps li + li { margin-top: 4px; }
 .install-steps b { color: var(--pink); }
+/* 결과 창 '자랑하기' (클리어 카드 공유, js/share.js) */
+.share-btn { position: absolute; right: 12px; top: 12px; z-index: 3; padding: 6px 12px 6px 34px; border-radius: 99px; background: #fff url(../assets/img/items/sparkle.png?v=2) 8px center / 22px no-repeat; border: 2px solid var(--pink); color: var(--pink); font-family: var(--head); font-size: 16px; line-height: 1.2; box-shadow: 0 3px 0 #4a426222; }
+.share-btn:active { transform: scale(.95); }
+.share-btn[hidden] { display: none; }

@@ -687,8 +687,12 @@ function playStory(lines) {
 // 버튼 글자 속 기호(🏠 ▶ ◀)를 손그림 아이콘으로 (버튼 글은 코드에 적힌 것만 들어옴)
 const UI_ICON = { '🏠': 'home', '▶': 'next', '◀': 'back' };
 const uiIcons = s => s.replace(/🏠|▶|◀/g, m => `<img class="b-ic" src="assets/img/ui/${UI_ICON[m]}.png" alt="">`);
-function modal({ title, stars = null, char, img = null, photo = false, rows = [], text, btn1, on1, btn2 = '', on2 = null }) {
+function modal({ title, stars = null, char, img = null, photo = false, rows = [], text, btn1, on1, btn2 = '', on2 = null, share = false }) {
   $('#modalTitle').textContent = title;
+  // 클리어 자랑하기 (js/share.js): 그림은 결과 창을 띄우기 전에 Share.prepare로 미리 만들어 둠
+  const sh = $('#modalShare');
+  sh.hidden = !share;
+  sh.onclick = share ? () => { Sound.play('click'); Share.go(); } : null;
   $('#modalChar').src = img || artOf(char);
   $('#modalChar').classList.toggle('photo', photo);
   $('#modalChar').classList.remove('icon');
@@ -1041,6 +1045,9 @@ async function startStage(i) {
   B.played = false;
   NTYPES = B.team.length;
   B.gauge = B.team.map((k, j) => (j < B.real && bowl && (bowl.id === 'gauge' || bowl.id === 'okinawa') ? Math.floor(skillNeed(CHARS[k].id, false) / 2) : 0));
+  const help = Help.level('b', i); // 여러 번 막힌 스테이지면 응원 선물 (js/stats.js)
+  Help.battle(help);
+  Stats.start('b', i, help);
   show('battle');
   stageTitle(routeIdx('b', i), STAGES[i].name);
   buildParty();
@@ -1052,6 +1059,7 @@ async function startStage(i) {
   spawnMonster(false);
   updateTeam();
   if (STORY[i] && Save.data.stars[i] == null) await playStory(STORY[i]);
+  await Help.say(help, 'b');
   await dropIn(routeLevel(routeIdx('b', i)) === 'hard' ? 'HARD!' : '토벌 시작!');
   if (bowl) banner(`${bowl.name}!`, 500);
   B.busy = false;
@@ -1116,7 +1124,7 @@ $('#btnBack').onclick = () => {
   el.querySelector('[data-p=quit]').onclick = () => {
     Sound.play('click');
     close();
-    if (costs) Hearts.lose();
+    if (costs) { Stats.end('quit', B.mode === 'life' ? { goals_left: Life.leftPct() } : { wave: B.wave + 1 }); Hearts.lose(); }
     B.over = true;
     go(leaveTo());
   };
@@ -2071,6 +2079,7 @@ async function endTurn() {
   await Promise.all(B.pending);
   B.pending = [];
   if (B.mode === 'life') { await Life.endTurn(); return; }
+  Stats.turn();
   if (!aliveMons().length) { await monsterDefeated(); return; }
   if (B.fever) { B.fever--; updateFever(); }
   if (B.rally) B.rally--;
@@ -2174,6 +2183,7 @@ async function win() {
   const ratio = B.teamHp / B.teamMax;
   const stars = ratio >= 0.7 ? 3 : ratio >= 0.35 ? 2 : 1;
   const firstClear = Save.data.stars[B.stage] == null;
+  Stats.end('clear', { stars, hp_left: Math.round(ratio * 100) });
   const coins = Meta.reward(stars, firstClear), treat = Meta.treat('b', B.stage, stars, firstClear);
   Daily.add('win');
   Daily.add('battle');
@@ -2191,7 +2201,9 @@ async function win() {
   const ch = mvp(), shard = firstClear && Meta.shardGift(ch.id, stars);
   Sound.music(null);
   const from = k;
+  Share.prepare({ k, name: STAGES[B.stage].name, stars, mode: 'b', char: ch.id, rows: [['남은 체력', Math.round(ratio * 100) + '%']] });
   modal({
+    share: true,
     title: '토벌 성공!', stars, char: ch.id, text: `MVP ${ch.name}: "${lineOf(ch.id)}"`,
     rows: [['남은 체력', Math.round(ratio * 100) + '%'], [`<img class="row-ic" src="${ITEM('coin')}">`, '+' + coins], treat, shard].filter(Boolean),
     btn2: '🏠 지도로', on2: () => go(() => openMap(firstClear ? from : null)),
@@ -2207,15 +2219,18 @@ async function lose() {
   Sound.music(null);
   Sound.play('jingle_lose', 1, 0.9);
   await banner('후퇴…', 600);
+  const monLeft = Math.ceil((aliveMons().reduce((t, m) => t + m.hp, 0) / Math.max(1, (B.mons || []).reduce((t, m) => t + m.max, 0))) * 100);
+  const lost = () => Stats.end('fail', { monster_hp: monLeft, wave: B.wave + 1 });
   modal({
     title: '실패…', stars: 0, img: 'assets/img/art/scene_scared.jpg', photo: true, text: '치이카와: (훌쩍…) 상성 좋은 친구랑 다시 가 보자',
     rows: [['괴물 체력', Math.ceil((aliveMons().reduce((t, m) => t + m.hp, 0) / Math.max(1, (B.mons || []).reduce((t, m) => t + m.max, 0))) * 100) + '%'], ['웨이브', `${B.wave + 1} / ${STAGES[B.stage].waves.length}`], [`<img class="row-ic" src="${ITEM('heart')}">`, '-1']],
-    btn2: '🏠 지도로', on2: () => { Hearts.lose(); go(openMap); },
-    btn1: '다시 하기', on1: () => { Hearts.lose(); Hearts.need(() => go(() => startStage(B.stage)), () => go(openMap)); },
+    btn2: '🏠 지도로', on2: () => { lost(); Hearts.lose(); go(openMap); },
+    btn1: '다시 하기', on1: () => { lost(); Hearts.lose(); Hearts.need(() => go(() => startStage(B.stage)), () => go(openMap)); },
     ...(!B.cont && (Items.n('cont') || Save.data.coins >= itemPrice('cont')) ? { // 이어하기: 체력 절반 채우고 그 자리에서 계속. 이어하기권이 없으면 코인으로, 스테이지마다 한 번
-      btn2: '다시 하기', on2: () => { Hearts.lose(); Hearts.need(() => go(() => startStage(B.stage)), () => go(openMap)); },
+      btn2: '다시 하기', on2: () => { lost(); Hearts.lose(); Hearts.need(() => go(() => startStage(B.stage)), () => go(openMap)); },
       btn1: Items.n('cont') ? `이어하기권 쓰기 (${Items.n('cont')})` : `이어하기 (코인 ${itemPrice('cont')})`,
       on1: () => {
+        Stats.cont(Items.n('cont') ? 'ticket' : 'coins');
         if (Items.n('cont')) Items.use('cont'); else Meta.addCoins(-itemPrice('cont'));
         B.cont = true;
         B.teamHp = Math.ceil(B.teamMax / 2);

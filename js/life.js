@@ -474,9 +474,14 @@ const Life = {
     B.grid = Board.create(lay);
     const bowl = run.kind === 'route' ? Ramen.takeLife() : null; // 먹고 온 라멘: 아이템 깔기·이동 더하기
     const boosts = Items.applyBoost(); // 친구 고르는 창에서 켠 시작 아이템
+    const help = run.kind === 'route' ? Help.level('l', i) : 0; // 여러 번 막힌 스테이지면 응원 선물 (js/stats.js)
+    Help.life(help);
+    L.goal0 = st.goals.map(g => Life.remain(g)); // 처음 목표 양 (실패했을 때 얼마나 남았는지 기록하려고)
+    if (run.kind === 'route') Stats.start('l', i, help);
     renderFloor();
     Life.hud();
     if (run.kind === 'route' && LIFE_STORY[i] && (Save.data.life || [])[i] == null) await playStory(LIFE_STORY[i]);
+    await Help.say(help, 'l');
     await dropIn(run.kind === 'route' && routeLevel(routeIdx('l', i)) === 'hard' ? 'HARD!' : st.intro);
     if (bowl) banner(`${bowl.name}!`, 500);
     else if (boosts) banner('시작 아이템!', 500);
@@ -604,6 +609,7 @@ const Life = {
   },
 
   async endTurn() {
+    Stats.turn();
     if (!L.st.time) L.moves--;
     if (B.fever && !L.st.time) { B.fever--; updateFever(); }
     // 거품을 하나도 못 터뜨린 턴에는 거품이 번짐
@@ -765,7 +771,11 @@ const Life = {
     await sleep(400);
   },
 
+  // 남은 목표 비율(%): 목표마다 남은 비율의 평균 (실패 기록용)
+  leftPct: () => Math.round((100 * L.st.goals.reduce((a, g, k) => a + Life.remain(g) / Math.max(1, L.goal0?.[k] || 1), 0)) / Math.max(1, L.st.goals.length)),
+
   async win() {
+    const left = L.st.time ? Math.ceil(L.time) : L.moves; // 보너스 타임 전 남은 이동(초)
     // 보너스 타임이 끝날 때까지는 over를 세우지 않음 (그 사이 뒤로 가기로 판이 바뀌지 않게)
     B.busy = true;
     Life.stopTimer();
@@ -777,6 +787,7 @@ const Life = {
     if (L.run.kind === 'daily') return DayChal.cleared();
     const st = L.st, i = L.i;
     const stars = L.score >= st.stars[2] ? 3 : L.score >= st.stars[1] ? 2 : 1;
+    if (L.run.kind === 'route') Stats.end('clear', { stars, moves_left: left });
     const list = (Save.data.life = Save.data.life || []);
     const first = list[i] == null;
     const coins = Meta.reward(stars, first), treat = Meta.treat('l', i, stars, first);
@@ -793,7 +804,9 @@ const Life = {
     if (first) await Meta.stageJoin('l', i);
     Sound.music(null);
     const ch = mvp(), shard = first && L.run.kind === 'route' && Meta.shardGift(ch.id, stars);
+    if (L.run.kind === 'route') Share.prepare({ k, name: st.name, stars, mode: 'l', char: ch.id, rows: [['점수', L.score]] });
     modal({
+      share: L.run.kind === 'route',
       title: st.exam ? '합격!' : '클리어!', stars, char: ch.id, text: `${ch.name}: "${lineOf(ch.id)}"`,
       rows: [['점수', L.score], [`<img class="row-ic" src="${ITEM('coin')}">`, '+' + coins], treat, shard].filter(Boolean),
       btn2: '🏠 지도로', on2: () => go(() => openMap(first ? k : null)),
@@ -814,8 +827,10 @@ const Life = {
     if (L.run.kind === 'tower' && L.extra) return Tower.over();
     // 모험 지도 스테이지를 포기하면 하트 하나
     const route = L.run.kind === 'route';
+    const lost = () => route && Stats.end('fail', { goals_left: Life.leftPct() });
     const retry = () => {
       if (!route) return go(() => (L.run.kind === 'tower' ? Tower.over() : L.run.kind === 'daily' ? DayChal.start() : Life.start(L.i)));
+      lost();
       Hearts.lose();
       Hearts.need(() => go(() => Life.start(L.i)), () => go(openMap));
     };
@@ -829,6 +844,7 @@ const Life = {
         ...card, text: ticket ? `이어하기${have ? '권으로' : '로'} ${L.st.time ? '15초' : '5번'} 더 해 볼까요?` : `조금만 더! ${L.st.time ? '15초' : '5번'} 더 해 볼까요?`,
         btn1: ticket ? (have ? `이어하기권 쓰기 (${Items.n('cont')})` : `이어하기 (코인 ${itemPrice('cont')})`) : L.st.time ? '+15초 더!' : '+5번 더!',
         on1: () => {
+          if (route) Stats.cont(ticket ? (have ? 'ticket' : 'coins') : 'free');
           if (ticket) { if (have) Items.use('cont'); else Meta.addCoins(-itemPrice('cont')); L.cont = true; }
           L.extra = true;
           if (L.st.time) L.time += 15; else L.moves += 5;
@@ -841,7 +857,7 @@ const Life = {
         btn2: L.run.kind === 'tower' ? '여기까지' : '다시 하기', on2: retry,
       });
     } else {
-      modal({ ...card, text: '아깝다! 다음엔 꼭 깰 수 있어', rows: route ? [...left, [`<img class="row-ic" src="${ITEM('heart')}">`, '-1']] : left, btn1: '다시 하기', on1: retry, btn2: '🏠 지도로', on2: () => { if (route) Hearts.lose(); go(route ? openMap : openChallenge); } });
+      modal({ ...card, text: '아깝다! 다음엔 꼭 깰 수 있어', rows: route ? [...left, [`<img class="row-ic" src="${ITEM('heart')}">`, '-1']] : left, btn1: '다시 하기', on1: retry, btn2: '🏠 지도로', on2: () => { lost(); if (route) Hearts.lose(); go(route ? openMap : openChallenge); } });
     }
   },
 };

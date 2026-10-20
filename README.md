@@ -96,6 +96,24 @@ node tools/sim.js route 100                    # 루트 전체를 봇으로 돌�
 - 토벌: 친구 레벨이 60판 6 → 300판 10으로 오른다고 보고, 깨는 비율과 싸움 길이(10~18턴)에 맞춰 괴물 체력·공격력을 정함
 - 잰 값은 `tools/stages/tuned.json`에 남겨 둬서, 대사만 고치면 다시 재지 않음
 
+## 플레이 기록 보기 (Google Analytics)
+
+모험 지도 스테이지마다 이벤트를 보냅니다 (`js/stats.js`, 진짜 사이트에서만).
+
+- `level_start`: 스테이지 시작
+- `level_continue`: 이어하기 (`method`: free 공짜 +5번 / ticket 이어하기권 / coins 코인)
+- `level_end`: 끝 (`result`: clear 클리어 / fail 실패 / quit 중간에 나감 / closed 앱을 닫음)
+- `share`: 클리어 자랑하기
+
+같이 가는 값: `stage`(1~300), `chapter`, `mode`(puzzle/battle), `difficulty`(normal/challenge/hard), `attempt`(몇 번째 도전), `help`(막힌 판 도움 단계 0~2), `moves_used`, `moves_left`(클리어 때 남은 이동·초), `continues`, `duration_sec`, `stars`, `goals_left`(실패 때 남은 목표 %), `monster_hp`(실패 때 남은 괴물 체력 %), `hp_left`(토벌 클리어 때 남은 체력 %), `wave`
+
+처음 한 번 GA 관리에서 맞춤 정의를 만들어야 보고서에서 스테이지별로 볼 수 있습니다:
+1. [GA](https://analytics.google.com) → 관리 → 데이터 표시 → **맞춤 정의** → 맞춤 측정기준 만들기 (범위: 이벤트): `stage`, `chapter`, `mode`, `difficulty`, `result`, `attempt`, `help`, `method`
+2. 같은 곳 **맞춤 측정항목**: `moves_used`, `moves_left`, `continues`, `duration_sec`, `goals_left`, `monster_hp`
+3. 탐색 → 자유 형식: 행 `stage`, 열 `result`, 값 `이벤트 수`, 필터 `이벤트 이름 = level_end` → 스테이지마다 클리어·실패·포기 수. 실패가 많은 스테이지는 `tools/stages/spec.js`에서 고치고 `node tools/stages/make.js "--only=이름"`
+
+막힌 판 도와주기: 아직 못 깬 스테이지를 3번 실패하면 하치와레가 응원 선물(퍼즐 랏코 검 2개 / 토벌 스킬 게이지 반), 5번부터는 더(퍼즐 폭탄+이동 3번 / 토벌 체력 +20%). 클리어 자랑하기: 결과 창 '자랑하기' → 지역 풍경·로고·MVP 친구·별이 든 카드 그림을 공유 (`js/share.js`)
+
 ## 실행
 
 정적 파일만 있어서 아무 웹 서버로 열면 됩니다.
