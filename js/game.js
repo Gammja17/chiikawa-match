@@ -734,7 +734,8 @@ function modal({ title, stars = null, char, img = null, photo = false, rows = []
 }
 
 // ---------- 전투 ----------
-const B = { mode: 'battle', team: [], gauge: [], grid: null, stage: 0, wave: 0, monHp: 0, monMax: 0, cd: 0, teamHp: 120, teamMax: 120, busy: true, over: false, sel: null, S: 56, pending: [] };
+const B = { mode: 'battle', team: [], gauge: [], grid: null, stage: 0, wave: 0, monHp: 0, monMax: 0, cd: 0, teamHp: 120, teamMax: 120, busy: true, over: false, sel: null, S: 56, pending: [],
+  moving: new Set(), open: false, quick: null, quickSwapped: null }; // moving·open·quick: 떨어지는 동안 두기
 // ---------- 괴물 여럿: 3장부터 보스가 아닌 첫 웨이브는 2~3마리가 한꺼번에 (각자 카운트다운), 누르면 그 괴물부터 때림 ----------
 // B.mons = [{ w: 웨이브 정보, hp, max, cd, el: {img, hp, cd, name, sprite, card} }], B.pick = 고른 괴물 (안 고르면 왼쪽부터)
 const GROUP_AT = 20, TRIO_AT = 140; // 모험 지도 21판(3장)부터 둘, 141판(15장)부터 가끔 셋
@@ -1190,7 +1191,7 @@ function clearSel() {
 }
 boardEl.addEventListener('pointerdown', e => {
   Tutor.poke();
-  if (B.busy || B.over) return;
+  if (B.over || (B.busy && !canQuick())) return;
   const cell = cellAt(e);
   if (!cell) return;
   down = { x: e.clientX, y: e.clientY, cell, moved: false };
@@ -1204,6 +1205,7 @@ boardEl.addEventListener('pointermove', e => {
   const [r, c] = down.cell;
   const to = Math.abs(dx) > Math.abs(dy) ? [r, c + Math.sign(dx)] : [r + Math.sign(dy), c];
   clearSel();
+  if (B.busy) { if (inside(to[0], to[1])) quickSwap(down.cell, to); return; } // 연쇄 중: 떨어지는 동안 두기
   if (inside(to[0], to[1]) && movable(B.grid[to[0]][to[1]])) trySwap(down.cell, to);
   else if (B.grid[r][c]?.special) activate(down.cell); // 벽이나 장애물 쪽으로 밀어도 제자리에서 발동
 });
@@ -1224,6 +1226,36 @@ boardEl.addEventListener('pointerup', () => {
   setSel(d.cell);
 });
 boardEl.addEventListener('pointercancel', () => (down = null));
+
+// ---------- 떨어지는 동안 두기 (일상 퍼즐, 꿈의집처럼) ----------
+// 연쇄가 도는 중에도 판이 다 찬 뒤(B.open)라면 이미 내려앉은 얼굴끼리는 바꿀 수 있음
+// 맞으면 이동 1을 바로 쓰고, 도는 연쇄가 다음 단계에서 같이 터뜨림. 안 맞으면 살짝 갔다 돌아옴
+// 떨어지는 칸(B.moving)·아이템·장애물·리본은 못 잡음. 토벌(괴물 턴)과 시간 판(연쇄 중엔 시계가 멈춤)은 그대로 기다림
+const canQuick = () => B.busy && B.open && !B.over && !B.quick && B.mode === 'life' && !L.ending && !B.inSkill && !Tutor.guide && !L.st?.time && L.moves >= 2 && !Life.done();
+const settled = t => movable(t) && !t.special && t.type >= 0 && !B.moving.has(t) && liveTile(t);
+function quickSwap(a, b) {
+  const g = B.grid, ta = g[a[0]]?.[a[1]], tb = g[b[0]]?.[b[1]];
+  if (!canQuick() || !settled(ta) || !settled(tb)) return;
+  Board.swap(g, a, b);
+  const mine = ([r, c]) => (r === a[0] && c === a[1]) || (r === b[0] && c === b[1]);
+  if (!Board.findRuns(g).some(run => run.cells.some(mine))) {
+    Board.swap(g, a, b);
+    Sound.play('bad', 1.2, 0.5);
+    const nudge = (t, from, to) => t.el.animate([{ transform: tf(...from) }, { transform: `translate(${(from[1] * 0.7 + to[1] * 0.3) * B.S}px,${(from[0] * 0.7 + to[0] * 0.3) * B.S}px)` }, { transform: tf(...from) }], { duration: 200, easing: 'ease-out' });
+    nudge(ta, a, b);
+    nudge(tb, b, a);
+    return;
+  }
+  Haptic.tap(15);
+  Sound.play('swap', 1.15);
+  B.played = true;
+  B.quickSwapped = [a, b];
+  L.moves--;
+  if (B.fever) { B.fever--; updateFever(); }
+  Stats.turn();
+  Life.hud();
+  B.quick = Promise.all([slide(ta, b[0], b[1], 100, 'cubic-bezier(.3,.7,.4,1)'), slide(tb, a[0], a[1], 100, 'cubic-bezier(.3,.7,.4,1)')]).then(() => { B.quick = null; });
+}
 
 async function trySwap(a, b) {
   if (B.busy || B.over) return;
@@ -1324,7 +1356,13 @@ const Combo = {
 async function cascade(swapped, forced, origin = null, depth = 0) {
   let combo = 0, landed = null;
   for (;;) {
-    const res = Board.resolve(B.grid, combo === 0 ? swapped : null, combo === 0 ? forced : []);
+    B.open = false; // 판을 고치는 동안은 '떨어지는 동안 두기' 닫음
+    if (B.quick) await B.quick; // 방금 둔 수가 자리 잡을 때까지
+    const quick = B.quickSwapped;
+    const res = Board.resolve(B.grid, combo === 0 ? swapped : quick, combo === 0 ? forced : []);
+    B.quickSwapped = null;
+    if (res && quick && combo) { combo = 0; Combo.end(); } // 떨어지는 동안 둔 수는 새 수: 콤보(점수 배수·피버)를 처음부터
+    if (!res && landed) { B.open = true; await landed; landed = null; continue; } // 마지막으로 내려앉는 동안에도 둘 수 있게, 다 앉으면 한 번 더 봄
     if (!res) break;
     combo++;
     B.maxCombo = Math.max(B.maxCombo || 0, combo);
@@ -1333,9 +1371,11 @@ async function cascade(swapped, forced, origin = null, depth = 0) {
     if (combo === 5 && !B.fever) feverShow(); // 연쇄는 멈추지 않고 그 위에 겹쳐서
     await stepFx(res, combo, combo === 1 ? origin : null);
     landed = fall(Board.gravity(B.grid));
+    B.open = true; // 판이 다 찼으니 내려앉은 칸끼리는 둘 수 있음
     await Promise.race([landed, fall.soon]);
-    if (B.mode === 'life' && Life.hasIng()) { await landed; await Life.collect(); } // 재료는 다 내려앉은 뒤에 거둠
+    if (B.mode === 'life' && Life.hasIng()) { B.open = false; await landed; await Life.collect(); } // 재료는 다 내려앉은 뒤에 거둠
   }
+  B.open = false;
   await landed; // 다 내려앉은 뒤에 손을 댈 수 있게
   Combo.end();
   if (B.mode === 'life' && L.feverGift) { L.feverGift = false; await Life.feverGift(); } // 피버 첫 턴 선물
@@ -2097,6 +2137,7 @@ async function fall(moves) {
   let end = 0;
   const ps = moves.map(({ tile: t, path, fresh }) => {
     if (fresh) makeTile(t);
+    B.moving.add(t); // 떨어지는 중 (떨어지는 동안 두기에서 못 잡음)
     const t0 = path[0][2], span = Math.max(1, path[path.length - 1][2] - t0);
     const [r1, c1] = path[path.length - 1];
     place(t, r1, c1);
@@ -2106,7 +2147,7 @@ async function fall(moves) {
     const dur = 120 + Math.sqrt(span) * 80, delay = t0 * 42;
     end = Math.max(end, delay + dur);
     return t.el.animate(frames, { duration: dur, delay, easing: 'cubic-bezier(.5,0,.8,.45)', fill: 'backwards' })
-      .finished.then(() => squish(t));
+      .finished.then(() => { B.moving.delete(t); squish(t); }, () => B.moving.delete(t));
   });
   if (moves.length) later(() => Sound.play('land', 1.3, 0.25), 220);
   const all = Promise.all(ps);

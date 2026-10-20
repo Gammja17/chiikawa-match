@@ -443,7 +443,7 @@ const Life = {
     else if ((run.kind !== 'tower' || run.floor === 1 || L.helper == null) && !(await pickHelper(st))) return go(run.kind === 'route' ? openMap : openChallenge); // 고르다가 돌아가기
     const buddy = !!st.host && CHARS[L.helper]?.id === st.host; // 단짝 보너스
     Object.assign(L, { hg: 0, run, ending: false, st, i, moves: (st.moves || 0) + (buddy && st.moves ? 2 : 0), time: (st.time || 0) + (buddy && st.time ? 6 : 0), score: 0, ing: 0, chars: {}, popped: false, extra: false, cont: false, goalsHtml: '', feverT: 0, feverGift: false });
-    Object.assign(B, { mode: 'life', stage: i, over: false, busy: true, inSkill: false, sel: null, pending: [], maxCombo: 0, fever: 0 });
+    Object.assign(B, { mode: 'life', stage: i, over: false, busy: true, inSkill: false, sel: null, pending: [], maxCombo: 0, fever: 0, moving: new Set(), open: false, quick: null, quickSwapped: null });
     B.team = LIFE_CHARS.slice(0, st.types).map(id => CHARS.findIndex(c => c.id === id));
     Object.assign(B, { real: B.team.length, played: false, dmgBy: {} });
     NTYPES = st.types;
