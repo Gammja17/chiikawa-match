@@ -240,6 +240,19 @@ const KMASK = {};
   sc.onerror = () => sc.remove();
   document.head.appendChild(sc);
 }
+// 날카로운 모양(칼자국·충격 별·빛살, assets/img/fx/sharp, game-icons.net CC BY 3.0·Kenney CC0)을 진한 테두리 스티커로
+const SHARP = n => new URL(`assets/img/fx/sharp/${n}.png`, location.href).href;
+['quick-slash', 'claw-slashes', 'crossed-slashes', 'explosion-rays', 'gooey-impact', 'spiky-explosion', 'sparkles', 'burst'].forEach(n => Particles.img(SHARP(n)));
+function sk(name, x, y, size, color, frames, opts, outline = '#4a4262') {
+  if (Particles.count() > 300 || (Prefs.d.light && Math.random() < 0.4)) return Promise.resolve();
+  return Particles.add({ src: SHARP(name), x, y, size, color, outline: Prefs.d.light ? null : outline }, frames, opts);
+}
+// 탁! 하고 커졌다 빠르게 사라지는 날카로운 한 컷 (in: 들어오는 비율)
+const snapFrames = (rot = 0, from = 0.3, to = 1.15, spin = 0) => [
+  { transform: `rotate(${rot}deg) scale(${from})`, opacity: 1 },
+  { transform: `rotate(${rot + spin * 0.4}deg) scale(${to})`, opacity: 1, offset: 0.28 },
+  { transform: `rotate(${rot + spin}deg) scale(${to * 1.08})`, opacity: 0 },
+];
 function kx(name, alt, x, y, size, color, frames, opts) {
   if (!KING || Prefs.d.light || !KMASK[name]) return kp(alt, x, y, size, color, frames, opts);
   if (Particles.count() > (FX_LOAD > 2 ? 200 : 280)) return Promise.resolve();
@@ -1338,6 +1351,8 @@ async function comboFx(combo) {
   const ring = addFx('ring', p.x, p.y);
   ring.animate([{ width: '0px', height: '0px', opacity: 1 }, { width: B.S * 8 + 'px', height: B.S * 8 + 'px', opacity: 0 }], { duration: 500, easing: 'ease-out' }).finished.then(() => ring.remove());
   comboArt(combo.kind, p);
+  const k = combo.kind, big = k.startsWith('rainbow') ? 'sparkles' : k === 'bomb+bomb' ? 'spiky-explosion' : /h|v/.test(k.replace('rainbow', '')) ? 'crossed-slashes' : 'burst';
+  sk(big, p.x, p.y, B.S * 4.6, big === 'sparkles' ? '#fff3a8' : '#ffffff', snapFrames(Math.random() * 20 - 10, 0.3, 1.1, 12), { duration: 420, easing: 'cubic-bezier(.2,.9,.3,1)' }, big === 'burst' ? null : '#4a4262');
   await sleep(250);
   if (combo.planes) {
     await Promise.all(combo.planes.map(tg => planeFly(p, tileCenter(tg[0], tg[1]), combo.carry, 620)));
@@ -1412,7 +1427,7 @@ function chainKick(ef) {
   const S = B.S, o = tileCenter(ef.r, ef.c);
   ef.tile?.inner?.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.35,.75)', offset: 0.35 }, { transform: 'scale(.9,1.15)', offset: 0.7 }, { transform: 'scale(1.12)' }],
     { duration: CHAIN_BEAT, easing: 'ease-out' });
-  kp('circle_05', o.x, o.y, S * 1.8, '#ffffff', [{ transform: 'scale(.4)', opacity: 1 }, { transform: 'scale(1.15)', opacity: 0 }], { duration: 220, easing: 'ease-out' });
+  sk('gooey-impact', o.x, o.y, S * 2, '#ffffff', snapFrames(Math.random() * 360, 0.3, 1.05, 20), { duration: 220, easing: 'ease-out' });
   Sound.play('special', Math.min(2, 1.05 + ef.chain * 0.09), 0.5);
   Haptic.tap(10);
 }
@@ -1436,8 +1451,8 @@ function blade(o, dir, horiz, steps, light) {
   sw.animate([{ transform: pos(0, 0.8) }, { transform: pos(S * 0.6, 1.25), offset: 0.12 }, { transform: pos(len + S * 0.6, 1.1), opacity: 1, offset: 0.9 }, { transform: pos(len + S, 0.9), opacity: 0 }],
     { duration: dur + 60, easing: 'linear', fill: 'forwards' }).finished.then(() => sw.remove());
   for (let k = 1; k <= steps; k++) if (!light || k % 2) later(() => {
-    const x = o.x + ux * k * S, y = o.y + uy * k * S, tilt = (k % 2 ? 1 : -1) * (25 + Math.random() * 20);
-    kp('slash_03', x, y, S * 1.25, '#ffffff', [{ transform: `rotate(${ang + 90 + tilt}deg) scale(.4, .2)`, opacity: 1 }, { transform: `rotate(${ang + 90 + tilt}deg) scale(1.15, 1)`, opacity: 1, offset: 0.4 }, { transform: `rotate(${ang + 90 + tilt}deg) scale(1.3, .6)`, opacity: 0 }], { duration: 230, easing: 'ease-out' });
+    const x = o.x + ux * k * S, y = o.y + uy * k * S, tilt = (k % 2 ? 1 : -1) * (20 + Math.random() * 25);
+    sk('quick-slash', x, y, S * 1.45, '#ffffff', [{ transform: `rotate(${ang + tilt - 25}deg) scale(.5)`, opacity: 1 }, { transform: `rotate(${ang + tilt}deg) scale(1.1)`, opacity: 1, offset: 0.35 }, { transform: `rotate(${ang + tilt + 8}deg) scale(1.2)`, opacity: 0 }], { duration: 210, easing: 'ease-out' }, '#3a4f86');
     if (!light) kp('spark_05', x, y, S * 0.9, '#bfe9ff', [{ transform: `rotate(${ang + 90}deg) scale(.5)`, opacity: 1 }, { transform: `rotate(${ang + 90}deg) scale(1.2)`, opacity: 0 }], { duration: 220 });
   }, k * BLADE_MS);
 }
@@ -1456,6 +1471,8 @@ function effectFx(ef) {
       Sound.play('line', 1.15 * pitch, 0.85);
       Sound.play('swap', 1.7 * pitch, 0.7); // 칼 소리 (슥-)
       kp('flare_01', o.x, o.y, S * 2.6, '#ffffff', [{ transform: 'scale(.3)', opacity: 1 }, { transform: 'scale(1.2)', opacity: 0 }], { duration: 260, easing: 'ease-out' });
+      const sw = horiz ? 0 : 90; // 큰 초승달 칼자국이 휙 (칼 방향으로)
+      sk('quick-slash', o.x, o.y, S * 3.4, '#ffffff', [{ transform: `rotate(${sw - 70}deg) scale(.5)`, opacity: 1 }, { transform: `rotate(${sw - 10}deg) scale(1.1)`, opacity: 1, offset: 0.4 }, { transform: `rotate(${sw + 10}deg) scale(1.2)`, opacity: 0 }], { duration: 280, easing: 'cubic-bezier(.2,.9,.3,1)' }, '#3a4f86');
       const at = horiz ? ef.c : ef.r, n = horiz ? COLS : ROWS;
       blade(o, 1, horiz, n - 1 - at, heavy);
       blade(o, -1, horiz, at, heavy);
@@ -1480,7 +1497,9 @@ function effectFx(ef) {
       Sound.play('thwack', 0.6 * pitch, 1);
       Sound.play('line', 0.6 * pitch, 0.9);
       if (!heavy) kp('light_02', o.x, o.y, S * 5, '#fff6c8', [{ transform: 'scale(.2)', opacity: 1 }, { transform: 'scale(1)', opacity: 0 }], { duration: 320, easing: 'ease-out' });
-      kx('explosion01', 'star_09', o.x, o.y, S * 4.2, '#ffd25a', [{ transform: 'scale(.2) rotate(0)', opacity: 1 }, { transform: 'scale(1.05) rotate(20deg)', opacity: 0 }], { duration: 380, easing: 'cubic-bezier(.2,.9,.3,1)' });
+      sk('burst', o.x, o.y, S * 5.2, '#fff6c8', snapFrames(Math.random() * 40, 0.3, 1.1, 25), { duration: 340, easing: 'cubic-bezier(.2,.9,.3,1)' }, null);
+      sk('spiky-explosion', o.x, o.y, S * 3.3, '#ffcf3f', snapFrames(Math.random() * 360, 0.25, 1.15, 18), { duration: 360, easing: 'cubic-bezier(.2,.9,.3,1)' });
+      if (!heavy) sk('spiky-explosion', o.x, o.y, S * 1.9, '#ff8a3d', snapFrames(Math.random() * 360, 0.2, 1.1, -25), { duration: 300, delay: 40, easing: 'cubic-bezier(.2,.9,.3,1)' }, null);
       kp('circle_03', o.x, o.y, S * 5.5, '#ffe066', [{ transform: 'scale(.1)', opacity: 1 }, { transform: 'scale(1)', opacity: 0 }], { duration: 420, easing: 'cubic-bezier(.2,.8,.3,1)' });
       burst(o.x, o.y, '#ffb347', heavy ? 5 : 10);
       if (!heavy) { // 한꺼번에 많이 터질 땐 여운 조각은 빼서 폰에서 안 끊기게
@@ -2013,6 +2032,8 @@ function hitMonster(dmg, ch, crit, k, eff = 1, carried = false) {
     { transform: `translate(-50%,-50%) rotate(${ang}deg) scaleX(1.1) scaleY(.2)`, opacity: 0 },
   ], { duration: 260, easing: 'ease-out' }).finished.then(() => sl.remove());
   ringFx(x, y, crit ? 150 : 90, crit ? '#ffd84d' : '#ffffff', 300);
+  sk('spiky-explosion', x, y, crit ? 120 : eff > 1 ? 96 : 72, crit ? '#ffd84d' : ch.ring, snapFrames(Math.random() * 360, 0.3, 1.1, 20), { duration: 230, easing: 'ease-out' });
+  if (crit) sk('explosion-rays', x, y, 210, '#fff6c8', snapFrames(Math.random() * 30, 0.4, 1.15, 15), { duration: 300, easing: 'ease-out' }, null);
   if (crit || eff > 1) {
     app.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.025)' }, { transform: 'scale(1)' }], { duration: 160, easing: 'ease-out' });
     flash('#ffffff', 0.25);
@@ -2651,6 +2672,11 @@ async function rakkoSlash(ch, r0, c0) {
       kp('slash_03', p.x, p.y, S * 1.3, '#ffffff', [{ transform: `rotate(${ang + 90 + tilt}deg) scale(.3, .2)`, opacity: 1 }, { transform: `rotate(${ang + 90 + tilt}deg) scale(1.2, 1)`, opacity: 1, offset: 0.4 }, { transform: `rotate(${ang + 90 + tilt}deg) scale(1.3, .5)`, opacity: 0 }], { duration: 240, easing: 'ease-out' });
       if (Math.abs(horiz ? r - r0 : c - c0) === 0) actorHit(r, c, ch.ring, i % 7);
     }, Math.abs(horiz ? c - c0 : r - r0) * 14));
+    [0.22, 0.5, 0.78].forEach((u, j) => sk('quick-slash', from.x + (to.x - from.x) * u, from.y + (to.y - from.y) * u, S * 3.2, '#ffffff',
+      [{ transform: `rotate(${ang - 60 + j * 8}deg) scale(.45)`, opacity: 1 }, { transform: `rotate(${ang - 5 + j * 8}deg) scale(1.1)`, opacity: 1, offset: 0.35 }, { transform: `rotate(${ang + 10 + j * 8}deg) scale(1.2)`, opacity: 0 }],
+      { duration: 300, delay: j * 35, easing: 'cubic-bezier(.2,.9,.3,1)' }, '#3a4f86'));
+    sk('explosion-rays', mid.x, mid.y, S * 6, '#fff6c8', snapFrames(ang, 0.4, 1.1, 10), { duration: 360, easing: 'ease-out' }, null);
+    sk('claw-slashes', mid.x, mid.y, S * 3.6, '#ffffff', snapFrames(ang - 20, 0.4, 1.12, 10), { duration: 360, delay: 40, easing: 'cubic-bezier(.2,.9,.3,1)' }, '#3a4f86');
     if (!Prefs.d.noShake) app.animate([{ transform: 'none' }, { transform: horiz ? 'translateY(9px)' : 'translateX(9px)' }, { transform: horiz ? 'translateY(-5px)' : 'translateX(-5px)' }, { transform: 'none' }], { duration: 220, easing: 'ease-out' });
     flash('#ffffff', 0.35);
     Haptic.tap(40);

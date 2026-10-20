@@ -41,7 +41,7 @@ Prefs.load();
 const CREDITS = `먼작귀 퍼즐 토벌 대작전!은 팬이 만든 비공식 게임이에요. 돈을 받지 않아요.
 캐릭터·괴물: © nagano / chiikawa committee
 그림: Chiikawa Wiki(Fandom)의 원작 애니메이션 장면과 공식 일러스트
-효과음: Pixabay, Mixkit · 이펙트: Kenney Particle Pack(CC0)
+효과음: Pixabay, Mixkit · 이펙트: Kenney Particle Pack·Explosion Pack(CC0), 칼자국·충격 모양 game-icons.net(Lorc·Delapouite, CC BY 3.0)
 아이콘: Noto Emoji(Google, Apache 2.0) · 글꼴: Poor Story(Google Fonts, OFL)
 배경 음악(OpenGameArt, CC0): Caturday - iamoneabe · happy lofi day - Tarush Singhal
   · Cat caffe, Florist, Countryside - Tad · Trouble in the Garden - Augmentality · Baby Black Magi - bobjt

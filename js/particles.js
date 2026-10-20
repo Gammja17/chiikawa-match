@@ -39,22 +39,35 @@ const Particles = {
     if (!im) { im = new Image(); im.src = src; this.imgs.set(src, im); }
     return im;
   },
-  tinted(src, color) {
-    const k = src + '|' + color;
+  // outline: 그 색으로 테두리를 두름 (스티커처럼). 모양을 둘레로 조금씩 밀어 찍어서 굵게 만든 뒤 위에 본 색
+  tinted(src, color, outline) {
+    const k = src + '|' + color + '|' + (outline || '');
     let c = this.tints.get(k);
     if (c) return c;
     if (this.tintBudget-- <= 0) return null; // 새 색은 한 프레임에 몇 개만 칠함 (몰리면 그 프레임이 끊김)
     const im = this.img(src);
     if (!im.complete || !im.naturalWidth) return null;
-    const S = 128; // 칠해 둘 크기 (그릴 때 늘리고 줄임)
-    c = document.createElement('canvas');
-    c.width = c.height = S;
-    const g = c.getContext('2d');
-    const r = Math.min(S / im.naturalWidth, S / im.naturalHeight), w = im.naturalWidth * r, h = im.naturalHeight * r;
-    g.drawImage(im, (S - w) / 2, (S - h) / 2, w, h); // center / contain
-    g.globalCompositeOperation = 'source-in';
-    g.fillStyle = color;
-    g.fillRect(0, 0, S, S);
+    const S = 128, pad = outline ? 8 : 0; // 칠해 둘 크기 (그릴 때 늘리고 줄임), 테두리 몫 여백
+    const paint = col => {
+      const t = document.createElement('canvas');
+      t.width = t.height = S;
+      const g = t.getContext('2d');
+      const r = Math.min((S - pad * 2) / im.naturalWidth, (S - pad * 2) / im.naturalHeight), w = im.naturalWidth * r, h = im.naturalHeight * r;
+      g.drawImage(im, (S - w) / 2, (S - h) / 2, w, h); // center / contain
+      g.globalCompositeOperation = 'source-in';
+      g.fillStyle = col;
+      g.fillRect(0, 0, S, S);
+      return t;
+    };
+    c = paint(color);
+    if (outline) {
+      const o = paint(outline), out = document.createElement('canvas');
+      out.width = out.height = S;
+      const g = out.getContext('2d');
+      for (let a = 0; a < 12; a++) g.drawImage(o, Math.cos((a / 12) * Math.PI * 2) * 4.5, Math.sin((a / 12) * Math.PI * 2) * 4.5);
+      g.drawImage(c, 0, 0);
+      c = out;
+    }
     if (this.tints.size > 400) this.tints.clear();
     this.tints.set(k, c);
     return c;
@@ -168,7 +181,7 @@ const Particles = {
       g.rotate(v('rot'));
       g.scale(v('sx'), v('sy'));
       if (p.src) {
-        const img = this.tinted(p.src, p.color || '#fff');
+        const img = this.tinted(p.src, p.color || '#fff', p.outline);
         if (img) g.drawImage(img, -p.size / 2, -p.size / 2, p.size, p.size);
       } else {
         g.fillStyle = p.color || '#fff';

@@ -1,0 +1,8 @@
+날카로운 이펙트 모양 (흰 모양으로 바꿔서 게임에서 색을 입힘)
+
+- quick-slash, claw-slashes, crossed-slashes, explosion-rays, gooey-impact, spiky-explosion: Lorc, https://game-icons.net (CC BY 3.0, https://creativecommons.org/licenses/by/3.0/)
+- sparkles: Delapouite, https://game-icons.net (CC BY 3.0)
+- burst: Kenney Explosion Pack, https://kenney.nl (CC0)
+
+원본: https://github.com/game-icons/icons , Kenney Explosion Pack
+바꾼 것: 검은 바탕을 지우고 모양을 흰색 256px PNG로 (색과 테두리는 게임 안에서 입힘)

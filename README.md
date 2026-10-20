@@ -114,6 +114,8 @@ python -m http.server 8770
 - 점수 숫자(0~9)·'+'·'초'·'보너스 타임!'·'피버 타임!'·'선물!' 그림 글자: 콤보 숫자 그림과 같은 느낌(색은 저마다 다르게)으로 [Jua](https://fonts.google.com/specimen/Jua) 글꼴(SIL Open Font License)을 써서 코드로 그림
 - 효과음: [Pixabay](https://pixabay.com/sound-effects/) (floraphonic, humordome / Pixabay Content License)와 [Mixkit](https://mixkit.co/free-sound-effects/) (Mixkit Sound Effects Free License). 크기를 맞추고 일부는 잘라서 mp3로 변환했습니다. 소리 파일만 따로 떼어 배포하는 것은 각 라이선스에서 허용하지 않습니다. 소리마다 볼륨은 `js/audio.js`의 `SFX_VOL`
 - 파티클 이펙트: [Kenney Particle Pack](https://kenney.nl/assets/particle-pack) (CC0). 라이선스 원문은 `assets/img/fx/k/LICENSE-kenney-particles.txt`
+- 날카로운 이펙트 모양(칼자국·충격 별·빛살·반짝이): [game-icons.net](https://game-icons.net) Lorc·Delapouite (CC BY 3.0), 충격파 별: Kenney Explosion Pack (CC0). 흰 모양으로 바꿔 게임 안에서 색과 테두리를 입힘, `assets/img/fx/sharp/LICENSE.txt`
+- 반짝이·조각은 캔버스 한 장에 그림 (`js/particles.js`, 폰에서 안 끊기게)
 - 배경 음악: OpenGameArt의 CC0 곡 (`assets/bgm/`, 출처는 `js/prefs.js`의 CREDITS)
 - 아이템, 장애물, 재료, 가구, 액세서리 아이콘: [Noto Emoji](https://github.com/googlefonts/noto-emoji) (Google, Apache License 2.0). 라이선스 원문은 `assets/img/items/LICENSE-noto.txt`
 - 글꼴: [Dongle](https://fonts.google.com/specimen/Dongle), [Gowun Dodum](https://fonts.google.com/specimen/Gowun+Dodum), [Gaegu](https://fonts.google.com/specimen/Gaegu) (Google Fonts, SIL Open Font License)
