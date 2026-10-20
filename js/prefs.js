@@ -1,8 +1,8 @@
-// 이 기기만의 설정 (계정 저장과 따로): 테마 색, 연출 가볍게, 화면 흔들림 끄기, 빠른 진행
+// 이 기기만의 설정 (계정 저장과 따로): 테마 색, 연출 가볍게, 화면 흔들림 끄기, 빠른 진행, 스킬 연출 끄기
 // data.js 다음, game.js 앞에서 불러옴 (sleep·animate가 빠른 진행을 따라가게)
 const Prefs = {
   KEY: 'chiikawa-prefs',
-  d: { theme: null, light: false, noShake: false, fast: false },
+  d: { theme: null, light: false, noShake: false, fast: false, noSkillFx: false },
   load() {
     try { Object.assign(Prefs.d, JSON.parse(localStorage.getItem(Prefs.KEY) || '{}')); } catch {}
     Prefs.applyTheme();

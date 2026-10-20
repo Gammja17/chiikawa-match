@@ -1032,7 +1032,8 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .theme-dots button { position: relative; width: 38px; height: 38px; padding: 0; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px color-mix(in srgb, var(--c) 60%, var(--ink)); overflow: hidden; }
 .theme-dots button img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.15) translateY(6%); }
 .theme-dots button.on { box-shadow: 0 0 0 3px #fff, 0 0 0 6px var(--ink); transform: scale(1.08); }
-.p-toggles3 button { width: 84px; height: 54px; font-size: 15px; }
+.p-toggles3 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 6px 8px; }
+.p-toggles3 button { width: auto; height: 46px; font-size: 16px; }
 .p-credits { margin-bottom: 4px; }
 #modalText { white-space: pre-line; } /* 줄바꿈 있는 글(크레딧)도 그대로 */
 #settings { align-items: center; justify-content: center; background: rgba(74, 66, 98, .5); z-index: 33; } /* 일시정지 창 위에 뜸 */
@@ -1259,3 +1260,8 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .share-btn { position: absolute; right: 12px; top: 12px; z-index: 3; padding: 6px 12px 6px 34px; border-radius: 99px; background: #fff url(../assets/img/items/sparkle.png?v=2) 8px center / 22px no-repeat; border: 2px solid var(--pink); color: var(--pink); font-family: var(--head); font-size: 16px; line-height: 1.2; box-shadow: 0 3px 0 #4a426222; }
 .share-btn:active { transform: scale(.95); }
 .share-btn[hidden] { display: none; }
+
+/* 스킬 연출 끔: 컷인 대신 위쪽에 잠깐 뜨는 스킬 이름표 */
+.skill-tag { position: absolute; left: 50%; top: 22%; z-index: 30; display: flex; align-items: center; gap: 8px; padding: 6px 18px 6px 8px; border-radius: 999px; background: var(--ring); color: #fff; font-family: var(--head); font-size: 24px; white-space: nowrap; box-shadow: 0 4px 0 rgba(74, 66, 98, .25); pointer-events: none; animation: skillTag 1s ease-out forwards; }
+.skill-tag img { width: 40px; height: 40px; border-radius: 50%; background: #fff; }
+@keyframes skillTag { 0% { transform: translateX(-50%) scale(.4); opacity: 0; } 15% { transform: translateX(-50%) scale(1.1); opacity: 1; } 25%, 75% { transform: translateX(-50%) scale(1); opacity: 1; } 100% { transform: translateX(-50%) translateY(-16px); opacity: 0; } }

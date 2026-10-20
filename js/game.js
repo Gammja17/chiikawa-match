@@ -89,6 +89,7 @@ function openSettings() {
     el.querySelector('[data-s=light]').classList.toggle('off', !Prefs.d.light);
     el.querySelector('[data-s=shake]').classList.toggle('off', Prefs.d.noShake);
     el.querySelector('[data-s=fast]').classList.toggle('off', !Prefs.d.fast);
+    el.querySelector('[data-s=skillfx]').classList.toggle('off', Prefs.d.noSkillFx);
     // 테마 색: 기본 분홍 + 가진 친구 색
     const cur = Prefs.d.theme || '';
     el.querySelector('[data-s=theme]').innerHTML = [['', Prefs.THEME_DEFAULT, '기본'], ...CHARS.filter(c => Meta.owned(c.id)).map(c => [c.id, c.ring, c.name])]
@@ -111,6 +112,8 @@ function openSettings() {
   };
   el.querySelector('[data-s=shake]').onclick = () => { Prefs.set('noShake', !Prefs.d.noShake); Sound.play('click'); sync(); shake(6, 260); };
   el.querySelector('[data-s=fast]').onclick = () => { Prefs.set('fast', !Prefs.d.fast); Sound.play('click'); sync(); };
+  // 스킬 연출을 끄면 컷인 없이 바로, 친구 움직임은 빨리 감기로 (효과는 똑같음)
+  el.querySelector('[data-s=skillfx]').onclick = () => { Prefs.set('noSkillFx', !Prefs.d.noSkillFx); Sound.play('click'); sync(); };
   el.querySelector('[data-s=credits]').onclick = () => {
     Sound.play('click');
     el.classList.remove('show');
@@ -2728,8 +2731,22 @@ async function useSkill(k) {
   const hint = document.createElement('div');
   hint.className = 'skip-hint';
   hint.textContent = '두 번 톡 ▶▶ 빨리 감기';
-  app.appendChild(hint);
-  await cutIn(ch);
+  if (Prefs.d.noSkillFx) {
+    // 설정에서 스킬 연출 끔: 컷인 없이 스킬 이름만 잠깐, 나머지는 빨리 감기
+    Sound.play('jingle_skill', 1.2, 0.6);
+    Haptic.tap(30);
+    FastFwd.on();
+    // 빨리 감기 뒤에 붙여야 이름표는 제 속도로 보임 (CSS 애니메이션, 진짜 setTimeout)
+    const tag = document.createElement('div');
+    tag.className = 'skill-tag';
+    tag.style.setProperty('--ring', ch.ring);
+    tag.innerHTML = `<img src="${FACE(ch.id)}" alt="">${sk.name}`;
+    app.appendChild(tag);
+    setTimeout(() => tag.remove(), 1000);
+  } else {
+    app.appendChild(hint);
+    await cutIn(ch);
+  }
   const auraOff = skillAura(ch.ring);
   let finAt = null; // 마무리 펑 자리 (없으면 맞은 칸들 가운데)
   // 일상 퍼즐: 이동(시간)을 더 주는 스킬
