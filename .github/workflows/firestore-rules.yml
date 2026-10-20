@@ -1,0 +1,28 @@
+# firestore.rules가 바뀌어 main에 올라오면 Firebase에 규칙을 배포
+# 처음 한 번 저장소 Secrets에 FIREBASE_SERVICE_ACCOUNT (서비스 계정 키 JSON 전체)를 넣어야 함 (없으면 건너뜀)
+name: Firestore 규칙 배포
+on:
+  push:
+    branches: [main]
+    paths: [firestore.rules]
+  workflow_dispatch:
+jobs:
+  rules:
+    runs-on: ubuntu-latest
+    env:
+      SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+    steps:
+      - uses: actions/checkout@v4
+        if: env.SA != ''
+      - uses: actions/setup-node@v4
+        if: env.SA != ''
+        with:
+          node-version: 22
+      - name: 규칙 배포
+        if: env.SA != ''
+        run: |
+          echo "$SA" > "$RUNNER_TEMP/sa.json"
+          GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json" npx -y firebase-tools@13 deploy --only firestore:rules --project chiikawa-3match --non-interactive
+      - name: 건너뜀 안내
+        if: env.SA == ''
+        run: echo "FIREBASE_SERVICE_ACCOUNT가 없어서 규칙 배포는 건너뛰었어요 (README '자동 배포' 참고)"

@@ -141,6 +141,19 @@ python -m http.server 8770
 
 ## 배포 (Cloudflare)
 
+### 자동 배포 (GitHub Actions)
+
+main에 올리면 `.github/workflows/deploy.yml`이 코드 문법·스테이지 점검 → `dist/` 만들기 → Cloudflare 배포까지 합니다. 저장소 **Actions** 탭에서 진행 상황을 보고, 점검이 실패하면 배포는 안 나갑니다. 손으로 다시 돌리려면 Actions → 배포 → Run workflow.
+
+처음 한 번 저장소 **Settings → Secrets and variables → Actions → New repository secret**:
+- `CLOUDFLARE_API_TOKEN`: Cloudflare 대시보드 → 내 프로필 → API 토큰 → 토큰 만들기 → 'Workers 편집' 템플릿
+- `CLOUDFLARE_ACCOUNT_ID`: Cloudflare 대시보드 → Workers 및 Pages 오른쪽의 계정 ID
+- `FIREBASE_SERVICE_ACCOUNT` (규칙 자동 배포, 선택): Firebase 콘솔 → 프로젝트 설정 → 서비스 계정 → 새 비공개 키 생성 → JSON 내용 전체. 있으면 `firestore.rules`가 바뀔 때 `.github/workflows/firestore-rules.yml`이 규칙도 올림
+
+유료 이펙트 원본(`assets/king`)은 저장소에 없어서, 자동 배포는 지금 사이트에 올라가 있는 뒤섞은 팩(`js/king-pack.js`)을 받아 그대로 다시 올립니다. 팩을 새로 만들었을 땐 컴퓨터에서 한 번 손으로 배포하세요.
+
+### 손으로 배포
+
 공개 주소: https://chiikawa.3match.workers.dev
 
 ```bash
