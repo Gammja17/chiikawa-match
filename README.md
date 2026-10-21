@@ -162,6 +162,10 @@ main에 올리면 `.github/workflows/deploy.yml`이 코드 문법·스테이지 
 
 유료 이펙트 원본(`assets/king`)은 저장소에 없어서, 자동 배포는 지금 사이트에 올라가 있는 뒤섞은 팩(`js/king-pack.js`)을 받아 그대로 다시 올립니다. 팩을 새로 만들었을 땐 컴퓨터에서 한 번 손으로 배포하세요.
 
+### 잠시 닫기 (점검 화면)
+
+저장소 맨 위에 `MAINTENANCE` 파일이 있으면 자동 배포가 게임 대신 `maintenance/`의 점검 화면만 Cloudflare에 올립니다. 예전에 깔린 홈 화면 앱(서비스 워커)과 저장해 둔 그림도 지워서 오프라인에서 옛 게임이 뜨지 않게 합니다. 다시 열려면 `MAINTENANCE` 파일을 지우고 main에 올리면 됩니다 (유료 이펙트 팩은 점검 중에도 사이트에 남겨 둬서 다시 열 때 그대로 받아 감). GitHub Pages 주소는 따로: 저장소 Settings → Pages에서 끄기.
+
 ### 손으로 배포
 
 공개 주소: https://chiikawa.3match.workers.dev

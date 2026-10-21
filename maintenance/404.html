@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#ff6fa5">
+<title>잠시 쉬어 가요</title>
+<style>
+  :root { --pink: #ff6fa5; --ink: #4a4262; --ink2: #7a6f8f; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { display: flex; align-items: center; justify-content: center; padding: 24px 16px; background: #fff4f8 radial-gradient(circle, #ffd9e8 1.4px, transparent 1.8px) 0 0 / 18px 18px;
+    font-family: -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif; color: var(--ink); text-align: center; }
+  .card { max-width: 360px; width: 100%; padding: 32px 24px 28px; border-radius: 24px; background: #fff; border: 3px solid var(--ink); box-shadow: 0 6px 0 rgba(74, 66, 98, .15); }
+  .moon { font-size: 56px; line-height: 1; animation: bob 2.4s ease-in-out infinite; }
+  @keyframes bob { 50% { transform: translateY(-8px); } }
+  h1 { margin: 14px 0 10px; font-size: 26px; }
+  p { margin: 0; font-size: 16px; line-height: 1.6; color: var(--ink2); word-break: keep-all; }
+  .tag { display: inline-block; margin-top: 18px; padding: 4px 14px; border-radius: 99px; background: var(--pink); color: #fff; font-size: 14px; font-weight: 700; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="moon">🌙</div>
+    <h1>잠시 쉬어 가요</h1>
+    <p>게임을 새 모습으로 단장하고 있어요.<br>준비가 끝나면 다시 열게요.<br>기다려 주셔서 고마워요!</p>
+    <span class="tag">곧 돌아올게요</span>
+  </div>
+  <script>
+    // 예전에 깔린 앱(서비스 워커)과 저장해 둔 그림을 지움 (오프라인에서 옛 게임이 뜨지 않게)
+    if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister())).catch(() => {});
+    if (window.caches) caches.keys().then(ks => ks.forEach(k => caches.delete(k))).catch(() => {});
+  </script>
+</body>
+</html>
