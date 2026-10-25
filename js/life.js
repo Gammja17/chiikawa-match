@@ -390,7 +390,7 @@ const routeLevel = k => (HARD_AT.has(k + 1) ? 'hard' : CHALLENGE_AT.has(k + 1) ?
 
 // 깼을 때 쾅 찍히는 말: 스테이지에 done이 있으면 그것, 없으면 첫 목표에 맞춰서
 const DONE_WORD = { weed: '제초<br>끝!!', box: '상자<br>다 뜯었다!', bubble: '거품<br>싹싹!', ing: '배달<br>완료!', lock: '리본<br>풀었다!', syrup: '시럽<br>듬뿍!', char: '모으기<br>끝!', score: '목표<br>달성!' };
-const doneWord = st => st.done || DONE_WORD[st.goals[0].k] || '클리어!';
+const doneWord = st => st.done || DONE_WORD[st.goals[0]?.k] || '클리어!';
 
 const GOAL_ICON = { lock: () => ITEM('ribbon'), syrup: () => ITEM('pancake'), weed: () => ITEM('weed2'), box: () => ITEM('box'), bubble: () => ITEM('bubble'), ing: () => ITEM('ramen'),
   char: g => FACE(g.id), score: () => ITEM('target') };
@@ -447,6 +447,7 @@ const Life = {
     B.team = LIFE_CHARS.slice(0, st.types).map(id => CHARS.findIndex(c => c.id === id));
     Object.assign(B, { real: B.team.length, played: false, dmgBy: {} });
     NTYPES = st.types;
+    preloadWord(st.exam ? '검정<br>합격!' : doneWord(st)); // 끝 글자 그림을 미리 받아 둠
     Board.setSize(st.map.length, st.map[0].length); // 판 그림 크기대로 (7x7 ~ 9x9)
     B.grid = null; // 앞 판(크기가 다를 수 있음)은 버림. 남겨 두면 새 크기로 옛 판을 읽다가 멈춤
     const lay = parseLayout(st);
@@ -553,7 +554,13 @@ const Life = {
       m.style.left = (st.stars[k] / top) * 100 + '%';
       m.classList.toggle('on', L.score >= st.stars[k]);
     });
-    $('#lhScore b').textContent = L.score;
+    // 점수 합계는 점수 숫자 그림(하늘→라벤더)으로, 바뀔 때만 다시 그림
+    const sb = $('#lhScore b');
+    if (sb.dataset.v !== String(L.score)) {
+      sb.dataset.v = L.score;
+      sb.setAttribute('aria-label', L.score);
+      sb.innerHTML = [...String(L.score)].map(d => `<img src="${CIMG('n' + d)}" alt="">`).join('');
+    }
     const need = skillNeed(CHARS[L.helper].id);
     setGauge($('#lhHelper'), Math.min(1, L.hg / need), L.hg >= need);
   },

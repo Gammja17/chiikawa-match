@@ -420,6 +420,8 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 #lhScore i { position: absolute; top: 50%; width: 32px; height: 32px; margin: -17px 0 0 -16px; background: url(../assets/img/ui/star_off.png) center / contain no-repeat; transition: transform .25s cubic-bezier(.3, 1.6, .6, 1); }
 #lhScore i.on { transform: scale(1.15); background-image: url(../assets/img/ui/star_on.png); }
 #lhScore b { min-width: 72px; text-align: right; font-family: var(--head); font-size: 30px; font-weight: 700; line-height: 1.1; }
+#lhScore b:has(img) { display: flex; justify-content: flex-end; } /* 점수 합계: 숫자 그림 */
+#lhScore b img { height: 30px; margin: 0 -2px; }
 
 /* ---------- 스토리 ---------- */
 .overlay { position: absolute; inset: 0; display: none; z-index: 30; }
