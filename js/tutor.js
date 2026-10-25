@@ -377,9 +377,10 @@ Tutor.formIntro = async function () {
 const CINE = [
   { img: 'assets/img/art/title.jpg', text: '어느 들판 마을에,', pan: ['scale(1.25) translateY(8%)', 'scale(1.1) translateY(-4%)'] },
   { img: 'assets/img/art/pose_chiikawa.png', fit: 'contain', bg: '#fff3f7', text: '작고 귀여운 녀석이 살고 있었어요.', pan: ['scale(.8) translateY(6%)', 'scale(.95)'] },
-  { img: 'assets/img/art/scene_scared.jpg', text: '세상엔 무서운 것도 많고,', pan: ['scale(1.05)', 'scale(1.2) translateX(-4%)'] },
-  { img: 'assets/img/art/scene_goblins.jpg', text: '토벌해야 할 녀석들도 잔뜩이지만…', pan: ['scale(1.3) translateX(6%)', 'scale(1.3) translateX(-6%)'] },
-  { img: 'assets/img/art/scene_pajama_dance.jpg', text: '친구들이 하나둘 모이면 괜찮아!', pan: ['scale(1.3)', 'scale(1.1)'] },
+  // 가로로 긴 장면(480px 안팎)은 세로 화면에 꽉 채우면 3배로 잘려 뭔지 안 보임 → 통째로 보이고 뒤는 같은 그림을 흐리게 (fit: 'wide')
+  { img: 'assets/img/art/scene_scared.jpg', fit: 'wide', text: '세상엔 무서운 것도 많고,', pan: ['scale(1.05)', 'scale(1.18) translateX(-3%)'] },
+  { img: 'assets/img/art/scene_goblins.jpg', fit: 'wide', text: '토벌해야 할 녀석들도 잔뜩이지만…', pan: ['scale(1.12) translateX(3%)', 'scale(1.12) translateX(-3%)'] },
+  { img: 'assets/img/art/scene_pajama_dance.jpg', fit: 'wide', text: '친구들이 하나둘 모이면 괜찮아!', pan: ['scale(1.2)', 'scale(1.04)'] },
 ];
 const Cine = {
   play(scenes) {
@@ -411,13 +412,16 @@ const Cine = {
         if (k > scenes.length) return end();
         if (k === scenes.length) return logo();
         const sc = scenes[k];
-        const im = new Image();
+        const fr = document.createElement('div'), im = new Image();
+        fr.className = 'cine-fr';
+        fr.style.background = sc.bg || '#2a2440';
+        if (sc.fit === 'wide') fr.innerHTML = `<i class="cine-back" style="background-image:url(${sc.img})"></i>`;
         im.src = sc.img;
-        im.className = sc.fit === 'contain' ? 'contain' : '';
-        imgBox.style.background = sc.bg || '#2a2440';
-        const old = imgBox.querySelector('img');
-        imgBox.appendChild(im);
-        im.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 500, fill: 'backwards' });
+        im.className = sc.fit || '';
+        fr.appendChild(im);
+        const old = imgBox.querySelector('.cine-fr');
+        imgBox.appendChild(fr);
+        fr.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 500, fill: 'backwards' });
         im.animate([{ transform: sc.pan[0] }, { transform: sc.pan[1] }], { duration: 3400, easing: 'ease-out', fill: 'forwards' });
         if (old) old.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500, fill: 'forwards' }).finished.then(() => old.remove());
         txt.textContent = '';

@@ -1,6 +1,6 @@
 """배포용 dist/ 폴더를 만듦 (Cloudflare Pages에 올릴 것).
 
-- 게임에 필요한 파일만 복사: index.html, css/, js/, assets/
+- 게임에 필요한 파일만 복사: index.html, credits.html(출처 페이지), css/, js/, assets/
 - 빼는 것: assets/raw (원본 다운로드), assets/king (유료 원본), 개발용 파일
 - 유료 이펙트는 js/king-pack.js(뒤섞은 팩)로만 들어감. 없으면 무료 이펙트로 돌아감
 실행: python tools/build_dist.py   →   npx wrangler deploy
@@ -24,7 +24,7 @@ if os.path.isdir(os.path.join(ROOT, 'assets', 'king')):
 if os.path.isdir(DIST):
     shutil.rmtree(DIST)
 os.makedirs(DIST)
-for f in ('index.html', 'manifest.webmanifest', 'sw.js'):  # 홈 화면 앱(PWA) 파일은 맨 위에
+for f in ('index.html', 'credits.html', 'manifest.webmanifest', 'sw.js'):  # 홈 화면 앱(PWA) 파일과 출처 페이지는 맨 위에
     shutil.copy2(os.path.join(ROOT, f), DIST)
 for top in ('css', 'js', 'assets'):
     for dirpath, dirnames, files in os.walk(os.path.join(ROOT, top)):

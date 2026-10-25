@@ -117,7 +117,7 @@ function openSettings() {
   el.querySelector('[data-s=credits]').onclick = () => {
     Sound.play('click');
     el.classList.remove('show');
-    modal({ title: '만든 사람·출처', char: 'hachiware', text: CREDITS, btn1: '닫기', on1: openSettings });
+    Credits.open(); // js/credits.js
   };
   // 홈 화면에 추가하는 법 (js/notice.js)
   el.querySelector('[data-s=install]').onclick = () => { Sound.play('click'); el.classList.remove('show'); Install.open('settings'); };
@@ -588,7 +588,8 @@ function openMap(advanceFrom = null, paging = false) {
     if (at < a0 || at >= a1) return;
     const b = document.createElement('div');
     b.className = 'chapter-band' + (at > cur ? ' locked' : '');
-    b.style.top = pts[at].y - NODE_GAP / 2 + 'px';
+    // 지금 판이 장 첫 판이면 위쪽은 친구들·판 이름이 차지해서, 띠를 별 아래로 내림 (안 그러면 셋이 겹쳐 글자가 가려짐)
+    b.style.top = pts[at].y + (at === cur ? 70 : -NODE_GAP / 2) + 'px';
     b.textContent = name;
     path.appendChild(b);
   });
