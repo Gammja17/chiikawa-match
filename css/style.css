@@ -1211,6 +1211,7 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .survey-stars img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
 .survey-text { display: block; width: 100%; box-sizing: border-box; padding: 10px 12px; border: var(--line); border-radius: 14px; background: #fff; color: var(--ink); font: 16px/1.4 inherit; font-family: inherit; resize: none; }
 .survey-note { margin-top: 6px; font-size: 13px; color: var(--ink2); }
+.name-input { display: block; width: 100%; box-sizing: border-box; padding: 10px 12px; border: var(--line); border-radius: 14px; background: #fff; color: var(--ink); font-family: var(--head); font-size: 22px; text-align: center; } /* 이름 정하기 (Tutor.askName) */
 .sheet-btns .big-btn:disabled { opacity: .45; }
 
 /* ---------- 업적·칭호 (프로필 창) ---------- */

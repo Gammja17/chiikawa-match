@@ -1,11 +1,4 @@
 // 처음 하는 사람 돕기: 첫 이야기, 첫 수 따라 하기, 처음 보는 것 짧은 안내, 오래 멈추면 힌트
-const OPENING = [
-  ['hachiware', '저기~! 게시판에 새 일이 붙었어!'],
-  ['chiikawa', '…!'],
-  ['hachiware', '풀 뽑기래. 이거 끝나면… 라멘 먹을 수 있다는 거야!?'],
-  ['chiikawa', '…!! (두근두근)'],
-  ['hachiware', '좋아, 어떻게든 되겠지~! 가자!'],
-];
 // 아이템을 처음 만들었을 때 따라 하기 한 줄
 const LESSON = {
   h: '랏코 검이다! 아무 쪽으로 쓱 밀면 한 줄을 싹 베어 버려~',
@@ -33,12 +26,11 @@ const Tutor = {
   mark(k) { Save.data.tips[k] = 1; Save.save(); },
   unmark(k) { delete (Save.data.tips || {})[k]; Save.save(); },
 
-  // 맨 처음 시작하기를 누르면 짧은 이야기
+  // 맨 처음 시작하기를 누르면 짧은 영상만 (대사는 1판 앞 두 줄로 줄임: 첫 수까지 빨리 가게)
   async opening() {
     if (Tutor.seen('opening')) return;
     Tutor.mark('opening');
     await Cine.play(CINE);
-    await playStory(OPENING);
   },
 
   // 화면 위쪽에 잠깐 뜨는 안내 카드 (톡 누르면 닫힘)
@@ -63,9 +55,7 @@ const Tutor = {
     // 맨 첫 판: 목표, 이동 수를 비춰 주고 → 첫 수를 손가락으로 알려 주고 그 수만 둘 수 있게
     if (L.run?.kind === 'route' && L.i === 0 && !Tutor.seen('firstMove')) {
       B.busy = true;
-      await Spot.show($('.lh-goals'), '오늘 할 일! 잡초를 전부 뽑으면 끝이야');
-      await Spot.show($('.lh-limit'), '움직일 수 있는 횟수야. 다 쓰기 전에 끝내자!');
-      await Spot.show($('.lh-help'), '나도 도와줄게! 동그라미가 꽉 차면 스킬을 쓸 수 있어');
+      await Spot.show([$('.lh-limit'), $('.lh-goals')], '잡초를 전부 뽑으면 끝! 왼쪽 숫자는 움직일 수 있는 횟수야');
       B.busy = false;
       const mv = Tutor.findMove(true);
       if (mv) {
@@ -330,6 +320,11 @@ Tutor.mapFlow = async function (delay) {
       await Spot.show($('#mapPath .node.current'), '여기 눌러서 첫 일 시작하자!', { tap: true });
       return;
     }
+    // 첫 판을 깨고 오면 이름을 한 번 물어봄 (지도 이름표·랭킹에 '이름 없는 친구'로 나오지 않게). 구글 이름이 있으면 안 물어봄
+    if (!Tutor.seen('nameAsk') && clearedCount() > 0) {
+      Tutor.mark('nameAsk');
+      if (!Save.data.nick && !(typeof Net !== 'undefined' && Net.user?.displayName)) { await Tutor.askName(); return; }
+    }
     const u = Unlock.fresh();
     if (u) {
       Tutor.mark('u_' + u.id);
@@ -364,6 +359,33 @@ Tutor.mapFlow = async function (delay) {
     if (typeof Notice !== 'undefined' && Notice.dueAuto()) await Notice.open();
   } finally { Tutor.busyFlow = false; }
 };
+// 이름 정하기: 하치와레가 물어봄. '나중에'면 프로필의 '이름 바꾸기'로
+Tutor.askName = () => new Promise(done => {
+  const card = $('#charSheet .sheet-card');
+  card.style.setProperty('--ring', CHARS[charIdx('hachiware')].ring);
+  card.innerHTML = `<div class="mates-title">이름 정하기</div>
+    <div class="helper-pick"><span class="fig"><img src="${artOf('hachiware')}" draggable="false"></span><div><b>하치와레</b><p>참, 아직 이름을 못 들었다! 뭐라고 부르면 돼~?</p></div></div>
+    <input class="name-input" maxlength="12" placeholder="12자까지" autocomplete="off" enterkeyhint="done">
+    <p class="survey-note">지도 이름표와 랭킹에 보여요. 프로필에서 언제든 바꿀 수 있어요</p>
+    <div class="sheet-btns"><button class="big-btn ghost" data-back>나중에</button><button class="big-btn" data-go>이걸로!</button></div>`;
+  const inp = card.querySelector('input'), go = card.querySelector('[data-go]');
+  const close = () => { $('#charSheet').classList.remove('show'); done(); };
+  const sync = () => (go.disabled = !inp.value.trim());
+  inp.oninput = sync;
+  inp.onkeydown = e => { if (e.key === 'Enter' && inp.value.trim()) go.click(); };
+  sync();
+  go.onclick = () => {
+    Save.data.nick = inp.value.trim().slice(0, 12);
+    Save.save();
+    if (typeof Net !== 'undefined') Net.submit();
+    Sound.play('star', 1.2, 0.8);
+    profileChip();
+    close();
+  };
+  card.querySelector('[data-back]').onclick = () => { Sound.play('click'); close(); };
+  $('#charSheet').classList.add('show');
+  fitText($('#charSheet'));
+});
 // 첫 편성: 슬롯과 출격 버튼
 Tutor.formIntro = async function () {
   if (Tutor.seen('formIntro')) return;
