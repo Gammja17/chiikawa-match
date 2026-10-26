@@ -184,6 +184,14 @@ const CREDITS = [
       'img/ui/words': [
         'battle.webp', 'box.webp', 'bubble.webp', 'char.webp', 'clear.webp', 'exam.webp', 'ing.webp', 'lock.webp', 'score.webp',
         'syrup.webp', 'weed.webp',
+        // 판마다 다른 끝 글자 (라멘 완성!, 1차 합격! 등)
+        'd01.webp', 'd02.webp', 'd03.webp', 'd04.webp', 'd05.webp', 'd06.webp', 'd07.webp', 'd08.webp', 'd09.webp', 'd10.webp',
+        'd11.webp', 'd12.webp', 'd13.webp', 'd14.webp', 'd15.webp', 'd16.webp', 'd17.webp', 'd18.webp', 'd19.webp', 'd20.webp',
+        'd21.webp', 'd22.webp', 'd23.webp', 'd24.webp', 'd25.webp', 'd26.webp', 'd27.webp', 'd28.webp', 'd29.webp', 'd30.webp',
+        'd31.webp', 'd32.webp', 'd33.webp', 'd34.webp', 'd35.webp', 'd36.webp', 'd37.webp', 'd38.webp', 'd39.webp', 'd40.webp',
+        'd41.webp', 'd42.webp', 'd43.webp', 'd44.webp', 'd45.webp', 'd46.webp', 'd47.webp', 'd48.webp', 'd49.webp', 'd50.webp',
+        'd51.webp', 'd52.webp', 'd53.webp', 'd54.webp', 'd55.webp', 'd56.webp', 'd57.webp', 'd58.webp', 'd59.webp', 'd60.webp',
+        'd61.webp', 'd62.webp', 'd63.webp', 'd64.webp', 'd65.webp', 'd66.webp', 'd67.webp', 'd68.webp', 'd69.webp',
       ],
     },
   },

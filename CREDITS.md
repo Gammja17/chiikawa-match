@@ -2,7 +2,7 @@
 
 > 이 파일은 `node tools/credits.js`가 `js/credits.js`에서 만듭니다. 고칠 땐 `js/credits.js`를 고치세요.
 
-먼작귀 퍼즐 토벌 대작전!은 팬이 만든 **비공식 게임**입니다. 원작자 나가노 및 치이카와 제작위원회와 관계가 없고, 돈을 받지 않습니다. 게임에 들어간 그림 404개와 소리 28개의 출처를 파일마다 적었습니다. 게임 안에서는 설정 → 만든 사람·출처, 웹에서는 `credits.html`에서 같은 목록을 볼 수 있습니다.
+먼작귀 퍼즐 토벌 대작전!은 팬이 만든 **비공식 게임**입니다. 원작자 나가노 및 치이카와 제작위원회와 관계가 없고, 돈을 받지 않습니다. 게임에 들어간 그림 473개와 소리 28개의 출처를 파일마다 적었습니다. 게임 안에서는 설정 → 만든 사람·출처, 웹에서는 `credits.html`에서 같은 목록을 볼 수 있습니다.
 
 ## 원작 그림
 
@@ -142,7 +142,7 @@
 
 AI 그림 도구와 코드로 이 게임을 위해 새로 만든 그림이에요.
 
-### VARCO로 생성한 그림 (180개)
+### VARCO로 생성한 그림 (249개)
 
 - 권리: 이 게임에서 생성
 - 출처: [VARCO (NCSOFT)](https://3d.varco.ai)
@@ -159,7 +159,7 @@ AI 그림 도구와 코드로 이 게임을 위해 새로 만든 그림이에요
 - `assets/img/obst/`: `box_flap.png`, `box_open.png`, `bubble_pop.png`, `dirt.png`, `foam_tex.webp`, `leaf.png`, `ribbon_loose.png`, `sprout_pull.png`, `weed_pull.png`
 - `assets/img/stage/`: `s1.jpg`, `s10.jpg`, `s2.jpg`, `s3.jpg`, `s4.jpg`, `s5.jpg`, `s6.jpg`, `s7.jpg`, `s8.jpg`, `s9.jpg`
 - `assets/img/ui/`: `back.png`, `bar_fill.png`, `bar_fill_red.png`, `bar_frame.png`, `book.png`, `cd_clock.png`, `check.png`, `crown.png`, `debuff_drain.webp`, `debuff_poison.webp`, `debuff_sleep.webp`, `debuff_weak.webp`, `fx_dark.webp`, `fx_dust.webp`, `fx_poison.webp`, `fx_sleep.webp`, `gear.png`, `home.png`, `lock.png`, `logo.png`, `next.png`, `note.png`, `ring_fill.png`, `ring_frame.png`, `sk_burst.png`, `sk_cross.png`, `sk_line_h.png`, `sk_line_v.png`, `sk_meteor.png`, `sk_rally.png`, `sk_shuffle.png`, `sk_slash.png`, `star_off.png`, `star_on.png`
-- `assets/img/ui/words/`: `battle.webp`, `box.webp`, `bubble.webp`, `char.webp`, `clear.webp`, `exam.webp`, `ing.webp`, `lock.webp`, `score.webp`, `syrup.webp`, `weed.webp`
+- `assets/img/ui/words/`: `battle.webp`, `box.webp`, `bubble.webp`, `char.webp`, `clear.webp`, `exam.webp`, `ing.webp`, `lock.webp`, `score.webp`, `syrup.webp`, `weed.webp`, `d01.webp`, `d02.webp`, `d03.webp`, `d04.webp`, `d05.webp`, `d06.webp`, `d07.webp`, `d08.webp`, `d09.webp`, `d10.webp`, `d11.webp`, `d12.webp`, `d13.webp`, `d14.webp`, `d15.webp`, `d16.webp`, `d17.webp`, `d18.webp`, `d19.webp`, `d20.webp`, `d21.webp`, `d22.webp`, `d23.webp`, `d24.webp`, `d25.webp`, `d26.webp`, `d27.webp`, `d28.webp`, `d29.webp`, `d30.webp`, `d31.webp`, `d32.webp`, `d33.webp`, `d34.webp`, `d35.webp`, `d36.webp`, `d37.webp`, `d38.webp`, `d39.webp`, `d40.webp`, `d41.webp`, `d42.webp`, `d43.webp`, `d44.webp`, `d45.webp`, `d46.webp`, `d47.webp`, `d48.webp`, `d49.webp`, `d50.webp`, `d51.webp`, `d52.webp`, `d53.webp`, `d54.webp`, `d55.webp`, `d56.webp`, `d57.webp`, `d58.webp`, `d59.webp`, `d60.webp`, `d61.webp`, `d62.webp`, `d63.webp`, `d64.webp`, `d65.webp`, `d66.webp`, `d67.webp`, `d68.webp`, `d69.webp`
 
 ### 시럽·국물 무늬 (2개)
 
