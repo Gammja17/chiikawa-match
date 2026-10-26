@@ -549,7 +549,7 @@ function openMap(advanceFrom = null, paging = false) {
   show('map');
   Meta.coinUI();
   Hearts.ui();
-  if (!paging) Meta.checkDaily();
+  if (!paging && clearedCount() > 0) Meta.checkDaily(); // 출석 도장은 첫 판을 깬 뒤부터 (처음엔 바로 첫 판으로)
   const STAGES = ROUTE.map((_, k) => routeStage(k));
   const cur = unlockedIdx(), pages = Math.ceil(STAGES.length / MAP_PAGE);
   // 지도는 30판(3장)씩 한 지역: 위의 ◀ ▶로 넘김. 판을 깨고 오면 지금 판이 있는 지역으로
