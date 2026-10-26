@@ -5,7 +5,9 @@
 > 비영리로 만들었고, 수익을 내지 않습니다.
 > 권리자께서 요청하시면 바로 내리겠습니다.
 
-**플레이:** https://gammja17.github.io/chiikawa-match/
+**플레이:** https://chiikawa.3match.workers.dev
+
+**출처:** 게임에 들어간 그림·소리를 파일마다 [CREDITS.md](CREDITS.md)에 적어 두었습니다 (게임 안 설정 → 만든 사람·출처, 웹 `credits.html`)
 
 '먼가 작고 귀여운 녀석들' 캐릭터 얼굴을 맞추는 3매치 퍼즐에 괴물 토벌 전투를 더한 브라우저 게임입니다.
 
@@ -136,6 +138,8 @@ python -m http.server 8770
 
 ## 저작권과 출처
 
+파일마다 출처는 [CREDITS.md](CREDITS.md). 원본 목록은 `js/credits.js`이고, 그림·소리를 새로 넣으면 거기 적은 뒤 `node tools/credits.js`로 CREDITS.md를 다시 씁니다 (빠진 파일이 있으면 자동 배포 전 점검에서 멈춤).
+
 - 캐릭터, 괴물 이미지: © nagano / chiikawa committee. 퍼즐 얼굴은 인터넷에서 모은 이미지, 전신·포즈 일러스트와 괴물은 [Chiikawa Wiki (Fandom)](https://chiikawa.fandom.com/)에서(인어섬의 세이렌·인어는 [『映画ちいかわ 人魚の島のひみつ』 공식 사이트](https://chiikawa.toho-movie.jp/) 캐릭터 그림에서), 옷 그림은 Chiikawa Wiki의 애니메이션 장면·공식 일러스트에서 배경을 지워서, 춤추는 치이카와 GIF는 작가 nagano의 [GIPHY](https://giphy.com/ngntrtr)에서 가져왔습니다. 이미지의 권리는 원저작자에게 있으며, 이 저장소의 라이선스 대상이 아닙니다.
 - 도전 화면 그림(인어섬, 제초 검정, 랏코), 타이틀 풀밭 그림: 원작 애니메이션·게임 이미지 (© nagano / chiikawa committee, 「映画ちいかわ」製作委員会, Applibot)
 - 배경, 터짐 조각, 체력바·점수바 틀과 스킬 고리: [VARCO](https://3d.varco.ai)로 생성
@@ -144,16 +148,16 @@ python -m http.server 8770
 - 파티클 이펙트: [Kenney Particle Pack](https://kenney.nl/assets/particle-pack) (CC0). 라이선스 원문은 `assets/img/fx/k/LICENSE-kenney-particles.txt`
 - 날카로운 이펙트 모양(칼자국·충격 별·빛살·반짝이): [game-icons.net](https://game-icons.net) Lorc·Delapouite (CC BY 3.0), 충격파 별: Kenney Explosion Pack (CC0). 흰 모양으로 바꿔 게임 안에서 색과 테두리를 입힘, `assets/img/fx/sharp/LICENSE.txt`
 - 반짝이·조각은 캔버스 한 장에 그림 (`js/particles.js`, 폰에서 안 끊기게)
-- 배경 음악: OpenGameArt의 CC0 곡 (`assets/bgm/`, 출처는 `js/prefs.js`의 CREDITS)
+- 배경 음악: OpenGameArt의 CC0 곡 (`assets/bgm/`, 곡마다 작가는 CREDITS.md)
 - 아이템, 장애물, 재료, 가구, 액세서리 아이콘: [Noto Emoji](https://github.com/googlefonts/noto-emoji) (Google, Apache License 2.0). 라이선스 원문은 `assets/img/items/LICENSE-noto.txt`
-- 글꼴: [Dongle](https://fonts.google.com/specimen/Dongle), [Gowun Dodum](https://fonts.google.com/specimen/Gowun+Dodum), [Gaegu](https://fonts.google.com/specimen/Gaegu) (Google Fonts, SIL Open Font License)
+- 글꼴: [Poor Story](https://fonts.google.com/specimen/Poor+Story) (Google Fonts, SIL Open Font License)
 - 게임 코드(`js/`, `css/`, `index.html`): 팬 창작물
 
 ## 배포 (Cloudflare)
 
 ### 자동 배포 (GitHub Actions)
 
-main에 올리면 `.github/workflows/deploy.yml`이 코드 문법·스테이지 점검 → `dist/` 만들기 → Cloudflare 배포까지 합니다. 저장소 **Actions** 탭에서 진행 상황을 보고, 점검이 실패하면 배포는 안 나갑니다. 손으로 다시 돌리려면 Actions → 배포 → Run workflow.
+main에 올리면 `.github/workflows/deploy.yml`이 코드 문법·스테이지·출처 점검 → `dist/` 만들기 → Cloudflare 배포까지 합니다. 저장소 **Actions** 탭에서 진행 상황을 보고, 점검이 실패하면 배포는 안 나갑니다. 손으로 다시 돌리려면 Actions → 배포 → Run workflow.
 
 처음 한 번 저장소 **Settings → Secrets and variables → Actions → New repository secret**:
 - `CLOUDFLARE_API_TOKEN`: Cloudflare 대시보드 → 내 프로필 → API 토큰 → 토큰 만들기 → 'Workers 편집' 템플릿

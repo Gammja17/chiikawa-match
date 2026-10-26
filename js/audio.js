@@ -116,7 +116,7 @@ const Haptic = {
 
 fetch('assets/voice/voices.json').then(r => r.json()).then(v => (Sound.voices = v || {})).catch(() => {});
 
-// ---------- BGM: OpenGameArt의 CC0 곡 (출처는 prefs.js의 CREDITS). 원본을 112kbps mp3로 줄여 assets/bgm/에 둠 ----------
+// ---------- BGM: OpenGameArt의 CC0 곡 (곡마다 출처는 js/credits.js). 원본을 112kbps mp3로 줄여 assets/bgm/에 둠 ----------
 // 화면 이름 → 파일. 여러 곡이면 틀 때마다 다음 곡으로 돌아감
 const BGM = {
   map: ['map'],                      // Caturday (iamoneabe)

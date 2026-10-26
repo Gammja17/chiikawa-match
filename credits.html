@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>만든 사람·출처 · 먼작귀 퍼즐 토벌 대작전! (팬게임)</title>
+<meta name="description" content="비공식 팬게임 '먼작귀 퍼즐 토벌 대작전!'에 들어간 그림·소리의 출처를 파일마다 적은 목록">
+<link rel="icon" href="assets/img/app/icon-192.png?v=2">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poor+Story&display=swap" rel="stylesheet">
+<style>
+/* 게임 안 '만든 사람·출처' 창과 같은 글 (js/credits.js의 Credits.html). 모양만 이 페이지용 */
+:root { --ink: #4a4262; --ink2: #8a82a3; --ring: #ff8ab8; --head: 'Poor Story', sans-serif; }
+* { box-sizing: border-box; }
+body { margin: 0; background: #fff3f7; color: var(--ink); font-family: system-ui, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; }
+main { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+h1 { margin: 0 0 4px; font-family: var(--head); font-size: 30px; }
+.back { display: inline-block; margin-bottom: 14px; color: var(--ink2); font-size: 14px; }
+.cr-intro { margin: 0 0 10px; padding: 12px 14px; border-radius: 14px; background: #ffe0ec; line-height: 1.55; }
+.cr-sec { margin: 26px 0 4px; font-family: var(--head); font-size: 25px; }
+.cr-note { margin: 0 0 10px; color: var(--ink2); font-size: 14px; line-height: 1.5; }
+.cr-group { margin: 0 0 12px; padding: 12px 14px; border-radius: 14px; background: #fff; box-shadow: 0 2px 6px rgba(74, 66, 98, .08); font-size: 15px; line-height: 1.5; }
+.cr-group h4 { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 0 0 6px; font-family: var(--head); font-size: 21px; }
+.cr-group h4 small { font-size: 14px; color: var(--ink2); white-space: nowrap; }
+.cr-group dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 0; }
+.cr-group dt { color: var(--ink2); white-space: nowrap; }
+.cr-group dd { margin: 0; overflow-wrap: anywhere; }
+.cr-group a { color: inherit; text-decoration-color: var(--ring); }
+.cr-group summary { margin-top: 8px; cursor: pointer; color: var(--ink2); font-size: 14px; }
+.cr-dir { margin: 10px 0 4px; font-size: 13px; color: var(--ink2); font-family: ui-monospace, monospace; }
+.cr-files { display: flex; flex-wrap: wrap; gap: 8px; }
+.cr-files figure { margin: 0; width: 84px; text-align: center; }
+.cr-files img { display: block; width: 76px; height: 76px; margin: 0 auto; object-fit: contain; border-radius: 10px; background: #f3eef7; }
+.cr-files figcaption, .cr-files span { display: block; margin-top: 2px; font-size: 11px; line-height: 1.25; overflow-wrap: anywhere; color: var(--ink2); }
+.cr-files span { padding: 4px 8px; border-radius: 8px; background: #f7f3fa; font-size: 12px; }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="./">← 게임으로</a>
+  <h1>만든 사람·출처</h1>
+  <div id="list"></div>
+</main>
+<script src="js/credits.js?v=2"></script>
+<script>document.getElementById('list').innerHTML = Credits.html();</script>
+</body>
+</html>

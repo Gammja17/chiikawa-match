@@ -24,6 +24,8 @@ jobs:
         run: for f in js/*.js tools/*.js tools/stages/*.js; do node --check "$f"; done
       - name: 스테이지 점검 (판 크기·목표·그림 파일·대사)
         run: node tools/stages/check.js
+      - name: 출처 점검 (assets의 그림·소리가 모두 js/credits.js에 적혀 있는지)
+        run: node tools/credits.js --check
       - name: dist 만들기
         run: python3 tools/build_dist.py
       - name: 유료 이펙트 팩은 지금 사이트에 있는 걸 그대로

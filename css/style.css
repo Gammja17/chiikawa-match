@@ -1015,6 +1015,9 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .cine-img { position: absolute; inset: 0; overflow: hidden; }
 .cine-img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .cine-img img.contain { object-fit: contain; padding: 18% 8%; box-sizing: border-box; }
+.cine-fr { position: absolute; inset: 0; overflow: hidden; }
+.cine-img img.wide { object-fit: contain; filter: drop-shadow(0 6px 18px rgba(0, 0, 0, .35)); }
+.cine-back { position: absolute; inset: -12%; background: center / cover no-repeat; filter: blur(18px) brightness(.72) saturate(1.1); }
 .cine .bar { position: absolute; left: 0; right: 0; height: 13%; background: #1c1730; z-index: 2; }
 .cine .bar.top { top: 0; }
 .cine .bar.bot { bottom: 0; }
@@ -1254,6 +1257,25 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .notice h3 small { font-family: inherit; font-size: 13px; color: var(--ink2); white-space: nowrap; }
 .notice ul { margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.45; }
 .notice li + li { margin-top: 3px; }
+/* 만든 사람·출처 (js/credits.js): credits.html도 같은 이름을 씀 */
+.credit-list { max-height: 60vh; overflow-y: auto; text-align: left; padding-right: 4px; font-size: 14px; line-height: 1.45; }
+.cr-intro { margin: 0 0 10px; padding: 10px 12px; border-radius: 14px; background: color-mix(in srgb, var(--ring) 16%, #fff); }
+.cr-sec { margin: 16px 0 4px; font-family: var(--head); font-size: 21px; }
+.cr-note { margin: 0 0 8px; color: var(--ink2); font-size: 13px; }
+.cr-group { margin: 0 0 10px; padding: 9px 12px; border-radius: 14px; background: color-mix(in srgb, var(--ring) 8%, #fff); }
+.cr-group h4 { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 0 0 4px; font-family: var(--head); font-size: 18px; }
+.cr-group h4 small { font-size: 13px; color: var(--ink2); white-space: nowrap; }
+.cr-group dl { display: grid; grid-template-columns: auto 1fr; gap: 1px 8px; margin: 0; }
+.cr-group dt { color: var(--ink2); white-space: nowrap; }
+.cr-group dd { margin: 0; overflow-wrap: anywhere; }
+.cr-group a { color: inherit; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--ring) 70%, #fff); }
+.cr-group summary { margin-top: 5px; cursor: pointer; color: var(--ink2); font-size: 13px; }
+.cr-dir { margin: 6px 0 3px; font-size: 12px; color: var(--ink2); }
+.cr-files { display: flex; flex-wrap: wrap; gap: 6px; }
+.cr-files figure { margin: 0; width: 64px; text-align: center; }
+.cr-files img { display: block; width: 56px; height: 56px; margin: 0 auto; object-fit: contain; border-radius: 8px; background: #f3eef7; }
+.cr-files figcaption, .cr-files span { display: block; font-size: 10px; line-height: 1.2; overflow-wrap: anywhere; color: var(--ink2); }
+.cr-files span { padding: 3px 6px; border-radius: 6px; background: #fff; font-size: 11px; }
 /* 홈 화면에 추가하는 법 */
 .install-steps { margin: 4px 0 0; padding: 10px 12px 10px 30px; border-radius: 14px; background: #f4f0fa; text-align: left; font-size: 15px; line-height: 1.5; }
 .install-steps li + li { margin-top: 4px; }
