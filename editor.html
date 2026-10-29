@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>스테이지 만들기 · 퍼즐 토벌 대작전</title>
+<link rel="icon" href="assets/img/app/icon-192.png?v=2">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poor+Story&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/editor.css?v=1">
+</head>
+<body>
+<header class="top">
+  <h1>스테이지 만들기</h1>
+  <div class="top-row">
+    <select id="mine" aria-label="내가 만든 스테이지"></select>
+    <button id="btnNew">새로</button>
+    <button id="btnLoad">기존 스테이지 불러오기</button>
+    <button id="btnMore" aria-haspopup="menu">…</button>
+  </div>
+  <div id="moreMenu" class="menu" hidden>
+    <button data-act="copy">이 스테이지 복제</button>
+    <button data-act="del">이 스테이지 지우기</button>
+    <button data-act="save">전부 파일로 저장</button>
+    <button data-act="open">파일 열기</button>
+    <button data-act="help">쓰는 법</button>
+  </div>
+  <input id="fileIn" type="file" accept=".json,application/json" hidden>
+</header>
+
+<main>
+  <section class="card board-card">
+    <div class="size-row">
+      <span>줄</span><button data-size="r-">−</button><b id="rowsN">8</b><button data-size="r+">+</button>
+      <span>칸</span><button data-size="c-">−</button><b id="colsN">8</b><button data-size="c+">+</button>
+      <label class="tog"><input id="mirror" type="checkbox" checked>좌우 대칭</label>
+    </div>
+    <div id="brushes" class="brushes" role="radiogroup" aria-label="칠할 것"></div>
+    <div id="board" class="board" aria-label="판"></div>
+    <div class="board-acts">
+      <button id="btnUndo">되돌리기</button>
+      <select id="shape" aria-label="판 모양"><option value="">판 모양 고르기…</option></select>
+      <button id="btnClear">장애물 다 지우기</button>
+    </div>
+    <p id="counts" class="muted"></p>
+  </section>
+
+  <section class="card">
+    <h2>스테이지</h2>
+    <label class="field"><span>이름</span><input id="fName" maxlength="20"></label>
+    <div class="two">
+      <label class="field"><span>단짝 친구</span><select id="fHost"></select></label>
+      <label class="field"><span>지도 아이콘</span><select id="fIcon"></select></label>
+    </div>
+    <div class="two">
+      <label class="field"><span>시작 말</span><input id="fIntro" maxlength="24" placeholder="잡초를 뽑자!"></label>
+      <label class="field"><span>깼을 때 도장</span><input id="fDone" maxlength="20" placeholder="비우면 목표대로 (제초 끝!!)"></label>
+    </div>
+
+    <h3>목표 <small class="muted">(3개까지)</small></h3>
+    <div id="goals" class="chips"></div>
+    <div id="goalMore"></div>
+
+    <h3>규칙</h3>
+    <div class="seg" id="fMode">
+      <button data-v="moves">이동 수</button><button data-v="time">제한 시간 (검정)</button>
+    </div>
+    <div class="two">
+      <label class="field" id="movesBox"><span>이동 수</span><input id="fMoves" type="number" min="1" max="99" inputmode="numeric"></label>
+      <label class="field" id="timeBox"><span>시간 (초)</span><input id="fTime" type="number" min="10" max="300" step="5" inputmode="numeric"></label>
+      <div class="field"><span>얼굴 가짓수</span><div class="seg" id="fTypes"><button data-v="4">4</button><button data-v="5">5</button><button data-v="6">6</button></div></div>
+    </div>
+    <div class="field"><span>난이도 표시</span><div class="seg" id="fLv"><button data-v="">보통</button><button data-v="challenge">도전</button><button data-v="hard">HARD</button></div></div>
+    <div class="field"><span>별 점수 (별 1 · 2 · 3)</span>
+      <div class="three"><input id="fS1" type="number" step="500" inputmode="numeric"><input id="fS2" type="number" step="500" inputmode="numeric"><input id="fS3" type="number" step="500" inputmode="numeric"></div>
+    </div>
+    <label class="field"><span>시작 전 대사 <small class="muted">(한 줄에 하나: 하치와레: 오늘은 풀 뽑기 하자~)</small></span><textarea id="fStory" rows="3"></textarea></label>
+    <label class="field"><span>처음 깼을 때 대사</span><textarea id="fAfter" rows="2"></textarea></label>
+    <label class="field"><span>기획 메모 <small class="muted">(새 기믹 아이디어, 의도 등. 내보낼 때 주석으로 같이 감)</small></span><textarea id="fMemo" rows="3"></textarea></label>
+  </section>
+
+  <section class="card">
+    <h2>점검</h2>
+    <ul id="checks" class="checks"></ul>
+  </section>
+
+  <section class="card">
+    <h2>봇으로 재 보기</h2>
+    <p class="muted">자동 플레이 봇이 이 판을 여러 번 해 봐요. 봇은 친구 스킬을 안 써서 사람보다 조금 못해요.</p>
+    <div class="bot-row">
+      <button id="btnBot" class="main">재 보기</button>
+      <select id="botRuns" aria-label="판 수"><option value="80">빠르게 (80판)</option><option value="200" selected>보통 (200판)</option><option value="400">꼼꼼히 (400판)</option></select>
+    </div>
+    <div id="botProg" class="prog" hidden><i></i></div>
+    <div id="botOut"></div>
+  </section>
+
+  <section class="card">
+    <h2>해 보기</h2>
+    <button id="btnPlay" class="main play">테스트 플레이 ▶</button>
+    <p class="muted">진짜 게임 화면에서 이 판을 해 봐요. 기록·하트·코인은 그대로예요.</p>
+    <p id="lastPlay"></p>
+  </section>
+
+  <section class="card">
+    <h2>내보내기</h2>
+    <div class="seg" id="exFmt"><button data-v="spec">300판 설계도 (spec.js)</button><button data-v="life">1~6장 (life.js)</button><button data-v="json">파일 (JSON)</button></div>
+    <p id="exHelp" class="muted"></p>
+    <textarea id="exOut" rows="9" readonly></textarea>
+    <button id="btnCopy" class="main">복사</button>
+  </section>
+</main>
+
+<div id="sheet" class="sheet" hidden>
+  <div class="sheet-card">
+    <div class="sheet-head"><b id="sheetTitle"></b><button id="sheetX" aria-label="닫기">닫기</button></div>
+    <div id="sheetBody"></div>
+  </div>
+</div>
+<div id="toast" class="toast" hidden></div>
+
+<script src="js/editor.js?v=1"></script>
+</body>
+</html>

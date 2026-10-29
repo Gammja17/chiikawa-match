@@ -256,4 +256,5 @@ Net.onChange(profileChip); // 지도 왼쪽 위 이름표 (이름, 구글 표시
 document.addEventListener('visibilitychange', () => document.hidden && Net.flush());
 window.addEventListener('pagehide', () => Net.flush());
 // 로그인·랭킹 라이브러리(470KB)는 타이틀 그림을 먼저 받은 뒤에
-if (document.readyState === 'complete') Net.init().then(titleLogin); else addEventListener('load', () => Net.init().then(titleLogin));
+// 에디터 테스트 플레이(index.html?test)는 로그인·랭킹·통계 없이
+if (!window.TEST_PLAY) { if (document.readyState === 'complete') Net.init().then(titleLogin); else addEventListener('load', () => Net.init().then(titleLogin)); }

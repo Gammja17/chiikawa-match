@@ -440,7 +440,7 @@ const Life = {
     Life.stopTimer();
     // 같이 갈 친구 한 명 (인어섬은 1층에서만 고름)
     if (run.kind === 'route' && run.i < 2 && !Save.data.helper) L.helper = CHARS.findIndex(c => c.id === 'hachiware'); // 처음 두 판은 하치와레가 알아서 따라옴
-    else if ((run.kind !== 'tower' || run.floor === 1 || L.helper == null) && !(await pickHelper(st))) return go(run.kind === 'route' ? openMap : openChallenge); // 고르다가 돌아가기
+    else if ((run.kind !== 'tower' || run.floor === 1 || L.helper == null) && !(await pickHelper(st))) return go(run.kind === 'route' ? openMap : run.kind === 'test' ? TestPlay.back : openChallenge); // 고르다가 돌아가기
     const buddy = !!st.host && CHARS[L.helper]?.id === st.host; // 단짝 보너스
     Object.assign(L, { hg: 0, run, ending: false, st, i, moves: (st.moves || 0) + (buddy && st.moves ? 2 : 0), time: (st.time || 0) + (buddy && st.time ? 6 : 0), score: 0, ing: 0, chars: {}, popped: false, extra: false, cont: false, goalsHtml: '', feverT: 0, feverGift: false });
     Object.assign(B, { mode: 'life', stage: i, over: false, busy: true, inSkill: false, sel: null, pending: [], maxCombo: 0, fever: 0, moving: new Set(), open: false, quick: null, quickSwapped: null });
@@ -798,6 +798,7 @@ const Life = {
     B.over = true;
     if (L.run.kind === 'tower') return Tower.cleared();
     if (L.run.kind === 'daily') return DayChal.cleared();
+    if (L.run.kind === 'test') return TestPlay.cleared(left);
     const st = L.st, i = L.i;
     const stars = L.score >= st.stars[2] ? 3 : L.score >= st.stars[1] ? 2 : 1;
     if (L.run.kind === 'route') Stats.end('clear', { stars, moves_left: left });
@@ -838,6 +839,7 @@ const Life = {
     Sound.play('jingle_lose', 1, 0.9);
     await banner(L.st.time ? '시간 끝…' : '이동 끝…', 600);
     if (L.run.kind === 'tower' && L.extra) return Tower.over();
+    if (L.run.kind === 'test') return TestPlay.failed();
     // 모험 지도 스테이지를 포기하면 하트 하나
     const route = L.run.kind === 'route';
     const lost = () => route && Stats.end('fail', { goals_left: Life.leftPct() });

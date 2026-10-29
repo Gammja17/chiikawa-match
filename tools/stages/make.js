@@ -139,9 +139,52 @@ const target = (lv, ch) => { const t = (ch - 7) / 23; return lv === 'hard' ? ler
 const teamLv = k => (k <= 60 ? Math.max(2, Math.min(6, 2 + (k - 20) / 10)) : 6 + (k - 60) / 60);
 const round = (x, s) => Math.round(x / s) * s;
 
+// 깨는 비율 tgt가 되는 이동 수: 봇이 깨는 데 든 수 분포에서 그 지점 (bad: 판 모양 때문에 안 채워지는 칸이 생긴 판 수)
+function needAt(st, tgt, runs, sim) {
+  const need = [];
+  let bad = 0;
+  for (let k = 0; k < runs; k++) { sim.SIM.seed(hash(st.name) + k * 7919); const r = sim.SIM.lifeRun(st, { cap: 90 }); if (r.bad) bad++; need.push(r.used); }
+  need.sort((a, b) => a - b);
+  return { bad, m: need[Math.min(runs - 1, Math.ceil(tgt * runs) - 1)] };
+}
+// 별: 정한 이동 수로 다시 돌려서, 깬 판 점수(보너스 포함)의 40%·75% 지점 (깬 판의 60%가 별 2, 25%가 별 3)
+function starsAt(st, limit, exam, sim) {
+  const scores = [];
+  for (let k = 0; k < 160; k++) {
+    sim.SIM.seed(hash(st.name) + 99991 + k * 104729);
+    const r = sim.SIM.lifeRun(exam ? { ...st, time: limit * 2.6 } : { ...st, moves: limit }, { limit });
+    if (isFinite(r.used)) scores.push(r.score);
+  }
+  scores.sort((a, b) => a - b);
+  const q = p => scores[Math.min(scores.length - 1, Math.floor(p * scores.length))] || 0;
+  const sg = st.goals.find(x => x.k === 'score');
+  const s1 = sg ? sg.n : Math.max(1000, round(q(0.1), 500));
+  const s2 = Math.max(s1 + 500, round(q(0.4), 500)), s3 = Math.max(s2 + 500, round(q(0.75), 500));
+  return [s1, s2, s3];
+}
+
+// ---------- 에디터(editor.html)에서 그린 판: 판 그림은 그대로, 정해 두지 않은 이동 수(시간)·별 점수만 봇으로 잼 ----------
+// spec 옵션: map 판 그림, moves | time, stars, n 친구 모으기 수, score 점수 목표, ingN 재료 수
+function tuneDrawn(job, sim) {
+  const { sp, ch } = job;
+  const exam = !!sp.time;
+  const goals = parseGoals(sp.goals).goals.map(x => (x.k === 'char' ? { ...x, n: sp.n || 24 } : x.k === 'score' ? { ...x, n: sp.score || 9000 } : x));
+  let st = { name: sp.name, ...(sp.done ? { done: sp.done } : {}), icon: sp.icon, types: sp.types || 5, moves: 99, host: sp.host, ...(exam ? { exam: true } : {}), intro: sp.intro, goals, stars: [0, 0, 0],
+    ...(goals.some(x => x.k === 'ing') ? { ing: { n: sp.ingN || 3, max: 2, kinds: sp.ing || ['naruto', 'egg'] } } : {}), map: sp.map };
+  const tgt = target(sp.lv, ch);
+  const fixed = exam ? (sp.time === true ? 0 : sp.time / 2.6) : sp.moves;
+  const r = fixed ? { m: fixed, bad: 0 } : needAt(st, tgt, 220, sim);
+  const m = isFinite(r.m) ? Math.max(5, Math.round(r.m)) : 60;
+  st.stars = sp.stars || starsAt(st, m, exam, sim);
+  if (exam) { delete st.moves; st.time = fixed ? sp.time : Math.max(30, round(m * 2.6, 5)); st = reorder(st); }
+  else st.moves = m;
+  return { st, info: { m, drawn: true, bad: r.bad, tgt: +tgt.toFixed(2), types: st.types } };
+}
+
 // ---------- 일상 퍼즐 하나 재기 (일꾼 안에서) ----------
 function tuneLife(job, sim) {
   const { sp, ch } = job;
+  if (sp.map) return tuneDrawn(job, sim);
   const g = parseGoals(sp.goals);
   const rnd = rng(hash(sp.name));
   const hasIng = g.goals.some(x => x.k === 'ing'), hasSyrup = g.goals.some(x => x.k === 'syrup');
@@ -166,13 +209,7 @@ function tuneLife(job, sim) {
       ...(hasIng ? { ing: { n: Math.max(2, Math.round(ingN * Math.sqrt(knob))), max: 2, kinds: sp.ing || ['naruto', 'egg'] } } : {}), map };
     return st;
   };
-  const measure = (st, runs) => {
-    const need = [];
-    let bad = 0;
-    for (let k = 0; k < runs; k++) { sim.SIM.seed(hash(st.name) + k * 7919); const r = sim.SIM.lifeRun(st, { cap: 90 }); if (r.bad) bad++; need.push(r.used); }
-    need.sort((a, b) => a - b);
-    return { bad, m: need[Math.min(runs - 1, Math.ceil(tgt * runs) - 1)] };
-  };
+  const measure = (st, runs) => needAt(st, tgt, runs, sim);
   // 장애물 양(knob)을 이분 탐색: 깨는 데 든 수가 [minM, maxM] 안에 들 때까지
   let st, m;
   const off = x => (x < minM ? minM - x : x > maxM ? x - maxM : 0);
@@ -203,20 +240,7 @@ function tuneLife(job, sim) {
   st = make();
   m = measure(st, 220).m;
   if (!isFinite(m)) m = 60;
-  // 별: 정한 이동 수로 다시 돌려서, 깬 판 점수(보너스 포함)의 40%·75% 지점 (깬 판의 60%가 별 2, 25%가 별 3)
-  const limit = m;
-  const scores = [];
-  for (let k = 0; k < 160; k++) {
-    sim.SIM.seed(hash(st.name) + 99991 + k * 104729);
-    const r = sim.SIM.lifeRun(exam ? { ...st, time: limit * 2.6 } : { ...st, moves: limit }, { limit });
-    if (isFinite(r.used)) scores.push(r.score);
-  }
-  scores.sort((a, b) => a - b);
-  const q = p => scores[Math.min(scores.length - 1, Math.floor(p * scores.length))] || 0;
-  const sg = st.goals.find(x => x.k === 'score');
-  let s1 = sg ? sg.n : Math.max(1000, round(q(0.1), 500));
-  let s2 = Math.max(s1 + 500, round(q(0.4), 500)), s3 = Math.max(s2 + 500, round(q(0.75), 500));
-  st.stars = [s1, s2, s3];
+  st.stars = starsAt(st, m, exam, sim);
   if (exam) { delete st.moves; st.time = Math.max(40, round(m * 2.6, 5)); st = reorder(st); }
   else st.moves = m;
   return { st, info: { m, knob: +knob.toFixed(2), tgt: +tgt.toFixed(2), types, boost, shape, R, C } };
