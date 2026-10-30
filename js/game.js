@@ -32,7 +32,7 @@ const Save = {
     } catch {}
   },
   save() {
-    if (this.wiped) return; // 초기화 중에는 다시 저장하지 않음
+    if (this.wiped || window.TEST_PLAY) return; // 초기화 중, 에디터 테스트 플레이 중에는 저장하지 않음
     this.data.savedAt = Date.now();
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(this.data)); } catch {}
     if (typeof Net !== 'undefined') Net.cloudSave();
@@ -1143,7 +1143,7 @@ async function dropIn(text) {
   await Promise.all(ps);
 }
 // 일시정지: 계속하기, 설정, 나가기 (모험 지도 스테이지를 하다 나가면 하트 하나)
-const leaveTo = () => (B.mode === 'life' && L.run && L.run.kind !== 'route' ? openChallenge : openMap);
+const leaveTo = () => (B.mode === 'life' && L.run?.kind === 'test' ? TestPlay.back : B.mode === 'life' && L.run && L.run.kind !== 'route' ? openChallenge : openMap);
 const inRoute = () => B.mode === 'battle' || L.run?.kind === 'route';
 $('#btnBack').onclick = () => {
   Sound.play('click');

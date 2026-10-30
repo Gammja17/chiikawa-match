@@ -24,7 +24,7 @@ if os.path.isdir(os.path.join(ROOT, 'assets', 'king')):
 if os.path.isdir(DIST):
     shutil.rmtree(DIST)
 os.makedirs(DIST)
-for f in ('index.html', 'credits.html', 'manifest.webmanifest', 'sw.js'):  # 홈 화면 앱(PWA) 파일과 출처 페이지는 맨 위에
+for f in ('index.html', 'credits.html', 'editor.html', 'manifest.webmanifest', 'sw.js'):  # 홈 화면 앱(PWA) 파일, 출처 페이지, 스테이지 에디터는 맨 위에
     shutil.copy2(os.path.join(ROOT, f), DIST)
 for top in ('css', 'js', 'assets'):
     for dirpath, dirnames, files in os.walk(os.path.join(ROOT, top)):
