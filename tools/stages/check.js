@@ -6,7 +6,7 @@ const { load } = require(path.join(ROOT, 'tools', 'sim.js'));
 const vm = require('vm');
 const ctx = load();
 const G = vm.runInContext('({ LIFE, STAGES, ROUTE, CHAPTERS, STORY, STORY_AFTER, LIFE_STORY, LIFE_STORY_AFTER, CHAR_NAME, MONSTERS, LIFE_CHARS, CHARS })', ctx);
-const item = n => fs.existsSync(path.join(ROOT, 'assets', 'img', 'items', n + '.png'));
+const item = n => fs.existsSync(path.join(ROOT, 'assets', 'img', 'items', n + '.webp'));
 const bad = [];
 const err = (where, msg) => bad.push(`${where}: ${msg}`);
 G.LIFE.forEach((st, i) => {

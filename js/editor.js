@@ -2,8 +2,8 @@
 // 만든 판은 이 기기(localStorage)에만 남음. 다른 기기로 옮기려면 '전부 파일로 저장'
 // 판 글자는 js/life.js와 같음: # 구멍 . 구슬 w 잡초 W 큰 잡초 b 상자 g 선물 상자 o 거품 l 리본 i 재료 s 시럽
 const $ = s => document.querySelector(s);
-const ITEM = n => `assets/img/items/${n}.png?v=3`;
-const FACE = id => `assets/img/faces/${id}.png`;
+const ITEM = n => `assets/img/items/${n}.webp`;
+const FACE = id => `assets/img/faces/${id}.webp`;
 const KEY = 'chiikawaEditor.stages', CUR = 'chiikawaEditor.cur';
 
 const BRUSHES = [
@@ -343,7 +343,7 @@ function drawChecks() {
 // ---------- 봇으로 재기 ----------
 let worker = null, busy = false;
 try {
-  worker = new Worker('js/editor-worker.js?v=1');
+  worker = new Worker('js/editor-worker.js?v=2');
   worker.onerror = () => { $('#botOut').innerHTML = '<p class="muted">봇을 못 불렀어요. 파일을 바로 열지 말고 웹 서버로 열어 주세요 (python -m http.server)</p>'; };
 } catch {}
 const pct = (a, p) => a[Math.min(a.length - 1, Math.max(0, Math.ceil(p * a.length) - 1))];

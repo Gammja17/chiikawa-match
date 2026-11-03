@@ -274,9 +274,9 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 #party .pm.strong .up { display: block; }
 #party .pm.weak .fig { opacity: .55; }
 #party .pm.ready { background: var(--ring); animation: bob 1s ease-in-out infinite; }
-#party .pm.ready::after { content: ''; position: absolute; right: -9px; bottom: -6px; width: 26px; height: 26px; background: url(../assets/img/items/sparkle.png?v=2) center / contain no-repeat; animation: spin 2.4s linear infinite; }
+#party .pm.ready::after { content: ''; position: absolute; right: -9px; bottom: -6px; width: 26px; height: 26px; background: url(../assets/img/items/sparkle.webp) center / contain no-repeat; animation: spin 2.4s linear infinite; }
 #teamRow { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
-#teamRow .heart { width: 30px; height: 30px; flex: none; background: url(../assets/img/items/heart.png) center / contain no-repeat; }
+#teamRow .heart { width: 30px; height: 30px; flex: none; background: url(../assets/img/items/heart.webp) center / contain no-repeat; }
 #teamRow .heart path { display: none; }
 #teamHp { --h: 32px; flex: 1; }
 #teamHp span { font-size: 21px; }
@@ -316,8 +316,8 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 .cellfg.w1::before, .cellfg.w2::before { content: ''; position: absolute; inset: 3px; border-radius: 11px; }
 .cellfg.w1::before { background: rgba(140, 214, 105, .36); box-shadow: inset 0 0 0 2px rgba(96, 170, 70, .8); }
 .cellfg.w2::before { background: rgba(90, 180, 70, .5); box-shadow: inset 0 0 0 3px rgba(60, 140, 45, .9); }
-.cellfg.w1::after, .cellfg.w2::after { content: ''; position: absolute; left: 24%; top: 24%; width: 52%; height: 52%; background: url(../assets/img/items/weed1.png?v=2) center / contain no-repeat; opacity: .85; filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 1px #fff); }
-.cellfg.w2::after { background-image: url(../assets/img/items/weed2.png?v=2); opacity: .92; }
+.cellfg.w1::after, .cellfg.w2::after { content: ''; position: absolute; left: 24%; top: 24%; width: 52%; height: 52%; background: url(../assets/img/items/weed1.webp) center / contain no-repeat; opacity: .85; filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 1px #fff); }
+.cellfg.w2::after { background-image: url(../assets/img/items/weed2.webp); opacity: .92; }
 /* 시럽(꿀·국물): 이웃 시럽 칸과 이어져 한 덩어리로 보임. 바깥 테두리만 진하게 */
 .cellbg.syrup::after { --ox: 2px; --oy: 2px; background-image: url(../assets/img/obst/syrup_tex.webp?v=2), linear-gradient(180deg, #ffd56e, #ffbe45); border: 2.5px solid #d98a1e; box-shadow: inset 0 3px 0 rgba(255, 255, 255, .45);
   /* 무늬(3칸 크기, 이음매 없는 그림: tools/make_syrup_tex.py)와 색 번짐을 칸마다가 아니라 판 전체 기준으로 깔아서 이웃 시럽 칸과 끊김 없이 이어짐 (--ox/--oy: 칸 안쪽으로 들어간 만큼) */
@@ -909,7 +909,7 @@ img.shadow { filter: brightness(0) opacity(.15); }
 #lhHelper .pm-face { width: 100%; height: 100%; border-radius: 50%; overflow: hidden; display: grid; place-items: center; }
 #lhHelper .fig { width: 92%; height: 92%; margin-top: 8%; }
 #lhHelper.ready { background: var(--ring); animation: bob 1s ease-in-out infinite; }
-#lhHelper.ready::after { content: ''; position: absolute; right: -9px; bottom: -6px; width: 24px; height: 24px; background: url(../assets/img/items/sparkle.png?v=2) center / contain no-repeat; animation: spin 2.4s linear infinite; }
+#lhHelper.ready::after { content: ''; position: absolute; right: -9px; bottom: -6px; width: 24px; height: 24px; background: url(../assets/img/items/sparkle.webp) center / contain no-repeat; animation: spin 2.4s linear infinite; }
 .helper-pick { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; padding: 10px; border-radius: 14px; background: color-mix(in srgb, var(--ring) 18%, #fff); }
 .helper-pick .fig { width: 84px; height: 84px; flex: none; }
 .helper-pick b { display: block; font-family: var(--head); font-size: 22px; }
@@ -1282,7 +1282,7 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .install-steps li + li { margin-top: 4px; }
 .install-steps b { color: var(--pink); }
 /* 결과 창 '자랑하기' (클리어 카드 공유, js/share.js) */
-.share-btn { position: absolute; right: 12px; top: 12px; z-index: 3; padding: 6px 12px 6px 34px; border-radius: 99px; background: #fff url(../assets/img/items/sparkle.png?v=2) 8px center / 22px no-repeat; border: 2px solid var(--pink); color: var(--pink); font-family: var(--head); font-size: 16px; line-height: 1.2; box-shadow: 0 3px 0 #4a426222; }
+.share-btn { position: absolute; right: 12px; top: 12px; z-index: 3; padding: 6px 12px 6px 34px; border-radius: 99px; background: #fff url(../assets/img/items/sparkle.webp) 8px center / 22px no-repeat; border: 2px solid var(--pink); color: var(--pink); font-family: var(--head); font-size: 16px; line-height: 1.2; box-shadow: 0 3px 0 #4a426222; }
 .share-btn:active { transform: scale(.95); }
 .share-btn[hidden] { display: none; }
 

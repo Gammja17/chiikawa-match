@@ -126,6 +126,15 @@ const BGM = {
   boss: ['boss'],                    // Baby Black Magi (bobjt)
 };
 const BGM_V = 1; // 파일을 바꾸면 올림
+// 지금 화면의 그림을 다 받을 때까지 기다림 (최대 ms). 화면이 막 바뀌는 중일 수 있어서 조금 있다가 셈
+const imagesFirst = (ms = 2500) => new Promise(done => {
+  const end = setTimeout(done, ms);
+  setTimeout(() => {
+    const left = [...document.querySelectorAll('.screen.active img')].filter(im => !im.complete);
+    Promise.all(left.map(im => new Promise(r => { im.addEventListener('load', r, { once: true }); im.addEventListener('error', r, { once: true }); })))
+      .then(() => { clearTimeout(end); done(); });
+  }, 400);
+});
 Object.assign(Sound, {
   song: null, el: null, fade: null, turn: {}, req: 0, blobs: {},
 
@@ -175,8 +184,9 @@ Object.assign(Sound, {
 
   // 파일을 통째로 받아 blob 주소로 틂: 서버(Cloudflare)가 조각 받기(Range)를 안 해 줘서 아이폰 <audio>가 못 트는 걸 피함
   // 받은 곡은 기억해 두고, 통째로 받으니 sw.js에 저장돼 오프라인에서도 나옴
+  // 곡(1~3MB)이 화면 그림 받을 길을 막지 않게: 처음 받는 곡은 화면 그림이 다 온 뒤(최대 2.5초)에 낮은 우선순위로
   bgmSrc(file) {
-    return (this.blobs[file] ||= fetch(file)
+    return (this.blobs[file] ||= imagesFirst().then(() => fetch(file, { priority: 'low' }))
       .then(r => { if (!r.ok) throw new Error(r.status); return r.blob(); })
       .then(b => URL.createObjectURL(b))
       .catch(e => { delete this.blobs[file]; throw e; }));

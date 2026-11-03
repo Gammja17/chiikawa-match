@@ -5,19 +5,22 @@
 - assets/img/combo/*     (game.js CIMG, style.css 피버 딱지)
 - assets/img/ui/debuff_*, fx_*  (debuff.js DBF, style.css 잠든 친구)
 - assets/img/gacha/machine.png  (index.html)
+- assets/img/faces, tiles, chars, items  (data.js FACE·TILE·BODY·ITEM, editor.js, style.css, index.html, tools/stages/check.js)
+  스티커 테두리가 뭉개지지 않게 투명한 부분(알파)은 손실 없이
 실행: python tools/to_webp.py   (이미 바꾼 건 건너뜀, 바꾼 PNG는 지움)
 """
 import glob, os
 from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-GROUPS = ['assets/img/monsters/*.png', 'assets/img/combo/*.png', 'assets/img/ui/debuff_*.png', 'assets/img/ui/fx_*.png', 'assets/img/gacha/machine.png']
+GROUPS = ['assets/img/monsters/*.png', 'assets/img/combo/*.png', 'assets/img/ui/debuff_*.png', 'assets/img/ui/fx_*.png', 'assets/img/gacha/machine.png',
+          'assets/img/faces/*.png', 'assets/img/tiles/*.png', 'assets/img/chars/*.png', 'assets/img/items/*.png']
 before = after = 0
 for pat in GROUPS:
     for f in sorted(glob.glob(os.path.join(ROOT, pat))):
         out = f[:-4] + '.webp'
         im = Image.open(f)
-        im.save(out, 'WEBP', quality=88, method=6)
+        im.save(out, 'WEBP', quality=90, alpha_quality=100, method=6)
         a, b = os.path.getsize(f), os.path.getsize(out)
         before += a
         after += b

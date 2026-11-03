@@ -14,7 +14,7 @@
 - 출처: 인터넷에서 모은 원작 이미지 (원본 주소 기록 없음)
 - 손본 것: 얼굴만 오려 냄
 
-- `assets/img/faces/`: `beetle.png`, `chiikawa.png`, `darkstar.png`, `goblin.png`, `hachiware.png`, `kani.png`, `kurimanju.png`, `momonga.png`, `rakko.png`, `shisa.png`, `shooting.png`, `usagi.png`
+- `assets/img/faces/`: `beetle.webp`, `chiikawa.webp`, `darkstar.webp`, `goblin.webp`, `hachiware.webp`, `kani.webp`, `kurimanju.webp`, `momonga.webp`, `rakko.webp`, `shisa.webp`, `shooting.webp`, `usagi.webp`
 
 ### 퍼즐 구슬 (12개)
 
@@ -22,7 +22,7 @@
 - 출처: 위 퍼즐 얼굴
 - 손본 것: 퍼즐 얼굴에 친구 색 테두리를 둘러 만듦
 
-- `assets/img/tiles/`: `beetle.png`, `chiikawa.png`, `darkstar.png`, `goblin.png`, `hachiware.png`, `kani.png`, `kurimanju.png`, `momonga.png`, `rakko.png`, `shisa.png`, `shooting.png`, `usagi.png`
+- `assets/img/tiles/`: `beetle.webp`, `chiikawa.webp`, `darkstar.webp`, `goblin.webp`, `hachiware.webp`, `kani.webp`, `kurimanju.webp`, `momonga.webp`, `rakko.webp`, `shisa.webp`, `shooting.webp`, `usagi.webp`
 
 ### 앱 아이콘 (4개)
 
@@ -39,7 +39,7 @@
 - 손본 것: 배경을 지움
 
 - `assets/img/art/`: `armor_labor.png`, `armor_one.png`, `armors.png`, `body_kani.png`, `pajama_uwawa.png`, `pose_chiikawa.png`, `pose_chiikawa2.png`, `pose_hachiware.png`, `pose_hachiware2.png`, `pose_kurimanju.png`, `pose_momonga.png`, `pose_rakko.png`, `pose_shisa.png`, `pose_usagi.png`, `pose_usagi2.png`, `usagi_haa.png`
-- `assets/img/chars/`: `chiikawa.png`, `hachiware.png`, `kurimanju.png`, `momonga.png`, `rakko.png`, `shisa.png`, `usagi.png`
+- `assets/img/chars/`: `chiikawa.webp`, `hachiware.webp`, `kurimanju.webp`, `momonga.webp`, `rakko.webp`, `shisa.webp`, `usagi.webp`
 - `assets/img/npc/`: `armor.png`
 
 ### 애니메이션 장면 (오프닝·이야기) (5개)
@@ -154,7 +154,7 @@ AI 그림 도구와 코드로 이 게임을 위해 새로 만든 그림이에요
 - `assets/img/fx/`: `dot_l.png`, `dot_m.png`, `drop_b.png`, `drop_p.png`, `heart_l.png`, `heart_o.png`, `heart_p.png`, `heart_r.png`, `star_b.png`, `star_m.png`, `star_p.png`, `star_y.png`, `twinkle1.png`, `twinkle2.png`, `twinkle3.png`, `twinkle4.png`
 - `assets/img/gacha/`: `machine.webp`
 - `assets/img/house/`: `fl_carpet.webp`, `fl_dark.webp`, `fl_grass.webp`, `fl_sand.webp`, `fl_stone.webp`, `fl_tatami.webp`, `fl_tile.webp`, `fl_wood.webp`, `w_check.webp`, `w_cloud.webp`, `w_daisy.webp`, `w_dot.webp`, `w_heart.webp`, `w_night.webp`, `w_star.webp`, `w_stripe.webp`
-- `assets/img/items/`: `bath.png`, `bento.png`, `bombball.png`, `bombball_o.png`, `box.png`, `bubble.png`, `clock.png`, `coin.png`, `dango.png`, `dango3.png`, `dango3_o.png`, `donut.png`, `egg.png`, `f_balloon.png`, `f_board.png`, `f_bookcase.png`, `f_cake.png`, `f_clock.png`, `f_cushion.png`, `f_frame.png`, `f_fridge.png`, `f_futon.png`, `f_garland.png`, `f_grass.png`, `f_kotatsu.png`, `f_lamp.png`, `f_monstera.png`, `f_poster.png`, `f_rice.png`, `f_rug.png`, `f_shelf.png`, `f_sofa.png`, `f_stool.png`, `f_table.png`, `f_tissue.png`, `f_toybox.png`, `f_tv.png`, `f_wclock.png`, `f_window.png`, `gift.png`, `hand.png`, `heart.png`, `house.png`, `medal.png`, `naruto.png`, `onigiri.png`, `pancake.png`, `paperplane.png`, `paperplane_o.png`, `parfait.png`, `pot.png`, `ramen.png`, `ribbon.png`, `sparkle.png`, `star.png`, `stick.png`, `sword.png`, `sword_o.png`, `target.png`, `timer.png`, `weed1.png`, `weed2.png`
+- `assets/img/items/`: `bath.webp`, `bento.webp`, `bombball.webp`, `bombball_o.webp`, `box.webp`, `bubble.webp`, `clock.webp`, `coin.webp`, `dango.webp`, `dango3.webp`, `dango3_o.webp`, `donut.webp`, `egg.webp`, `f_balloon.webp`, `f_board.webp`, `f_bookcase.webp`, `f_cake.webp`, `f_clock.webp`, `f_cushion.webp`, `f_frame.webp`, `f_fridge.webp`, `f_futon.webp`, `f_garland.webp`, `f_grass.webp`, `f_kotatsu.webp`, `f_lamp.webp`, `f_monstera.webp`, `f_poster.webp`, `f_rice.webp`, `f_rug.webp`, `f_shelf.webp`, `f_sofa.webp`, `f_stool.webp`, `f_table.webp`, `f_tissue.webp`, `f_toybox.webp`, `f_tv.webp`, `f_wclock.webp`, `f_window.webp`, `gift.webp`, `hand.webp`, `heart.webp`, `house.webp`, `medal.webp`, `naruto.webp`, `onigiri.webp`, `pancake.webp`, `paperplane.webp`, `paperplane_o.webp`, `parfait.webp`, `pot.webp`, `ramen.webp`, `ribbon.webp`, `sparkle.webp`, `star.webp`, `stick.webp`, `sword.webp`, `sword_o.webp`, `target.webp`, `timer.webp`, `weed1.webp`, `weed2.webp`
 - `assets/img/map/`: `m1.jpg`, `m10.jpg`, `m2.jpg`, `m3.jpg`, `m4.jpg`, `m5.jpg`, `m6.jpg`, `m7.jpg`, `m8.jpg`, `m9.jpg`
 - `assets/img/obst/`: `box_flap.png`, `box_open.png`, `bubble_pop.png`, `dirt.png`, `foam_tex.webp`, `leaf.png`, `ribbon_loose.png`, `sprout_pull.png`, `weed_pull.png`
 - `assets/img/stage/`: `s1.jpg`, `s10.jpg`, `s2.jpg`, `s3.jpg`, `s4.jpg`, `s5.jpg`, `s6.jpg`, `s7.jpg`, `s8.jpg`, `s9.jpg`
@@ -195,7 +195,7 @@ AI 그림 도구와 코드로 이 게임을 위해 새로 만든 그림이에요
 - 라이선스: Apache License 2.0 (assets/img/items/LICENSE-noto.txt)
 - 손본 것: 크기를 맞추고 일부는 흰 테두리를 그림
 
-- `assets/img/items/`: `bed.png`, `berry.png`, `bomb.png`, `boom.png`, `candle.png`, `cap.png`, `crown.png`, `frame.png`, `gradcap.png`, `h.png`, `honey.png`, `mirror.png`, `phones.png`, `plane.png`, `plant.png`, `rainbow.png`, `rocket.png`, `sakura.png`, `shades.png`, `sofa.png`, `sponge.png`, `sunflower.png`, `teddy.png`, `tophat.png`, `tv.png`, `v.png`
+- `assets/img/items/`: `bed.webp`, `berry.webp`, `bomb.webp`, `boom.webp`, `candle.webp`, `cap.webp`, `crown.webp`, `frame.webp`, `gradcap.webp`, `h.webp`, `honey.webp`, `mirror.webp`, `phones.webp`, `plane.webp`, `plant.webp`, `rainbow.webp`, `rocket.webp`, `sakura.webp`, `shades.webp`, `sofa.webp`, `sponge.webp`, `sunflower.webp`, `teddy.webp`, `tophat.webp`, `tv.webp`, `v.webp`
 
 ### Kenney Particle Pack (13개)
 
