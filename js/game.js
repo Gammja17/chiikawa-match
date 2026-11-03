@@ -603,9 +603,11 @@ function openMap(advanceFrom = null, paging = false) {
     n.style.left = pts[i].x + 'px';
     n.style.top = pts[i].y + 'px';
     const s = routeStars(i) || 0;
-    const icon = st.icon ? ITEM(st.icon) : MONSTERS[st.waves[st.waves.length - 1].m].img;
+    const lastW = !st.icon && st.waves[st.waves.length - 1];
+    const icon = st.icon ? ITEM(st.icon) : MONSTERS[lastW.m].img;
+    const tint = lastW && monHue(lastW) ? ` style="filter:hue-rotate(${monHue(lastW)}deg) saturate(1.3)"` : ''; // 토벌 칸은 마지막 괴물 그림 (색 변형까지)
     const kind = st.exam ? ['exam', 'gradcap'] : st.icon ? ['life', 'plant'] : ['hunt', 'sword']; // 일상·토벌·시험 배지
-    n.innerHTML = `<i class="nkind ${kind[0]}"><img src="${ITEM(kind[1])}" alt=""></i>` + (st.host ? `<img class="nhost" src="${FACE(st.host)}" alt="">` : '') + (locked ? LOCK_SVG : `<img class="nicon" src="${icon}" loading="lazy"><span class="nnum">${i + 1}</span>`) +
+    n.innerHTML = `<i class="nkind ${kind[0]}"><img src="${ITEM(kind[1])}" alt=""></i>` + (st.host ? `<img class="nhost" src="${FACE(st.host)}" alt="">` : '') + (locked ? LOCK_SVG : `<img class="nicon" src="${icon}"${tint} loading="lazy"><span class="nnum">${i + 1}</span>`) +
       (i === cur ? `<span class="nname">${st.name}</span>` : '') +
       (lv && !locked ? `<span class="ntag">${lv === 'hard' ? 'HARD' : '도전'}</span>` : '') +
       (s ? `<span class="nstars">${[0, 1, 2].map(k => `<i class="${k < s ? 'on' : ''}"></i>`).join('')}</span>` : '');
@@ -757,7 +759,7 @@ function waveMembers(stage, wv) {
   const others = STAGES[stage].waves.filter(x => !x.boss && x !== w);
   const share = n === 2 ? 0.55 : 0.38, atkK = n === 2 ? 0.6 : 0.45;
   return Array.from({ length: n }, (_, j) => {
-    const base = j === 0 ? w : others[j - 1] || { ...w, hue: ((w.hue || 0) + 50 * j) % 360 };
+    const base = j === 0 ? w : others[j - 1] || { ...w, hue: (monHue(w) + 50 * j) % 360 };
     return { ...base, hp: Math.round(w.hp * share), atk: Math.round(w.atk * atkK), cd: w.cd + j, boss: false };
   });
 }
@@ -1024,7 +1026,7 @@ function spawnMonster(animated) {
       el = { img: card.querySelector('img'), hp: card.querySelector('.hp'), cd: card.querySelector('.mon-cd'), name: card.querySelector('.mon-name'), sprite: card.querySelector('.mon-sprite'), card };
     }
     el.img.src = M.img;
-    el.sprite.style.filter = w.hue ? `hue-rotate(${w.hue}deg) saturate(1.3)` : '';
+    el.sprite.style.filter = monHue(w) ? `hue-rotate(${monHue(w)}deg) saturate(1.3)` : '';
     const title = w.title ? (w.title.endsWith('·') ? w.title : w.title + ' ') : '';
     el.name.innerHTML = attrIcon(w.a) + (w.boss ? '<img class="crown-ic" src="assets/img/ui/crown.png" alt="">' : '') + (group ? '' : title) + M.name;
     el.name.classList.toggle('boss', !!w.boss);
@@ -2343,7 +2345,7 @@ function openFormation(i) {
     return !seen.has(k) && seen.add(k);
   }).map(w => {
     const title = w.title ? w.title + (w.title.endsWith('·') ? '' : ' ') : '';
-    const tint = w.hue ? `filter:hue-rotate(${w.hue}deg) saturate(1.3)` : '';
+    const tint = monHue(w) ? `filter:hue-rotate(${monHue(w)}deg) saturate(1.3)` : '';
     return `<div class="enemy-chip"><img src="${MONSTERS[w.m].img}" style="${tint}">${title}${MONSTERS[w.m].name}${attrTag(w.a)}</div>`;
   }).join('');
   renderFormation();

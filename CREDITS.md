@@ -2,7 +2,7 @@
 
 > 이 파일은 `node tools/credits.js`가 `js/credits.js`에서 만듭니다. 고칠 땐 `js/credits.js`를 고치세요.
 
-먼작귀 퍼즐 토벌 대작전!은 팬이 만든 **비공식 게임**입니다. 원작자 나가노 및 치이카와 제작위원회와 관계가 없고, 돈을 받지 않습니다. 게임에 들어간 그림 473개와 소리 28개의 출처를 파일마다 적었습니다. 게임 안에서는 설정 → 만든 사람·출처, 웹에서는 `credits.html`에서 같은 목록을 볼 수 있습니다.
+먼작귀 퍼즐 토벌 대작전!은 팬이 만든 **비공식 게임**입니다. 원작자 나가노 및 치이카와 제작위원회와 관계가 없고, 돈을 받지 않습니다. 게임에 들어간 그림 472개와 소리 28개의 출처를 파일마다 적었습니다. 게임 안에서는 설정 → 만든 사람·출처, 웹에서는 `credits.html`에서 같은 목록을 볼 수 있습니다.
 
 ## 원작 그림
 
@@ -50,13 +50,13 @@
 
 - `assets/img/art/`: `scene_crying.jpg`, `scene_goblins.jpg`, `scene_magical.jpg`, `scene_pajama_dance.jpg`, `scene_scared.jpg`
 
-### 괴물 (8개)
+### 괴물 (7개)
 
 - 권리: © nagano / chiikawa committee
 - 출처: [Chiikawa Wiki (Fandom)](https://chiikawa.fandom.com/)
 - 손본 것: 배경을 지움
 
-- `assets/img/monsters/`: `anoko.webp`, `blackstar.webp`, `chimera.webp`, `dekatsuyo.webp`, `elephant.webp`, `mimic.webp`, `ode.webp`, `sphinx.webp`
+- `assets/img/monsters/`: `anoko.webp`, `blackstar.webp`, `chimera.webp`, `dekatsuyo.webp`, `elephant.webp`, `ode.webp`, `sphinx.webp`
 
 ### 인어섬 괴물 (세이렌·인어) (2개)
 

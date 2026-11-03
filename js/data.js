@@ -138,9 +138,10 @@ const art = id => (ART[id] ? `assets/img/art/${ART[id]}.png` : portrait(id));
 const POCKETS = ['chiikawa', 'hachiware', 'usagi', 'momonga', 'rakko', 'shisa', 'kurimanju'].map(id => art(id));
 
 
+// hue: 그 괴물의 기본 색 변형 (웨이브에 hue가 있으면 그게 먼저)
 const MONSTERS = {
   chimera:   { name: '키메라',   img: 'assets/img/monsters/chimera.webp' },
-  mimic:     { name: '미믹',     img: 'assets/img/monsters/mimic.webp' },
+  mimic:     { name: '미믹',     img: 'assets/img/monsters/chimera.webp', hue: 60 }, // 남을 흉내 내는 괴물: 키메라 모습을 나무 상자 색으로 (원래 그림은 잘려 있어서 뺌)
   dekatsuyo: { name: '데카츠요', img: 'assets/img/monsters/dekatsuyo.webp' },
   // 4~6장 보스 (Chiikawa Wiki 그림에서 배경을 지움)
   elephant:  { name: '한밤의 코끼리', img: 'assets/img/monsters/elephant.webp' },
@@ -153,6 +154,8 @@ const MONSTERS = {
   siren:     { name: '세이렌',   img: 'assets/img/monsters/siren.webp' },
   mermaid:   { name: '인어',     img: 'assets/img/monsters/mermaid.webp' },
 };
+
+const monHue = w => w.hue ?? MONSTERS[w.m]?.hue ?? 0;
 
 // a: 속성, m: 몬스터 종류, hp, atk: 공격력, cd: 몇 턴마다 공격, hue: 색 변형, title: 이름 앞말, boss
 // 토벌 hp·atk: 자동 플레이 봇으로 맞춤 (처음 100% → 보통 80~95% → HARD 50% 안팎 깸). 카니 회복을 줄인 뒤 기준
