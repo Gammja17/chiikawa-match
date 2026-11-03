@@ -38,6 +38,7 @@ const Tutor = {
     if (Tutor.seen(k) || !TIPS[k]) return;
     Tutor.mark(k);
     const [icon, text] = TIPS[k];
+    $('.tip:not(.mtoast)')?.remove(); // 떠 있던 안내 위에 겹치지 않게 (미션 알림은 그대로)
     const el = document.createElement('div');
     el.className = 'tip';
     el.innerHTML = `<img src="${ITEM(icon)}"><span>${text}</span>`;
@@ -243,6 +244,7 @@ const Spot = {
         Spot.finish = null;
         els.forEach(e => e.removeEventListener('click', finish));
         ov.querySelectorAll('.blk').forEach(x => (x.style.pointerEvents = 'none')); // 사라지는 동안에도 터치를 막지 않게
+        ov.querySelector('.spot-say').style.visibility = 'hidden'; // 말풍선은 바로 숨김: 빨리 넘기면 다음 말풍선과 글자가 겹쳐 보여서
         ov.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, fill: 'forwards' }).finished.then(() => ov.remove());
         setTimeout(() => ov.remove(), 220); // 애니메이션이 멈춰도 확실히 지움 (화면 전환과 겹치지 않게)
         done();
@@ -412,14 +414,16 @@ const Cine = {
       el.innerHTML = '<div class="cine-img"></div><i class="bar top"></i><i class="bar bot"></i><p class="cine-text"></p><button class="cine-skip">건너뛰기 ▶▶</button><div class="cine-logo"><img src="assets/img/ui/logo.png" alt="퍼즐 토벌 대작전!"></div>';
       app.appendChild(el);
       const imgBox = el.querySelector('.cine-img'), txt = el.querySelector('.cine-text');
-      let k = -1, timer = null, ended = false;
+      let k = -1, timer = null, typer = null, ended = false; // typer: 글자 하나씩 쓰는 타이머 (장면을 빨리 넘기면 앞 장면 것을 멈춰야 글자가 안 섞임)
       const end = () => {
         if (ended) return;
         ended = true;
         clearTimeout(timer);
+        clearInterval(typer);
         el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards' }).finished.then(() => { el.remove(); done(); });
       };
       const logo = () => {
+        clearInterval(typer);
         imgBox.innerHTML = '';
         txt.textContent = '';
         const lg = el.querySelector('.cine-logo');
@@ -448,7 +452,8 @@ const Cine = {
         if (old) old.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500, fill: 'forwards' }).finished.then(() => old.remove());
         txt.textContent = '';
         let n = 0;
-        const typer = setInterval(() => { txt.textContent = sc.text.slice(0, ++n); if (n >= sc.text.length) clearInterval(typer); }, 55);
+        clearInterval(typer);
+        typer = setInterval(() => { txt.textContent = sc.text.slice(0, ++n); if (n >= sc.text.length) clearInterval(typer); }, 55);
         Sound.play('click', 1.6, 0.3);
         timer = setTimeout(next, 3000);
       };
