@@ -128,7 +128,7 @@
       <button id="btnDayChal" class="ch-card daily"><div class="ch-label"><b>오늘의 도전</b><small id="dayTwist"></small><span id="dayState"></span></div></button>
       <button id="btnTower" class="ch-card tower"><div class="ch-label"><b>인어섬 탐험</b><small>끝없이 올라가는 층</small><span id="towerBest"></span></div></button>
       <button id="btnContest" class="ch-card contest"><div class="ch-label"><b>제초 대회</b><small>60초 동안 최고 점수</small><span id="contestBest"></span></div></button>
-      <button id="btnDungeon" class="ch-card dungeon"><img loading="lazy" class="ch-mimic" src="assets/img/monsters/mimic.webp" alt=""><img loading="lazy" class="ch-peek" src="assets/img/art/pose_hachiware.png" alt=""><div class="ch-label"><b>미믹 보물창고</b><small>상자를 깨서 코인 벌기</small><span id="dunLeft"></span></div></button>
+      <button id="btnDungeon" class="ch-card dungeon"><img loading="lazy" class="ch-mimic" src="assets/img/monsters/chimera.webp" style="filter:hue-rotate(60deg) saturate(1.3)" alt=""><img loading="lazy" class="ch-peek" src="assets/img/art/pose_hachiware.png" alt=""><div class="ch-label"><b>미믹 보물창고</b><small>상자를 깨서 코인 벌기</small><span id="dunLeft"></span></div></button>
       <button id="btnSnack" class="ch-card snack"><img loading="lazy" class="ch-peek" src="assets/img/art/pose_kurimanju.png" alt=""><div class="ch-label"><b>간식 창고</b><small>상자를 깨서 간식 모으기</small><div id="snackPick"></div><span id="snackLeft"></span></div></button>
     </div>
   </section>
@@ -297,12 +297,12 @@ window.__errs = [];
 addEventListener('error', e => window.__errs.push(['error', e.message, (e.filename || '') + ':' + e.lineno + ':' + e.colno + '\n' + (e.error?.stack || '')]));
 addEventListener('unhandledrejection', e => window.__errs.push(['promise', String(e.reason?.message || e.reason), e.reason?.stack || '']));
 </script>
-<script src="js/data.js?v=52"></script>
+<script src="js/data.js?v=53"></script>
 <script src="js/audio.js?v=33"></script>
 <script src="js/board.js?v=33"></script>
 <script src="js/particles.js?v=3"></script>
 <script src="js/prefs.js?v=7"></script>
-<script src="js/game.js?v=108"></script>
+<script src="js/game.js?v=109"></script>
 <script src="js/debuff.js?v=3"></script>
 <script src="js/life.js?v=67"></script>
 <script src="js/chapters.js?v=3"></script>
@@ -321,7 +321,7 @@ addEventListener('unhandledrejection', e => window.__errs.push(['promise', Strin
 <script src="js/share.js?v=1"></script>
 <script src="js/league.js?v=1"></script>
 <script src="js/testplay.js?v=1"></script>
-<script src="js/credits.js?v=3"></script>
+<script src="js/credits.js?v=4"></script>
 <script>if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(() => {});</script>
 </body>
 </html>

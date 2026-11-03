@@ -61,7 +61,7 @@ const CREDITS = [
     src: [['Chiikawa Wiki (Fandom)', 'https://chiikawa.fandom.com/']],
     did: '배경을 지움',
     files: {
-      'img/monsters': ['anoko.webp', 'blackstar.webp', 'chimera.webp', 'dekatsuyo.webp', 'elephant.webp', 'mimic.webp', 'ode.webp', 'sphinx.webp'],
+      'img/monsters': ['anoko.webp', 'blackstar.webp', 'chimera.webp', 'dekatsuyo.webp', 'elephant.webp', 'ode.webp', 'sphinx.webp'],
     },
   },
   { sec: 'orig', title: '인어섬 괴물 (세이렌·인어)', by: '© nagano / 「映画ちいかわ」製作委員会',
