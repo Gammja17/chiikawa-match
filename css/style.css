@@ -498,6 +498,10 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 .modal-btns { display: flex; gap: 10px; justify-content: center; }
 .modal-btns .big-btn { flex: 1; min-width: 0; font-size: 27px; height: 52px; padding: 4px 10px 0; }
 .modal-btns .big-btn:empty { display: none; }
+/* 이어하기를 권할 때 아래에 작게 붙는 '지도로' */
+.modal-exit { display: block; margin: 10px auto 0; padding: 4px 12px; background: none; color: var(--ink2); font-family: var(--head); font-size: 18px; }
+.modal-exit[hidden] { display: none; }
+.modal-exit .b-ic { width: 18px; height: 18px; vertical-align: -3px; }
 
 /* ---------- 스킬 컷인: 집중선 + 캐릭터 색 띠 두 줄 + 튀어나오는 친구 + 한 글자씩 스킬 이름 ---------- */
 .cutin { position: absolute; inset: 0; z-index: 25; pointer-events: none; overflow: hidden; }

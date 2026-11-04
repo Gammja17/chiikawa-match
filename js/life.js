@@ -870,6 +870,7 @@ const Life = {
           if (L.st.time) Life.runTimer();
         },
         btn2: L.run.kind === 'tower' ? '여기까지' : '다시 하기', on2: retry,
+        ...(L.run.kind !== 'tower' ? { btn3: '🏠 지도로', on3: () => { lost(); if (route) Hearts.lose(); go(route ? openMap : openChallenge); } } : {}),
       });
     } else {
       modal({ ...card, text: '아깝다! 다음엔 꼭 깰 수 있어', rows: route ? [...left, [`<img class="row-ic" src="${ITEM('heart')}">`, '-1']] : left, btn1: '다시 하기', on1: retry, btn2: '🏠 지도로', on2: () => { lost(); if (route) Hearts.lose(); go(route ? openMap : openChallenge); } });

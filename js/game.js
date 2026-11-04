@@ -693,7 +693,7 @@ function playStory(lines) {
 // 버튼 글자 속 기호(🏠 ▶ ◀)를 손그림 아이콘으로 (버튼 글은 코드에 적힌 것만 들어옴)
 const UI_ICON = { '🏠': 'home', '▶': 'next', '◀': 'back' };
 const uiIcons = s => s.replace(/🏠|▶|◀/g, m => `<img class="b-ic" src="assets/img/ui/${UI_ICON[m]}.png" alt="">`);
-function modal({ title, stars = null, char, img = null, photo = false, rows = [], text, btn1, on1, btn2 = '', on2 = null, share = false }) {
+function modal({ title, stars = null, char, img = null, photo = false, rows = [], text, btn1, on1, btn2 = '', on2 = null, btn3 = '', on3 = null, share = false }) {
   $('#modalTitle').textContent = title;
   // 클리어 자랑하기 (js/share.js): 그림은 결과 창을 띄우기 전에 Share.prepare로 미리 만들어 둠
   const sh = $('#modalShare');
@@ -717,6 +717,10 @@ function modal({ title, stars = null, char, img = null, photo = false, rows = []
   const ready = () => performance.now() - shownAt > 500;
   b1.onclick = () => { if (!ready()) return; Sound.play('click'); close(); on1(); };
   b2.onclick = () => { if (!ready()) return; Sound.play('click'); close(); on2 && on2(); };
+  const b3 = $('#modalBtn3'); // 작은 글자 버튼 (이어하기를 권할 때 '지도로')
+  b3.hidden = !btn3;
+  b3.innerHTML = btn3 ? uiIcons(btn3) : '';
+  b3.onclick = () => { if (!ready()) return; Sound.play('click'); close(); on3 && on3(); };
   $('#modal').classList.add('show');
   fitText($('#modal'));
   $('#modal .modal-card').animate([{ transform: 'scale(.5)', opacity: 0 }, { transform: 'scale(1.06)', opacity: 1, offset: 0.6 }, { transform: 'scale(1)' }],
@@ -2309,6 +2313,7 @@ async function lose() {
     btn1: '다시 하기', on1: () => { lost(); Hearts.lose(); Hearts.need(() => go(() => startStage(B.stage)), () => go(openMap)); },
     ...(!B.cont && (Items.n('cont') || Save.data.coins >= itemPrice('cont')) ? { // 이어하기: 체력 절반 채우고 그 자리에서 계속. 이어하기권이 없으면 코인으로, 스테이지마다 한 번
       btn2: '다시 하기', on2: () => { lost(); Hearts.lose(); Hearts.need(() => go(() => startStage(B.stage)), () => go(openMap)); },
+      btn3: '🏠 지도로', on3: () => { lost(); Hearts.lose(); go(openMap); },
       btn1: Items.n('cont') ? `이어하기권 쓰기 (${Items.n('cont')})` : `이어하기 (코인 ${itemPrice('cont')})`,
       on1: () => {
         Stats.cont(Items.n('cont') ? 'ticket' : 'coins');
