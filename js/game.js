@@ -511,12 +511,9 @@ function openProfile() {
       Sound.voice(b.dataset.id, 'pick') || Sound.play('pop', 1.2, 0.5);
       draw();
     }));
-    card.querySelector('[data-nick]').onclick = () => {
+    card.querySelector('[data-nick]').onclick = async () => {
       const n = prompt('랭킹에 보일 이름 (12자까지)', netName());
-      if (!n || !n.trim()) return;
-      Save.data.nick = n.trim().slice(0, 12);
-      Save.save();
-      if (typeof Net !== 'undefined') Net.submit();
+      if (!n || !(await Net.setNick(n))) return;
       draw();
     };
     card.querySelector('[data-google]')?.addEventListener('click', async () => { Sound.play('click'); await Net.google(); draw(); profileChip(); });

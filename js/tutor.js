@@ -322,10 +322,10 @@ Tutor.mapFlow = async function (delay) {
       await Spot.show($('#mapPath .node.current'), '여기 눌러서 첫 일 시작하자!', { tap: true });
       return;
     }
-    // 첫 판을 깨고 오면 이름을 한 번 물어봄 (지도 이름표·랭킹에 '이름 없는 친구'로 나오지 않게). 구글 이름이 있으면 안 물어봄
+    // 첫 판을 깨고 오면 이름을 한 번 물어봄 (자동 이름이어도). 구글 이름이 있으면 안 물어봄
     if (!Tutor.seen('nameAsk') && clearedCount() > 0) {
       Tutor.mark('nameAsk');
-      if (!Save.data.nick && !(typeof Net !== 'undefined' && Net.user?.displayName)) { await Tutor.askName(); return; }
+      if ((!Save.data.nick || Save.data.nickAuto) &&!(typeof Net !== 'undefined' && Net.user?.displayName)) { await Tutor.askName(); return; }
     }
     const u = Unlock.fresh();
     if (u) {
@@ -373,13 +373,12 @@ Tutor.askName = () => new Promise(done => {
   const inp = card.querySelector('input'), go = card.querySelector('[data-go]');
   const close = () => { $('#charSheet').classList.remove('show'); done(); };
   const sync = () => (go.disabled = !inp.value.trim());
+  inp.value = Save.data.nickAuto ? Save.data.nick : ''; // 자동 이름을 채워 둠 (그대로 써도 되고 고쳐도 됨)
   inp.oninput = sync;
   inp.onkeydown = e => { if (e.key === 'Enter' && inp.value.trim()) go.click(); };
   sync();
-  go.onclick = () => {
-    Save.data.nick = inp.value.trim().slice(0, 12);
-    Save.save();
-    if (typeof Net !== 'undefined') Net.submit();
+  go.onclick = async () => {
+    if (!(await Net.setNick(inp.value))) return; // 이미 있는 이름이면 창을 그대로 둠
     Sound.play('star', 1.2, 0.8);
     profileChip();
     close();

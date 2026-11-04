@@ -7,6 +7,9 @@ const progressOf = d => {
   const n = a => (a || []).filter(v => v != null).length;
   return { cleared: n(d.stars) + n(d.life), friends: Object.keys(d.own || {}).length, coins: d.coins || 0 };
 };
+// 자동 이름 (수식어 + 친구 이름, 예: 잠자는우사기)
+const NICK_ADJ = ['잠자는', '꿈꾸는', '배고픈', '용감한', '수줍은', '신난', '졸린', '씩씩한', '반짝이는', '느긋한', '말랑한', '두근두근'];
+const NICK_FRIEND = ['치이카와', '하치와레', '우사기', '모몽가', '랏코', '쿠리만쥬', '시사', '카니'];
 
 const Net = {
   on: false, user: null, listeners: [],
@@ -20,7 +23,7 @@ const Net = {
       Net.on = true;
       Net.analytics();
       Net.auth.getRedirectResult().catch(() => {});
-      Net.auth.onAuthStateChanged(async u => { Net.user = u; Net.ready = true; Net.synced = false; Net.listeners.forEach(f => f()); if (u) { await Net.cloudLoad(); Net.submit(); } });
+      Net.auth.onAuthStateChanged(async u => { Net.user = u; Net.ready = true; Net.synced = false; Net.listeners.forEach(f => f()); if (u) { await Net.cloudLoad(); Net.submit(); } else Net.autoGuest(); });
     } catch (e) { console.warn('랭킹 서버를 켜지 못했어요', e); }
   },
   onChange(f) { Net.listeners.push(f); },
@@ -37,6 +40,7 @@ const Net = {
   },
   // 구글 로그인. 게스트로 하던 중이면 그 기록 그대로 구글 계정에 연결
   async google() {
+    delete Save.data.noGuest;
     const p = new firebase.auth.GoogleAuthProvider();
     const u = Net.auth.currentUser;
     try {
@@ -104,12 +108,47 @@ const Net = {
       $('#modalText').innerHTML += `<br><small>계정: ${line(theirs)}<br>이 기기: ${line(mine)}</small>`; // 숫자만 들어감
     } catch (e) { console.warn('계정 기록을 못 불러왔어요', e); } // 못 불러오면 이번엔 안 올림 (계정 기록을 지킴)
   },
-  guest() { return Net.auth.signInAnonymously(); },
-  logout() { return Net.auth.signOut(); },
+  // 게스트: 이름이 없으면 자동 이름부터
+  async guest() {
+    delete Save.data.noGuest;
+    if (!Save.data.nick) { Save.data.nick = await Net.freeNick().catch(() => ''); Save.data.nickAuto = !!Save.data.nick; Save.save(); }
+    return Net.auth.signInAnonymously();
+  },
+  logout() { Save.data.noGuest = true; Save.save(); return Net.auth.signOut(); },
+  // 판을 하나라도 깼는데 로그인 안 했으면 게스트로 (랭킹에 올라가게). 스스로 로그아웃한 사람은 그대로 둠
+  async autoGuest() {
+    if (!Net.on || !Net.ready || Net.user || Net.autoing || Save.data.noGuest || !clearedCount()) return;
+    Net.autoing = true;
+    try { await Net.guest(); } catch {} finally { Net.autoing = false; }
+  },
+  // 자동 이름. 랭킹에 같은 이름이 있으면 뒤에 숫자
+  async freeNick() {
+    const pick = a => a[Math.floor(Math.random() * a.length)];
+    const base = pick(NICK_ADJ) + pick(NICK_FRIEND);
+    for (let n = 1; n < 30; n++) { const s = n === 1 ? base : base + n; if (!(await Net.taken(s))) return s; }
+    return base + (Date.now() % 10000);
+  },
+  // 다른 사람이 이 이름을 쓰는지 (내 기록은 뺌)
+  async taken(name) {
+    const q = await Net.db.collection('scores').where('name', '==', name).limit(2).get();
+    return q.docs.some(d => d.id !== Net.user?.uid);
+  },
+  // 이름 바꾸기 (버튼 세 군데가 같이 씀). 이미 있는 이름이면 안 바꿈
+  async setNick(n) {
+    n = n.trim().slice(0, 12);
+    if (!n) return false;
+    if (Net.on && n !== Save.data.nick && await Net.taken(n).catch(() => false)) { alert('이미 누가 쓰는 이름이에요. 다른 이름으로 해 주세요'); return false; }
+    Save.data.nick = n;
+    delete Save.data.nickAuto;
+    Save.save();
+    await Net.submit();
+    return true;
+  },
   name() { return (Save.data.nick || Net.user?.displayName || '이름 없는 친구').slice(0, 12); },
   // 내 기록 올리기: 서버에 있는 값과 비교해 더 큰 쪽을 남김 (다른 기기에서 한 기록도 지키게)
   async submit() {
-    if (!Net.on || !Net.user) return;
+    if (!Net.on) return;
+    if (!Net.user) return Net.autoGuest(); // 로그인되면 onAuthStateChanged가 다시 올림
     const mine = {
       name: Net.name(), cleared: clearedCount(), tower: Save.data.towerBest || 0, contest: Save.data.contestBest || 0,
       title: Achieve.title(), // 고른 칭호 (없으면 빈 글자)
@@ -220,13 +259,13 @@ async function openRanking(tab = rankTab) {
     me.innerHTML = `<div class="rank-note">${guest ? `게스트 ${Net.name()} · 구글 계정을 연결하면 다른 기기에서도 이어서 해요` : '로그인하면 기록이 저장되고 랭킹에 올라가요'}</div>
       <div class="login-btns"><button class="big-btn" id="btnGoogle">${guest ? '구글 계정 연결' : '구글로 로그인'}</button>${guest ? '<button class="big-btn ghost" id="btnNick2">이름 바꾸기</button>' : '<button class="big-btn ghost" id="btnGuest">게스트로 시작</button>'}</div>`;
     $('#btnGoogle').onclick = () => Net.google();
-    if (guest) $('#btnNick2').onclick = async () => { const n = prompt('랭킹에 보일 이름 (12자까지)', Net.name()); if (n && n.trim()) { Save.data.nick = n.trim().slice(0, 12); Save.save(); await Net.submit(); openRanking(); } };
+    if (guest) $('#btnNick2').onclick = async () => { const n = prompt('랭킹에 보일 이름 (12자까지)', Net.name()); if (n && await Net.setNick(n)) openRanking(); };
     else $('#btnGuest').onclick = () => Net.guest();
   } else {
     me.innerHTML = `<div class="me-row"><span class="nm">${Net.name()}</span><button class="mini-btn" id="btnNick">이름 바꾸기</button><button class="mini-btn" id="btnLogout">로그아웃</button></div>`;
     $('#btnNick').onclick = async () => {
       const n = prompt('랭킹에 보일 이름 (12자까지)', Net.name());
-      if (n && n.trim()) { Save.data.nick = n.trim().slice(0, 12); Save.save(); await Net.submit(); openRanking(); }
+      if (n && await Net.setNick(n)) openRanking();
     };
     $('#btnLogout').onclick = async () => { await Net.logout(); openRanking(); };
   }
