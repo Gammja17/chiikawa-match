@@ -2,7 +2,7 @@
 
 > 이 파일은 `node tools/credits.js`가 `js/credits.js`에서 만듭니다. 고칠 땐 `js/credits.js`를 고치세요.
 
-먼작귀 퍼즐 토벌 대작전!은 팬이 만든 **비공식 게임**입니다. 원작자 나가노 및 치이카와 제작위원회와 관계가 없고, 돈을 받지 않습니다. 게임에 들어간 그림 553개와 소리 28개의 출처를 파일마다 적었습니다. 게임 안에서는 설정 → 만든 사람·출처, 웹에서는 `credits.html`에서 같은 목록을 볼 수 있습니다.
+먼작귀 퍼즐 토벌 대작전!은 팬이 만든 **비공식 게임**입니다. 원작자 나가노 및 치이카와 제작위원회와 관계가 없고, 돈을 받지 않습니다. 게임에 들어간 그림 556개와 소리 28개의 출처를 파일마다 적었습니다. 게임 안에서는 설정 → 만든 사람·출처, 웹에서는 `credits.html`에서 같은 목록을 볼 수 있습니다.
 
 ## 원작 그림
 
@@ -140,14 +140,16 @@
 - `assets/img/skins/shisa/`: `clerk.png`, `goat.png`, `pantu.png`, `traffic.png`
 - `assets/img/skins/kani/`: `angel.png`, `bat.png`, `pizza.png`, `sakura.png`
 
-### VARCO로 다듬은 옷 (1개)
+### VARCO로 다듬은 옷 (4개)
 
 - 권리: © nagano / chiikawa committee
 - 출처: [나가노 X (@ngnchiikawa)](https://x.com/ngnchiikawa), [VARCO (NCSOFT)](https://3d.varco.ai)
 - 손본 것: 원작 그림을 VARCO 이미지 편집(GPT Image 2.6)에 넣어 친구만 남기고 배경을 지움. 다른 친구에 가려진 부분은 같은 그림체로 채움
-- 참고: 모몽가 게 머리띠(만화 2023-01)는 털 윤곽이 열려 있어 그냥 오려 낼 수 없었음
+- 참고: 모몽가 게 머리띠(만화 2023-01)는 털 윤곽이 열려 있어서, 하치와레·우사기·모몽가 흑마법소녀(굿즈 일러스트 「わるいまじかる」)는 치이카와에 가려져 있어서 그냥 오려 낼 수 없었음
 
-- `assets/img/skins/momonga/`: `crab.png`
+- `assets/img/skins/momonga/`: `crab.png`, `darkmagic.png`
+- `assets/img/skins/hachiware/`: `darkmagic.png`
+- `assets/img/skins/usagi/`: `darkmagic.png`
 
 ### 흑마법소녀 옷 (1개)
 
