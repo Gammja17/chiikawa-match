@@ -2,7 +2,7 @@
 
 > 이 파일은 `node tools/credits.js`가 `js/credits.js`에서 만듭니다. 고칠 땐 `js/credits.js`를 고치세요.
 
-먼작귀 퍼즐 토벌 대작전!은 팬이 만든 **비공식 게임**입니다. 원작자 나가노 및 치이카와 제작위원회와 관계가 없고, 돈을 받지 않습니다. 게임에 들어간 그림 472개와 소리 28개의 출처를 파일마다 적었습니다. 게임 안에서는 설정 → 만든 사람·출처, 웹에서는 `credits.html`에서 같은 목록을 볼 수 있습니다.
+먼작귀 퍼즐 토벌 대작전!은 팬이 만든 **비공식 게임**입니다. 원작자 나가노 및 치이카와 제작위원회와 관계가 없고, 돈을 받지 않습니다. 게임에 들어간 그림 494개와 소리 28개의 출처를 파일마다 적었습니다. 게임 안에서는 설정 → 만든 사람·출처, 웹에서는 `credits.html`에서 같은 목록을 볼 수 있습니다.
 
 ## 원작 그림
 
@@ -88,6 +88,63 @@
 - `assets/img/skins/rakko/`: `mask.png`, `santa.png`
 - `assets/img/skins/shisa/`: `magical.png`
 - `assets/img/skins/usagi/`: `hotate.png`, `magical.png`, `neckie.png`, `santa.png`, `squid.png`
+
+### 섬 옷 (영화 인어섬) (8개)
+
+- 권리: © nagano / 「映画ちいかわ」製作委員会
+- 출처: [『映画ちいかわ 人魚の島のひみつ』 공식 사이트 캐릭터 소개](https://chiikawa.toho-movie.jp/atm/characters.html)
+- 손본 것: 캐릭터 그림에서 이름·설명 글을 빼고 크기를 줄임
+
+- `assets/img/skins/chiikawa/`: `island.png`
+- `assets/img/skins/hachiware/`: `island.png`
+- `assets/img/skins/usagi/`: `island.png`
+- `assets/img/skins/momonga/`: `island.png`
+- `assets/img/skins/rakko/`: `island.png`
+- `assets/img/skins/kurimanju/`: `island.png`
+- `assets/img/skins/shisa/`: `island.png`
+- `assets/img/skins/kani/`: `island.png`
+
+### 섬 옷 배경 장면 (1개)
+
+- 권리: © nagano / 「映画ちいかわ」製作委員会
+- 출처: [『映画ちいかわ 人魚の島のひみつ』 메인 비주얼](https://chiikawa.toho-movie.jp/)
+- 손본 것: 세로로 잘라 크기를 줄임
+
+- `assets/img/scenes/`: `island.jpg`
+
+### 산리오 콜라보 옷 (5개)
+
+- 권리: © nagano / chiikawa committee, © 2022 SANRIO CO., LTD.
+- 출처: [치이카와×산리오 캐릭터즈 콜라보 일러스트 (파미통 기사)](https://www.famitsu.com/news/202206/10264618.html)
+- 손본 것: 일러스트에서 먼작귀 친구만 오려 냄
+
+- `assets/img/skins/chiikawa/`: `melody.png`
+- `assets/img/skins/hachiware/`: `kitty.png`
+- `assets/img/skins/usagi/`: `purin.png`
+- `assets/img/skins/momonga/`: `kuromi.png`
+- `assets/img/skins/kurimanju/`: `hangyodon.png`
+
+### 나가노 일러스트·만화 옷 (5개)
+
+- 권리: © nagano
+- 출처: [나가노 X (@ngnchiikawa)](https://x.com/ngnchiikawa)
+- 손본 것: 일러스트·만화 칸에서 친구만 오려 냄
+- 참고: 벚꽃 요정(2024-03), 소 옷(2021 새해), 하카마(2020 새해)
+
+- `assets/img/skins/kani/`: `sakura.png`
+- `assets/img/skins/chiikawa/`: `hakama.png`, `ox.png`
+- `assets/img/skins/hachiware/`: `ox.png`
+- `assets/img/skins/usagi/`: `ox.png`
+
+### 애니·영화 장면 옷 (3개)
+
+- 권리: © nagano / chiikawa committee, 「映画ちいかわ」製作委員会
+- 출처: [애니 123화 장면 (애니메애니메 기사)](https://animeanime.jp/article/2023/12/04/81628.html), [영화 장면 컷 (리얼사운드 기사)](https://realsound.jp/)
+- 손본 것: 장면에서 친구만 오려 냄
+- 참고: 시사 갑옷은 애니 123화, 시사 요리사·우사기 DJ는 영화 『人魚の島のひみつ』 장면
+
+- `assets/img/skins/shisa/`: `armor.png`, `chef.png`
+- `assets/img/skins/usagi/`: `dj.png`
 
 ### 스페셜 옷 배경 장면 (5개)
 

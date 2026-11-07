@@ -344,34 +344,67 @@ const SKINS = {
     sasumata: { name: '토벌봉',      img: 'sasumata.png', price: 250 },
     melon:    { name: '멜론 모자',   img: 'melon.png',    price: 300 },
     squid:    { name: '오징어 옷',   img: 'squid.png',    price: 350 },
+    ox:       { name: '소 옷',       img: 'ox.png',       price: 350 },
+    hakama:   { name: '하카마',      img: 'hakama.png',   price: 350 },
     tanuki:   { name: '너구리 옷',   img: 'tanuki.png',   price: 400 },
+    melody:   { name: '마이멜로디 옷', img: 'melody.png', price: 450 },
     magical:  { name: '마법소녀',    img: 'magical.png',  price: 600, special: 'magical_chiikawa' },
     santa:    { name: '산타',        img: 'santa.png',    price: 600, special: 'santa_chiikawa' },
     hotate:   { name: '가리비',      img: 'hotate.png',   price: 600, special: 'hotate_chiikawa' },
+    island:   { name: '섬 옷',       img: 'island.png',   price: 600, special: 'island' },
   },
   hachiware: {
     bugnet:   { name: '잠자리채',    img: 'bugnet.png',   price: 150 },
     sasumata: { name: '토벌봉',      img: 'sasumata.png', price: 250 },
     guitar:   { name: '기타',        img: 'guitar.png',   price: 300 },
+    ox:       { name: '소 옷',       img: 'ox.png',       price: 350 },
     tanuki:   { name: '너구리 옷',   img: 'tanuki.png',   price: 400 },
+    kitty:    { name: '키티 옷',     img: 'kitty.png',    price: 450 },
     magical:  { name: '마법소녀',    img: 'magical.png',  price: 600, special: 'magical_hachiware' },
     santa:    { name: '산타',        img: 'santa.png',    price: 600, special: 'santa_hachiware' },
     hotate:   { name: '가리비',      img: 'hotate.png',   price: 600, special: 'hotate_hachiware' },
+    island:   { name: '섬 옷',       img: 'island.png',   price: 600, special: 'island' },
   },
   usagi: {
     neckie:   { name: '시원한 넥밴드', img: 'neckie.png', price: 150 },
     squid:    { name: '오징어 옷',   img: 'squid.png',    price: 350 },
+    ox:       { name: '소 옷',       img: 'ox.png',       price: 350 },
+    dj:       { name: 'DJ',          img: 'dj.png',       price: 400 },
+    purin:    { name: '푸린 옷',     img: 'purin.png',    price: 450 },
     magical:  { name: '마법소녀',    img: 'magical.png',  price: 600, special: 'magical_usagi' },
     santa:    { name: '산타',        img: 'santa.png',    price: 600, special: 'santa_usagi' },
     hotate:   { name: '가리비',      img: 'hotate.png',   price: 600, special: 'hotate_usagi' },
+    island:   { name: '섬 옷',       img: 'island.png',   price: 600, special: 'island' },
   },
   // 마법소녀 MV(まじかるちいかわ) 장면에서. 산타는 공식 콜라보 영상 「サンタ・テル・ミー」, 가리비는 차르메라 광고 「ホタテ三重奏篇」
-  momonga:   { magical: { name: '마법소녀',      img: 'magical.png', price: 600, special: 'magical_momonga' },
-               santa:   { name: '산타',          img: 'santa.png',   price: 600, special: 'santa_momonga' } },
-  rakko:     { mask:    { name: '가면 히어로',   img: 'mask.png',    price: 600, special: 'rakko_mask' },
-               santa:   { name: '산타',          img: 'santa.png',   price: 600, special: 'santa_rakko' } },
-  kurimanju: { magical: { name: '마법소녀',      img: 'magical.png', price: 600, special: 'magical_meadow' } },
-  shisa:     { magical: { name: '마법소녀',      img: 'magical.png', price: 600, special: 'magical_meadow' } },
+  // 섬 옷은 『映画ちいかわ 人魚の島のひみつ』 공식 사이트 캐릭터 그림, 배경은 메인 비주얼. 산리오 옷은 치이카와×산리오 콜라보 일러스트
+  momonga: {
+    kuromi:   { name: '쿠로미 옷',   img: 'kuromi.png',   price: 450 },
+    magical:  { name: '마법소녀',    img: 'magical.png',  price: 600, special: 'magical_momonga' },
+    santa:    { name: '산타',        img: 'santa.png',    price: 600, special: 'santa_momonga' },
+    island:   { name: '섬 옷',       img: 'island.png',   price: 600, special: 'island' },
+  },
+  rakko: {
+    mask:     { name: '가면 히어로', img: 'mask.png',     price: 600, special: 'rakko_mask' },
+    santa:    { name: '산타',        img: 'santa.png',    price: 600, special: 'santa_rakko' },
+    island:   { name: '섬 옷',       img: 'island.png',   price: 600, special: 'island' },
+  },
+  kurimanju: {
+    hangyodon: { name: '한교동 옷',  img: 'hangyodon.png', price: 450 },
+    magical:  { name: '마법소녀',    img: 'magical.png',  price: 600, special: 'magical_meadow' },
+    island:   { name: '섬 옷',       img: 'island.png',   price: 600, special: 'island' },
+  },
+  shisa: {
+    chef:     { name: '요리사',      img: 'chef.png',     price: 400 },
+    armor:    { name: '갑옷',        img: 'armor.png',    price: 400 },
+    magical:  { name: '마법소녀',    img: 'magical.png',  price: 600, special: 'magical_meadow' },
+    island:   { name: '섬 옷',       img: 'island.png',   price: 600, special: 'island' },
+  },
+  // 카니(고본야)는 전신 그림이 따로 있어서 옷도 그대로 바꿔 끼움. 고블린은 옷 입은 원작 그림이 없어서 아직 없음
+  kani: {
+    sakura:   { name: '벚꽃 요정',   img: 'sakura.png',   price: 400 },
+    island:   { name: '섬 옷',       img: 'island.png',   price: 600, special: 'island' },
+  },
 };
 const SKIN = (id, s) => `assets/img/skins/${id}/${SKINS[id][s].img}`;
 // 스페셜 코스튬(special: 장면 그림 이름): 입고 있으면 카드·상세 창 배경이 그 옷이 나온 애니 장면으로 바뀜
