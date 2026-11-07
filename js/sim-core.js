@@ -10,8 +10,8 @@
 
   let S, G; // 지금 판 상태, 판
   const cloneGrid = g => g.map(row => row.map(t => (t ? { ...t } : t)));
-  const snap = () => ({ S: { ...S, chars: { ...S.chars } }, G: cloneGrid(G), syrup: Board.syrup && Board.syrup.map(r => r.slice()), floor: Board.floor && Board.floor.map(r => r.slice()) });
-  const restore = s => { S = s.S; G = s.G; Board.syrup = s.syrup; Board.floor = s.floor; Board._protect = Board._deferred = null; };
+  const snap = () => ({ S: { ...S, chars: { ...S.chars } }, G: cloneGrid(G), syrup: Board.syrup && Board.syrup.map(r => r.slice()), floor: Board.floor && Board.floor.map(r => r.slice()), sand: Board.sand && Board.sand.map(r => r.slice()) });
+  const restore = s => { S = s.S; G = s.G; Board.syrup = s.syrup; Board.floor = s.floor; Board.sand = s.sand; Board._protect = Board._deferred = null; };
 
   function spawnIng() {
     const { n, max, kinds } = S.st.ing;
@@ -26,7 +26,7 @@
   function onStep(res, combo) {
     if (S.life) {
       const pts = Math.round((res.cleared.length * 20 * combo + res.created.length * 100 + res.hits.length * 50 + res.weeds.length * 60 +
-        res.unlocked.length * 60 + res.syrup.length * 40) * (S.fever ? 1.5 : 1));
+        res.unlocked.length * 60 + res.syrup.length * 40 + res.inked.length * 60 + res.sand.length * 60) * (S.fever ? 1.5 : 1));
       S.score += pts;
       res.cleared.forEach(({ tile }) => {
         if (!S.inSkill) S.hg += tile.type >= 0 && tile.type === S.helperType ? 1 : 1 / 3;
@@ -45,11 +45,17 @@
       if (ch.heal) { const amt = Math.round(n * ch.heal * mult * (cheer ? 0.5 : S.lvm[type])); S.healed += Math.min(amt, S.hpMax - S.hp); S.hp = Math.min(S.hpMax, S.hp + amt); }
       else if (S.monHp > 0) {
         const crit = ch.crit && Math.random() < ch.crit, eff = cheer ? 1 : attrMult(ch.attr, S.wave.a);
-        hit(Math.round(n * ch.dmg * mult * eff * (cheer ? 0.5 : S.lvm[type]) * (crit ? 2.5 : 1)));
+        hit(Math.round(n * ch.dmg * mult * eff * (cheer ? 0.5 : S.lvm[type]) * (crit ? 2.5 : 1)), ch.attr);
       }
     }
   }
-  const hit = d => { const x = Math.min(d, S.monHp); S.dealt += x; S.monHp -= x; };
+  // 보호막이 있으면 깨는 속성만 보호막을 깎음 (js/data.js shieldSplit). 보호막을 깎은 것도 공격한 값으로 셈
+  const hit = (d, attr = null) => {
+    const { toSh, toHp } = shieldSplit(d, attr, S.wave.a, S.sh);
+    S.sh -= toSh;
+    const x = Math.min(toHp, S.monHp);
+    S.dealt += x + toSh; S.monHp -= x;
+  };
 
   function collect() {
     for (;;) {
@@ -102,7 +108,8 @@
         const u = G[r2][c2];
         if (t.special || u.special) { out.push({ a: [r, c], b: [r2, c2] }); continue; }
         Board.swap(G, [r, c], [r2, c2]);
-        const ok = Board.findRuns(G).length > 0;
+        // 먹물 구슬은 얼굴이 안 보이니, 먹물 구슬이 끼어야만 되는 매치는 사람이 못 보고 지나감
+        const ok = Board.findRuns(G).some(run => !run.cells.some(([rr, cc]) => G[rr][cc].ink));
         Board.swap(G, [r, c], [r2, c2]);
         if (ok) out.push({ a: [r, c], b: [r2, c2] });
       }
@@ -123,6 +130,8 @@
     let n = 0;
     if (k === 'syrup') { Board.syrup?.forEach((row, r) => row.forEach((v, c) => { if (!v && !hole(r, c)) n++; })); return n; }
     if (k === 'lock') { Board.each(G, t => { if (t.lock) n++; }); return n; }
+    if (k === 'ink') { Board.each(G, t => { if (t.ink) n++; }); return n; }
+    if (k === 'sand') { Board.sand?.forEach(row => row.forEach(v => (n += v ? 1 : 0))); return n; }
     Board.each(G, t => { if (t.block === k) n += t.hp; });
     return n;
   };
@@ -141,7 +150,7 @@
     });
     return v;
   };
-  const GW = { weed: 10, box: 10, bubble: 11, lock: 9, syrup: 4, char: 2.2, score: 0.012, ing: 45 };
+  const GW = { weed: 10, box: 10, bubble: 11, lock: 9, syrup: 4, char: 2.2, score: 0.012, ing: 45, clam: 10, sand: 5, ink: 8 };
   function lifeValue() {
     let v = 0;
     for (const g of S.st.goals) {
@@ -156,14 +165,14 @@
     NTYPES = st.types;
     Board.setSize(st.map.length, st.map[0].length);
     const lay = parseLayout(st);
-    Board.floor = lay.floor; Board.mask = lay.mask; Board.syrup = lay.syrup;
-    S = { life: true, st, score: 0, ing: 0, chars: {}, popped: false, fever: 0, feverGift: false, spawned: lay.ings.length, used: 0, hg: 0, inSkill: false,
+    Board.floor = lay.floor; Board.mask = lay.mask; Board.syrup = lay.syrup; Board.sand = lay.sand; Board.portals = lay.portals;
+    S = { life: true, st, score: 0, ing: 0, chars: {}, popped: false, fever: 0, feverGift: false, spawned: lay.ings.length, used: 0, hg: 0, inSkill: false, turn: 0,
       helperType: LIFE_CHARS.indexOf(helper) };
     Board.spawnIng = st.ing ? spawnIng : null;
     G = Board.create(lay);
   }
 
-  const copyOf = s => ({ S: { ...s.S, chars: { ...s.S.chars } }, G: cloneGrid(s.G), syrup: s.syrup && s.syrup.map(r => r.slice()), floor: s.floor && s.floor.map(r => r.slice()) });
+  const copyOf = s => ({ S: { ...s.S, chars: { ...s.S.chars } }, G: cloneGrid(s.G), syrup: s.syrup && s.syrup.map(r => r.slice()), floor: s.floor && s.floor.map(r => r.slice()), sand: s.sand && s.sand.map(r => r.slice()) });
   function lifeTurn() {
     const ms = moves();
     const before = lifeValue(), s0 = snap();
@@ -183,6 +192,10 @@
     if (S.fever) S.fever--;
     if (!S.popped && count('bubble') && !done()) { const s = Board.spreadBubble(G); if (s) cascade(null, []); }
     S.popped = false;
+    Board.closeClams(G); // 조개: 지난 턴에 벌어지고 또 못 맞은 건 닫힘
+    S.turn++;
+    const cur = S.st.current; // 물살 (js/life.js Life.flow)
+    if (cur && !done() && S.turn % cur.every === 0) { cur.rows.forEach((r, j) => Board.flow(G, r, flowDir(j))); cascade(null, []); }
   }
 
   // 남은 이동을 아이템으로 바꿔 터뜨리는 보너스 타임 (시간 판은 3초마다 하나)
@@ -220,10 +233,10 @@
   function battleSetup(stage, team, lv) {
     NTYPES = team.length;
     Board.setSize(7, 7);
-    Board.floor = Board.syrup = Board.mask = null;
+    Board.floor = Board.syrup = Board.mask = Board.sand = Board.portals = null;
     Board.spawnIng = null;
     const chars5 = team.map(id => CHARS.find(c => c.id === id));
-    S = { life: false, stage, w: 0, wave: stage.waves[0], monHp: stage.waves[0].hp, cd: stage.waves[0].cd, hp: 120, hpMax: 120, fever: 0, rally: 0,
+    S = { life: false, stage, w: 0, wave: stage.waves[0], monHp: stage.waves[0].hp, sh: stage.waves[0].sh || 0, cd: stage.waves[0].cd, hp: 120, hpMax: 120, fever: 0, rally: 0,
       chars5, real: team.length, lvm: chars5.map(c => lvMult(c.id, lv)), gauge: team.map(() => 0), need: chars5.map(c => Math.round(c.skill.need * (1 - 0.04 * Math.max(0, lv - 1)))),
       inSkill: false, dealt: 0, healed: 0, turns: 0 };
     G = Board.create();
@@ -233,6 +246,7 @@
     if (S.w >= S.stage.waves.length) return true;
     S.wave = S.stage.waves[S.w];
     S.monHp = S.wave.hp;
+    S.sh = S.wave.sh || 0;
     S.cd = S.wave.cd;
     return false;
   }
@@ -248,14 +262,14 @@
     else if (id === 'cross') {
       const r0 = 1 + Math.floor(Math.random() * (ROWS - 2)), c0 = 1 + Math.floor(Math.random() * (COLS - 2));
       for (let d = -1; d <= 1; d++) { for (let i = 0; i < COLS; i++) cells.push([r0 + d, i]); for (let i = 0; i < ROWS; i++) cells.push([i, c0 + d]); }
-      hit(Math.round(ch.dmg * 10 * eff * S.lvm[k]));
+      hit(Math.round(ch.dmg * 10 * eff * S.lvm[k]), ch.attr);
       S.cd += 2;
-    } else if (id === 'bighit') hit(Math.round(ch.dmg * 18 * eff));
+    } else if (id === 'bighit') hit(Math.round(ch.dmg * 18 * eff), ch.attr);
     else if (id === 'heal40') S.hp = Math.min(S.hpMax, S.hp + Math.round(S.hpMax * 0.25));
     else if (id === 'ramen') { S.hp = Math.min(S.hpMax, S.hp + Math.round(S.hpMax * 0.2)); S.gauge = S.gauge.map(g => g + 3); }
     else if (id === 'convert6') pickTiles(G, 6, t => !t.special && t.type >= 0 && t.type !== k).forEach(([r, c]) => (G[r][c].type = k));
     else if (id === 'rainbow') { const [rc] = pickTiles(G, 1); if (rc) { G[rc[0]][rc[1]].special = 'rainbow'; G[rc[0]][rc[1]].type = -1; } }
-    else if (id === 'stall') { S.cd += 3; hit(Math.round(ch.dmg * 4 * eff)); }
+    else if (id === 'stall') { S.cd += 3; hit(Math.round(ch.dmg * 4 * eff), ch.attr); }
     else if (id === 'meteor') { cells = pickTiles(G, 3); cells.forEach(([r, c]) => { G[r][c].special = 'bomb'; G[r][c].type = -1; }); }
     else if (id === 'cheer') { Board.shuffle(G); S.gauge = S.gauge.map((g, j) => (j === k ? g : g + 4)); }
     cascade(null, cells);
@@ -305,7 +319,7 @@
         S.hp -= S.wave.atk;
         S.cd = S.wave.cd;
         if (S.hp <= 0) return { win: false, frac: (gone + S.wave.hp - S.monHp) / total };
-        if (S.wave.m === 'mimic') { Board.dropBlocks(G, S.wave.boss ? 3 : 2); if (!Board.hasMove(G)) cascade(null, []); }
+        if (S.wave.m === 'mimic') { Board.dropBlocks(G, S.wave.boss ? 3 : 2, S.wave.drop || 'box', S.wave.drop === 'clam' ? 2 : 1); if (!Board.hasMove(G)) cascade(null, []); }
       }
     }
     return { win: false, frac: 0 };

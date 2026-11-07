@@ -49,7 +49,7 @@ const goRoute = k => (ROUTE[k][0] === 'b' ? openFormation(ROUTE[k][1]) : Life.st
 // 이미지 미리 불러오기
 [...CHARS.map(c => FACE(c.id)), ...CHARS.map(c => TILE(c.id)),
   ...['chiikawa', 'hachiware', 'usagi', 'momonga', 'rakko', 'shisa', 'kurimanju'].map(BODY), ...Object.values(MONSTERS).map(m => m.img),
-  ...['h', 'v', 'bomb', 'rainbow', 'boom', 'sparkle', 'plane', 'box', 'gift', 'bubble', 'weed1', 'weed2'].map(ITEM)]
+  ...['h', 'v', 'bomb', 'rainbow', 'boom', 'sparkle', 'plane', 'box', 'gift', 'bubble', 'weed1', 'weed2', 'clam', 'clam_open', 'ink', 'shield'].map(ITEM)]
   .forEach(Preload.add);
 
 // ---------- 공통 ----------
@@ -529,16 +529,19 @@ function openProfile() {
   fitText($('#charSheet'));
 }
 
-// 지도 지역: 30판(3장)마다 다른 그림 (assets/img/map/m1~10.jpg), 판 배경도 같은 지역 풍경 (assets/img/stage/s1~10.jpg)
+// 지도 지역: 30판(3장)마다 다른 그림 (assets/img/map/m1~10.jpg, REGION_ART), 판 배경도 같은 지역 풍경 (assets/img/stage/s1~10.jpg)
 const MAP_PAGE = 30;
-const REGIONS = ['봄 들판', '숲과 고블린 동굴', '비 오는 마을', '여름 바닷가', '별똥별 언덕', '할로윈 밤', '가을 소풍길', '눈 내린 새해', '온천 꽃마을', '키메라 숲과 거인의 성'];
+const REGIONS = ['봄 들판', '숲과 고블린 동굴', '비 오는 마을', '여름 바닷가', '별똥별 언덕', '할로윈 밤', '가을 소풍길', '눈 내린 새해', '온천 꽃마을', '키메라 숲과 거인의 성',
+  '바다 건너 인어섬', '산호 숲과 인어 마을', '바다 동굴과 폭풍의 밤', '다시 노래하는 섬'];
+// 인어섬 편(301~400판) 지역은 아직 새 그림이 없어서 바닷가(4)·밤 언덕(5) 그림을 같이 씀
+const REGION_ART = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 4, 4, 5, 4];
 const regionOf = k => Math.min(Math.floor(k / MAP_PAGE), REGIONS.length - 1);
 let mapPage = null;
 // 판 배경: 지도에서 고른 판만 그 지역 풍경 (오늘의 도전·탑 같은 건 원래 무늬). k는 지도 번호, 없으면 -1
 function stageBg(k) {
   const el = $('#battle');
   el.classList.toggle('has-bg', k >= 0);
-  el.style.setProperty('--stage-bg', k >= 0 ? `url(${new URL(`assets/img/stage/s${regionOf(k) + 1}.jpg`, location.href)})` : 'none'); // CSS 변수의 주소는 style.css 기준으로 풀려서 절대 주소로
+  el.style.setProperty('--stage-bg', k >= 0 ? `url(${new URL(`assets/img/stage/s${REGION_ART[regionOf(k)]}.jpg`, location.href)})` : 'none'); // CSS 변수의 주소는 style.css 기준으로 풀려서 절대 주소로
 }
 
 function openMap(advanceFrom = null, paging = false) {
@@ -557,7 +560,7 @@ function openMap(advanceFrom = null, paging = false) {
   $('#mapRange').textContent = `스테이지 ${a0 + 1}~${a1}`;
   $('#mapPrev').disabled = mapPage === 0;
   $('#mapNext').disabled = mapPage >= pages - 1 || mapPage > Math.floor(cur / MAP_PAGE); // 지금 지역의 다음 지역까지만 미리 보기
-  $('#mapScroll').style.backgroundImage = `url(assets/img/map/m${r + 1}.jpg)`;
+  $('#mapScroll').style.backgroundImage = `url(assets/img/map/m${REGION_ART[r]}.jpg)`;
   Sound.music('map');
   $('#btnRamen').classList.toggle('on', Save.data.ramen !== false && !Save.data.buff);
   friendsDot();
@@ -673,8 +676,10 @@ function playStory(lines) {
     const next = () => {
       if (i >= lines.length) { ov.classList.remove('show'); ov.onclick = null; done(); return; }
       const [id, text] = lines[i++];
-      $('#storyChar').src = artOf(id);
-      $('#storyName').textContent = CHAR_NAME[id];
+      // 인어·세이렌처럼 괴물도 말할 수 있음 (그 괴물 그림과 이름)
+      const mon = !CHAR_NAME[id] && MONSTERS[id];
+      $('#storyChar').src = mon ? mon.img : artOf(id);
+      $('#storyName').textContent = mon ? mon.name : CHAR_NAME[id];
       $('#storyChar').animate([{ transform: 'translateY(24px) scale(.85)' }, { transform: 'translateY(0) scale(1)' }],
         { duration: 320, easing: 'cubic-bezier(.3,1.6,.6,1)' });
       Sound.play('pop', 1.3, 0.6);
@@ -761,7 +766,7 @@ function waveMembers(stage, wv) {
   const share = n === 2 ? 0.55 : 0.38, atkK = n === 2 ? 0.6 : 0.45;
   return Array.from({ length: n }, (_, j) => {
     const base = j === 0 ? w : others[j - 1] || { ...w, hue: (monHue(w) + 50 * j) % 360 };
-    return { ...base, hp: Math.round(w.hp * share), atk: Math.round(w.atk * atkK), cd: w.cd + j, boss: false };
+    return { ...base, hp: Math.round(w.hp * share), atk: Math.round(w.atk * atkK), cd: w.cd + j, boss: false, ...(base.sh ? { sh: Math.round(base.sh * share) } : {}) };
   });
 }
 // 괴물 하나 고르기 (다시 누르면 풀기)
@@ -843,9 +848,20 @@ function cellClass(r, c) {
   // 시럽은 이웃 시럽 칸과 이어 그림 (꿈의집 꿀처럼 한 덩어리): n-t/r/b/l = 그쪽에 시럽이 이어짐
   const sy = (rr, cc) => inside(rr, cc) && !hole(rr, cc) && Board.syrup?.[rr][cc];
   const join = Board.syrup?.[r][c] ? ' syrup' + (sy(r - 1, c) ? ' n-t' : '') + (sy(r, c + 1) ? ' n-r' : '') + (sy(r + 1, c) ? ' n-b' : '') + (sy(r, c - 1) ? ' n-l' : '') : '';
-  return 'cellbg' + (out ? ' void' : '') + (w ? ' weed w' + w : '') + join + (exit ? ' exit' : '');
+  // 모래 바닥, 소용돌이 입구·출구, 물살 줄(화살표 방향)
+  const sand = Board.sand?.[r][c] ? ' sand' : '';
+  const ports = Board.portals || [];
+  const whirl = ports.some(p => p.from[0] === r && p.from[1] === c) ? ' whirl-in' : ports.some(p => p.to[0] === r && p.to[1] === c) ? ' whirl-out' : '';
+  const ci = B.mode === 'life' && !out ? (L.st?.current?.rows || []).indexOf(r) : -1;
+  const flow = ci >= 0 ? (flowDir(ci) > 0 ? ' flow flow-r' : ' flow flow-l') : '';
+  return 'cellbg' + (out ? ' void' : '') + (w ? ' weed w' + w : '') + join + sand + whirl + flow + (exit ? ' exit' : '');
 }
-const fgClass = (r, c) => { const w = Board.floor?.[r][c] || 0; return 'cellfg' + (w ? ' w' + w : ''); };
+const fgClass = (r, c) => {
+  const w = Board.floor?.[r][c] || 0;
+  // 물살 줄: 구슬 위에 작은 화살표 (칸 사이 경계에), 바닥 무늬는 구슬에 가려서
+  const ci = B.mode === 'life' && !hole(r, c) ? (L.st?.current?.rows || []).indexOf(r) : -1;
+  return 'cellfg' + (w ? ' w' + w : '') + (ci >= 0 ? (flowDir(ci) > 0 ? ' flow-r' : ' flow-l') : '');
+};
 function renderFloor() {
   boardEl.querySelectorAll('.cellbg').forEach((d, i) => (d.className = cellClass(...unkey(i))));
   boardEl.querySelectorAll('.cellfg').forEach((d, i) => (d.className = fgClass(...unkey(i))));
@@ -927,7 +943,8 @@ function refreshTile(t) {
   inner.className = 'inner';
   if (t.block) {
     inner.classList.add('block', t.block);
-    const img = t.block === 'bubble' ? 'bubble' : t.block === 'weed' ? (t.hp >= 2 ? 'weed2' : 'weed1') : t.hp >= 2 ? 'gift' : 'box';
+    if (t.block === 'clam') inner.classList.toggle('open', t.hp < 2);
+    const img = t.block === 'bubble' ? 'bubble' : t.block === 'weed' ? (t.hp >= 2 ? 'weed2' : 'weed1') : t.block === 'clam' ? (t.hp >= 2 ? 'clam' : 'clam_open') : t.hp >= 2 ? 'gift' : 'box';
     inner.innerHTML = `<img src="${ITEM(img)}" draggable="false">`;
     if (t.block === 'bubble') foamJoin();
     return;
@@ -950,7 +967,9 @@ function refreshTile(t) {
   const ch = teamCh(t.type);
   inner.style.setProperty('--ring', ch.ring);
   inner.classList.toggle('locked', !!t.lock);
-  inner.innerHTML = `<img src="${TILE(ch.id)}" draggable="false">` +
+  inner.classList.toggle('inked', !!t.ink); // 먹물: 얼굴을 가림 (테두리 색도 숨김)
+  if (t.ink) inner.style.setProperty('--ring', '#3b3550');
+  inner.innerHTML = (t.ink ? `<img class="inkimg" src="${ITEM('ink')}" draggable="false">` : `<img src="${TILE(ch.id)}" draggable="false">`) +
     (t.lock ? `<i class="band"></i><img class="lockimg" src="${ITEM('ribbon')}" draggable="false">` : '');
 }
 const ITEM_ICON = { h: 'rocket', v: 'rocket' };
@@ -995,6 +1014,11 @@ function updateMon() {
     const hp = Math.max(0, m.hp);
     m.el.hp.querySelector('.fill').style.width = (hp / m.max) * 100 + '%';
     m.el.hp.querySelector('span').textContent = `${hp} / ${m.max}`;
+    // 보호막: 체력바 위에 하늘색 띠 (깨는 속성 아이콘과 함께)
+    let sb = m.el.hp.querySelector('.shbar');
+    if (m.shMax && !sb) { sb = document.createElement('i'); sb.className = 'shbar'; m.el.hp.appendChild(sb); }
+    if (sb) { sb.style.width = (m.shMax ? Math.max(0, m.sh) / m.shMax : 0) * 100 + '%'; sb.hidden = !(m.sh > 0); }
+    m.el.hp.classList.toggle('shielded', m.sh > 0);
   });
 }
 function updateCd() {
@@ -1031,8 +1055,11 @@ function spawnMonster(animated) {
     const title = w.title ? (w.title.endsWith('·') ? w.title : w.title + ' ') : '';
     el.name.innerHTML = attrIcon(w.a) + (w.boss ? '<img class="crown-ic" src="assets/img/ui/crown.png" alt="">' : '') + (group ? '' : title) + M.name;
     el.name.classList.toggle('boss', !!w.boss);
+    if (w.sh) el.name.innerHTML += `<span class="sh-ic" title="이 속성으로만 보호막이 깨져요"><img src="${ITEM('shield')}" alt="">${attrIcon(shieldBreaker(w.a))}</span>`;
     el.img.style.opacity = 1;
-    const m = { w, hp: w.hp, max: w.hp, cd: w.cd, el };
+    el.hp.querySelector('.shbar')?.remove();
+    el.sprite.classList.toggle('shielded', !!w.sh);
+    const m = { w, hp: w.hp, max: w.hp, cd: w.cd, el, sh: w.sh || 0, shMax: w.sh || 0 };
     if (group) el.card.onclick = () => pickMon(m);
     return m;
   });
@@ -1068,7 +1095,10 @@ async function startStage(i) {
   Board.floor = null;
   Board.syrup = null;
   Board.mask = null;
+  Board.sand = null;
+  Board.portals = null;
   Board.spawnIng = null;
+  boardEl.classList.remove('flow-soon');
   B.stage = i; B.wave = 0; B.over = false; B.busy = true; B.inSkill = false; B.sel = null; B.pending = [];
   const bowl = Ramen.takeBattle(); // 먹고 온 라멘
   B.teamHp = B.teamMax = (bowl && (bowl.id === 'hp' || bowl.id === 'okinawa') ? 150 : 120) + trainLv('hp') * TRAIN.hp.per; // + 라멘 체력 수련
@@ -1808,6 +1838,22 @@ function hitFx(res, T) {
     Sound.play('pop', 1.7, 0.8);
     Sound.play('sparkle', 1.5, 0.4);
   }, at(r, c)));
+  // 먹물: 옆에서 맞추면 먹물이 튀며 씻기고 얼굴이 드러남
+  (res.inked || []).forEach(({ r, c, tile, gone }) => setTimeout(() => {
+    const p = tileCenter(r, c);
+    shards(p.x, p.y, ['#3b3550', '#5a4f7a', '#8d84b0'], 8, 9, true);
+    ringFx(p.x, p.y, S * 1.5, '#8d84b0', 300);
+    flyToGoal(ITEM('ink'), p, goalChip('ink'), '#8d84b0');
+    if (!gone && liveTile(tile)) { refreshTile(tile); squish(tile); }
+    Sound.play('pop', 1.5, 0.6);
+  }, at(r, c)));
+  // 모래 바닥: 위 칸이 터지면 모래가 사르르 걷힘
+  (res.sand || []).forEach(({ r, c }) => setTimeout(() => {
+    const p = tileCenter(r, c);
+    shards(p.x, p.y + S * 0.25, ['#e9cf94', '#d8b46a', '#f5e3b8'], 6, 7, true);
+    flyToGoal(ITEM('sand'), p, goalChip('sand'), '#e9cf94');
+    renderFloor();
+  }, at(r, c)));
   res.hits.forEach(({ r, c, tile, gone }) => setTimeout(() => {
     const p = tileCenter(r, c);
     if (tile.block === 'weed') {
@@ -1834,6 +1880,19 @@ function hitFx(res, T) {
       shards(p.x, p.y, ['#bfe9ff', '#e6f7ff', '#8fd3ff'], 10, 8, true);
       Sound.play('pop', 1.9, 0.9);
       Sound.play('sparkle', 1.8, 0.4);
+    } else if (tile.block === 'clam') {
+      // 조개: 한 번 맞으면 입을 쩍 벌려 진주가 보이고, 다시 맞으면 진주가 톡 튀어나와 목표로 날아감
+      if (gone) {
+        tile.inner.style.opacity = 0;
+        piece(ITEM('clam_open'), p.x, p.y, S * 0.9, [{ transform: at3(0, 0), opacity: 1 }, { transform: at3(0, S * 0.1, 1.1, 0), opacity: 1, offset: 0.4 }, { transform: at3(0, S * 0.2, 0.7, 0), opacity: 0 }], { duration: 420, easing: 'ease-in' });
+        ringFx(p.x, p.y, S * 1.9, '#fff3fa', 340);
+        kp('star_09', p.x, p.y, S * 1.8, '#ffe6f4', [{ transform: 'scale(.2) rotate(0)', opacity: 1 }, { transform: 'scale(1) rotate(60deg)', opacity: 0 }], { duration: 420, easing: 'ease-out' });
+        Sound.play('special', 1.6, 0.6);
+      } else {
+        ringFx(p.x, p.y, S * 1.5, '#ffc4dc', 300);
+        Sound.play('hit1', 1.4, 0.6);
+      }
+      shards(p.x, p.y, ['#ffd7e8', '#fff6fb', '#f3b6cf', '#c9e8ff'], 8, 8, true);
     } else if (gone) {
       // 상자: 날개가 활짝 열리며 통 튀어 오르고, 날개 두 장은 양옆으로 날아감
       tile.inner.style.opacity = 0;
@@ -1863,8 +1922,8 @@ function hitFx(res, T) {
       shards(p.x, p.y, ['#ff6b6b', '#ffd84d', '#ff9f5a'], 10, 10);
       Sound.play('hit1', 1.2, 0.8);
     }
-    const k = tile.block === 'weed' ? 'weed' : tile.block === 'bubble' ? 'bubble' : 'box';
-    if (gone || k !== 'box') flyToGoal(ITEM(tile.block === 'weed' ? 'weed1' : tile.block === 'bubble' ? 'bubble' : 'box'), p, goalChip(k), '#ffd84d');
+    const k = tile.block === 'weed' ? 'weed' : tile.block === 'bubble' ? 'bubble' : tile.block === 'clam' ? 'clam' : 'box';
+    if (gone || (k !== 'box' && k !== 'clam')) flyToGoal(ITEM(tile.block === 'weed' ? 'weed1' : tile.block === 'bubble' ? 'bubble' : tile.block === 'clam' ? 'pearl' : 'box'), p, goalChip(k), '#ffd84d');
     if (gone) { popTile(tile, 0); if (tile.block === 'bubble') foamJoin(); }
     else { refreshTile(tile); squish(tile); }
   }, at(r, c)));
@@ -2094,8 +2153,18 @@ function hitMonster(dmg, ch, crit, k, eff = 1, carried = false) {
   if (!mon) return;
   if (!carried) dmg = Debuff.weaken(dmg); // 어둠이면 약하게 (넘어가는 남은 데미지엔 또 걸지 않음)
   B.lastMon = mon;
+  // 보호막: 깨는 속성이면 보호막부터 깎이고(넘친 만큼 체력), 다른 속성은 1/4만 들어감 (js/data.js shieldSplit)
+  let shHit = 0;
+  if (mon.sh > 0) {
+    const sp = shieldSplit(dmg, ch.attr, mon.w.a, mon.sh);
+    shHit = sp.toSh;
+    mon.sh -= sp.toSh;
+    dmg = sp.toHp;
+    shieldFx(mon, shHit, mon.sh <= 0 && shHit > 0, ch);
+    if (!dmg) { B.dmgBy[ch.id] = (B.dmgBy[ch.id] || 0) + shHit; updateMon(); return; }
+  }
   const dealt = Math.min(dmg, mon.hp);
-  B.dmgBy[ch.id] = (B.dmgBy[ch.id] || 0) + dealt;
+  B.dmgBy[ch.id] = (B.dmgBy[ch.id] || 0) + dealt + shHit;
   mon.hp = Math.max(0, mon.hp - dmg);
   updateMon();
   // 여럿 중 하나가 쓰러지면: 쓰러지는 연출 + 남은 데미지는 다음 괴물에게 (속성 상성은 다시 따짐)
@@ -2136,6 +2205,31 @@ function hitMonster(dmg, ch, crit, k, eff = 1, carried = false) {
   if (crit) shake(5, 200);
 }
 
+// 보호막 맞음: 깨는 속성이면 보호막이 쩍 갈라지고(숫자는 하늘색), 아니면 팅 튕김. 다 깨지면 산산조각
+function shieldFx(mon, n, broke, ch) {
+  const c = centerOf(mon.el.img);
+  const x = c.x + (Math.random() - 0.5) * c.w * 0.5, y = c.y + (Math.random() - 0.5) * 24;
+  if (n > 0) {
+    ringFx(x, y, 110, '#9fdcff', 300);
+    floatNum(x, y, `${n}`, '#5bb8f0', '');
+    Sound.play('hit2', 1.5, 0.6);
+  } else {
+    ringFx(x, y, 70, '#d8eef9', 220);
+    Sound.play('bad', 1.6, 0.35);
+    if (!Tutor.seen('shieldBlock') && B.mode === 'battle') { Tutor.mark('shieldBlock'); banner('보호막! 다른 속성으로 깨자', 700); }
+  }
+  updateMon();
+  if (broke) {
+    Juice.stop(90);
+    flash('#bfe9ff', 0.35);
+    shake(8, 260);
+    shards(c.x, c.y, ['#bfe9ff', '#e6f7ff', '#8fd3ff', '#ffffff'], 16, 14);
+    Sound.play('defeat', 1.6, 0.6);
+    mon.el.sprite.classList.remove('shielded');
+    banner('보호막 깨짐!', 500);
+  }
+}
+
 // 이동 경로(박자 단위)를 따라 떨어뜨림. 장애물을 비켜 비스듬히 가는 것도 한 번에
 async function fall(moves) {
   let end = 0;
@@ -2146,7 +2240,17 @@ async function fall(moves) {
     const [r1, c1] = path[path.length - 1];
     place(t, r1, c1);
     // 새로 생긴 얼굴은 첫 칸 동안 서서히 나타남 (판 위쪽이 빈 모양이면 그 자리에 뿅 생기는 것처럼 보여서)
-    const frames = path.map(([r, c, k], i) => ({ transform: tf(r, c), offset: (k - t0) / span, ...(fresh ? { opacity: i ? 1 : 0 } : {}) }));
+    const frames = [];
+    path.forEach(([r, c, k], i) => {
+      const off = (k - t0) / span, prev = path[i - 1];
+      if (prev && Math.max(Math.abs(prev[0] - r), Math.abs(prev[1] - c)) > 1) {
+        // 소용돌이: 입구에서 빙글 작아지며 빨려 들어갔다가 출구에서 빙글 나타남
+        const mid = ((prev[2] - t0) / span + off) / 2;
+        frames.push({ transform: tf(prev[0], prev[1]) + ' scale(.2) rotate(200deg)', offset: mid, opacity: 0 });
+        frames.push({ transform: tf(r, c) + ' scale(.2) rotate(-200deg)', offset: Math.min(off, mid + 0.0001), opacity: 0 });
+        frames.push({ transform: tf(r, c), offset: off, opacity: 1 });
+      } else frames.push({ transform: tf(r, c), offset: off, ...(fresh ? { opacity: i ? 1 : 0 } : {}) });
+    });
     // 중력처럼 점점 빨라지다 톡 착지 (멀리 떨어질수록 조금 더 걸리지만 칸 수만큼 늘지는 않게)
     const dur = 120 + Math.sqrt(span) * 80, delay = t0 * 42;
     end = Math.max(end, delay + dur);
@@ -2200,17 +2304,17 @@ async function monsterAttack(mon = tgt()) {
   floatNum(c.x, c.y - 10, `-${atk}`, '#e2543f', 'crit');
   $('#party').animate([{ transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'none' }], { duration: 240 });
   await sleep(450);
-  if (mon.w.m === 'mimic') await throwBoxes(mon.w.boss ? 3 : 2, centerOf(m));
+  if (mon.w.m === 'mimic') await throwBoxes(mon.w.boss ? 3 : 2, centerOf(m), mon.w.drop);
   await Debuff.special(mon); // 괴물마다 특수 공격 (한 번 걸러 한 번)
 }
 
 // 미믹은 공격하면서 판에 상자를 던짐. 옆에서 터뜨리면 깨짐
-async function throwBoxes(n, from = centerOf(monImg())) {
-  const drops = Board.dropBlocks(B.grid, n);
+async function throwBoxes(n, from = centerOf(monImg()), kind = 'box') {
+  const drops = Board.dropBlocks(B.grid, n, kind || 'box', kind === 'clam' ? 2 : 1); // 대왕 조개 미믹은 조개(두 번)를 던짐
   await Promise.all(drops.map(({ r, c, old, tile }, i) => {
     const to = tileCenter(r, c);
     const im = new Image();
-    im.src = ITEM('box');
+    im.src = ITEM(kind === 'clam' ? 'clam' : 'box');
     im.className = 'fximg';
     Object.assign(im.style, { left: from.x + 'px', top: from.y + 'px', width: B.S + 'px' });
     fx.appendChild(im);

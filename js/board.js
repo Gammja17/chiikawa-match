@@ -1,8 +1,11 @@
 // 3매치 판 로직 (화면과 분리)
 // 타일: { id, type, special }
-//   type 0~: 캐릭터 구슬, -1: 무지개, -2: 재료(ing, 맨 밑으로 떨구면 모임), -3: 장애물(block: 'box'|'bubble', hp)
+//   type 0~: 캐릭터 구슬, -1: 무지개, -2: 재료(ing, 맨 밑으로 떨구면 모임), -3: 장애물(block: 'box'|'bubble'|'weed'|'clam', hp)
 //   special: null|'h'|'v'|'bomb'|'rainbow'|'plane'
 //   lock: 리본에 묶인 구슬. 못 움직이고, 한 번 터뜨리면 리본만 풀림
+//   ink: 먹물 묻은 구슬. 얼굴이 안 보임 (맞추기는 됨). 바로 옆에서 맞추면 먹물이 씻김
+//   clam: 조개 (hp 2). 한 번 맞으면 벌어져 진주가 보이고, 다음 턴까지 또 못 맞히면 다시 닫힘 (closeClams)
+// 판 칸 쪽 기믹: sand 모래 바닥(위 칸이 터지면 걷힘), portals 소용돌이(입구 칸 구슬이 출구 칸으로 빨려 감), flow 물살(줄이 옆으로 밀림)
 let ROWS = 7, COLS = 7; // 판 크기: 토벌은 7x7, 일상 퍼즐은 판 그림(map) 크기대로 (최대 9x9)
 let NTYPES = 7; // 편성 인원에 맞춰 출격 때 바뀜
 const ING = -2, BLOCK = -3;
@@ -27,8 +30,10 @@ const Board = {
   floor: null,    // 잡초: floor[r][c] = 남은 겹 수 (일상 퍼즐에서만)
   syrup: null,    // 시럽: syrup[r][c] = 발렸는지. 시럽 칸이 낀 매치는 그 칸들에 시럽을 번지게 함
   spawnIng: null, // 새 칸을 채울 때 재료를 낼지: () => 재료 이름 | null
+  sand: null,     // 모래 바닥: sand[r][c] = 1이면 그 칸 밑에 모래. 그 칸에서 구슬이 터지면 걷힘
+  portals: null,  // 소용돌이: [{ from: [r, c], to: [r, c] }] 입구 칸의 구슬이 비어 있는 출구 칸으로 빨려 감
 
-  // spec: { blocks: [[r, c, 'box'|'bubble', hp]], ings: [[r, c, 이름]], locks: [[r, c]] }
+  // spec: { blocks: [[r, c, 'box'|'bubble', hp]], ings: [[r, c, 이름]], locks: [[r, c]], inks: [[r, c]] }
   create(spec = {}) {
     let g;
     do {
@@ -43,6 +48,7 @@ const Board = {
         g[r][c] = newTile(t);
       }
       (spec.locks || []).forEach(([r, c]) => { if (g[r][c]?.type >= 0) g[r][c].lock = 1; });
+      (spec.inks || []).forEach(([r, c]) => { if (g[r][c]?.type >= 0) g[r][c].ink = 1; });
     } while (!Board.hasMove(g) || Board.findRuns(g).length);
     return g;
   },
@@ -160,8 +166,8 @@ const Board = {
     const tiers = [[], [], [], []];
     Board.each(g, (t, r, c) => {
       if (avoid.has(key(r, c))) return;
-      if (t.block || t.lock) tiers[0].push([r, c]);
-      else if ((Board.floor?.[r][c] > 0 || (Board.syrup && !Board.syrup[r][c])) && t.type !== ING) tiers[1].push([r, c]);
+      if (t.block || t.lock || t.ink) tiers[0].push([r, c]);
+      else if ((Board.floor?.[r][c] > 0 || Board.sand?.[r][c] || (Board.syrup && !Board.syrup[r][c])) && t.type !== ING) tiers[1].push([r, c]);
       else if (t.type >= 0 && r > 0 && g[r - 1][c]?.type === ING) tiers[2].push([r, c]);
       else if (t.type >= 0) tiers[3].push([r, c]);
     });
@@ -304,23 +310,38 @@ const Board = {
     // 터진 아이템 바로 옆 장애물도 한 대 맞음 (매치 옆처럼)
     origins.forEach(([r, c]) => NEAR4.forEach(([dr, dc]) => inside(r + dr, c + dc) && g[r + dr][c + dc]?.block && hitKeys.add(key(r + dr, c + dc))));
 
-    const cleared = [], hits = [], weeds = [], unlocked = [], syrup = [];
+    // 먹물: 매치 바로 옆(또는 터진 아이템 옆) 먹물 구슬은 먹물만 씻김. 터지는 칸의 먹물 구슬은 구슬째 사라짐
+    const inkKeys = new Set();
+    [...matched, ...origins.map(([r, c]) => key(r, c))].forEach(k => {
+      const [r, c] = unkey(k);
+      NEAR4.forEach(([dr, dc]) => { const rr = r + dr, cc = c + dc; if (inside(rr, cc) && g[rr][cc]?.ink && !clear.has(key(rr, cc))) inkKeys.add(key(rr, cc)); });
+    });
+    const cleared = [], hits = [], weeds = [], unlocked = [], syrup = [], inked = [], sand = [];
     const pullWeed = (r, c) => {
       if (Board.floor?.[r][c] > 0) weeds.push({ r, c, left: --Board.floor[r][c] });
+      if (Board.sand?.[r][c]) { Board.sand[r][c] = 0; sand.push({ r, c }); }
     };
     clear.forEach(k => {
       const [r, c] = unkey(k);
       const t = g[r][c];
       if (!t || t.block || t.type === ING || protect?.has(t.id)) return;
       if (t.lock) { t.lock = 0; unlocked.push({ r, c, tile: t }); pullWeed(r, c); return; }
+      if (t.ink) inked.push({ r, c, tile: t, gone: true });
       cleared.push({ r, c, tile: t });
       g[r][c] = null;
       pullWeed(r, c);
+    });
+    inkKeys.forEach(k => {
+      const [r, c] = unkey(k), t = g[r][c];
+      if (!t?.ink) return;
+      t.ink = 0;
+      inked.push({ r, c, tile: t, gone: false });
     });
     hitKeys.forEach(k => {
       const [r, c] = unkey(k);
       const t = g[r][c];
       const gone = --t.hp <= 0;
+      if (t.block === 'clam' && !gone) t.fresh = 1; // 이번 턴에 벌어짐: 다음 턴 끝까지는 열려 있음
       hits.push({ r, c, tile: t, gone });
       if (gone) { g[r][c] = null; pullWeed(r, c); }
     });
@@ -334,7 +355,7 @@ const Board = {
       const [r, c] = unkey(k);
       if (Board.syrup && !hole(r, c) && !Board.syrup[r][c]) { Board.syrup[r][c] = true; syrup.push({ r, c }); }
     });
-    return { cleared, created, effects, hits, weeds, unlocked, syrup };
+    return { cleared, created, effects, hits, weeds, unlocked, syrup, inked, sand };
   },
 
   // 빈칸 메우기. 한 칸씩 박자(tick)로 움직이고, 장애물 밑은 옆 위에서 비스듬히 채움
@@ -357,6 +378,11 @@ const Board = {
       const ing = Board.spawnIng && Board.spawnIng();
       return ing ? newIng(ing) : newTile(randType());
     };
+    // 소용돌이 출구가 맨 위 칸인 줄은 새 구슬이 안 나오고 소용돌이로만 채워짐 (입구가 장애물로 막혔을 때만 위에서 나옴)
+    // 입구 위가 장애물로 막혀 있으면 소용돌이는 쉼 (빨아 간 자리를 다시 못 채우니까). 그동안 출구 줄은 위에서 새 구슬이 나옴
+    const ports = Board.portals || [];
+    const live = ({ from: [fr, fc] }) => (!g[fr][fc] || movable(g[fr][fc])) && openAbove(fr, fc);
+    const fedByPortal = c => ports.some(p => p.to[1] === c && p.to[0] === top[c] && live(p));
     for (let tick = 0; tick < 80; tick++) {
       let moved = false;
       for (let r = ROWS - 2; r >= 0; r--) for (let c = 0; c < COLS; c++) {
@@ -367,9 +393,17 @@ const Board = {
           moved = true;
         }
       }
+      // 입구 칸 구슬이 더 내려갈 데가 없으면 빈 출구로 빨려 감
+      for (const p of ports) {
+        const { from: [fr, fc], to: [tr, tc] } = p, t = g[fr][fc];
+        if (!movable(t) || g[tr][tc] || !live(p) || (fr + 1 < ROWS && !hole(fr + 1, fc) && !g[fr + 1][fc])) continue;
+        g[tr][tc] = t; g[fr][fc] = null;
+        rec(t, fr, fc, tr, tc, tick);
+        moved = true;
+      }
       for (let c = 0; c < COLS; c++) {
         const r0 = top[c];
-        if (r0 >= ROWS || g[r0][c]) continue;
+        if (r0 >= ROWS || g[r0][c] || fedByPortal(c)) continue;
         const t = spawn();
         g[r0][c] = t;
         paths.set(t.id, { tile: t, fresh: true, path: [[r0 - 1, c, tick], [r0, c, tick + 1]] });
@@ -425,7 +459,7 @@ const Board = {
       if (t.block !== 'bubble') return;
       NEAR4.forEach(([dr, dc]) => {
         const n = inside(r + dr, c + dc) ? g[r + dr][c + dc] : null;
-        if (n && n.type >= 0 && !n.special && !n.lock) cand.push([r + dr, c + dc]);
+        if (n && n.type >= 0 && !n.special && !n.lock && !n.ink) cand.push([r + dr, c + dc]);
       });
     });
     if (!cand.length) return null;
@@ -433,6 +467,34 @@ const Board = {
     const old = g[r][c];
     g[r][c] = newBlock('bubble', 1);
     return { r, c, old, tile: g[r][c] };
+  },
+
+  // 턴 끝: 지난 턴에 벌어진 조개가 이번 턴에도 못 맞았으면 다시 꼭 닫힘 (이번 턴에 벌어진 건 한 턴 더 기다림)
+  closeClams(g) {
+    const out = [];
+    Board.each(g, (t, r, c) => {
+      if (t.block !== 'clam' || t.hp !== 1) return;
+      if (t.fresh) { t.fresh = 0; return; }
+      t.hp = 2;
+      out.push({ r, c, tile: t });
+    });
+    return out;
+  },
+
+  // 물살: r번째 줄의 구슬들이 dir(1 오른쪽, -1 왼쪽)으로 한 칸씩 밀림. 끝에 닿은 구슬은 반대쪽 끝으로 돌아 들어옴
+  // 장애물·리본·재료·구멍은 제자리, 그 사이 구슬끼리만 돎. 반환: [{ tile, from: [r, c], to: [r, c], wrap }]
+  flow(g, r, dir) {
+    const cols = [];
+    for (let c = 0; c < COLS; c++) if (!hole(r, c) && movable(g[r][c]) && g[r][c].type !== ING) cols.push(c);
+    if (cols.length < 2) return [];
+    const tiles = cols.map(c => g[r][c]);
+    const out = [];
+    cols.forEach((c, i) => {
+      const j = (i + dir + cols.length) % cols.length;
+      g[r][cols[j]] = tiles[i];
+      out.push({ tile: tiles[i], from: [r, c], to: [r, cols[j]], wrap: Math.abs(j - i) > 1 || Math.abs(cols[j] - c) > 1 });
+    });
+    return out;
   },
 
   swap(g, a, b) {
@@ -463,7 +525,7 @@ const Board = {
   // 구슬 n개를 장애물로 바꿈 (미믹이 던진 상자, 제초 대회에서 새로 돋는 잡초)
   dropBlocks(g, n, kind = 'box', hp = 1) {
     const cand = [];
-    Board.each(g, (t, r, c) => { if (t.type >= 0 && !t.special && !t.lock) cand.push([r, c]); });
+    Board.each(g, (t, r, c) => { if (t.type >= 0 && !t.special && !t.lock && !t.ink) cand.push([r, c]); });
     const out = [];
     for (let i = 0; i < n && cand.length; i++) {
       const [r, c] = cand.splice(Math.floor(boardRand() * cand.length), 1)[0];
