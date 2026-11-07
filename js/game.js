@@ -562,10 +562,10 @@ function openMap(advanceFrom = null, paging = false) {
   $('#mapNext').disabled = mapPage >= pages - 1 || mapPage > Math.floor(cur / MAP_PAGE); // 지금 지역의 다음 지역까지만 미리 보기
   $('#mapScroll').style.backgroundImage = `url(assets/img/map/m${REGION_ART[r]}.jpg)`;
   Sound.music('map');
-  $('#btnRamen').classList.toggle('on', Save.data.ramen !== false && !Save.data.buff);
+  $('#btnRamen').classList.toggle('on', ramenFree() && !Save.data.buff);
   friendsDot();
   rankDot();
-  if (!paging) Achieve.check();
+  if (!paging) { Achieve.check(); ChapStar.notify(); }
   const path = $('#mapPath');
   path.innerHTML = '';
   path.style.height = NODE_TOP + (a1 - a0) * NODE_GAP + 40 + 'px';
@@ -583,14 +583,19 @@ function openMap(advanceFrom = null, paging = false) {
       `<svg style="top:${top}px;height:${pts[b].y - top + 20}px"><path d="${d}" fill="none" stroke="#fffaf2" stroke-width="14" stroke-linecap="round" opacity=".9"/><path d="${d}" fill="none" stroke="#4b3f3a" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 12" opacity=".45"/></svg>`);
   }
 
-  // 장이 시작되는 자리 위에 띠 ("4장 하치와레의 노래")
-  CHAPTERS.forEach(([at, name]) => {
+  // 장이 시작되는 자리 위에 띠 ("4장 하치와레의 노래"). 띠에 장 별 표가 매달림 (js/achieve.js ChapStar)
+  CHAPTERS.forEach(([at, name], j) => {
     if (at < a0 || at >= a1) return;
     const b = document.createElement('div');
     b.className = 'chapter-band' + (at > cur ? ' locked' : '');
     // 지금 판이 장 첫 판이면 위쪽은 친구들·판 이름이 차지해서, 띠를 별 아래로 내림 (안 그러면 셋이 겹쳐 글자가 가려짐)
     b.style.top = pts[at].y + (at === cur ? 70 : -NODE_GAP / 2) + 'px';
-    b.textContent = name;
+    b.dataset.chap = j;
+    // 별 표는 띠 바로 아래 판(띠를 내렸으면 그다음 판)의 반대쪽에 매달림. 그 판이 가운데쯤이면 띠 위로, 위 판의 반대쪽에
+    const near = pts[Math.min(at === cur ? at + 1 : at, a1 - 1)], up = Math.abs(near.x - W / 2) < 50, prev = pts[Math.max(a0, at - 1)];
+    b.classList.toggle('pill-up', up);
+    b.classList.toggle('pill-l', up ? at > a0 && prev.x > W / 2 : near.x > W / 2);
+    ChapStar.paint(b);
     path.appendChild(b);
   });
   STAGES.forEach((st, i) => {
@@ -2073,7 +2078,9 @@ async function stepFx(res, combo, from = null) {
   // 오늘의 미션
   Daily.add('pop', res.cleared.filter(x => x.tile.type >= 0).length);
   Daily.add('item', res.effects.length);
-  ['weed', 'bubble', 'box'].forEach(k => Daily.add(k, res.hits.filter(h => h.gone && h.tile.block === k).length));
+  ['weed', 'bubble', 'box', 'clam'].forEach(k => Daily.add(k, res.hits.filter(h => h.gone && h.tile.block === k).length)); // 조개는 다 열려 사라지면 진주
+  Daily.add('sand', (res.sand || []).length); // 업적 기록 (인어섬 편 기믹)
+  Daily.add('ink', (res.inked || []).length);
   for (let i = 0; i < Math.min(3, Math.ceil(n / 3)); i++) setTimeout(() => Sound.pop(combo - 1 + i), i * 70);
   if (n >= 6) setTimeout(() => Sound.play('sparkle', 1 + combo * 0.05, 0.6), 60);
 
@@ -2161,6 +2168,7 @@ function hitMonster(dmg, ch, crit, k, eff = 1, carried = false) {
     mon.sh -= sp.toSh;
     dmg = sp.toHp;
     shieldFx(mon, shHit, mon.sh <= 0 && shHit > 0, ch);
+    if (mon.sh <= 0 && shHit > 0) Achieve.add('shield');
     if (!dmg) { B.dmgBy[ch.id] = (B.dmgBy[ch.id] || 0) + shHit; updateMon(); return; }
   }
   const dealt = Math.min(dmg, mon.hp);
@@ -3472,7 +3480,8 @@ const RAMEN_MENU = [
   { id: 'secret', hide: 1, name: '사부님 비밀 메뉴', icon: 'dango', desc: '퍼즐: 경단 깔고 + 이동 +2', mode: 'l', price: 150, at: 50, say: '…아무한테도 말하지 마라.' },
 ];
 const ramenOf = id => RAMEN_MENU.find(m => m.id === id);
-const ramenFree = () => Save.data.ramen !== false;
+// 공짜 한 그릇: 새 판을 깨면 한 번 + 라멘 서비스권(장 별 보상, Save.data.ramenPass 장 수)
+function ramenFree() { return Save.data.ramen !== false || (Save.data.ramenPass || 0) > 0; }
 // 라멘 가게 차림표 한 줄: 그림 · 이름(가진 개수) · 한 줄 설명 · 식권 버튼
 const rmTicket = (label, val, cls = '', data = '') => `<button class="tk ${cls}" ${data}><i class="cut"></i><small>${label}</small><b>${val}</b></button>`;
 const rmCoin = n => `<img src="${ITEM('coin')}" alt="">${n}`;
@@ -3494,7 +3503,7 @@ function renderRamenMenu() {
   const stamp = Save.data.ramenStamp || 0;
   $('#ramenNote').innerHTML = cur
     ? `먹은 효과: <b>${cur.name}</b> · 다음 ${cur.mode === 'b' ? '토벌' : '퍼즐'}에서 써요`
-    : `${ramenFree() ? '새로 깬 스테이지 축하 · 한 그릇은 서비스! ' : ''}도장 ${'●'.repeat(stamp % 5)}${'○'.repeat(5 - (stamp % 5))} (5개마다 간식)`;
+    : `${Save.data.ramen !== false ? '새로 깬 스테이지 축하 · 한 그릇은 서비스! ' : ramenFree() ? `라멘 서비스권 ${Save.data.ramenPass}장 · 한 그릇은 서비스! ` : ''}도장 ${'●'.repeat(stamp % 5)}${'○'.repeat(5 - (stamp % 5))} (5개마다 간식)`;
 }
 function orderRamen(id) {
   const m = ramenOf(id), shopkeep = $('#shopMaster');
@@ -3504,6 +3513,7 @@ function orderRamen(id) {
   if (!free && Save.data.coins < m.price) { Sound.play('bad'); shopSay(shopkeep, '코인이 모자라다. 토벌하고 와라.'); return; }
   if (!free) Meta.addCoins(-m.price);
   Save.data.buff = id;
+  if (free && Save.data.ramen === false) Save.data.ramenPass--; // 새 판 서비스가 없으면 서비스권을 씀
   Save.data.ramen = false;
   Save.data.ramenStamp = (Save.data.ramenStamp || 0) + 1;
   Save.save();

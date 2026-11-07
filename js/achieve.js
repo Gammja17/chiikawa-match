@@ -6,6 +6,9 @@ const ACHIEVES = [
   { id: 'clear10', title: '풀숲 탐험가', text: '모험 지도 스테이지 10개 깨기', n: 10, val: () => clearedCount() },
   { id: 'clear50', title: '모험 지도 단골', text: '모험 지도 스테이지 50개 깨기', n: 50, val: () => clearedCount() },
   { id: 'clear150', title: '지도의 주인', text: '모험 지도 스테이지 150개 깨기', n: 150, val: () => clearedCount() },
+  { id: 'clear300', title: '토벌 대축제의 주인공', text: '모험 지도 스테이지 300개 깨기', n: 300, val: () => clearedCount() },
+  { id: 'clear400', title: '노래를 되찾은 영웅', text: '모험 지도 스테이지 400개 깨기', n: 400, val: () => clearedCount() },
+  { id: 'bossAll', title: '갑옷 씨도 놀란 토벌대', text: '모든 장의 보스 판 깨기', n: () => bossStages().length, val: () => bossStages().filter(k => routeStars(k) != null).length },
   { id: 'boss10', title: '보스 사냥꾼', text: '보스 10마리 물리치기', n: 10, val: s => s.n.boss || 0 },
   { id: 'boss50', title: '전설의 토벌대', text: '보스 50마리 물리치기', n: 50, val: s => s.n.boss || 0 },
   { id: 'combo20', title: '콤보 장인', text: '5콤보 20번 만들기', n: 20, val: s => s.n.combo5 || 0 },
@@ -16,7 +19,17 @@ const ACHIEVES = [
   { id: 'pop5000', title: '구슬 부수기 왕', text: '구슬 5000개 터뜨리기', n: 5000, val: s => s.n.pop || 0 },
   { id: 'item300', title: '아이템 박사', text: '아이템 300번 터뜨리기', n: 300, val: s => s.n.item || 0 },
   { id: 'skill100', title: '스킬 마스터', text: '친구 스킬 100번 쓰기', n: 100, val: s => s.n.skill || 0 },
+  { id: 'stars100', title: '반짝반짝 별 줍기', text: '별 100개 모으기', n: 100, val: () => Achieve.stars() },
   { id: 'stars300', title: '별 수집가', text: '별 300개 모으기', n: 300, val: () => Achieve.stars() },
+  { id: 'stars600', title: '별똥별 사냥꾼', text: '별 600개 모으기', n: 600, val: () => Achieve.stars() },
+  { id: 'stars1200', title: '밤하늘을 다 가진 아이', text: '모든 스테이지 별 3개 (별 1200개)', n: () => ROUTE.length * 3, val: () => Achieve.stars() },
+  { id: 'chap1', title: '꼼꼼쟁이', text: '한 장에서 별 30개 다 모으기', n: 1, val: () => ChapStar.fullCount() },
+  { id: 'chap10', title: '별 도장 수집가', text: '별 30개 다 모은 장 10개', n: 10, val: () => ChapStar.fullCount() },
+  // 인어섬 편(31~40장) 기믹: 이 업적이 생긴 뒤부터 셈
+  { id: 'clam100', title: '진주 줍는 아이', text: '조개에서 진주 100개 꺼내기', n: 100, val: s => s.n.clam || 0 },
+  { id: 'sand300', title: '모래사장 청소부', text: '모래 바닥 300칸 걷어내기', n: 300, val: s => s.n.sand || 0 },
+  { id: 'ink200', title: '먹물 세탁소', text: '먹물 구슬 200개 씻기', n: 200, val: s => s.n.ink || 0 },
+  { id: 'shield30', title: '보호막 깨기 달인', text: '괴물 보호막 30번 깨기', n: 30, val: s => s.n.shield || 0 },
   { id: 'friends10', title: '인기쟁이', text: '친구 10명 모으기', n: 10, val: () => Object.keys(Save.data.own || {}).length },
   { id: 'tower20', title: '인어섬 모험가', text: '인어섬 20층 오르기', n: 20, val: () => Save.data.towerBest || 0 },
   { id: 'ramen30', title: '라멘 단골', text: '라멘 30그릇 먹기', n: 30, val: s => s.n.ramen || 0 },
@@ -28,7 +41,14 @@ const ACHIEVES = [
   { id: 'say_tower10', title: '하아?', text: '인어섬 10층 오르기', n: 10, val: () => Save.data.towerBest || 0 },
   { id: 'say_ramen10', title: '캬~! 한 그릇 더', text: '라멘 10그릇 먹기', n: 10, val: s => s.n.ramen || 0 },
   { id: 'say_weed1000', title: '풀 뽑기 장인이사!', text: '잡초 1000개 뽑기', n: 1000, val: s => s.n.weed || 0 },
+  { id: 'say_ink500', title: '얼굴이 안 보이잖아~!', text: '먹물 구슬 500개 씻기', n: 500, val: s => s.n.ink || 0 },
+  { id: 'say_clam500', title: '…진주, 반짝…!', text: '조개에서 진주 500개 꺼내기', n: 500, val: s => s.n.clam || 0 },
+  { id: 'say_chap40', title: '이거… 전부 별이야…!?', text: '모든 장에서 별 30개 다 모으기', n: () => CHAPTERS.length, val: () => ChapStar.fullCount() },
 ];
+
+// 보스가 나오는 지도 판 번호들 (장마다 끝 판, 1장은 없음)
+const bossStages = () => (bossStages.k = bossStages.k || ROUTE.map((_, k) => k).filter(k => ROUTE[k][0] === 'b' && routeStage(k).waves?.some(w => w.boss)));
+const achN = a => (typeof a.n === 'function' ? a.n() : a.n); // n이 함수면 판 수에 맞춰 (판이 늘어도 따라감)
 
 const Achieve = {
   s() {
@@ -57,7 +77,7 @@ const Achieve = {
     const s = Achieve.s();
     let got = false;
     ACHIEVES.forEach(a => {
-      if (s.got[a.id] || a.val(s) < a.n) return;
+      if (s.got[a.id] || a.val(s) < achN(a)) return;
       s.got[a.id] = 1;
       got = true;
       if (!s.title) s.title = a.id;
@@ -72,9 +92,9 @@ const Achieve = {
     const s = Achieve.s(), cnt = ACHIEVES.filter(a => s.got[a.id]).length;
     return `<div class="sheet-label">칭호 <small>업적 ${cnt} / ${ACHIEVES.length} · 얻은 칭호를 누르면 랭킹 이름 옆에 붙어요</small></div>
       <div class="ach-list">${ACHIEVES.map(a => {
-        const v = Math.min(a.n, a.val(s)), got = s.got[a.id], on = s.title === a.id && got;
+        const n = achN(a), v = Math.min(n, a.val(s)), got = s.got[a.id], on = s.title === a.id && got;
         return `<button class="ach${got ? ' got' : ''}${on ? ' on' : ''}" data-ach="${a.id}" ${got ? '' : 'disabled'}>
-          <b>${a.title}</b><small>${a.text}</small>${got ? `<i>${on ? '다는 중' : '달기'}</i>` : `<span class="mbar"><i style="width:${(v / a.n) * 100}%"></i></span><em>${v} / ${a.n}</em>`}</button>`;
+          <b>${a.title}</b><small>${a.text}</small>${got ? `<i>${on ? '다는 중' : '달기'}</i>` : `<span class="mbar"><i style="width:${(v / n) * 100}%"></i></span><em>${v} / ${n}</em>`}</button>`;
       }).join('')}</div>`;
   },
   bind(card, redraw) {
@@ -118,5 +138,118 @@ const Pic = {
       if (typeof Net !== 'undefined') Net.submit();
       redraw();
     }));
+  },
+};
+
+// 장 별 보상: 장마다 10판 × 별 3개 = 30개를 다 모으면 한 번 받음. 뒤 장일수록 조금씩 큼
+// Save.data.chapGot = { 장 번호(0부터): 1 }. 직접 눌러서 받으니 업데이트 전에 이미 30개인 장도 그냥 '받기'가 뜸 (옛 기록은 따로 옮길 것 없음)
+// 보이는 곳: 지도의 장 띠(★ 27/30, 다 모으면 선물 띠를 눌러 받기), 미션 창 → 장 별 보상 목록, 미션 버튼 빨간 점
+const CHAP_TREATS = ['dango', 'parfait', 'onigiri'];
+const ChapStar = {
+  range: j => [CHAPTERS[j][0], (CHAPTERS[j + 1] || [ROUTE.length])[0]],
+  stars(j) { const [a, b] = ChapStar.range(j); let t = 0; for (let k = a; k < b; k++) t += routeStars(k) || 0; return t; },
+  max(j) { const [a, b] = ChapStar.range(j); return (b - a) * 3; },
+  full: j => ChapStar.stars(j) >= ChapStar.max(j),
+  got: j => !!Save.data.chapGot?.[j],
+  ready: j => !ChapStar.got(j) && ChapStar.full(j),
+  fullCount: () => CHAPTERS.filter((_, j) => ChapStar.full(j)).length,
+  claimable: () => CHAPTERS.filter((_, j) => ChapStar.ready(j)).length,
+  open: j => CHAPTERS[j][0] <= unlockedIdx(),
+  // 보상: 코인 100 + 장마다 10, 뽑기 티켓 1장(21장부터 2장), 덤은 장마다 돌아가며 간식(10장마다 +1개) · 이어하기권 · 간식 · 라멘 서비스권
+  // 40장 다 받으면 코인 7800, 티켓 60장, 간식 70개, 이어하기권 10장, 라멘 10그릇
+  reward(j) {
+    const t = Math.floor(j / 10), r = { coins: 100 + 10 * j, tickets: j < 20 ? 1 : 2 };
+    const x = j % 4;
+    if (x === 0 || x === 2) Object.assign(r, { treat: CHAP_TREATS[Math.floor(j / 2) % 3], n: 2 + t });
+    else if (x === 1) r.item = 'cont';
+    else r.ramen = 1;
+    return r;
+  },
+  // 보상 한 줄씩: [그림, 글]
+  parts: r => [[ITEM('coin'), `${r.coins}`], [ITEM('gift'), `티켓 ${r.tickets}`], r.treat && [ITEM(r.treat), `×${r.n}`],
+    r.item && [ITEM('timer'), '이어하기 1'], r.ramen && [ITEM('ramen'), '라멘 1그릇']].filter(Boolean),
+  chips: r => ChapStar.parts(r).map(([src, t]) => `<span><img src="${src}" alt="">${t}</span>`).join(''),
+  name(j) { const s = CHAPTERS[j][1], i = s.indexOf(' '); return i < 0 ? [s, ''] : [s.slice(0, i), s.slice(i + 1)]; },
+  // 받기: 보상을 주고 반짝. el은 반짝일 자리
+  claim(j, el) {
+    if (!ChapStar.ready(j)) return false;
+    (Save.data.chapGot = Save.data.chapGot || {})[j] = 1;
+    Daily.give(ChapStar.reward(j)); // 저장까지
+    Sound.play('star', 1.2, 0.9);
+    Haptic.tap(25);
+    if (el) {
+      const c = centerOf(el);
+      burst(c.x, c.y, '#ffd84d', 14);
+      floatNum(c.x, c.y - 24, `${ChapStar.name(j)[0]} 보상!`, '#ff5d9e');
+    }
+    Meta.coinUI(true);
+    ChapStar.paintBands();
+    Daily.badge();
+    return true;
+  },
+  // 지도 장 띠 (game.js openMap이 만든 .chapter-band[data-chap]). 별이 하나도 없는 장은 표를 안 붙임 (처음 화면을 깔끔하게)
+  paint(b) {
+    const j = +b.dataset.chap, open = ChapStar.open(j), s = ChapStar.stars(j), m = ChapStar.max(j), got = ChapStar.got(j), ready = !got && s >= m;
+    b.classList.toggle('ready', ready);
+    b.classList.toggle('got', got);
+    b.innerHTML = `<span class="cb-name">${CHAPTERS[j][1]}</span>` + (open && s ? `<button class="cb-star">${ready ? `<img src="${ITEM('starchest')}" alt="">보상 받기` : `★ ${s}/${m}${got ? ' ✓' : ''}`}</button>` : '');
+    // 띠는 판을 가리지 않게 눌리지 않고, 매달린 별 표만 눌림: 받을 게 있으면 보상 창, 아니면 장 별 보상 목록
+    const pill = b.querySelector('.cb-star');
+    if (pill) pill.onclick = () => {
+      Sound.play('click');
+      if (ChapStar.ready(j)) ChapStar.popup(j, pill);
+      else ChapStar.list(j);
+    };
+  },
+  paintBands: () => document.querySelectorAll('.chapter-band[data-chap]').forEach(ChapStar.paint),
+  // 띠를 누르면: 받을 게 있으면 보상 창
+  popup(j, b) {
+    const [no, nm] = ChapStar.name(j), r = ChapStar.reward(j);
+    modal({
+      title: `${no} 별 30개!`, img: ITEM('starchest'), text: `「${nm}」 별을 다 모았어요! 우사기: 우라~!`,
+      rows: ChapStar.parts(r).map(([src, t]) => [`<img class="row-ic" src="${src}" alt="">`, t]),
+      btn1: '받기!', on1: () => ChapStar.claim(j, b),
+    });
+    $('#modalChar').classList.add('icon');
+  },
+  // 장 별 보상 목록 (미션 창에서, 또는 띠를 눌러서). at: 이 장이 보이게 스크롤
+  list(at = -1) {
+    const el = $('#chapStar');
+    const draw = () => {
+      const cur = unlockedIdx();
+      const many = ChapStar.claimable();
+      el.querySelector('.cs-sub').innerHTML = `별 30개를 다 모은 장 <b>${ChapStar.fullCount()}</b> / ${CHAPTERS.length} · 장마다 한 번 받아요` +
+        (many > 1 ? `<button class="mini-btn ready" data-all>모두 받기 ${many}</button>` : '');
+      el.querySelector('.cs-list').innerHTML = CHAPTERS.map(([a], j) => {
+        const [no, nm] = ChapStar.name(j), s = ChapStar.stars(j), m = ChapStar.max(j), got = ChapStar.got(j), ready = !got && s >= m, lock = a > cur;
+        return `<div class="mis cs-row${got ? ' done' : ready ? ' full' : ''}${lock ? ' locked' : ''}" data-j="${j}"><b class="cs-no">${ready ? `<img src="${ITEM('starchest')}" alt="">` : ''}${no}</b><div class="mtx"><b>${lock ? '???' : nm}<small>★ ${s}/${m}</small></b>
+          <span class="mbar"><i style="width:${(s / m) * 100}%"></i></span><span class="cs-rw">${ChapStar.chips(ChapStar.reward(j))}</span></div>
+          <button class="mini-btn" data-c="${j}" ${ready ? '' : 'disabled'}>${got ? '받음' : ready ? '받기' : `<img src="${ITEM('star')}" alt="">${m - s}`}</button></div>`;
+      }).join('');
+      el.querySelectorAll('[data-c]').forEach(b => (b.onclick = () => { if (ChapStar.claim(+b.dataset.c, b)) draw(); }));
+      // 모두 받기: 받을 수 있는 장을 한꺼번에 (보상은 장마다 따로 들어감)
+      el.querySelector('[data-all]')?.addEventListener('click', e => {
+        const b = e.currentTarget, sum = { coins: 0, tickets: 0 };
+        CHAPTERS.forEach((_, j) => { if (!ChapStar.ready(j)) return; const r = ChapStar.reward(j); sum.coins += r.coins; sum.tickets += r.tickets; ChapStar.claim(j); });
+        const c = centerOf(b);
+        burst(c.x, c.y, '#ffd84d', 18);
+        floatNum(c.x, c.y - 24, `+${sum.coins} · 티켓 +${sum.tickets}`, '#ff5d9e');
+        draw();
+      });
+    };
+    draw();
+    el.querySelector('[data-close]').onclick = () => { Sound.play('click'); el.classList.remove('show'); };
+    el.classList.add('show');
+    el.querySelector('.modal-card').animate([{ transform: 'translateY(30px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 220, easing: 'ease-out' });
+    const box = el.querySelector('.cs-list'), row = box.querySelector(`[data-j="${at >= 0 ? at : Math.max(0, CHAPTERS.findIndex((_, j) => ChapStar.ready(j)))}"]`);
+    box.scrollTop = row ? row.offsetTop - 6 : 0;
+  },
+  // 이번에 켠 뒤로 새로 30개가 된 장은 알림 한 번 (지도를 열 때)
+  seen: null,
+  notify() {
+    const now = CHAPTERS.map((_, j) => ChapStar.full(j));
+    const fresh = ChapStar.seen ? now.map((f, j) => (f && !ChapStar.seen[j] && !ChapStar.got(j) ? j : -1)).filter(j => j >= 0) : [];
+    if (fresh.length) Daily.toast(`${fresh.length > 1 ? `장 ${fresh.length}개` : ChapStar.name(fresh[0])[0]} 별 30개! 장 띠의 선물을 눌러 받기`, 'starchest');
+    ChapStar.seen = now;
   },
 };
