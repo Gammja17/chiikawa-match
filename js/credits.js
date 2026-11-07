@@ -30,6 +30,15 @@ const CREDITS = [
       ],
     },
   },
+  { sec: 'orig', title: '초록이 (파자마파티즈)', by: '© nagano / chiikawa committee',
+    src: [['아래 전신·포즈 일러스트의 img/art/pajama_uwawa.png', '']],
+    did: '파자마파티즈 넷이 모인 그림에서 초록이만 오려 내 얼굴·구슬(초록 테두리)·전신으로 만듦',
+    files: {
+      'img/faces': ['midori.webp'],
+      'img/tiles': ['midori.webp'],
+      'img/chars': ['midori.webp'],
+    },
+  },
   { sec: 'orig', title: '앱 아이콘', by: '© nagano / chiikawa committee',
     src: [['위 퍼즐 구슬', '']],
     did: '퍼즐 구슬을 분홍 바탕에 모아 만듦',
@@ -237,7 +246,12 @@ const CREDITS = [
         // 인어섬 편 (31~40장) 기믹·지도 아이콘: 2D/png/128 그대로
         'boat.png', 'clam.png', 'clam_open.png', 'coral.png', 'crab.png', 'fish.png', 'fog.png', 'ink.png', 'island.png', 'letter.png',
         'moon.png', 'note.png', 'sand.png', 'seamap.png', 'shield.png', 'storm.png', 'wave.png', 'whirl.png',
+        // 파자마파티즈 편 (41~50장) 기믹·지도 아이콘
+        'broom.png', 'bulb.png', 'chair.png', 'dance.png', 'duck.png', 'feather.png', 'mic.png', 'nest.png', 'notes.png', 'pajama.png',
+        'potato.png', 'tent.png', 'thread.png', 'ticket.png',
       ],
+      // 큰 새: 원작 그림이 없어서 오리 그림(🦆 512px)을 크게 씀
+      'img/monsters': ['bird.webp'],
     },
   },
   { sec: 'free', title: 'Kenney Particle Pack', by: 'Kenney',

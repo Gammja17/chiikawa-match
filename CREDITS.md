@@ -2,7 +2,7 @@
 
 > 이 파일은 `node tools/credits.js`가 `js/credits.js`에서 만듭니다. 고칠 땐 `js/credits.js`를 고치세요.
 
-먼작귀 퍼즐 토벌 대작전!은 팬이 만든 **비공식 게임**입니다. 원작자 나가노 및 치이카와 제작위원회와 관계가 없고, 돈을 받지 않습니다. 게임에 들어간 그림 490개와 소리 28개의 출처를 파일마다 적었습니다. 게임 안에서는 설정 → 만든 사람·출처, 웹에서는 `credits.html`에서 같은 목록을 볼 수 있습니다.
+먼작귀 퍼즐 토벌 대작전!은 팬이 만든 **비공식 게임**입니다. 원작자 나가노 및 치이카와 제작위원회와 관계가 없고, 돈을 받지 않습니다. 게임에 들어간 그림 508개와 소리 28개의 출처를 파일마다 적었습니다. 게임 안에서는 설정 → 만든 사람·출처, 웹에서는 `credits.html`에서 같은 목록을 볼 수 있습니다.
 
 ## 원작 그림
 
@@ -23,6 +23,16 @@
 - 손본 것: 퍼즐 얼굴에 친구 색 테두리를 둘러 만듦
 
 - `assets/img/tiles/`: `beetle.webp`, `chiikawa.webp`, `darkstar.webp`, `goblin.webp`, `hachiware.webp`, `kani.webp`, `kurimanju.webp`, `momonga.webp`, `rakko.webp`, `shisa.webp`, `shooting.webp`, `usagi.webp`
+
+### 초록이 (파자마파티즈) (3개)
+
+- 권리: © nagano / chiikawa committee
+- 출처: 아래 전신·포즈 일러스트의 img/art/pajama_uwawa.png
+- 손본 것: 파자마파티즈 넷이 모인 그림에서 초록이만 오려 내 얼굴·구슬(초록 테두리)·전신으로 만듦
+
+- `assets/img/faces/`: `midori.webp`
+- `assets/img/tiles/`: `midori.webp`
+- `assets/img/chars/`: `midori.webp`
 
 ### 앱 아이콘 (4개)
 
@@ -188,14 +198,15 @@ AI 그림 도구와 코드로 이 게임을 위해 새로 만든 그림이에요
 
 자유롭게 쓸 수 있는 라이선스로 공개된 소재예요.
 
-### Noto Emoji 아이콘 (44개)
+### Noto Emoji 아이콘 (59개)
 
 - 권리: Google
 - 출처: [Noto Emoji](https://github.com/googlefonts/noto-emoji)
 - 라이선스: Apache License 2.0 (assets/img/items/LICENSE-noto.txt)
 - 손본 것: 크기를 맞추고 일부는 흰 테두리를 그림
 
-- `assets/img/items/`: `bed.webp`, `berry.webp`, `bomb.webp`, `boom.webp`, `candle.webp`, `cap.webp`, `crown.webp`, `frame.webp`, `gradcap.webp`, `h.webp`, `honey.webp`, `mirror.webp`, `phones.webp`, `plane.webp`, `plant.webp`, `rainbow.webp`, `rocket.webp`, `sakura.webp`, `shades.webp`, `sofa.webp`, `sponge.webp`, `sunflower.webp`, `teddy.webp`, `tophat.webp`, `tv.webp`, `v.webp`, `boat.png`, `clam.png`, `clam_open.png`, `coral.png`, `crab.png`, `fish.png`, `fog.png`, `ink.png`, `island.png`, `letter.png`, `moon.png`, `note.png`, `sand.png`, `seamap.png`, `shield.png`, `storm.png`, `wave.png`, `whirl.png`
+- `assets/img/items/`: `bed.webp`, `berry.webp`, `bomb.webp`, `boom.webp`, `candle.webp`, `cap.webp`, `crown.webp`, `frame.webp`, `gradcap.webp`, `h.webp`, `honey.webp`, `mirror.webp`, `phones.webp`, `plane.webp`, `plant.webp`, `rainbow.webp`, `rocket.webp`, `sakura.webp`, `shades.webp`, `sofa.webp`, `sponge.webp`, `sunflower.webp`, `teddy.webp`, `tophat.webp`, `tv.webp`, `v.webp`, `boat.png`, `clam.png`, `clam_open.png`, `coral.png`, `crab.png`, `fish.png`, `fog.png`, `ink.png`, `island.png`, `letter.png`, `moon.png`, `note.png`, `sand.png`, `seamap.png`, `shield.png`, `storm.png`, `wave.png`, `whirl.png`, `broom.png`, `bulb.png`, `chair.png`, `dance.png`, `duck.png`, `feather.png`, `mic.png`, `nest.png`, `notes.png`, `pajama.png`, `potato.png`, `tent.png`, `thread.png`, `ticket.png`
+- `assets/img/monsters/`: `bird.webp`
 
 ### Kenney Particle Pack (13개)
 
