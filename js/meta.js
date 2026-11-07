@@ -92,6 +92,23 @@ const stageTreat = (t, i) => ['dango', 'parfait', 'onigiri'][(t === 'b' ? i + 1 
 const today = () => new Date().toISOString().slice(0, 10);
 const charIdx = id => CHARS.findIndex(c => c.id === id);
 
+// 플레이 통계 (관리자 엑셀 admin.html에서 봄): Save.data.stat = { since: 세기 시작한 날, coinIn: 모은 코인, coinOut: 쓴 코인, playSec: 화면이 보이는 동안 논 시간(초) }
+// 예전부터 하던 사람은 since 날부터 셈. 뽑기 횟수는 업적 기록(ach.n.gacha)에 원래부터 있음
+const Track = {
+  s() { return (Save.data.stat = Save.data.stat || { since: today(), coinIn: 0, coinOut: 0, playSec: 0 }); },
+  coins(n) {
+    if (!n || window.TEST_PLAY) return;
+    const s = Track.s();
+    if (n > 0) s.coinIn += n; else s.coinOut -= n;
+  },
+};
+setInterval(() => {
+  if (document.hidden || window.TEST_PLAY || !Save.data.own) return; // own: Meta.init 뒤 (게임이 켜진 뒤)부터 셈
+  const s = Track.s();
+  s.playSec += 15;
+  if (s.playSec % 60 === 0) Save.save(); // 저장은 1분마다 (계정에는 net.js가 알아서 1분에 한 번만 올림)
+}, 15000);
+
 const Meta = {
   init() {
     const d = Save.data;
@@ -117,6 +134,7 @@ const Meta = {
   mult: id => lvMult(id) * (Save.data.outfit?.[id] ? 1.05 : 1) * (1 + (trainLv('atk') * TRAIN.atk.per) / 100), // 레벨마다 +8% (간식으로 데려온 친구는 +12%), 옷을 입으면 +5%, 라멘 공격 수련 +1.5%씩
   addCoins(n) {
     Save.data.coins += n;
+    Track.coins(n);
     Save.save();
     Meta.coinUI(n > 0);
   },
@@ -567,7 +585,7 @@ function drawPrize(kind, sure = false, force = null) { // force: 이 친구로 �
   if (kind === 'outfit') {
     const all = outfitPool(), fresh = all.filter(([c, s]) => !hasSkin(c, s));
     const [cid, s] = pickOne(sure && fresh.length ? fresh : all);
-    if (hasSkin(cid, s)) { Save.data.coins += 40; return { kind: 'skindup', id: cid, skin: s }; }
+    if (hasSkin(cid, s)) { Save.data.coins += 40; Track.coins(40); return { kind: 'skindup', id: cid, skin: s }; }
     (Save.data.skins[cid] = Save.data.skins[cid] || []).push(s);
     return { kind: 'skin', id: cid, skin: s };
   }
@@ -576,6 +594,7 @@ function drawPrize(kind, sure = false, force = null) { // force: 이 친구로 �
   if (!lv) { Save.data.own[c.id] = 1; return { kind: 'new', id: c.id }; }
   if (lv < LV_MAX) { Save.data.shards[c.id] = (Save.data.shards[c.id] || 0) + SHARD_PER_DUP; return { kind: 'shard', id: c.id, n: SHARD_PER_DUP }; }
   Save.data.coins += 50;
+  Track.coins(50);
   return { kind: 'max', id: c.id };
 }
 // 위시 친구: 캡슐에서 나오는 친구 하나를 골라 두면 10번 뽑기에서 꼭 한 번 나옴 (최고 레벨이 되면 풀림)
