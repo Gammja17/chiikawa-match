@@ -2,7 +2,7 @@
 
 > 이 파일은 `node tools/credits.js`가 `js/credits.js`에서 만듭니다. 고칠 땐 `js/credits.js`를 고치세요.
 
-먼작귀 퍼즐 토벌 대작전!은 팬이 만든 **비공식 게임**입니다. 원작자 나가노 및 치이카와 제작위원회와 관계가 없고, 돈을 받지 않습니다. 게임에 들어간 그림 500개와 소리 28개의 출처를 파일마다 적었습니다. 게임 안에서는 설정 → 만든 사람·출처, 웹에서는 `credits.html`에서 같은 목록을 볼 수 있습니다.
+먼작귀 퍼즐 토벌 대작전!은 팬이 만든 **비공식 게임**입니다. 원작자 나가노 및 치이카와 제작위원회와 관계가 없고, 돈을 받지 않습니다. 게임에 들어간 그림 499개와 소리 28개의 출처를 파일마다 적었습니다. 게임 안에서는 설정 → 만든 사람·출처, 웹에서는 `credits.html`에서 같은 목록을 볼 수 있습니다.
 
 ## 원작 그림
 
@@ -142,7 +142,7 @@
 
 AI 그림 도구와 코드로 이 게임을 위해 새로 만든 그림이에요.
 
-### VARCO로 생성한 그림 (277개)
+### VARCO로 생성한 그림 (276개)
 
 - 권리: 이 게임에서 생성
 - 출처: [VARCO (NCSOFT)](https://3d.varco.ai)
@@ -154,7 +154,7 @@ AI 그림 도구와 코드로 이 게임을 위해 새로 만든 그림이에요
 - `assets/img/fx/`: `dot_l.png`, `dot_m.png`, `drop_b.png`, `drop_p.png`, `heart_l.png`, `heart_o.png`, `heart_p.png`, `heart_r.png`, `star_b.png`, `star_m.png`, `star_p.png`, `star_y.png`, `twinkle1.png`, `twinkle2.png`, `twinkle3.png`, `twinkle4.png`
 - `assets/img/gacha/`: `machine.webp`
 - `assets/img/house/`: `fl_carpet.webp`, `fl_dark.webp`, `fl_grass.webp`, `fl_sand.webp`, `fl_stone.webp`, `fl_tatami.webp`, `fl_tile.webp`, `fl_wood.webp`, `w_check.webp`, `w_cloud.webp`, `w_daisy.webp`, `w_dot.webp`, `w_heart.webp`, `w_night.webp`, `w_star.webp`, `w_stripe.webp`
-- `assets/img/items/`: `bath.webp`, `bento.webp`, `bombball.webp`, `bombball_o.webp`, `box.webp`, `bubble.webp`, `clock.webp`, `coin.webp`, `dango.webp`, `dango3.webp`, `dango3_o.webp`, `donut.webp`, `egg.webp`, `f_balloon.webp`, `f_board.webp`, `f_bookcase.webp`, `f_cake.webp`, `f_clock.webp`, `f_cushion.webp`, `f_frame.webp`, `f_fridge.webp`, `f_futon.webp`, `f_garland.webp`, `f_grass.webp`, `f_kotatsu.webp`, `f_lamp.webp`, `f_monstera.webp`, `f_poster.webp`, `f_rice.webp`, `f_rug.webp`, `f_shelf.webp`, `f_sofa.webp`, `f_stool.webp`, `f_table.webp`, `f_tissue.webp`, `f_toybox.webp`, `f_tv.webp`, `f_wclock.webp`, `f_window.webp`, `gift.webp`, `hand.webp`, `heart.webp`, `house.webp`, `medal.webp`, `naruto.webp`, `onigiri.webp`, `pancake.webp`, `paperplane.webp`, `paperplane_o.webp`, `parfait.webp`, `pot.webp`, `ramen.webp`, `ribbon.webp`, `sparkle.webp`, `star.webp`, `stick.webp`, `sword.webp`, `sword_o.webp`, `target.webp`, `timer.webp`, `weed1.webp`, `weed2.webp`, `boat.webp`, `clam.webp`, `clam_open.webp`, `coral.webp`, `crab.webp`, `fish.webp`, `flow.webp`, `fog.webp`, `ink.webp`, `island.webp`, `letter.webp`, `moon.webp`, `note.webp`, `pearl.webp`, `sand.webp`, `seamap.webp`, `shield.webp`, `storm.webp`, `wave.webp`, `whirl.webp`
+- `assets/img/items/`: `bath.webp`, `bento.webp`, `bombball.webp`, `bombball_o.webp`, `box.webp`, `bubble.webp`, `clock.webp`, `coin.webp`, `dango.webp`, `dango3.webp`, `dango3_o.webp`, `donut.webp`, `egg.webp`, `f_balloon.webp`, `f_board.webp`, `f_bookcase.webp`, `f_cake.webp`, `f_clock.webp`, `f_cushion.webp`, `f_frame.webp`, `f_fridge.webp`, `f_futon.webp`, `f_garland.webp`, `f_grass.webp`, `f_kotatsu.webp`, `f_lamp.webp`, `f_monstera.webp`, `f_poster.webp`, `f_rice.webp`, `f_rug.webp`, `f_shelf.webp`, `f_sofa.webp`, `f_stool.webp`, `f_table.webp`, `f_tissue.webp`, `f_toybox.webp`, `f_tv.webp`, `f_wclock.webp`, `f_window.webp`, `gift.webp`, `hand.webp`, `heart.webp`, `house.webp`, `medal.webp`, `naruto.webp`, `onigiri.webp`, `pancake.webp`, `paperplane.webp`, `paperplane_o.webp`, `parfait.webp`, `pot.webp`, `ramen.webp`, `ribbon.webp`, `sparkle.webp`, `star.webp`, `stick.webp`, `sword.webp`, `sword_o.webp`, `target.webp`, `timer.webp`, `weed1.webp`, `weed2.webp`, `boat.webp`, `clam.webp`, `clam_open.webp`, `coral.webp`, `crab.webp`, `fish.webp`, `flow.webp`, `fog.webp`, `ink.webp`, `island.webp`, `letter.webp`, `moon.webp`, `note.webp`, `sand.webp`, `seamap.webp`, `shield.webp`, `storm.webp`, `wave.webp`, `whirl.webp`
 - `assets/img/map/`: `m1.jpg`, `m10.jpg`, `m2.jpg`, `m3.jpg`, `m4.jpg`, `m5.jpg`, `m6.jpg`, `m7.jpg`, `m8.jpg`, `m9.jpg`, `m11.jpg`, `m12.jpg`, `m13.jpg`, `m14.jpg`
 - `assets/img/obst/`: `box_flap.png`, `box_open.png`, `bubble_pop.png`, `dirt.png`, `foam_tex.webp`, `leaf.png`, `ribbon_loose.png`, `sprout_pull.png`, `weed_pull.png`
 - `assets/img/stage/`: `s1.jpg`, `s10.jpg`, `s2.jpg`, `s3.jpg`, `s4.jpg`, `s5.jpg`, `s6.jpg`, `s7.jpg`, `s8.jpg`, `s9.jpg`, `s11.jpg`, `s12.jpg`, `s13.jpg`, `s14.jpg`

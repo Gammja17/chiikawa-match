@@ -18,7 +18,7 @@ const Share = {
     const g = cv.getContext('2d');
     await document.fonts?.load('80px "Poor Story"').catch(() => {});
     const [bg, logo, hero, star] = await Promise.all([
-      Share.load(`assets/img/stage/s${REGION_ART[regionOf(o.k)]}.jpg`), Share.load('assets/img/ui/logo.png'), Share.load(artOf(o.char)), Share.load(ITEM('star')),
+      Share.load(`assets/img/stage/s${STAGE_ART[regionOf(o.k)]}.jpg`), Share.load('assets/img/ui/logo.png'), Share.load(artOf(o.char)), Share.load(ITEM('star')),
     ]);
     // 배경: 지역 풍경을 꽉 채우고 아래쪽을 크림색으로 덮음
     g.fillStyle = '#fff4f8';

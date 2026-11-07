@@ -360,6 +360,7 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 .cellfg.flow-r::before, .cellfg.flow-l::before { content: ''; position: absolute; top: 29%; width: 42%; height: 42%; background: url(../assets/img/items/flow.webp) center / contain no-repeat; opacity: .95; } /* 물살 화살표 스티커 (칸 사이 경계에) */
 .cellfg.flow-r::before { right: -21%; }
 .cellfg.flow-l::before { left: -21%; transform: scaleX(-1); }
+.cellfg.flow-r.flow-end::before { right: 1%; } .cellfg.flow-l.flow-end::before { left: 1%; } /* 판 끝 칸: 화살표가 판 밖으로 잘리지 않게 칸 안쪽에 */
 .flow-soon .cellfg.flow-r::before, .flow-soon .cellfg.flow-l::before { animation: flowBlink .6s ease-in-out infinite alternate; }
 @keyframes flowBlink { from { opacity: .45; } to { opacity: 1; scale: 1.25; } } /* scale 속성이라 왼쪽 화살표의 뒤집기(transform)는 그대로 */
 /* 먹물 구슬: 얼굴 대신 먹물 덩어리 스티커 */

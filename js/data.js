@@ -132,6 +132,7 @@ const BODY = id => `assets/img/chars/${id}.webp`;
 const TILE = id => `assets/img/tiles/${id}.webp`;
 // 아이템은 치이카와 원작 도구로: 줄폭탄=랏코 검, 폭탄=동글 폭탄, 무지개=경단, 비행기=종이비행기 (VARCO로 그림)
 const ITEM_ALIAS = { rocket: 'sword_o', bomb: 'bombball_o', rainbow: 'dango3_o', plane: 'paperplane_o' }; // _o: 테두리를 그림에 미리 그려 둔 판 (CSS 필터는 보너스 타임에 렉)
+ITEM_ALIAS.pearl = 'clam_open'; // 진주 목표: 판 위 가리비가 벌어진 그림 (같은 조개인 게 보이게)
 // 인어섬 편(31~40장) 기믹·판 아이콘(조개·진주·먹물·모래·소용돌이·보호막·물살, 파도·섬·배…)도 VARCO 스티커 그림. 처음엔 Noto Emoji PNG였다가 그림체를 맞춤
 const ITEM = name => `assets/img/items/${ITEM_ALIAS[name] || name}.webp`; // 그림을 바꾸면 이름(또는 ?v=)을 바꿔서 폰에 남은 옛 그림 대신 새로 받게
 // 전신 그림이 없는 캐릭터는 얼굴로

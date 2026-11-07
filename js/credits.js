@@ -169,7 +169,7 @@ const CREDITS = [
         'sword.webp', 'sword_o.webp', 'target.webp', 'timer.webp', 'weed1.webp', 'weed2.webp',
         // 인어섬 편(31~40장) 기믹·판 아이콘 (GPT Image 2.6, 2026-11)
         'boat.webp', 'clam.webp', 'clam_open.webp', 'coral.webp', 'crab.webp', 'fish.webp', 'flow.webp', 'fog.webp', 'ink.webp', 'island.webp',
-        'letter.webp', 'moon.webp', 'note.webp', 'pearl.webp', 'sand.webp', 'seamap.webp', 'shield.webp', 'storm.webp', 'wave.webp', 'whirl.webp',
+        'letter.webp', 'moon.webp', 'note.webp', 'sand.webp', 'seamap.webp', 'shield.webp', 'storm.webp', 'wave.webp', 'whirl.webp',
       ],
       'img/map': ['m1.jpg', 'm10.jpg', 'm2.jpg', 'm3.jpg', 'm4.jpg', 'm5.jpg', 'm6.jpg', 'm7.jpg', 'm8.jpg', 'm9.jpg', 'm11.jpg', 'm12.jpg', 'm13.jpg', 'm14.jpg'],
       'img/obst': [
