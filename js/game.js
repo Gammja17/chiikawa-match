@@ -2,6 +2,9 @@
 const $ = s => document.querySelector(s);
 // 말끝 물결(~)이 혼자 다음 줄로 떨어지지 않게 앞 글자에 붙임 (보이지 않는 이음 글자 U+2060)
 const glue = s => String(s).replace(/(\S)~/g, '$1⁠~');
+// 한글은 낱말 중간에서 줄이 바뀌지 않게 (움직/일 → 움직일). 칸보다 긴 낱말만 쪼갬
+// (그림·화면 손질은 다른 작업이 style.css에서 해서, 겹치지 않게 여기서 켬)
+Object.assign(document.body.style, { wordBreak: 'keep-all', overflowWrap: 'break-word' });
 const SLEEPS = new Set(); // 기다리는 중인 sleep (빨리 감기 때 남은 시간을 줄이려고)
 const sleep = ms => new Promise(r => { // 빠른 진행이면 기다림도 짧게
   const s = { r, end: performance.now() + ms / Prefs.speed() };
