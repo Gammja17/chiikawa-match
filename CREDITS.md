@@ -2,7 +2,7 @@
 
 > 이 파일은 `node tools/credits.js`가 `js/credits.js`에서 만듭니다. 고칠 땐 `js/credits.js`를 고치세요.
 
-먼작귀 퍼즐 토벌 대작전!은 팬이 만든 **비공식 게임**입니다. 원작자 나가노 및 치이카와 제작위원회와 관계가 없고, 돈을 받지 않습니다. 게임에 들어간 그림 494개와 소리 28개의 출처를 파일마다 적었습니다. 게임 안에서는 설정 → 만든 사람·출처, 웹에서는 `credits.html`에서 같은 목록을 볼 수 있습니다.
+먼작귀 퍼즐 토벌 대작전!은 팬이 만든 **비공식 게임**입니다. 원작자 나가노 및 치이카와 제작위원회와 관계가 없고, 돈을 받지 않습니다. 게임에 들어간 그림 553개와 소리 28개의 출처를 파일마다 적었습니다. 게임 안에서는 설정 → 만든 사람·출처, 웹에서는 `credits.html`에서 같은 목록을 볼 수 있습니다.
 
 ## 원작 그림
 
@@ -124,27 +124,49 @@
 - `assets/img/skins/momonga/`: `kuromi.png`
 - `assets/img/skins/kurimanju/`: `hangyodon.png`
 
-### 나가노 일러스트·만화 옷 (5개)
+### 나가노 일러스트·만화 옷 (61개)
 
 - 권리: © nagano
 - 출처: [나가노 X (@ngnchiikawa)](https://x.com/ngnchiikawa)
 - 손본 것: 일러스트·만화 칸에서 친구만 오려 냄
-- 참고: 벚꽃 요정(2024-03), 소 옷(2021 새해), 하카마(2020 새해)
+- 참고: 새해(2020~2022)·할로윈(2022~2025)·크리스마스(2022~2025)·생일 일러스트와 만화, 우비(2021-06)·잠옷(2021-04)·문어 옷(2022-06)·도토리 모자(2023-01)·교통 정리(2023-12)·벚꽃 요정(2024-03) 만화, 편의점 점원은 패밀리마트 콜라보 만화
 
-- `assets/img/skins/kani/`: `sakura.png`
-- `assets/img/skins/chiikawa/`: `hakama.png`, `ox.png`
-- `assets/img/skins/hachiware/`: `ox.png`
-- `assets/img/skins/usagi/`: `ox.png`
+- `assets/img/skins/chiikawa/`: `blackcat.png`, `chicken.png`, `cream.png`, `dress.png`, `franken.png`, `hakama.png`, `mushroom.png`, `nurse.png`, `octopus.png`, `ox.png`, `pajama.png`, `raincoat.png`, `tiger.png`, `tree.png`, `whitesanta.png`, `winter.png`
+- `assets/img/skins/hachiware/`: `blackcat.png`, `chicken.png`, `cream.png`, `dress.png`, `franken.png`, `mushroom.png`, `nurse.png`, `octopus.png`, `ox.png`, `pajama.png`, `raincoat.png`, `snowman.png`, `tiger.png`, `whitesanta.png`, `winter.png`
+- `assets/img/skins/usagi/`: `blackcat.png`, `doctor.png`, `franken.png`, `knit.png`, `mushroom.png`, `ox.png`, `prince.png`, `raincoat.png`, `stollen.png`, `tiger.png`, `tree.png`, `whitesanta.png`
+- `assets/img/skins/momonga/`: `acorn.png`, `bat.png`, `devil.png`, `devil_angel.png`, `pizza.png`, `pumpkin.png`
+- `assets/img/skins/rakko/`: `mochi.png`, `taxi.png`
+- `assets/img/skins/kurimanju/`: `chestnut.png`, `edamame.png`
+- `assets/img/skins/shisa/`: `clerk.png`, `goat.png`, `pantu.png`, `traffic.png`
+- `assets/img/skins/kani/`: `angel.png`, `bat.png`, `pizza.png`, `sakura.png`
 
-### 애니·영화 장면 옷 (3개)
+### VARCO로 다듬은 옷 (1개)
+
+- 권리: © nagano / chiikawa committee
+- 출처: [나가노 X (@ngnchiikawa)](https://x.com/ngnchiikawa), [VARCO (NCSOFT)](https://3d.varco.ai)
+- 손본 것: 원작 그림을 VARCO 이미지 편집(GPT Image 2.6)에 넣어 친구만 남기고 배경을 지움. 다른 친구에 가려진 부분은 같은 그림체로 채움
+- 참고: 모몽가 게 머리띠(만화 2023-01)는 털 윤곽이 열려 있어 그냥 오려 낼 수 없었음
+
+- `assets/img/skins/momonga/`: `crab.png`
+
+### 흑마법소녀 옷 (1개)
+
+- 권리: © nagano / chiikawa committee
+- 출처: [마법소녀 굿즈 「わるいまじかる」 일러스트 (Chiikawa Wiki, miraheze)](https://chiikawa.miraheze.org/)
+- 손본 것: 일러스트에서 치이카와만 오려 냄
+
+- `assets/img/skins/chiikawa/`: `darkmagic.png`
+
+### 애니·영화 장면 옷 (4개)
 
 - 권리: © nagano / chiikawa committee, 「映画ちいかわ」製作委員会
-- 출처: [애니 123화 장면 (애니메애니메 기사)](https://animeanime.jp/article/2023/12/04/81628.html), [영화 장면 컷 (리얼사운드 기사)](https://realsound.jp/)
+- 출처: [애니 123화 장면 (애니메애니메 기사)](https://animeanime.jp/article/2023/12/04/81628.html), [애니 372화 장면 (Chiikawa Wiki, miraheze)](https://chiikawa.miraheze.org/), [영화 장면 컷 (리얼사운드 기사)](https://realsound.jp/)
 - 손본 것: 장면에서 친구만 오려 냄
-- 참고: 시사 갑옷은 애니 123화, 시사 요리사·우사기 DJ는 영화 『人魚の島のひみつ』 장면
+- 참고: 시사 갑옷은 애니 123화, 치이카와 꾸민 모자는 애니 372화, 시사 요리사·우사기 DJ는 영화 『人魚の島のひみつ』 장면
 
 - `assets/img/skins/shisa/`: `armor.png`, `chef.png`
 - `assets/img/skins/usagi/`: `dj.png`
+- `assets/img/skins/chiikawa/`: `dressup.png`
 
 ### 스페셜 옷 배경 장면 (5개)
 
