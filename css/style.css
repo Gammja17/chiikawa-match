@@ -41,7 +41,7 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 
 /* ---------- 공통 ---------- */
 .bar { position: relative; z-index: 2; display: flex; align-items: center; gap: 8px; padding: 12px 12px 8px; }
-.bar-title { flex: 1; text-align: center; font-family: var(--head); font-size: 25px; font-weight: 700; line-height: 1.15; }
+.bar-title { flex: 1; min-width: 0; text-align: center; font-family: var(--head); font-size: 25px; font-weight: 700; line-height: 1.15; }
 .bar-title small { display: flex; justify-content: center; gap: 4px; margin-top: 4px; font-size: 0; }
 #waveInfo i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--ink); background: var(--paper); }
 #waveInfo i.on { background: var(--pink); }
@@ -61,7 +61,8 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 .p-toggles button img { width: 28px; height: 28px; }
 .p-toggles button.off img { opacity: .4; }
 /* 폰 폭에선 지도 위 버튼들 사이에 '모험 지도' 글자가 들어갈 자리가 없어 세로로 깨짐 → 글자만 숨김 */
-@media (max-width: 420px) { #mapTitle { visibility: hidden; } }
+@media (max-width: 420px) { #mapTitle { visibility: hidden; white-space: nowrap; overflow: hidden; } } /* visibility만 숨기면 자리는 남아서 글자가 세로로 접힌 채 윗줄을 키움 → 한 줄로 두고 빈칸으로만 씀 */
+@media (max-width: 380px) { #map .bar { gap: 6px; } #map .hearts { padding: 0 7px 0 5px; } #map .hearts small { min-width: 0; } #map .coins { padding-right: 8px; } } /* 코인이 6자리여도 ⚙가 화면 안에 */
 .big-btn { white-space: nowrap; overflow: hidden; min-width: 150px; height: 54px; padding: 0 28px; border-radius: 16px; font-family: var(--head); font-size: 25px; line-height: 1.15; background: var(--pink); color: #fff;  transition: transform .06s, box-shadow .06s; }
 .big-btn:active { transform: scale(.96); }
 .big-btn.ghost { background: var(--paper); color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink3); }
@@ -176,6 +177,8 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 .dock button + button { border-left: 1.5px dashed var(--ink3); border-radius: 0; }
 .dock button:active { transform: scale(.94); }
 .dock button > img { height: 40px; width: 40px; object-fit: contain; }
+.dock button > span { white-space: nowrap; letter-spacing: -.3px; }
+@media (max-width: 380px) { .dock button { font-size: 15.5px; } }
 .ramen-btn .dot { position: absolute; right: 18%; top: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--red); border: 2px solid var(--ink); display: none; }
 .ramen-btn.on .dot { display: block; }
 .ramen-btn.on img { animation: sway 1.6s ease-in-out infinite; }
@@ -343,22 +346,27 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 /* ---------- 인어섬 기믹 (31~40장) ---------- */
 /* 모래 바닥: 모래 알갱이 무늬, 구슬이 터지면 걷힘 */
 .cellbg.sand::after { background: radial-gradient(circle at 25% 30%, #c9a35e 0 1.5px, transparent 2px), radial-gradient(circle at 70% 65%, #c9a35e 0 1.5px, transparent 2px), radial-gradient(circle at 60% 20%, #fff4d6 0 1.5px, transparent 2px), radial-gradient(circle at 35% 75%, #fff4d6 0 1.5px, transparent 2px), linear-gradient(180deg, #f3dca6, #e7c47d); box-shadow: inset 0 0 0 2px #d6ad62; }
-/* 소용돌이: 입구는 칸 아래쪽, 출구는 칸 위쪽에 빙글빙글 */
-.cellbg.whirl-in::before, .cellbg.whirl-out::before { content: ''; position: absolute; z-index: 1; left: 22%; width: 56%; height: 40%; background: url(../assets/img/items/whirl.png) center / contain no-repeat; animation: spin 2.2s linear infinite; opacity: .9; }
-.cellbg.whirl-in::before { bottom: -18%; }
-.cellbg.whirl-out::before { top: -18%; animation-direction: reverse; }
+/* 소용돌이: 칸 바닥에 큰 소용돌이(구슬 둘레로 보임) + 구슬 위 작은 표시 (입구는 칸 아래, 출구는 칸 위) */
+.cellbg.whirl-in::after, .cellbg.whirl-out::after { background: #cfeefa; box-shadow: inset 0 0 0 2px #7cc8e8; }
+.cellbg.whirl-in::before, .cellbg.whirl-out::before { content: ''; position: absolute; z-index: 1; inset: 0; background: url(../assets/img/items/whirl.webp) center / contain no-repeat; animation: spin 3s linear infinite; opacity: .95; }
+.cellbg.whirl-out::before { animation-direction: reverse; }
+.cellfg.whirl-in::after, .cellfg.whirl-out::after { content: ''; position: absolute; left: 31%; width: 38%; height: 38%; background: url(../assets/img/items/whirl.webp) center / contain no-repeat; animation: spin 2.2s linear infinite; filter: drop-shadow(0 1px 1px #4a426240); }
+.cellfg.whirl-in::after { bottom: -12%; }
+.cellfg.whirl-out::after { top: -12%; animation-direction: reverse; }
+/* 모래 바닥 표시: 구슬 왼쪽 아래 귀퉁이에 작은 모래 더미 (시럽 테두리와 헷갈리지 않게) */
+.cellfg.sand::after { content: ''; position: absolute; left: -2%; bottom: -2%; width: 38%; height: 38%; background: url(../assets/img/items/sand.webp) center / contain no-repeat; filter: drop-shadow(0 1px 1px #4a426240); }
 /* 물살 줄: 파란 바탕에 흐르는 방향 화살표 무늬. 다음 턴에 밀리면 깜빡 */
 .cellbg.flow::after { background: repeating-linear-gradient(90deg, #d4ecfb 0 10px, #c3e3f8 10px 20px); }
-.cellfg.flow-r::before, .cellfg.flow-l::before { content: ''; position: absolute; top: 50%; width: 10px; height: 14px; margin-top: -7px; background: #3f9fd8; opacity: .75; filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 1px #fff); }
-.cellfg.flow-r::before { right: -5px; clip-path: polygon(0 0, 100% 50%, 0 100%); }
-.cellfg.flow-l::before { left: -5px; clip-path: polygon(100% 0, 0 50%, 100% 100%); }
+.cellfg.flow-r::before, .cellfg.flow-l::before { content: ''; position: absolute; top: 29%; width: 42%; height: 42%; background: url(../assets/img/items/flow.webp) center / contain no-repeat; opacity: .95; } /* 물살 화살표 스티커 (칸 사이 경계에) */
+.cellfg.flow-r::before { right: -21%; }
+.cellfg.flow-l::before { left: -21%; transform: scaleX(-1); }
 .flow-soon .cellfg.flow-r::before, .flow-soon .cellfg.flow-l::before { animation: flowBlink .6s ease-in-out infinite alternate; }
-@keyframes flowBlink { from { opacity: .35; } to { opacity: 1; transform: scale(1.3); } }
-/* 먹물 구슬: 얼굴 대신 먹물 얼룩과 문어 */
-.tile .inner.inked { background: radial-gradient(circle at 45% 40%, #5a4f7a 0 45%, #3b3550 46% 62%, transparent 64%), radial-gradient(circle at 70% 72%, #3b3550 0 16%, transparent 18%), radial-gradient(circle at 24% 74%, #3b3550 0 12%, transparent 14%); border-radius: 12px; }
-.tile .inner.inked .inkimg { transform: scale(.56); opacity: .9; filter: grayscale(.3) brightness(1.3); }
-/* 조개: 닫힌 소라, 맞으면 벌어져 진주가 보임 */
-.tile .inner.clam img { transform: scale(.86); filter: drop-shadow(0 2px 0 #4a426230); }
+@keyframes flowBlink { from { opacity: .45; } to { opacity: 1; scale: 1.25; } } /* scale 속성이라 왼쪽 화살표의 뒤집기(transform)는 그대로 */
+/* 먹물 구슬: 얼굴 대신 먹물 덩어리 스티커 */
+.tile .inner.inked { border-radius: 12px; }
+.tile .inner.inked .inkimg { transform: scale(.92); }
+/* 조개: 닫힌 가리비, 맞으면 벌어져 진주가 보임 */
+.tile .inner.clam img { transform: scale(.9); filter: drop-shadow(0 2px 0 #4a426230); }
 .tile .inner.clam.open { animation: clamOpen 1s ease-in-out infinite; }
 @keyframes clamOpen { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg) scale(1.04); } }
 /* 보호막 괴물: 체력바 위에 하늘색 보호막 띠, 이름 옆에 깨는 속성 */
@@ -436,6 +444,7 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 .lh-goals { flex: 1; min-width: 0; }
 #lhGoals { display: flex; gap: 14px; justify-content: center; }
 .gchip { position: relative; width: 50px; height: 50px; }
+#lhGoals:has(.gchip:nth-child(4)) { gap: 10px; } #lhGoals:has(.gchip:nth-child(4)) .gchip { width: 38px; height: 38px; } /* 목표 4개 이상 */
 .gchip img { width: 100%; height: 100%; object-fit: contain; }
 .gchip b { position: absolute; right: -12px; bottom: -8px; min-width: 30px; height: 28px; padding: 2px 7px 0; border-radius: 10px; border: 2px solid var(--paper); background: var(--ink); color: #fff; font-family: var(--head); font-size: 21px; font-weight: 700; line-height: 1.1; text-align: center; white-space: nowrap; }
 .gchip.done b { background: var(--mint); color: #fff; }
@@ -698,9 +707,9 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .knob-hint { position: absolute; left: 50%; top: 46%; transform: translateX(-50%); padding: 2px 12px 0; border-radius: 99px; background: var(--ink); color: #fff;
   font-family: var(--head); font-size: 18px; white-space: nowrap; animation: bob 1s ease-in-out infinite; pointer-events: none; }
 .gacha-note { margin: -10px 16px 0; min-height: 20px; text-align: center; font-size: 14px; color: var(--ink2); }
-.gacha-btns { display: flex; gap: 10px; }
+.gacha-btns { display: flex; gap: 10px; width: 100%; max-width: 400px; padding: 0 14px; }
 .gacha-skip { position: absolute; right: 12px; top: 10px; z-index: 30; padding: 6px 14px 3px; border-radius: 99px; background: rgba(42, 36, 64, .55); color: #fff; font-family: var(--head); font-size: 16px; }
-.gacha-btns .big-btn { display: flex; align-items: center; gap: 4px; min-width: 0; padding: 0 16px; font-size: 26px; }
+.gacha-btns .big-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; min-width: 0; padding: 0 10px; font-size: clamp(21px, 6.4vw, 26px); }
 .gacha-btns .big-btn img { width: 26px; height: 26px; }
 /* 옷 가게 탭: 뽑기 기계 대신 옷 목록 */
 .gacha-body.shop-mode { justify-content: flex-start; gap: 10px; padding-top: 10px; min-height: 0; } /* 내용만큼 늘어나지 않게 해야 옷 목록이 스크롤됨 */
@@ -842,6 +851,7 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .ch-card.done { filter: saturate(.5) brightness(.95); }
 /* 간식 창고: 쿠리만쥬가 빼꼼, 이름표 안에서 받을 간식을 고름 */
 .ch-card.snack { background: #ffe0ec radial-gradient(circle, #ffc2d8 1.4px, transparent 1.8px) 0 0 / 14px 14px; }
+.ch-card.snack { min-height: 142px; } /* 간식 고르기 줄까지 들어가게 (글자 상자가 카드보다 크면 제목이 잘림) */
 .ch-card.snack .ch-peek { height: 82%; bottom: 0; }
 #snackPick { display: flex; gap: 6px; margin: 5px 0 1px; }
 #snackPick i { display: flex; align-items: center; gap: 2px; padding: 2px 8px 2px 3px; border-radius: 10px; background: #f3edf7; font-style: normal; font-size: 14px; color: var(--ink2); }
@@ -974,8 +984,9 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .p-toggles { display: flex; gap: 12px; justify-content: center; margin-bottom: 8px; }
 .p-toggles button { width: 88px; height: 76px; border-radius: 18px; background: var(--pink-l); color: var(--pink); font-family: var(--head); font-size: 17px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
 .p-toggles button span { font-size: 24px; line-height: 1; }
-.p-toggles button.off { background: #eee8f0; color: var(--ink3); text-decoration: line-through; }
+.p-toggles button.off { background: #eee8f0; color: #aaa2bd; text-decoration: line-through; } /* ink3은 바탕과 거의 같은 색이라 글자가 안 읽혀서 */
 .p-warn { min-height: 20px; margin: 6px 0 12px; font-size: 15px; color: #e2543f; }
+.p-warn:empty { display: none; } /* 경고가 없으면 제목 아래가 휑하지 않게 */
 .hero-say .mvp { display: block; width: max-content; margin: -22px 0 4px; padding: 0 8px; border-radius: 8px; background: var(--gold, #ffcf3f); color: var(--ink); font-family: var(--head); font-size: 16px; }
 
 /* 새 친구 합류 */
