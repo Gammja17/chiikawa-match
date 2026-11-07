@@ -1,5 +1,7 @@
 // 화면, 입력, 전투 연출
 const $ = s => document.querySelector(s);
+// 말끝 물결(~)이 혼자 다음 줄로 떨어지지 않게 앞 글자에 붙임 (보이지 않는 이음 글자 U+2060)
+const glue = s => String(s).replace(/(\S)~/g, '$1⁠~');
 const SLEEPS = new Set(); // 기다리는 중인 sleep (빨리 감기 때 남은 시간을 줄이려고)
 const sleep = ms => new Promise(r => { // 빠른 진행이면 기다림도 짧게
   const s = { r, end: performance.now() + ms / Prefs.speed() };
@@ -55,6 +57,8 @@ const goRoute = k => (ROUTE[k][0] === 'b' ? openFormation(ROUTE[k][1]) : Life.st
 // ---------- 공통 ----------
 function show(id) {
   if (typeof Spot !== 'undefined') Spot.close(); // 화면이 바뀌면 떠 있던 안내는 닫음 (안 보이는 버튼을 기다리며 멈추지 않게)
+  // 판에서 띄운 힌트 손가락도 같이 치움 (시간 판에서 가만히 있다가 시간이 끝나면 지도 위에 손가락이 남던 것)
+  if (typeof Tutor !== 'undefined') { clearTimeout(Tutor.idle); Tutor.guide = Tutor.guideItem = null; Tutor.hideHand(); }
   Prefs.boost = 1; // 혹시 빨리 감기가 남아 있어도 화면이 바뀌면 원래 속도로
   document.querySelector('.skip-hint')?.remove();
   document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
@@ -62,11 +66,20 @@ function show(id) {
 }
 // 버튼 글씨가 칸보다 길면 한 줄에 들어갈 때까지 글씨를 줄임
 function fitText(root = document) {
-  requestAnimationFrame(() => root.querySelectorAll('.big-btn, .mini-btn').forEach(b => {
-    b.style.fontSize = '';
-    let fs = parseFloat(getComputedStyle(b).fontSize);
-    while (b.scrollWidth > b.clientWidth + 1 && fs > 12) b.style.fontSize = --fs + 'px';
-  }));
+  requestAnimationFrame(() => {
+    root.querySelectorAll('.big-btn, .mini-btn').forEach(b => {
+      b.style.fontSize = '';
+      let fs = parseFloat(getComputedStyle(b).fontSize);
+      while (b.scrollWidth > b.clientWidth + 1 && fs > 12) b.style.fontSize = --fs + 'px';
+    });
+    // 나란히 놓인 버튼은 글씨 크기를 맞춤 ('지도로'는 크고 '다음 스테이지'만 작아 보이던 것)
+    root.querySelectorAll('.modal-btns').forEach(row => {
+      const bs = [...row.querySelectorAll('.big-btn')].filter(b => b.offsetParent);
+      if (bs.length < 2) return;
+      const min = Math.min(...bs.map(b => parseFloat(getComputedStyle(b).fontSize)));
+      bs.forEach(b => (b.style.fontSize = min + 'px'));
+    });
+  });
 }
 function updateMute() {
   document.querySelectorAll('.btn-set').forEach(b => b.classList.toggle('off', Sound.muted)); // 소리를 꺼 두면 ⚙가 흐려짐
@@ -535,13 +548,15 @@ const REGIONS = ['봄 들판', '숲과 고블린 동굴', '비 오는 마을', '
   '바다 건너 인어섬', '산호 숲과 인어 마을', '바다 동굴과 폭풍의 밤', '다시 노래하는 섬'];
 // 인어섬 편(301~400판) 지역은 아직 새 그림이 없어서 바닷가(4)·밤 언덕(5) 그림을 같이 씀
 const REGION_ART = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 4, 4, 5, 4];
+// 판 배경은 인어섬 편도 새 그림 (바르코: 섬 바닷가·산호 석호·바다 동굴 폭풍 밤·새벽 섬)
+const STAGE_ART = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
 const regionOf = k => Math.min(Math.floor(k / MAP_PAGE), REGIONS.length - 1);
 let mapPage = null;
 // 판 배경: 지도에서 고른 판만 그 지역 풍경 (오늘의 도전·탑 같은 건 원래 무늬). k는 지도 번호, 없으면 -1
 function stageBg(k) {
   const el = $('#battle');
   el.classList.toggle('has-bg', k >= 0);
-  el.style.setProperty('--stage-bg', k >= 0 ? `url(${new URL(`assets/img/stage/s${REGION_ART[regionOf(k)]}.jpg`, location.href)})` : 'none'); // CSS 변수의 주소는 style.css 기준으로 풀려서 절대 주소로
+  el.style.setProperty('--stage-bg', k >= 0 ? `url(${new URL(`assets/img/stage/s${STAGE_ART[regionOf(k)]}.jpg`, location.href)})` : 'none'); // CSS 변수의 주소는 style.css 기준으로 풀려서 절대 주소로
 }
 
 function openMap(advanceFrom = null, paging = false) {
@@ -675,7 +690,7 @@ function playStory(lines) {
     };
     const next = () => {
       if (i >= lines.length) { ov.classList.remove('show'); ov.onclick = null; done(); return; }
-      const [id, text] = lines[i++];
+      const [id, raw] = lines[i++], text = glue(raw);
       // 인어·세이렌처럼 괴물도 말할 수 있음 (그 괴물 그림과 이름)
       const mon = !CHAR_NAME[id] && MONSTERS[id];
       $('#storyChar').src = mon ? mon.img : artOf(id);
@@ -699,6 +714,7 @@ function playStory(lines) {
 const UI_ICON = { '🏠': 'home', '▶': 'next', '◀': 'back' };
 const uiIcons = s => s.replace(/🏠|▶|◀/g, m => `<img class="b-ic" src="assets/img/ui/${UI_ICON[m]}.png" alt="">`);
 function modal({ title, stars = null, char, img = null, photo = false, rows = [], text, btn1, on1, btn2 = '', on2 = null, btn3 = '', on3 = null, share = false }) {
+  if (typeof Tutor !== 'undefined' && !Tutor.guide) { clearTimeout(Tutor.idle); Tutor.hideHand(); } // 결과 창 위로 힌트 손가락이 남지 않게
   $('#modalTitle').textContent = title;
   // 클리어 자랑하기 (js/share.js): 그림은 결과 창을 띄우기 전에 Share.prepare로 미리 만들어 둠
   const sh = $('#modalShare');
@@ -709,7 +725,7 @@ function modal({ title, stars = null, char, img = null, photo = false, rows = []
   $('#modalChar').classList.remove('icon');
   $('#modal .modal-card').classList.toggle('has-photo', photo);
   $('#modalRows').innerHTML = rows.map(([k, v]) => `<div>${k}<b>${v}</b></div>`).join('');
-  $('#modalText').textContent = text;
+  $('#modalText').textContent = text == null ? '' : glue(text);
   const st = $('#modalStars');
   st.innerHTML = stars == null ? '' : '<span>★</span><span>★</span><span>★</span>';
   st.style.display = stars == null ? 'none' : '';

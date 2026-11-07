@@ -25,6 +25,8 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 button, a, .node { touch-action: manipulation; }
 html, body { margin: 0; height: 100%; background: #f3e4ee; color: var(--ink); font-family: var(--body); overflow: hidden; user-select: none; -webkit-user-select: none; touch-action: none; }
+/* 한글은 낱말 중간에서 줄이 바뀌지 않게 (움직/일 → 움직일). 칸보다 긴 낱말만 쪼갬 */
+body { word-break: keep-all; overflow-wrap: break-word; }
 button { font-family: inherit; color: inherit; cursor: pointer; border: 0; background: none; padding: 0; }
 #app { will-change: transform; position: relative; width: 100%; max-width: 480px; height: 100dvh; margin: 0 auto; overflow: hidden; background-color: var(--cream);
   background-image: radial-gradient(circle, #f7d9e6 1.2px, transparent 1.6px); background-size: 18px 18px; }

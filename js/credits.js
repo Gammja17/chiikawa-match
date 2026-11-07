@@ -173,7 +173,7 @@ const CREDITS = [
         'box_flap.png', 'box_open.png', 'bubble_pop.png', 'dirt.png', 'foam_tex.webp', 'leaf.png', 'ribbon_loose.png',
         'sprout_pull.png', 'weed_pull.png',
       ],
-      'img/stage': ['s1.jpg', 's10.jpg', 's2.jpg', 's3.jpg', 's4.jpg', 's5.jpg', 's6.jpg', 's7.jpg', 's8.jpg', 's9.jpg'],
+      'img/stage': ['s1.jpg', 's10.jpg', 's11.jpg', 's12.jpg', 's13.jpg', 's14.jpg', 's2.jpg', 's3.jpg', 's4.jpg', 's5.jpg', 's6.jpg', 's7.jpg', 's8.jpg', 's9.jpg'],
       'img/ui': [
         'back.png', 'bar_fill.png', 'bar_fill_red.png', 'bar_frame.png', 'book.png', 'cd_clock.png', 'check.png', 'crown.png',
         'debuff_drain.webp', 'debuff_poison.webp', 'debuff_sleep.webp', 'debuff_weak.webp', 'fx_dark.webp', 'fx_dust.webp',
