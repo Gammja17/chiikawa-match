@@ -12,3 +12,6 @@ dist/
 !.dev.vars.example
 .env*
 !.env.example
+
+# 화면 점검 스크린샷 (tools/visual-todo.md가 가리킴, 저장소에는 안 올림)
+tools/shots/

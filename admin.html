@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>관리자 통계 · 퍼즐 토벌 대작전</title>
+<link rel="icon" href="assets/img/app/icon-192.png?v=2">
+<style>
+  :root { --bg: #fff8ef; --card: #fff; --ink: #3d3550; --mute: #8a8199; --line: #eadfcf; --accent: #ff8ab8; --ok: #3aa676; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 24px 16px 60px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--mute); margin: 0 0 20px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 16px; }
+  button { font: inherit; border: 0; border-radius: 10px; padding: 10px 16px; background: var(--accent); color: #fff; font-weight: 700; cursor: pointer; }
+  button.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); font-weight: 500; }
+  button:disabled { opacity: .45; cursor: default; }
+  #status { color: var(--mute); }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px; }
+  .tile { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .tile b { display: block; font-size: 22px; font-variant-numeric: tabular-nums; }
+  .tile small { color: var(--mute); }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; overflow-x: auto; }
+  section h2 { font-size: 16px; margin: 0 0 8px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--mute); font-weight: 600; white-space: nowrap; }
+  td.n { text-align: right; font-variant-numeric: tabular-nums; }
+  .err { color: #c0392b; }
+</style>
+</head>
+<body>
+<main>
+  <h1>관리자 통계</h1>
+  <p class="sub">유저 기록·설문·에러를 Firestore에서 읽어 엑셀로 받습니다. 관리자 구글 계정으로 로그인해야 읽을 수 있어요.</p>
+  <div class="bar">
+    <button id="btnLogin">구글로 로그인</button>
+    <button id="btnLoad" class="ghost" disabled>다시 불러오기</button>
+    <button id="btnXlsx" disabled>엑셀로 받기</button>
+    <button id="btnLogout" class="ghost" hidden>로그아웃</button>
+    <span id="status">불러오는 중…</span>
+  </div>
+  <div id="tiles" class="tiles"></div>
+  <div id="preview"></div>
+</main>
+<script src="js/firebase-config.js?v=29"></script>
+<script src="js/data.js?v=56"></script>
+<script src="assets/vendor/firebase-app-compat.js"></script>
+<script src="assets/vendor/firebase-auth-compat.js"></script>
+<script src="assets/vendor/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="js/admin.js?v=1"></script>
+</body>
+</html>

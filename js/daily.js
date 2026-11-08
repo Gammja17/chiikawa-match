@@ -70,12 +70,20 @@ const Daily = {
     const b = $('#btnMission');
     if (!b) return;
     b.style.display = Daily.on() ? '' : 'none';
-    const n = Daily.claimable();
+    const n = Daily.claimable() + ChapStar.claimable(); // 장 별 보상도 미션 창에서 받음
     b.querySelector('i').textContent = n || '';
     b.classList.toggle('ready', n > 0);
   },
-  // 판 위쪽에 잠깐 뜨는 알림
+  // 판 위쪽에 잠깐 뜨는 알림. 한꺼번에 여럿이면 1.2초씩 차례로, 새 알림이 뜨면 앞 알림은 걷힘 (업적이 여러 개 같이 풀릴 때)
+  toastAt: 0,
   toast(text, icon) {
+    const now = performance.now(), at = Math.max(now, Daily.toastAt);
+    Daily.toastAt = at + 1200;
+    if (at > now) { setTimeout(() => Daily.toastNow(text, icon), at - now); return; }
+    Daily.toastNow(text, icon);
+  },
+  toastNow(text, icon) {
+    document.querySelectorAll('.mtoast').forEach(t => t.remove());
     const el = document.createElement('div');
     el.className = 'tip mtoast';
     el.innerHTML = `<img src="${ITEM(icon)}"><span>${text}</span>`;
@@ -88,6 +96,8 @@ const Daily = {
     if (r.coins) Meta.addCoins(r.coins);
     if (r.treat) Save.data.treats[r.treat] = (Save.data.treats[r.treat] || 0) + r.n;
     if (r.tickets) Save.data.tickets = (Save.data.tickets || 0) + r.tickets;
+    if (r.item) (Save.data.items = Save.data.items || {})[r.item] = (Save.data.items[r.item] || 0) + 1;
+    if (r.ramen) Save.data.ramenPass = (Save.data.ramenPass || 0) + r.ramen; // 라멘 서비스권 (가게에서 한 그릇 공짜)
     Save.save();
   },
   rewardHtml: r => r.coins ? `<img src="${ITEM('coin')}">${r.coins}` : r.treat ? `<img src="${ITEM(r.treat)}">×${r.n}` : `<img src="${ITEM('gift')}">티켓 ${r.tickets}`,
@@ -147,7 +157,9 @@ const Daily = {
     const all = ms.ids.every(id => ms.done[id]);
     el.querySelector('.mis-list').innerHTML = rows + `<div class="mis bonus${ms.bonus ? ' done' : all ? ' full' : ''}"><img src="${ITEM('gift')}"><div class="mtx"><b>오늘 미션 다 깨기</b><small>뽑기 티켓 1장</small></div>
       <button class="mini-btn" data-id="bonus" ${!all || ms.bonus ? 'disabled' : ''}>${ms.bonus ? '받음' : '받기'}</button></div>`;
+    const cs = ChapStar.claimable();
     el.querySelector('.att-line').innerHTML = `출석 도장 ${Math.min(a.n, ATTEND.length)} / ${ATTEND.length}<button class="mini-btn" data-att>도장판 보기</button>`;
+    el.querySelector('.cs-line').innerHTML = `장 별 보상 ${ChapStar.fullCount()} / ${CHAPTERS.length}<button class="mini-btn${cs ? ' ready' : ''}" data-cs>${cs ? `받기 ${cs}` : '장 목록'}</button>`;
     el.querySelectorAll('[data-id]').forEach(b => (b.onclick = () => {
       const id = b.dataset.id, c = centerOf(b);
       if (id === 'bonus') { ms.bonus = true; Daily.give({ tickets: 1 }); floatNum(c.x, c.y - 20, '뽑기 티켓 +1', '#ff5d9e'); }
@@ -159,6 +171,7 @@ const Daily = {
       Daily.badge();
     }));
     el.querySelector('[data-att]').onclick = () => { Sound.play('click'); el.classList.remove('show'); Daily.board(); };
+    el.querySelector('[data-cs]').onclick = () => { Sound.play('click'); el.classList.remove('show'); ChapStar.list(); };
     el.querySelector('[data-close]').onclick = () => { Sound.play('click'); el.classList.remove('show'); };
     if (!el.classList.contains('show')) {
       el.classList.add('show');
