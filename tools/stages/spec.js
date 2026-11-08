@@ -816,7 +816,7 @@ module.exports = [
     L('몰래 다가가기', 'feather+lock', { host: 'chiikawa', icon: 'nest', broom: 1, intro: '살금살금…' }),
     B('둥지 키메라', [W('dark', 'chimera', 1, { hue: 240, title: '둥지' }), W('odd', 'bird', 1)]),
     L('탈출로', 'feather+box', { host: 'rakko', icon: 'broom', types: 6, broom: 2, intro: '길을 뚫어!',
-      story: [['pajamas', '(둥지 구석에서 서로 손을 잡고 살금살금 빠져나온다)'], ['hachiware', '멤버들이 스스로 도망치고 있어! 길을 열어 주자!']] }),
+      story: [['scene', 'assets/img/art/scene_pajama_bird.jpg', '(큰 새의 그림자 아래, 멤버들이 사막을 가로질러 도망친다)'], ['pajamas', '(둥지 구석에서 서로 손을 잡고 살금살금 빠져나온다)'], ['hachiware', '멤버들이 스스로 도망치고 있어! 길을 열어 주자!']] }),
     L('무대를 지키는 초록이', 'seat+note', { host: 'hachiware', icon: 'mic', intro: '무대는 내가!',
       story: [['midori', '(혼자 무대에 남아 노래한다) 우~ 우~ 와~ 와~'], ['hachiware', '초록이는 친구들이 돌아올 무대를 지키고 있어…!']] }),
     B('깃털 폭풍 미믹', [W('brave', 'mimic', 1, { hue: 40, title: '깃털 폭풍' }), W('odd', 'bird', 1.1)], { lv: 'challenge' }),

@@ -39,6 +39,14 @@ const CREDITS = [
       'img/chars': ['midori.webp'],
     },
   },
+  { sec: 'orig', title: '파자마파티즈 편 애니메이션 장면·큰 새', by: '© nagano / chiikawa committee',
+    src: [['TV 애니메이션 「ちいかわ」 파자마파티즈 에피소드 화면 (몇 화인지 확인 중)', '']],
+    did: '화면 그대로 쓰거나(장면), 큰 새만 배경을 지워 오려 냄(괴물)',
+    files: {
+      'img/art': ['scene_pajama_bird.jpg'],
+      'img/monsters': ['bird.webp'],
+    },
+  },
   { sec: 'orig', title: '앱 아이콘', by: '© nagano / chiikawa committee',
     src: [['위 퍼즐 구슬', '']],
     did: '퍼즐 구슬을 분홍 바탕에 모아 만듦',
@@ -250,8 +258,6 @@ const CREDITS = [
         'broom.png', 'bulb.png', 'chair.png', 'dance.png', 'duck.png', 'feather.png', 'mic.png', 'nest.png', 'notes.png', 'pajama.png',
         'potato.png', 'tent.png', 'thread.png', 'ticket.png',
       ],
-      // 큰 새: 원작 그림이 없어서 오리 그림(🦆 512px)을 크게 씀
-      'img/monsters': ['bird.webp'],
     },
   },
   { sec: 'free', title: 'Kenney Particle Pack', by: 'Kenney',

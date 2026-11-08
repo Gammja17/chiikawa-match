@@ -170,7 +170,7 @@ const MONSTERS = {
   // 인어섬 (『映画ちいかわ 人魚の島のひみつ』 공식 사이트 캐릭터 그림)
   siren:     { name: '세이렌',   img: 'assets/img/monsters/siren.webp' },
   mermaid:   { name: '인어',     img: 'assets/img/monsters/mermaid.webp' },
-  // 파자마파티즈 편 큰 새 (원작: 오리를 닮은 키메라). 원작 그림이 없어서 지금은 Noto Emoji 오리 그림
+  // 파자마파티즈 편 큰 새 (원작: 오리를 닮은 키메라). 애니 장면에서 배경을 지워 오려 냄
   bird:      { name: '큰 새',    img: 'assets/img/monsters/bird.webp' },
 };
 

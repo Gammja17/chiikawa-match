@@ -538,7 +538,7 @@ const REGIONS = ['봄 들판', '숲과 고블린 동굴', '비 오는 마을', '
 // 지역은 30판씩이라 장과 딱 맞지 않음: 391~420판(40~42장), 421~450판(43~45장), 451~480판(46~48장), 481~500판(49~50장)
 const REGION_ART = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 4, 4, 5, 4, 1, 7, 4];
 // 장마다 판 배경을 애니 명장면으로 (없으면 지역 풍경). 그림을 assets/img/art/에 넣고 장 이름으로 적으면 됨
-const CHAPTER_BG = { '42장 초록이의 안무': 'assets/img/art/scene_pajama_dance.jpg' };
+const CHAPTER_BG = { '42장 초록이의 안무': 'assets/img/art/scene_pajama_dance.jpg', '49장 빗자루 구출 작전': 'assets/img/art/scene_pajama_bird.jpg' };
 const regionOf = k => Math.min(Math.floor(k / MAP_PAGE), REGIONS.length - 1);
 let mapPage = null;
 // 판 배경: 지도에서 고른 판만 그 지역 풍경 (오늘의 도전·탑 같은 건 원래 무늬). k는 지도 번호, 없으면 -1
