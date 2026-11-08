@@ -141,6 +141,7 @@ const ITEM_ALIAS = { rocket: 'sword_o', bomb: 'bombball_o', rainbow: 'dango3_o',
 ITEM_ALIAS.pearl = 'clam_open'; // 진주 목표: 판 위 가리비가 벌어진 그림 (같은 조개인 게 보이게)
 // Noto Emoji였던 꿀·왕관·딸기·벚꽃·스펀지·해바라기를 VARCO 스티커로 새로 그림: 파일 이름을 바꿔서 폰에 남은 옛 그림 대신 새로 받게
 ITEM_ALIAS.honey = 'honey_pot';
+ITEM_ALIAS.plant = 'clover'; // 지도 판의 일상 퍼즐 표시: 화분 고사리 → 풀밭 세잎클로버
 ITEM_ALIAS.crown = 'crown2';
 ITEM_ALIAS.berry = 'berry2';
 ITEM_ALIAS.sakura = 'sakura2';

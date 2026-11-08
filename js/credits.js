@@ -253,7 +253,7 @@ const CREDITS = [
         'boat.webp', 'clam.webp', 'clam_open.webp', 'coral.webp', 'crab.webp', 'fish.webp', 'flow.webp', 'fog.webp', 'ink.webp', 'island.webp',
         'letter.webp', 'moon.webp', 'note.webp', 'sand.webp', 'seamap.webp', 'shield.webp', 'storm.webp', 'wave.webp', 'whirl.webp',
         // Noto Emoji였던 것을 스티커 그림으로 (GPT Image 2.6, 2026-11)
-        'berry2.webp', 'crown2.webp', 'honey_pot.webp', 'sakura2.webp', 'sponge2.webp', 'sunflower2.webp',
+        'berry2.webp', 'clover.webp', 'crown2.webp', 'honey_pot.webp', 'sakura2.webp', 'sponge2.webp', 'sunflower2.webp',
       ],
       'img/map': ['m1.jpg', 'm10.jpg', 'm2.jpg', 'm3.jpg', 'm4.jpg', 'm5.jpg', 'm6.jpg', 'm7.jpg', 'm8.jpg', 'm9.jpg', 'm11.jpg', 'm12.jpg', 'm13.jpg', 'm14.jpg'],
       'img/obst': [
@@ -319,7 +319,7 @@ const CREDITS = [
     files: {
       'img/items': [
         'bed.webp', 'bomb.webp', 'boom.webp', 'candle.webp', 'cap.webp', 'frame.webp', 'gradcap.webp', 'h.webp',
-        'mirror.webp', 'phones.webp', 'plane.webp', 'plant.webp', 'rainbow.webp', 'rocket.webp', 'shades.webp',
+        'mirror.webp', 'phones.webp', 'plane.webp', 'rainbow.webp', 'rocket.webp', 'shades.webp',
         'sofa.webp', 'teddy.webp', 'tophat.webp', 'tv.webp', 'v.webp',
         // 파자마파티즈 편 (41~50장) 기믹·지도 아이콘: 2D/png/128 그대로
         'broom.png', 'bulb.png', 'chair.png', 'dance.png', 'duck.png', 'feather.png', 'mic.png', 'nest.png', 'notes.png', 'pajama.png',
