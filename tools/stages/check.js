@@ -68,6 +68,21 @@ if (fs.existsSync(HD)) {
     if (st.time && !(hs.time < st.time)) err(w, `시간 ${hs.time} (보통 ${st.time})`);
   });
 } else err('js/hard-data.js', '없음');
+// 하드 이야기 (js/hard-story.js): 말하는 친구·장면 그림, 장 번호
+const HS = path.join(ROOT, 'js', 'hard-story.js');
+if (fs.existsSync(HS)) {
+  vm.runInContext(fs.readFileSync(HS, 'utf8') + ';this.HS = { HARD_PROLOGUE, HARD_STORY, HARD_STAMP, HARD_ENDING };', ctx, { filename: 'js/hard-story.js' });
+  const { HARD_PROLOGUE, HARD_STORY, HARD_STAMP, HARD_ENDING } = ctx.HS;
+  const books = { HARD_PROLOGUE, HARD_ENDING, ...Object.fromEntries(Object.entries(HARD_STAMP).map(([n, l]) => ['HARD_STAMP' + n, l])) };
+  for (const [j, s] of Object.entries(HARD_STORY)) {
+    if (!G.CHAPTERS[j]) err(`HARD_STORY[${j}]`, '없는 장');
+    Object.entries(s).forEach(([k, l]) => { if (k !== 'start' && k !== 'end') err(`HARD_STORY[${j}]`, `모르는 칸 ${k}`); books[`HARD_STORY[${j}].${k}`] = l; });
+  }
+  for (const [name, lines] of Object.entries(books)) lines.forEach(([id, a]) => {
+    if (id === 'scene') { if (!fs.existsSync(path.join(ROOT, a))) err(name, `장면 그림 없음 ${a}`); return; }
+    G.CHAR_NAME[id] || G.MONSTERS[id] || G.STORY_CAST[id] || err(name, `모르는 친구 ${id}`);
+  });
+}
 G.STAGES.forEach((st, i) => st.waves.forEach(wv => {
   if (!G.MONSTERS[wv.m]) err(`토벌 ${i} ${st.name}`, `괴물 ${wv.m}`);
   if (!(wv.hp > 0 && wv.atk > 0 && wv.cd > 0)) err(`토벌 ${i} ${st.name}`, '체력·공격·턴');

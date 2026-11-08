@@ -910,6 +910,7 @@ const Life = {
     await clearShow(st.exam ? '검정<br>합격!' : doneWord(st));
     const k = routeIdx('l', i), next = hard ? Hard.next(k) : k + 1, last = next < 0 || next >= ROUTE.length;
     if (LIFE_STORY_AFTER[i] && first && !hard) await playStory(LIFE_STORY_AFTER[i]); // 장 끝 대사
+    if (hard) await Hard.after(k); // 하드 장을 다 깼으면 깨어나는 대사·수련 도장·엔딩
     if (first && !hard) await Meta.stageJoin('l', i);
     Sound.music(null);
     const ch = mvp(), shard = first && L.run.kind === 'route' && Meta.shardGift(ch.id, stars);

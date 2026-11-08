@@ -2480,6 +2480,7 @@ async function win() {
   await clearShow();
   const k = routeIdx('b', B.stage), next = hard ? Hard.next(k) : k + 1, isLast = next < 0 || next >= ROUTE.length;
   if (STORY_AFTER[B.stage] && firstClear && !hard) await playStory(STORY_AFTER[B.stage]); // 장 끝 대사
+  if (hard) await Hard.after(k); // 하드 장을 다 깼으면 깨어나는 대사·수련 도장·엔딩
   if (firstClear && !hard) await Meta.stageJoin('b', B.stage);
   const ch = mvp(), shard = firstClear && Meta.shardGift(ch.id, stars);
   Sound.music(null);

@@ -45,10 +45,11 @@ const ACHIEVES = [
   { id: 'say_clam500', title: '…진주, 반짝…!', text: '조개에서 진주 500개 꺼내기', n: 500, val: s => s.n.clam || 0 },
   { id: 'say_chap40', title: '이거… 전부 별이야…!?', text: '모든 장에서 별 30개 다 모으기', n: () => CHAPTERS.length, val: () => ChapStar.fullCount() },
   // 하드 모드 (js/hard.js): 보통으로 다 깬 장을 더 어렵게
-  { id: 'hard1', title: '매운맛 입문', text: '하드 모드 판 하나 깨기', n: 1, val: () => Hard.cleared() },
-  { id: 'hardChap10', title: '매운맛 토벌대', text: '하드 모드로 10장 다 깨기', n: 10, val: () => Hard.chapsDone() },
-  { id: 'hardChap30', title: '두 번 깬 길도 무섭지 않아', text: '하드 모드로 30장 다 깨기', n: 30, val: () => Hard.chapsDone() },
-  { id: 'hardAll', title: '하드 모드 전설', text: '모든 장을 하드 모드로 다 깨기 (랏코 가면 히어로 옷)', n: () => CHAPTERS.length, val: () => Hard.chapsDone() },
+  // 하드 모드 이야기: 치이카와의 악몽을 랏코의 수련으로 (js/hard-story.js). 10장마다 랏코 수련 도장
+  { id: 'hard1', title: '첫 악몽 수련', text: '하드 모드 판 하나 깨기', n: 1, val: () => Hard.cleared() },
+  { id: 'hardChap10', title: '수련 도장 첫 번째', text: '하드 모드로 10장 다 깨기', n: 10, val: () => Hard.chapsDone() },
+  { id: 'hardChap30', title: '악몽도 무섭지 않아', text: '하드 모드로 30장 다 깨기', n: 30, val: () => Hard.chapsDone() },
+  { id: 'hardAll', title: '악몽을 이긴 랏코의 제자', text: '모든 장을 하드 모드로 다 깨기 (졸업장 + 랏코 가면 히어로 옷)', n: () => CHAPTERS.length, val: () => Hard.chapsDone() },
   { id: 'hardStar10', title: '보랏빛 별 수집가', text: '하드 별 30개 다 모은 장 10개', n: 10, val: () => ChapStar.fullCount(true) },
   { id: 'say_hard100', title: '…무리, 아니야…!', text: '하드 모드 판 100개 깨기', n: 100, val: () => Hard.cleared() },
 ];
