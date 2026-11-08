@@ -263,7 +263,7 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 #party .pm.asleep .pm-face { filter: grayscale(.6) brightness(.85); }
 /* 큰 새가 낚아채 간 친구: 반투명 + 깃털 */
 #party .pm.snatched .pm-face { opacity: .3; filter: grayscale(1); }
-#party .pm.snatched::after { content: ''; position: absolute; right: -6px; top: -10px; width: 28px; height: 28px; background: url(../assets/img/items/feather.png) center / contain no-repeat; animation: bob 1.4s ease-in-out infinite; z-index: 3; }
+#party .pm.snatched::after { content: ''; position: absolute; right: -6px; top: -10px; width: 28px; height: 28px; background: url(../assets/img/items/feather.webp) center / contain no-repeat; animation: bob 1.4s ease-in-out infinite; z-index: 3; }
 #party .pm.asleep::after { content: ''; position: absolute; right: -6px; top: -10px; width: 30px; height: 30px; background: url(../assets/img/ui/debuff_sleep.webp) center / contain no-repeat; animation: bob 1.4s ease-in-out infinite; z-index: 3; }
 @keyframes cdRing { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-12deg); } 40% { transform: rotate(10deg); } 60% { transform: rotate(-7deg); } 80% { transform: rotate(4deg); } }
 #feverTag { position: absolute; left: 8px; bottom: 8px; z-index: 3; display: none; width: 150px; height: 27px; background: url(../assets/img/combo/ftag_cheer.webp) left center / contain no-repeat; font-size: 0; color: transparent; transform-origin: 0 50%; animation: pulse .6s infinite; } /* 글자는 그림으로 (읽기 도우미용 글은 그대로) */

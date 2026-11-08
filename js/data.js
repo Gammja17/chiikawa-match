@@ -148,9 +148,8 @@ ITEM_ALIAS.sakura = 'sakura2';
 ITEM_ALIAS.sponge = 'sponge2';
 ITEM_ALIAS.sunflower = 'sunflower2';
 // 인어섬 편(31~40장) 기믹·판 아이콘(조개·진주·먹물·모래·소용돌이·보호막·물살, 파도·섬·배…)도 VARCO 스티커 그림. 처음엔 Noto Emoji PNG였다가 그림체를 맞춤
-// 파자마파티즈 편(41~50장) 아이콘은 아직 Noto Emoji PNG
-const ITEM_PNG = new Set(['mic', 'notes', 'broom', 'feather', 'potato', 'bulb', 'chair', 'ticket', 'nest', 'duck', 'tent', 'thread', 'pajama', 'dance']);
-const ITEM = name => { const n = ITEM_ALIAS[name] || name; return `assets/img/items/${n}.${ITEM_PNG.has(n) ? 'png' : 'webp'}`; }; // 그림을 바꾸면 이름(또는 ?v=)을 바꿔서 폰에 남은 옛 그림 대신 새로 받게
+// 파자마파티즈 편(41~50장) 아이콘도 Noto Emoji PNG였다가 VARCO 스티커 webp로 (춤은 사람 대신 미러볼). png→webp라 주소가 바뀌어 폰도 새로 받음
+const ITEM = name => `assets/img/items/${ITEM_ALIAS[name] || name}.webp`; // 그림을 바꾸면 이름(또는 ?v=)을 바꿔서 폰에 남은 옛 그림 대신 새로 받게
 // 전신 그림이 없는 캐릭터는 얼굴로
 const NO_BODY = new Set(['kani', 'shooting', 'darkstar', 'goblin', 'beetle']);
 const FXI = n => `assets/img/fx/${n}.png`;
