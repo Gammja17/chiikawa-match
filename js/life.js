@@ -390,25 +390,31 @@ const routeLevel = k => (HARD_AT.has(k + 1) ? 'hard' : CHALLENGE_AT.has(k + 1) ?
 
 // 깼을 때 쾅 찍히는 말: 스테이지에 done이 있으면 그것, 없으면 첫 목표에 맞춰서
 const DONE_WORD = { weed: '제초<br>끝!!', box: '상자<br>다 뜯었다!', bubble: '거품<br>싹싹!', ing: '배달<br>완료!', lock: '리본<br>풀었다!', syrup: '시럽<br>듬뿍!', char: '모으기<br>끝!', score: '목표<br>달성!',
-  clam: '진주<br>모았다!', sand: '모래<br>싹싹!', ink: '먹물<br>씻었다!' };
+  clam: '진주<br>모았다!', sand: '모래<br>싹싹!', ink: '먹물<br>씻었다!',
+  seat: '객석<br>꽉 찼다!', feather: '깃털<br>쓸었다!', note: '박자<br>딱딱!', clap: '박수<br>짝짝짝!' };
 const doneWord = st => st.done || DONE_WORD[st.goals[0]?.k] || '클리어!';
 
 const GOAL_ICON = { lock: () => ITEM('ribbon'), syrup: () => ITEM('pancake'), weed: () => ITEM('weed2'), box: () => ITEM('box'), bubble: () => ITEM('bubble'), ing: () => ITEM('ramen'),
-  char: g => FACE(g.id), score: () => ITEM('target'), clam: () => ITEM('pearl'), sand: () => ITEM('sand'), ink: () => ITEM('ink') };
+  char: g => FACE(g.id), score: () => ITEM('target'), clam: () => ITEM('pearl'), sand: () => ITEM('sand'), ink: () => ITEM('ink'),
+  seat: () => ITEM('chair'), feather: () => ITEM('feather'), note: () => ITEM('notes'), clap: () => ITEM('bulb') };
 const GOAL_NAME = { lock: () => '리본', syrup: () => '시럽', weed: () => '잡초', box: () => '상자', bubble: () => '거품', ing: () => '재료', char: g => CHAR_NAME[g.id], score: () => '점수',
-  clam: () => '진주', sand: () => '모래', ink: () => '먹물' };
+  clam: () => '진주', sand: () => '모래', ink: () => '먹물', seat: () => '관객', feather: () => '깃털', note: () => '음표', clap: () => '박수' };
 
 // 판 글자: # 구멍, l 리본, s 시럽, w/W 잡초, b 상자, g 선물 상자, o 거품, i 재료,
 //   c 조개, d 모래 바닥, k 먹물 구슬, v 소용돌이 입구, V 소용돌이 출구 (k번째 v가 k번째 V로 이어짐)
+//   a 빈 객석, f 깃털, z 빗자루 (파자마파티즈 편). 박자 줄 st.beat = { rows, every }, 스포트라이트 st.spot = { size, every }
 function parseLayout(st) {
   const floor = Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
   const mask = st.map.map(row => [...row].map(ch => ch !== '#'));
-  const blocks = [], ings = [], locks = [], inks = [], ins = [], outs = [];
+  const blocks = [], ings = [], locks = [], inks = [], brooms = [], ins = [], outs = [];
   const syrup = st.goals.some(g => g.k === 'syrup') ? Array.from({ length: ROWS }, () => new Array(COLS).fill(false)) : null;
   const sand = st.map.some(row => row.includes('d')) ? Array.from({ length: ROWS }, () => new Array(COLS).fill(0)) : null;
   let k = 0;
   st.map.forEach((row, r) => [...row].forEach((ch, c) => {
     if (ch === 'c') blocks.push([r, c, 'clam', 2]);
+    if (ch === 'a') blocks.push([r, c, 'seat', 1]);
+    if (ch === 'f') blocks.push([r, c, 'feather', 1]);
+    if (ch === 'z') brooms.push([r, c]);
     if (ch === 'd') sand[r][c] = 1;
     if (ch === 'k') inks.push([r, c]);
     if (ch === 'v') ins.push([r, c]);
@@ -423,7 +429,7 @@ function parseLayout(st) {
     if (ch === 'i') ings.push([r, c, st.ing.kinds[k++ % st.ing.kinds.length]]);
   }));
   const portals = ins.length ? ins.slice(0, outs.length).map((from, j) => ({ from, to: outs[j] })) : null;
-  return { floor, mask, blocks, ings, locks, inks, syrup, sand, portals };
+  return { floor, mask, blocks, ings, locks, inks, brooms, syrup, sand, portals };
 }
 // 물살: st.current = { rows: [줄 번호], every: 몇 턴마다 } 짝수째 줄은 오른쪽, 홀수째 줄은 왼쪽으로
 const flowDir = j => (j % 2 ? -1 : 1);
@@ -455,7 +461,7 @@ const Life = {
     if (run.kind === 'route' && run.i < 2 && !Save.data.helper) L.helper = CHARS.findIndex(c => c.id === 'hachiware'); // 처음 두 판은 하치와레가 알아서 따라옴
     else if ((run.kind !== 'tower' || run.floor === 1 || L.helper == null) && !(await pickHelper(st))) return go(run.kind === 'route' ? openMap : run.kind === 'test' ? TestPlay.back : openChallenge); // 고르다가 돌아가기
     const buddy = !!st.host && CHARS[L.helper]?.id === st.host; // 단짝 보너스
-    Object.assign(L, { hg: 0, run, ending: false, st, i, moves: (st.moves || 0) + (buddy && st.moves ? 2 : 0), time: (st.time || 0) + (buddy && st.time ? 6 : 0), score: 0, ing: 0, chars: {}, popped: false, extra: false, cont: false, goalsHtml: '', feverT: 0, feverGift: false, turn: 0 });
+    Object.assign(L, { hg: 0, run, ending: false, st, i, moves: (st.moves || 0) + (buddy && st.moves ? 2 : 0), time: (st.time || 0) + (buddy && st.time ? 6 : 0), score: 0, ing: 0, chars: {}, popped: false, extra: false, cont: false, goalsHtml: '', feverT: 0, feverGift: false, turn: 0, notes: 0, claps: 0 });
     Object.assign(B, { mode: 'life', stage: i, over: false, busy: true, inSkill: false, sel: null, pending: [], maxCombo: 0, fever: 0, moving: new Set(), open: false, quick: null, quickSwapped: null });
     B.team = LIFE_CHARS.slice(0, st.types).map(id => CHARS.findIndex(c => c.id === id));
     Object.assign(B, { real: B.team.length, played: false, dmgBy: {} });
@@ -491,6 +497,8 @@ const Life = {
     Particles.clear();
     boardRand = st.seed ? League.rand(st.seed) : Math.random; // 주간 리그: 그 주 씨앗
     B.grid = Board.create(lay);
+    Board.spot = null;
+    if (st.spot) Board.moveSpot(st.spot.size);
     const bowl = run.kind === 'route' ? Ramen.takeLife() : null; // 먹고 온 라멘: 아이템 깔기·이동 더하기
     const boosts = Items.applyBoost(); // 친구 고르는 창에서 켠 시작 아이템
     const help = run.kind === 'route' ? Help.level('l', i) : 0; // 여러 번 막힌 스테이지면 응원 선물 (js/stats.js)
@@ -500,6 +508,7 @@ const Life = {
     if (run.kind === 'league') League.began();
     renderFloor();
     Life.flowHint();
+    Life.beatHint();
     Life.hud();
     if (run.kind === 'route' && LIFE_STORY[i] && (Save.data.life || [])[i] == null) await playStory(LIFE_STORY[i]);
     await Help.say(help, 'l');
@@ -539,6 +548,8 @@ const Life = {
   },
   remain(g) {
     if (g.k === 'ing') return Math.max(0, L.st.ing.n - L.ing);
+    if (g.k === 'note') return Math.max(0, g.n - L.notes);
+    if (g.k === 'clap') return Math.max(0, g.n - L.claps);
     if (g.k === 'char') return Math.max(0, g.n - (L.chars[g.id] || 0));
     if (g.k === 'score') return Math.max(0, g.n - L.score);
     return Life.count(g.k);
@@ -594,6 +605,13 @@ const Life = {
       L.chars[id] = (L.chars[id] || 0) + 1;
     });
     if (res.hits.some(h => h.tile.block === 'bubble')) L.popped = true;
+    // 박자 줄: '쿵' 턴에 그 줄에서 터진 구슬마다 음표 / 스포트라이트: 조명 안에서 터진 구슬마다 박수
+    const beatRows = Life.beatNow() ? L.st.beat.rows : null;
+    res.cleared.forEach(({ r, c, tile }) => {
+      if (tile.type < 0) return;
+      if (beatRows?.includes(r)) L.notes++;
+      if (Board.spot && Board.inSpot(r, c)) L.claps++;
+    });
     if (L.st.dungeon) Dungeon.loot(res);
     L.score += pts;
     // 터진 자리 한가운데에 점수가 톡 (콤보일수록 크게)
@@ -669,6 +687,10 @@ const Life = {
     const cur = L.st.current;
     if (cur && !Life.done() && L.turn % cur.every === 0) await Life.flow(cur.rows);
     else if (cur) Life.flowHint();
+    // 깃털: 바람에 날려 한 칸씩 / 스포트라이트: 몇 턴마다 자리를 옮김 / 박자 줄: 다음 턴이 '쿵'이면 깜빡
+    if (!Life.done()) await Life.blow();
+    if (L.st.spot && !Life.done() && L.turn % L.st.spot.every === 0) { Board.moveSpot(L.st.spot.size); renderFloor(); Sound.play('sparkle', 1.2, 0.5); }
+    Life.beatHint();
     if (L.st.contest && !Life.count('weed')) await Life.regrow();
     if (L.st.dungeon && !Life.count('box') && L.moves > 0) await Dungeon.refill();
     Life.hud();
@@ -690,6 +712,22 @@ const Life = {
     await Promise.all(anims);
     Life.flowHint();
     await cascade(null, []);
+  },
+  // 박자 줄: 이번에 두는 수가 '쿵' 박자인지 (지난 턴 수 + 1이 every의 배수)
+  beatNow: () => !!L.st?.beat && (L.turn + 1) % L.st.beat.every === 0,
+  beatHint() {
+    boardEl.classList.toggle('beat-now', Life.beatNow());
+  },
+  // 깃털이 바람에 날려 옆 구슬과 자리를 바꿈
+  async blow() {
+    const mv = Board.blowFeathers(B.grid);
+    if (!mv.length) return;
+    Sound.play('swap', 1.6, 0.5);
+    await Promise.all(mv.flatMap(({ tile, other, from, to }) => [
+      tile.el && slide(tile, to[0], to[1], 300, 'ease-in-out'),
+      other.el && slide(other, from[0], from[1], 300, 'ease-in-out'),
+    ].filter(Boolean)));
+    await cascade(null, []); // 자리가 바뀌어 맞은 게 있으면 터짐
   },
   // 다음 턴에 물살이 오면 화살표가 깜빡임
   flowHint() {
@@ -871,7 +909,7 @@ const Life = {
     const ch = mvp(), shard = first && L.run.kind === 'route' && Meta.shardGift(ch.id, stars);
     if (L.run.kind === 'route') Share.prepare({ k, name: st.name, stars, mode: 'l', char: ch.id, rows: [['점수', L.score]] });
     modal({
-      share: L.run.kind === 'route',
+      share: L.run.kind === 'route', song: L.run.kind === 'route' && !!st.song,
       title: st.exam ? '합격!' : '클리어!', stars, char: ch.id, text: `${ch.name}: "${lineOf(ch.id)}"`,
       rows: [['점수', L.score], [`<img class="row-ic" src="${ITEM('coin')}">`, '+' + coins], treat, shard].filter(Boolean),
       btn2: '🏠 지도로', on2: () => go(() => openMap(first ? k : null)),

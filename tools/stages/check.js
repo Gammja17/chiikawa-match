@@ -5,7 +5,7 @@ const ROOT = path.join(__dirname, '..', '..');
 const { load } = require(path.join(ROOT, 'tools', 'sim.js'));
 const vm = require('vm');
 const ctx = load();
-const G = vm.runInContext('({ LIFE, STAGES, ROUTE, CHAPTERS, STORY, STORY_AFTER, LIFE_STORY, LIFE_STORY_AFTER, CHAR_NAME, MONSTERS, LIFE_CHARS, CHARS })', ctx);
+const G = vm.runInContext('({ LIFE, STAGES, ROUTE, CHAPTERS, STORY, STORY_AFTER, LIFE_STORY, LIFE_STORY_AFTER, CHAR_NAME, MONSTERS, STORY_CAST, LIFE_CHARS, CHARS })', ctx);
 const item = n => ['.webp', '.png'].some(x => fs.existsSync(path.join(ROOT, 'assets', 'img', 'items', n + x)));
 const bad = [];
 const err = (where, msg) => bad.push(`${where}: ${msg}`);
@@ -26,6 +26,11 @@ G.LIFE.forEach((st, i) => {
     if (g.k === 'clam' && !has('c')) err(w, '진주 목표인데 조개가 없음');
     if (g.k === 'sand' && !has('d')) err(w, '모래 목표인데 모래 바닥이 없음');
     if (g.k === 'ink' && !has('k')) err(w, '먹물 목표인데 먹물 구슬이 없음');
+    if (g.k === 'seat' && !has('a')) err(w, '관객 목표인데 빈 객석이 없음');
+    if (g.k === 'feather' && !has('f')) err(w, '깃털 목표인데 깃털이 없음');
+    if (g.k === 'note' && !(st.beat?.rows?.length && st.beat.every > 0)) err(w, '음표 목표인데 박자 줄(beat)이 없음');
+    if (g.k === 'clap' && !(st.spot?.size > 0 && st.spot.every > 0)) err(w, '박수 목표인데 스포트라이트(spot)가 없음');
+    if ((g.k === 'note' || g.k === 'clap') && !(g.n > 0)) err(w, `${g.k} 목표 수 없음`);
     if (g.k === 'ing' && !st.ing) err(w, '재료 목표인데 ing가 없음');
     if (g.k === 'char' && G.LIFE_CHARS.indexOf(g.id) >= st.types) err(w, `${g.id} 얼굴이 판에 안 나옴 (types ${st.types})`);
     if ((g.k === 'char' || g.k === 'score') && !(g.n > 0)) err(w, `${g.k} 목표 수 없음`);
@@ -46,7 +51,10 @@ G.STAGES.forEach((st, i) => st.waves.forEach(wv => {
   if (!(wv.hp > 0 && wv.atk > 0 && wv.cd > 0)) err(`토벌 ${i} ${st.name}`, '체력·공격·턴');
 }));
 for (const [name, book] of Object.entries({ STORY: G.STORY, STORY_AFTER: G.STORY_AFTER, LIFE_STORY: G.LIFE_STORY, LIFE_STORY_AFTER: G.LIFE_STORY_AFTER }))
-  for (const [k, lines] of Object.entries(book)) lines.forEach(([id]) => G.CHAR_NAME[id] || G.MONSTERS[id] || err(`${name}[${k}]`, `모르는 친구 ${id}`));
+  for (const [k, lines] of Object.entries(book)) lines.forEach(([id, a]) => {
+    if (id === 'scene') { if (!fs.existsSync(path.join(ROOT, a))) err(`${name}[${k}]`, `장면 그림 없음 ${a}`); return; } // ['scene', 그림, 설명]
+    G.CHAR_NAME[id] || G.MONSTERS[id] || G.STORY_CAST[id] || err(`${name}[${k}]`, `모르는 친구 ${id}`);
+  });
 G.ROUTE.forEach(([t, i], k) => { if (!(t === 'b' ? G.STAGES : G.LIFE)[i]) err(`루트 ${k + 1}`, '없는 판'); });
 console.log(`루트 ${G.ROUTE.length}판 (일상 ${G.LIFE.length}, 토벌 ${G.STAGES.length}), 장 ${G.CHAPTERS.length}개`);
 console.log(bad.length ? bad.join('\n') : '문제 없음');

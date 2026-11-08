@@ -25,6 +25,13 @@ const TIPS = {
   whirl: ['whirl', '소용돌이로 들어간 구슬은 다른 소용돌이에서 나와요'],
   current: ['wave', '파란 물살 줄은 몇 턴마다 화살표 쪽으로 한 칸씩 밀려요'],
   shield: ['shield', '보호막 괴물은 이름 옆 속성으로만 보호막이 깨져요. 다른 속성은 조금만 들어가요'],
+  // 파자마파티즈 편 (41~50장)
+  beat: ['notes', '분홍 박자 줄이 쿵쿵 뛰는 턴에 그 줄에서 터뜨리면 음표가 모여요'],
+  seat: ['chair', '빈 객석 옆에서 맞추면 관객이 앉아요'],
+  spot: ['bulb', '노란 조명 안에서 구슬을 터뜨리면 박수! 조명은 몇 턴마다 옮겨 가요'],
+  feather: ['feather', '깃털은 턴마다 바람에 날려 옆 칸으로 가요. 바로 옆에서 맞추면 잡혀요'],
+  broom: ['broom', '빗자루를 쓱 밀면 그 줄과 위아래 한 줄씩, 세 줄을 싹 쓸어 버려요'],
+  bird: ['duck', '큰 새는 친구 하나를 2턴 동안 낚아채 가요. 그동안 그 친구는 못 싸워요'],
 };
 
 const Tutor = {
@@ -59,7 +66,13 @@ const Tutor = {
 
   // 스테이지 시작 때 그 판에 처음 나오는 것 안내
   async onStart() {
-    if (B.mode === 'battle') { await Tutor.battleIntro(); if (STAGES[B.stage]?.waves.some(w => w.sh)) Tutor.tip('shield'); return; }
+    if (B.mode === 'battle') {
+      await Tutor.battleIntro();
+      const ws = STAGES[B.stage]?.waves || [];
+      if (ws.some(w => w.m === 'bird') && !Tutor.seen('bird')) Tutor.tip('bird');
+      else if (ws.some(w => w.sh)) Tutor.tip('shield');
+      return;
+    }
     // 맨 첫 판: 목표, 이동 수를 비춰 주고 → 첫 수를 손가락으로 알려 주고 그 수만 둘 수 있게
     if (L.run?.kind === 'route' && L.i === 0 && !Tutor.seen('firstMove')) {
       B.busy = true;
@@ -90,7 +103,10 @@ const Tutor = {
     if (Board.portals?.length) kinds.add('whirl');
     if (B.mode === 'life' && L.st?.current) kinds.add('current');
     if (B.mode === 'battle' && STAGES[B.stage]?.waves.some(w => w.sh)) kinds.add('shield');
-    ['box', 'bubble', 'lock', 'syrup', 'ing', 'clam', 'sand', 'ink', 'whirl', 'current', 'shield'].some(k => kinds.has(k) && !Tutor.seen(k) && (Tutor.tip(k), true));
+    if (B.mode === 'life' && L.st?.beat) kinds.add('beat');
+    if (B.mode === 'life' && L.st?.spot) kinds.add('spot');
+    Board.each(B.grid, t => { if (t.special === 'broom') kinds.add('broom'); });
+    ['box', 'bubble', 'lock', 'syrup', 'ing', 'clam', 'sand', 'ink', 'whirl', 'current', 'shield', 'seat', 'feather', 'beat', 'spot', 'broom'].some(k => kinds.has(k) && !Tutor.seen(k) && (Tutor.tip(k), true));
   },
   // 첫 토벌: 괴물, 공격까지 남은 턴, 친구들, 체력을 차례로 비춤
   async battleIntro() {
