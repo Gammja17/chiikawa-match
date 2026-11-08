@@ -451,7 +451,8 @@ const Life = {
   hasIng: () => !!L.st?.ing,
   stopTimer() { clearInterval(L.timer); L.timer = null; },
 
-  start(i) { return Life.begin(LIFE[i], { kind: 'route', i }); },
+  // 하드 모드(js/hard.js)면 하드 값으로 덮은 판. Hard.play는 지도에서 판을 누를 때 정해짐 (다시 하기도 그대로)
+  start(i) { return Hard.play ? Life.begin(Hard.life(i), { kind: 'route', i, hard: true }) : Life.begin(LIFE[i], { kind: 'route', i }); },
 
   // run: { kind: 'route', i } 모험 지도 / { kind: 'tower', floor } 인어섬 탐험 / { kind: 'contest' } 제초 대회 / { kind: 'daily' } 오늘의 도전 / { kind: 'dungeon' } 미믹 보물창고
   async begin(st, run) {
@@ -501,18 +502,20 @@ const Life = {
     if (st.spot) Board.moveSpot(st.spot.size);
     const bowl = run.kind === 'route' ? Ramen.takeLife() : null; // 먹고 온 라멘: 아이템 깔기·이동 더하기
     const boosts = Items.applyBoost(); // 친구 고르는 창에서 켠 시작 아이템
-    const help = run.kind === 'route' ? Help.level('l', i) : 0; // 여러 번 막힌 스테이지면 응원 선물 (js/stats.js)
+    const help = run.kind === 'route' && !run.hard ? Help.level('l', i) : 0; // 여러 번 막힌 스테이지면 응원 선물 (js/stats.js). 하드는 없음
     Help.life(help);
     L.goal0 = st.goals.map(g => Life.remain(g)); // 처음 목표 양 (실패했을 때 얼마나 남았는지 기록하려고)
-    if (run.kind === 'route') Stats.start('l', i, help);
+    if (run.kind === 'route' && !run.hard) Stats.start('l', i, help);
+    else if (run.hard) { if (Stats.run && !Stats.run.ended) Stats.end('quit'); Stats.run = null; } // 하드 판은 플레이 기록(GA)에 안 섞음
     if (run.kind === 'league') League.began();
     renderFloor();
     Life.flowHint();
     Life.beatHint();
     Life.hud();
-    if (run.kind === 'route' && LIFE_STORY[i] && (Save.data.life || [])[i] == null) await playStory(LIFE_STORY[i]);
+    if (run.hard) await Hard.intro(routeIdx('l', i), st.host); // 하드는 대사 대신 장 첫 판에 한 줄
+    else if (run.kind === 'route' && LIFE_STORY[i] && (Save.data.life || [])[i] == null) await playStory(LIFE_STORY[i]);
     await Help.say(help, 'l');
-    await dropIn(run.kind === 'route' && routeLevel(routeIdx('l', i)) === 'hard' ? 'HARD!' : st.intro);
+    await dropIn(run.hard ? 'HARD MODE!' : run.kind === 'route' && routeLevel(routeIdx('l', i)) === 'hard' ? 'HARD!' : st.intro);
     if (bowl) banner(`${bowl.name}!`, 500);
     else if (boosts) banner('시작 아이템!', 500);
     if (buddy) setTimeout(() => banner(`단짝 보너스! ${st.time ? '+6초' : '이동 +2'}`, 450), bowl ? 900 : 0);
@@ -888,33 +891,37 @@ const Life = {
     if (L.run.kind === 'tower') return Tower.cleared();
     if (L.run.kind === 'daily') return DayChal.cleared();
     if (L.run.kind === 'test') return TestPlay.cleared(left);
-    const st = L.st, i = L.i;
+    const st = L.st, i = L.i, hard = !!L.run.hard; // 하드 모드: 별은 따로 (js/hard.js), 처음 깬 판 보상(라멘·이야기·친구 합류·랭킹)은 보통 판에서만
     const stars = L.score >= st.stars[2] ? 3 : L.score >= st.stars[1] ? 2 : 1;
-    if (L.run.kind === 'route') Stats.end('clear', { stars, moves_left: left });
-    const list = (Save.data.life = Save.data.life || []);
+    if (L.run.kind === 'route' && !hard) Stats.end('clear', { stars, moves_left: left });
+    const list = hard ? Hard.s().l : (Save.data.life = Save.data.life || []);
     const first = list[i] == null;
-    const coins = Meta.reward(stars, first), treat = Meta.treat('l', i, stars, first);
+    const coins = Hard.coins(Meta.reward(stars, first), hard), treat = Meta.treat('l', i, stars, first);
     if (L.run.kind === 'route') { Daily.add('win'); Aff.afterWin([CHARS[L.helper].id]); }
-    list[i] = Math.max(list[i] || 0, stars);
+    if (hard) Hard.win('l', i, stars);
+    else {
+      list[i] = Math.max(list[i] || 0, stars);
+      if (first) Save.data.ramen = true;
+    }
     setTimeout(() => Net.submit(), 0);
-    if (first) Save.data.ramen = true;
     Save.save();
-    const rank = first && L.run.kind === 'route' && Net.clearRank();
+    const rank = first && !hard && L.run.kind === 'route' && Net.clearRank();
     Sound.play('win', 1);
     await clearShow(st.exam ? '검정<br>합격!' : doneWord(st));
-    const k = routeIdx('l', i), last = k === ROUTE.length - 1;
-    if (LIFE_STORY_AFTER[i] && first) await playStory(LIFE_STORY_AFTER[i]); // 장 끝 대사
-    if (first) await Meta.stageJoin('l', i);
+    const k = routeIdx('l', i), next = hard ? Hard.next(k) : k + 1, last = next < 0 || next >= ROUTE.length;
+    if (LIFE_STORY_AFTER[i] && first && !hard) await playStory(LIFE_STORY_AFTER[i]); // 장 끝 대사
+    if (hard) await Hard.after(k); // 하드 장을 다 깼으면 깨어나는 대사·수련 도장·엔딩
+    if (first && !hard) await Meta.stageJoin('l', i);
     Sound.music(null);
     const ch = mvp(), shard = first && L.run.kind === 'route' && Meta.shardGift(ch.id, stars);
-    if (L.run.kind === 'route') Share.prepare({ k, name: st.name, stars, mode: 'l', char: ch.id, rows: [['점수', L.score]] });
+    if (L.run.kind === 'route') Share.prepare({ k, name: st.name + (hard ? ' (HARD)' : ''), stars, mode: 'l', char: ch.id, rows: [['점수', L.score]] });
     modal({
       share: L.run.kind === 'route', song: L.run.kind === 'route' && !!st.song,
-      title: st.exam ? '합격!' : '클리어!', stars, char: ch.id, text: `${ch.name}: "${lineOf(ch.id)}"`,
+      title: hard ? 'HARD 클리어!' : st.exam ? '합격!' : '클리어!', stars, char: ch.id, text: `${ch.name}: "${lineOf(ch.id)}"`,
       rows: [['점수', L.score], [`<img class="row-ic" src="${ITEM('coin')}">`, '+' + coins], treat, shard].filter(Boolean),
       btn2: '🏠 지도로', on2: () => go(() => openMap(first ? k : null)),
-      btn1: last ? '🏠 지도로' : Unlock.fresh() ? '🎁 새 기능 보러 가기' : '다음 스테이지 ▶', // 새 기능이 열렸으면 지도로 데려가서 안내
-      on1: () => (last || Unlock.fresh() ? go(() => openMap(first ? k : null)) : Hearts.need(() => go(() => goRoute(k + 1)), () => go(() => openMap(first ? k : null)))),
+      btn1: last ? '🏠 지도로' : !hard && Unlock.fresh() ? '🎁 새 기능 보러 가기' : '다음 스테이지 ▶', // 새 기능이 열렸으면 지도로 데려가서 안내
+      on1: () => (last || (!hard && Unlock.fresh()) ? go(() => openMap(first ? k : null)) : Hearts.need(() => go(() => (hard ? Hard.go(next) : goRoute(next))), () => go(() => openMap(first ? k : null)))),
     });
     Net.rankLine(rank);
   },

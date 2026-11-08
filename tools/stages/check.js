@@ -1,4 +1,5 @@
 // 스테이지 데이터 점검: 판 크기, 목표와 판 글자, 얼굴 가짓수, 아이콘·재료 그림 파일, 대사 속 친구, 괴물
+// 하드 모드 값(js/hard-data.js)도 보통 판에 덮어 같은 점검 + 500판이 다 있는지, 판 크기가 같은지, 이동이 보통보다 적은지
 //   node tools/stages/check.js
 const fs = require('fs'), path = require('path');
 const ROOT = path.join(__dirname, '..', '..');
@@ -11,8 +12,7 @@ const ALIAS = vm.runInContext('typeof ITEM_ALIAS === "object" ? ITEM_ALIAS : {}'
 const item = n => ['.webp', '.png'].some(x => fs.existsSync(path.join(ROOT, 'assets', 'img', 'items', (ALIAS[n] || n) + x)));
 const bad = [];
 const err = (where, msg) => bad.push(`${where}: ${msg}`);
-G.LIFE.forEach((st, i) => {
-  const w = `일상 ${i} ${st.name}`;
+const checkLife = (st, w) => {
   const R = st.map.length, C = st.map[0].length;
   if (R < 5 || R > 9 || C < 5 || C > 9) err(w, `판 크기 ${R}x${C}`);
   if (st.map.some(r => r.length !== C)) err(w, '줄 길이가 다름');
@@ -47,7 +47,45 @@ G.LIFE.forEach((st, i) => {
   if (!(st.moves > 0) && !(st.time > 0)) err(w, '이동 수·시간 없음');
   if (!(st.stars[0] < st.stars[1] && st.stars[1] < st.stars[2])) err(w, `별 점수 순서 ${st.stars}`);
   if (st.host && !G.CHAR_NAME[st.host]) err(w, `host ${st.host}`);
-});
+};
+G.LIFE.forEach((st, i) => checkLife(st, `일상 ${i} ${st.name}`));
+// 하드 모드
+const HD = path.join(ROOT, 'js', 'hard-data.js');
+if (fs.existsSync(HD)) {
+  vm.runInContext(fs.readFileSync(HD, 'utf8') + ';this.HARD_DATA = HARD_DATA;', ctx, { filename: 'js/hard-data.js' });
+  const H = ctx.HARD_DATA;
+  G.ROUTE.forEach(([t, i], k) => {
+    const h = H[t][i], w = `하드 ${k + 1} ${(t === 'b' ? G.STAGES : G.LIFE)[i].name}`;
+    if (!h) return err(w, '하드 값 없음 (node tools/stages/hard.js)');
+    if (t === 'b') {
+      const st = G.STAGES[i];
+      if (h.waves.length !== st.waves.length) err(w, '웨이브 수가 다름');
+      h.waves.forEach(x => { if (!(x.hp > 0 && x.atk > 0 && x.atk <= 120 && x.cd >= 2)) err(w, `괴물 값 ${JSON.stringify(x)}`); });
+      return;
+    }
+    const st = G.LIFE[i], hs = { ...JSON.parse(JSON.stringify(st)), ...JSON.parse(JSON.stringify(h)) };
+    checkLife(hs, w);
+    if (hs.map.length !== st.map.length || hs.map[0].length !== st.map[0].length) err(w, '판 크기가 보통과 다름');
+    if (st.moves && !(hs.moves < st.moves)) err(w, `이동 ${hs.moves} (보통 ${st.moves})`);
+    if (st.time && !(hs.time < st.time)) err(w, `시간 ${hs.time} (보통 ${st.time})`);
+  });
+} else err('js/hard-data.js', '없음');
+// 하드 이야기 (js/hard-story.js): 말하는 친구·장면 그림, 장 번호
+const HS = path.join(ROOT, 'js', 'hard-story.js');
+if (fs.existsSync(HS)) {
+  vm.runInContext(fs.readFileSync(HS, 'utf8') + ';this.HS = { HARD_PROLOGUE, HARD_STORY, HARD_STAMP, HARD_ENDING };', ctx, { filename: 'js/hard-story.js' });
+  const { HARD_PROLOGUE, HARD_STORY, HARD_STAMP, HARD_ENDING } = ctx.HS;
+  const books = { HARD_PROLOGUE, HARD_ENDING, ...Object.fromEntries(Object.entries(HARD_STAMP).map(([n, l]) => ['HARD_STAMP' + n, l])) };
+  for (const [j, s] of Object.entries(HARD_STORY)) {
+    if (!G.CHAPTERS[j]) err(`HARD_STORY[${j}]`, '없는 장');
+    Object.entries(s).forEach(([k, l]) => { if (k !== 'start' && k !== 'end') err(`HARD_STORY[${j}]`, `모르는 칸 ${k}`); books[`HARD_STORY[${j}].${k}`] = l; });
+  }
+  G.CHAPTERS.forEach((_, j) => ['start', 'end'].forEach(k => HARD_STORY[j]?.[k]?.length || err(`HARD_STORY[${j}]`, `${j + 1}장 ${k} 대사 없음`)));
+  for (const [name, lines] of Object.entries(books)) lines.forEach(([id, a]) => {
+    if (id === 'scene') { if (!fs.existsSync(path.join(ROOT, a))) err(name, `장면 그림 없음 ${a}`); return; }
+    G.CHAR_NAME[id] || G.MONSTERS[id] || G.STORY_CAST[id] || err(name, `모르는 친구 ${id}`);
+  });
+}
 G.STAGES.forEach((st, i) => st.waves.forEach(wv => {
   if (!G.MONSTERS[wv.m]) err(`토벌 ${i} ${st.name}`, `괴물 ${wv.m}`);
   if (!(wv.hp > 0 && wv.atk > 0 && wv.cd > 0)) err(`토벌 ${i} ${st.name}`, '체력·공격·턴');

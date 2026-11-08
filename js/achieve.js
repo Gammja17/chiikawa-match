@@ -44,6 +44,14 @@ const ACHIEVES = [
   { id: 'say_ink500', title: '얼굴이 안 보이잖아~!', text: '먹물 구슬 500개 씻기', n: 500, val: s => s.n.ink || 0 },
   { id: 'say_clam500', title: '…진주, 반짝…!', text: '조개에서 진주 500개 꺼내기', n: 500, val: s => s.n.clam || 0 },
   { id: 'say_chap40', title: '이거… 전부 별이야…!?', text: '모든 장에서 별 30개 다 모으기', n: () => CHAPTERS.length, val: () => ChapStar.fullCount() },
+  // 하드 모드 (js/hard.js): 보통으로 다 깬 장을 더 어렵게
+  // 하드 모드 이야기: 치이카와의 악몽을 랏코의 수련으로 (js/hard-story.js). 10장마다 랏코 수련 도장
+  { id: 'hard1', title: '첫 악몽 수련', text: '하드 모드 판 하나 깨기', n: 1, val: () => Hard.cleared() },
+  { id: 'hardChap10', title: '수련 도장 첫 번째', text: '하드 모드로 10장 다 깨기', n: 10, val: () => Hard.chapsDone() },
+  { id: 'hardChap30', title: '악몽도 무섭지 않아', text: '하드 모드로 30장 다 깨기', n: 30, val: () => Hard.chapsDone() },
+  { id: 'hardAll', title: '악몽을 이긴 랏코의 제자', text: '모든 장을 하드 모드로 다 깨기 (졸업장 + 랏코 가면 히어로 옷)', n: () => CHAPTERS.length, val: () => Hard.chapsDone() },
+  { id: 'hardStar10', title: '보랏빛 별 수집가', text: '하드 별 30개 다 모은 장 10개', n: 10, val: () => ChapStar.fullCount(true) },
+  { id: 'say_hard100', title: '…무리, 아니야…!', text: '하드 모드 판 100개 깨기', n: 100, val: () => Hard.cleared() },
 ];
 
 // 보스가 나오는 지도 판 번호들 (장마다 끝 판, 1장은 없음)
@@ -143,22 +151,26 @@ const Pic = {
 
 // 장 별 보상: 장마다 10판 × 별 3개 = 30개를 다 모으면 한 번 받음. 뒤 장일수록 조금씩 큼
 // Save.data.chapGot = { 장 번호(0부터): 1 }. 직접 눌러서 받으니 업데이트 전에 이미 30개인 장도 그냥 '받기'가 뜸 (옛 기록은 따로 옮길 것 없음)
-// 보이는 곳: 지도의 장 띠(★ 27/30, 다 모으면 선물 띠를 눌러 받기), 미션 창 → 장 별 보상 목록, 미션 버튼 빨간 점
+// 하드 모드(js/hard.js)도 장마다 하드 별 30개 보상이 따로 있음 (Save.data.hard.got). h: true면 하드, 안 주면 지금 보는 쪽(ChapStar.H)
+// 보이는 곳: 지도의 장 띠(★ 27/30, 다 모으면 선물 띠를 눌러 받기), 미션 창 → 장 별 보상 목록(보통 | HARD 탭), 미션 버튼 빨간 점
 const CHAP_TREATS = ['dango', 'parfait', 'onigiri'];
 const ChapStar = {
+  mode: null, // 목록 창에서 고른 탭 (null이면 지도가 보는 쪽)
+  get H() { return ChapStar.mode ?? Hard.on; },
   range: j => [CHAPTERS[j][0], (CHAPTERS[j + 1] || [ROUTE.length])[0]],
-  stars(j) { const [a, b] = ChapStar.range(j); let t = 0; for (let k = a; k < b; k++) t += routeStars(k) || 0; return t; },
+  stars(j, h = ChapStar.H) { const [a, b] = ChapStar.range(j), f = h ? Hard.stars : routeStars; let t = 0; for (let k = a; k < b; k++) t += f(k) || 0; return t; },
   max(j) { const [a, b] = ChapStar.range(j); return (b - a) * 3; },
-  full: j => ChapStar.stars(j) >= ChapStar.max(j),
-  got: j => !!Save.data.chapGot?.[j],
-  ready: j => !ChapStar.got(j) && ChapStar.full(j),
-  fullCount: () => CHAPTERS.filter((_, j) => ChapStar.full(j)).length,
-  claimable: () => CHAPTERS.filter((_, j) => ChapStar.ready(j)).length,
-  open: j => CHAPTERS[j][0] <= unlockedIdx(),
+  full: (j, h = ChapStar.H) => ChapStar.stars(j, h) >= ChapStar.max(j),
+  got: (j, h = ChapStar.H) => !!(h ? Hard.s().got : Save.data.chapGot)?.[j],
+  ready: (j, h = ChapStar.H) => !ChapStar.got(j, h) && ChapStar.full(j, h),
+  fullCount: (h = false) => CHAPTERS.filter((_, j) => ChapStar.full(j, h)).length, // 업적은 보통 쪽 (하드는 fullCount(true))
+  claimable: h => (h == null ? ChapStar.claimable(false) + ChapStar.claimable(true) : CHAPTERS.filter((_, j) => ChapStar.ready(j, h)).length), // h를 안 주면 둘 다
+  open: (j, h = ChapStar.H) => (h ? Hard.open(j) : CHAPTERS[j][0] <= unlockedIdx()),
   // 보상: 코인 100 + 장마다 10, 뽑기 티켓 1장(21장부터 2장), 덤은 장마다 돌아가며 간식(10장마다 +1개) · 이어하기권 · 간식 · 라멘 서비스권
   // 40장 다 받으면 코인 7800, 티켓 60장, 간식 70개, 이어하기권 10장, 라멘 10그릇
-  reward(j) {
-    const t = Math.floor(j / 10), r = { coins: 100 + 10 * j, tickets: j < 20 ? 1 : 2 };
+  // 하드: 코인 두 배, 티켓 한 장 더 (덤은 같음)
+  reward(j, h = ChapStar.H) {
+    const t = Math.floor(j / 10), r = { coins: (100 + 10 * j) * (h ? 2 : 1), tickets: (j < 20 ? 1 : 2) + (h ? 1 : 0) };
     const x = j % 4;
     if (x === 0 || x === 2) Object.assign(r, { treat: CHAP_TREATS[Math.floor(j / 2) % 3], n: 2 + t });
     else if (x === 1) r.item = 'cont';
@@ -171,16 +183,17 @@ const ChapStar = {
   chips: r => ChapStar.parts(r).map(([src, t]) => `<span><img src="${src}" alt="">${t}</span>`).join(''),
   name(j) { const s = CHAPTERS[j][1], i = s.indexOf(' '); return i < 0 ? [s, ''] : [s.slice(0, i), s.slice(i + 1)]; },
   // 받기: 보상을 주고 반짝. el은 반짝일 자리
-  claim(j, el) {
-    if (!ChapStar.ready(j)) return false;
-    (Save.data.chapGot = Save.data.chapGot || {})[j] = 1;
-    Daily.give(ChapStar.reward(j)); // 저장까지
+  claim(j, el, h = ChapStar.H) {
+    if (!ChapStar.ready(j, h)) return false;
+    if (h) Hard.s().got[j] = 1;
+    else (Save.data.chapGot = Save.data.chapGot || {})[j] = 1;
+    Daily.give(ChapStar.reward(j, h)); // 저장까지
     Sound.play('star', 1.2, 0.9);
     Haptic.tap(25);
     if (el) {
       const c = centerOf(el);
       burst(c.x, c.y, '#ffd84d', 14);
-      floatNum(c.x, c.y - 24, `${ChapStar.name(j)[0]} 보상!`, '#ff5d9e');
+      floatNum(c.x, c.y - 24, `${ChapStar.name(j)[0]} ${h ? '하드 ' : ''}보상!`, '#ff5d9e');
     }
     Meta.coinUI(true);
     ChapStar.paintBands();
@@ -188,49 +201,60 @@ const ChapStar = {
     return true;
   },
   // 지도 장 띠 (game.js openMap이 만든 .chapter-band[data-chap]). 별이 하나도 없는 장은 표를 안 붙임 (처음 화면을 깔끔하게)
+  // 지도가 하드 쪽이면 하드 별, 아직 안 열린 장은 자물쇠 표 (누르면 여는 법)
   paint(b) {
-    const j = +b.dataset.chap, open = ChapStar.open(j), s = ChapStar.stars(j), m = ChapStar.max(j), got = ChapStar.got(j), ready = !got && s >= m;
+    const h = Hard.on, j = +b.dataset.chap, open = ChapStar.open(j, h), s = ChapStar.stars(j, h), m = ChapStar.max(j), got = ChapStar.got(j, h), ready = !got && s >= m;
     b.classList.toggle('ready', ready);
     b.classList.toggle('got', got);
-    b.innerHTML = `<span class="cb-name">${CHAPTERS[j][1]}</span>` + (open && s ? `<button class="cb-star">${ready ? `<img src="${ITEM('starchest')}" alt="">보상 받기` : `★ ${s}/${m}${got ? ' ✓' : ''}`}</button>` : '');
+    const pre = h ? '<b class="cb-hm">HARD</b>' : '';
+    b.innerHTML = `<span class="cb-name">${CHAPTERS[j][1]}</span>` + (open && s ? `<button class="cb-star">${ready ? `<img src="${ITEM('starchest')}" alt="">보상 받기` : `${pre}★ ${s}/${m}${got ? ' ✓' : ''}`}</button>`
+      : h && !open ? '<button class="cb-star cb-lock">🔒 보통 10판 다 깨기</button>' : '');
     // 띠는 판을 가리지 않게 눌리지 않고, 매달린 별 표만 눌림: 받을 게 있으면 보상 창, 아니면 장 별 보상 목록
     const pill = b.querySelector('.cb-star');
     if (pill) pill.onclick = () => {
       Sound.play('click');
-      if (ChapStar.ready(j)) ChapStar.popup(j, pill);
-      else ChapStar.list(j);
+      if (!open) Hard.why(CHAPTERS[j][0]);
+      else if (ChapStar.ready(j, h)) ChapStar.popup(j, pill, h);
+      else ChapStar.list(j, h);
     };
   },
   paintBands: () => document.querySelectorAll('.chapter-band[data-chap]').forEach(ChapStar.paint),
   // 띠를 누르면: 받을 게 있으면 보상 창
-  popup(j, b) {
-    const [no, nm] = ChapStar.name(j), r = ChapStar.reward(j);
+  popup(j, b, h = ChapStar.H) {
+    const [no, nm] = ChapStar.name(j), r = ChapStar.reward(j, h);
     modal({
-      title: `${no} 별 30개!`, img: ITEM('starchest'), text: `「${nm}」 별을 다 모았어요! 우사기: 우라~!`,
+      title: `${no} ${h ? '하드 ' : ''}별 30개!`, img: ITEM('starchest'), text: `「${nm}」 ${h ? '하드 모드 ' : ''}별을 다 모았어요! 우사기: 우라~!`,
       rows: ChapStar.parts(r).map(([src, t]) => [`<img class="row-ic" src="${src}" alt="">`, t]),
-      btn1: '받기!', on1: () => ChapStar.claim(j, b),
+      btn1: '받기!', on1: () => ChapStar.claim(j, b, h),
     });
     $('#modalChar').classList.add('icon');
   },
   // 장 별 보상 목록 (미션 창에서, 또는 띠를 눌러서). at: 이 장이 보이게 스크롤
-  list(at = -1) {
+  // h: 처음 보일 탭 (안 주면 받을 게 있는 쪽, 둘 다 없으면 지도가 보는 쪽)
+  list(at = -1, h) {
     const el = $('#chapStar');
+    ChapStar.mode = h ?? (ChapStar.claimable(false) ? false : ChapStar.claimable(true) ? true : Hard.on);
     const draw = () => {
-      const cur = unlockedIdx();
-      const many = ChapStar.claimable();
-      el.querySelector('.cs-sub').innerHTML = `별 30개를 다 모은 장 <b>${ChapStar.fullCount()}</b> / ${CHAPTERS.length} · 장마다 한 번 받아요` +
+      const hm = ChapStar.mode, cur = unlockedIdx();
+      const many = ChapStar.claimable(hm), other = ChapStar.claimable(!hm);
+      el.classList.toggle('hard-view', hm);
+      // 보통 | HARD 탭 (하드 장이 하나라도 열렸을 때만). 다른 탭에 받을 게 있으면 빨간 점
+      const dot = on => (on ? ' <i></i>' : '');
+      const tabs = Hard.any() ? `<div class="cs-tabs"><button data-tab="0" class="${hm ? '' : 'on'}">보통${dot(hm && other)}</button><button data-tab="1" class="${hm ? 'on' : ''}">HARD${dot(!hm && other)}</button></div>` : '';
+      el.querySelector('.cs-sub').innerHTML = tabs + `${hm ? '하드 ' : ''}별 30개를 다 모은 장 <b>${ChapStar.fullCount(hm)}</b> / ${CHAPTERS.length} · 장마다 한 번 받아요` +
         (many > 1 ? `<button class="mini-btn ready" data-all>모두 받기 ${many}</button>` : '');
       el.querySelector('.cs-list').innerHTML = CHAPTERS.map(([a], j) => {
-        const [no, nm] = ChapStar.name(j), s = ChapStar.stars(j), m = ChapStar.max(j), got = ChapStar.got(j), ready = !got && s >= m, lock = a > cur;
-        return `<div class="mis cs-row${got ? ' done' : ready ? ' full' : ''}${lock ? ' locked' : ''}" data-j="${j}"><b class="cs-no">${ready ? `<img src="${ITEM('starchest')}" alt="">` : ''}${no}</b><div class="mtx"><b>${lock ? '???' : nm}<small>★ ${s}/${m}</small></b>
-          <span class="mbar"><i style="width:${(s / m) * 100}%"></i></span><span class="cs-rw">${ChapStar.chips(ChapStar.reward(j))}</span></div>
-          <button class="mini-btn" data-c="${j}" ${ready ? '' : 'disabled'}>${got ? '받음' : ready ? '받기' : `<img src="${ITEM('star')}" alt="">${m - s}`}</button></div>`;
+        const [no, nm] = ChapStar.name(j), s = ChapStar.stars(j, hm), m = ChapStar.max(j), got = ChapStar.got(j, hm), ready = !got && s >= m, lock = hm ? !Hard.open(j) : a > cur;
+        return `<div class="mis cs-row${got ? ' done' : ready ? ' full' : ''}${lock ? ' locked' : ''}" data-j="${j}"><b class="cs-no">${ready ? `<img src="${ITEM('starchest')}" alt="">` : ''}${no}</b><div class="mtx"><b>${lock && a > cur ? '???' : nm}<small>★ ${s}/${m}</small></b>
+          <span class="mbar"><i style="width:${(s / m) * 100}%"></i></span><span class="cs-rw">${ChapStar.chips(ChapStar.reward(j, hm))}</span></div>
+          <button class="mini-btn" data-c="${j}" ${ready ? '' : 'disabled'}>${got ? '받음' : ready ? '받기' : lock && hm ? '🔒' : `<img src="${ITEM('star')}" alt="">${m - s}`}</button></div>`;
       }).join('');
-      el.querySelectorAll('[data-c]').forEach(b => (b.onclick = () => { if (ChapStar.claim(+b.dataset.c, b)) draw(); }));
+      el.querySelectorAll('[data-tab]').forEach(b => (b.onclick = () => { Sound.play('click'); ChapStar.mode = b.dataset.tab === '1'; draw(); el.querySelector('.cs-list').scrollTop = 0; }));
+      el.querySelectorAll('[data-c]').forEach(b => (b.onclick = () => { if (ChapStar.claim(+b.dataset.c, b, hm)) draw(); }));
       // 모두 받기: 받을 수 있는 장을 한꺼번에 (보상은 장마다 따로 들어감)
       el.querySelector('[data-all]')?.addEventListener('click', e => {
         const b = e.currentTarget, sum = { coins: 0, tickets: 0 };
-        CHAPTERS.forEach((_, j) => { if (!ChapStar.ready(j)) return; const r = ChapStar.reward(j); sum.coins += r.coins; sum.tickets += r.tickets; ChapStar.claim(j); });
+        CHAPTERS.forEach((_, j) => { if (!ChapStar.ready(j, hm)) return; const r = ChapStar.reward(j, hm); sum.coins += r.coins; sum.tickets += r.tickets; ChapStar.claim(j, null, hm); });
         const c = centerOf(b);
         burst(c.x, c.y, '#ffd84d', 18);
         floatNum(c.x, c.y - 24, `+${sum.coins} · 티켓 +${sum.tickets}`, '#ff5d9e');
@@ -238,18 +262,20 @@ const ChapStar = {
       });
     };
     draw();
-    el.querySelector('[data-close]').onclick = () => { Sound.play('click'); el.classList.remove('show'); };
+    el.querySelector('[data-close]').onclick = () => { Sound.play('click'); el.classList.remove('show'); ChapStar.mode = null; };
     el.classList.add('show');
     el.querySelector('.modal-card').animate([{ transform: 'translateY(30px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 220, easing: 'ease-out' });
     const box = el.querySelector('.cs-list'), row = box.querySelector(`[data-j="${at >= 0 ? at : Math.max(0, CHAPTERS.findIndex((_, j) => ChapStar.ready(j)))}"]`);
     box.scrollTop = row ? row.offsetTop - 6 : 0;
   },
-  // 이번에 켠 뒤로 새로 30개가 된 장은 알림 한 번 (지도를 열 때)
+  // 이번에 켠 뒤로 새로 30개가 된 장은 알림 한 번 (지도를 열 때). 보통·하드 따로
   seen: null,
   notify() {
-    const now = CHAPTERS.map((_, j) => ChapStar.full(j));
-    const fresh = ChapStar.seen ? now.map((f, j) => (f && !ChapStar.seen[j] && !ChapStar.got(j) ? j : -1)).filter(j => j >= 0) : [];
-    if (fresh.length) Daily.toast(`${fresh.length > 1 ? `장 ${fresh.length}개` : ChapStar.name(fresh[0])[0]} 별 30개! 장 띠의 선물을 눌러 받기`, 'starchest');
+    const now = [false, true].map(h => CHAPTERS.map((_, j) => ChapStar.full(j, h)));
+    [false, true].forEach((h, n) => {
+      const fresh = ChapStar.seen ? now[n].map((f, j) => (f && !ChapStar.seen[n][j] && !ChapStar.got(j, h) ? j : -1)).filter(j => j >= 0) : [];
+      if (fresh.length) Daily.toast(`${fresh.length > 1 ? `장 ${fresh.length}개` : ChapStar.name(fresh[0])[0]} ${h ? '하드 ' : ''}별 30개! 장 띠의 선물을 눌러 받기`, 'starchest');
+    });
     ChapStar.seen = now;
   },
 };
