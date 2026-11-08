@@ -745,9 +745,9 @@ function playStory(lines) {
 }
 
 // ---------- 모달 ----------
-// 버튼 글자 속 기호(🏠 ▶ ◀)를 손그림 아이콘으로 (버튼 글은 코드에 적힌 것만 들어옴)
-const UI_ICON = { '🏠': 'home', '▶': 'next', '◀': 'back' };
-const uiIcons = s => s.replace(/🏠|▶|◀/g, m => `<img class="b-ic" src="assets/img/ui/${UI_ICON[m]}.png" alt="">`);
+// 글자 속 기호(🏠 ▶ ◀ 🎁 👑)를 손그림 아이콘으로: 기본 이모지는 폰마다 다르게(또는 네모 상자로) 나와서 안 씀 (글은 코드에 적힌 것만 들어옴)
+const UI_ICON = { '🏠': 'assets/img/ui/home.png', '▶▶': 'assets/img/ui/ff.webp', '▶': 'assets/img/ui/next.png', '◀': 'assets/img/ui/back.png', '🎁': ITEM('gift'), '👑': ITEM('crown') };
+const uiIcons = s => s.replace(/🏠|▶▶|▶|◀|🎁|👑/g, m => `<img class="b-ic${m === '▶▶' ? ' ff' : ''}" src="${UI_ICON[m]}" alt="">`);
 // 파자마파티즈 공식 노래 페이지 (게임 안에 음원은 넣지 않고 링크만)
 const SONG_URL = 'https://lnk.to/PajamaPartiesnoUta';
 function modal({ title, stars = null, char, img = null, photo = false, rows = [], text, btn1, on1, btn2 = '', on2 = null, btn3 = '', on3 = null, share = false, song = false }) {
@@ -3067,7 +3067,7 @@ async function useSkill(k) {
   window.addEventListener('pointerdown', onTap, { capture: true });
   const hint = document.createElement('div');
   hint.className = 'skip-hint';
-  hint.textContent = '두 번 톡 ▶▶ 빨리 감기';
+  hint.innerHTML = uiIcons('두 번 톡 ▶▶ 빨리 감기');
   if (Prefs.d.noSkillFx) {
     // 설정에서 스킬 연출 끔: 컷인 없이 스킬 이름만 잠깐, 나머지는 빨리 감기
     Sound.play('jingle_skill', 1.2, 0.6);

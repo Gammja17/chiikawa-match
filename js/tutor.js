@@ -254,7 +254,7 @@ const Spot = {
       ov.innerHTML = box('hole', x1, y1, x2 - x1, y2 - y1) +
         box('blk', 0, 0, a.width, y1) + box('blk', 0, y2, a.width, a.height - y2) + box('blk', 0, y1, x1, y2 - y1) + box('blk', x2, y1, a.width - x2, y2 - y1) +
         (tap ? '' : box('blk', x1, y1, x2 - x1, y2 - y1)) +
-        `<div class="spot-say"><img src="${FACE(who)}"><span>${glue(text)}</span>${tap ? '' : '<small>톡 눌러서 다음 ▶</small>'}</div>` +
+        `<div class="spot-say"><img src="${FACE(who)}"><span>${glue(text)}</span>${tap ? '' : `<small>${uiIcons('톡 눌러서 다음 ▶')}</small>`}</div>` +
         (tap === true ? `<img class="spot-hand" src="${ITEM('hand')}" style="left:${(x1 + x2) / 2}px;top:${(y1 + y2) / 2}px">` : '');
       app.appendChild(ov);
       // 말풍선은 비춘 곳 아래에 자리가 있으면 아래, 없으면 위
@@ -439,7 +439,7 @@ const Cine = {
     return new Promise(done => {
       const el = document.createElement('div');
       el.className = 'cine';
-      el.innerHTML = '<div class="cine-img"></div><i class="bar top"></i><i class="bar bot"></i><p class="cine-text"></p><button class="cine-skip">건너뛰기 ▶▶</button><div class="cine-logo"><img src="assets/img/ui/logo.png" alt="퍼즐 토벌 대작전!"></div>';
+      el.innerHTML = '<div class="cine-img"></div><i class="bar top"></i><i class="bar bot"></i><p class="cine-text"></p><button class="cine-skip">' + uiIcons('건너뛰기 ▶▶') + '</button><div class="cine-logo"><img src="assets/img/ui/logo.png" alt="퍼즐 토벌 대작전!"></div>';
       app.appendChild(el);
       const imgBox = el.querySelector('.cine-img'), txt = el.querySelector('.cine-text');
       let k = -1, timer = null, typer = null, ended = false; // typer: 글자 하나씩 쓰는 타이머 (장면을 빨리 넘기면 앞 장면 것을 멈춰야 글자가 안 섞임)

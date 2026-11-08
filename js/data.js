@@ -139,10 +139,17 @@ const TILE = id => `assets/img/tiles/${id}.webp`;
 // 아이템은 치이카와 원작 도구로: 줄폭탄=랏코 검, 폭탄=동글 폭탄, 무지개=경단, 비행기=종이비행기 (VARCO로 그림)
 const ITEM_ALIAS = { rocket: 'sword_o', bomb: 'bombball_o', rainbow: 'dango3_o', plane: 'paperplane_o' }; // _o: 테두리를 그림에 미리 그려 둔 판 (CSS 필터는 보너스 타임에 렉)
 ITEM_ALIAS.pearl = 'clam_open'; // 진주 목표: 판 위 가리비가 벌어진 그림 (같은 조개인 게 보이게)
+// Noto Emoji였던 꿀·왕관·딸기·벚꽃·스펀지·해바라기를 VARCO 스티커로 새로 그림: 파일 이름을 바꿔서 폰에 남은 옛 그림 대신 새로 받게
+ITEM_ALIAS.honey = 'honey_pot';
+ITEM_ALIAS.plant = 'clover'; // 지도 판의 일상 퍼즐 표시: 화분 고사리 → 풀밭 세잎클로버
+ITEM_ALIAS.crown = 'crown2';
+ITEM_ALIAS.berry = 'berry2';
+ITEM_ALIAS.sakura = 'sakura2';
+ITEM_ALIAS.sponge = 'sponge2';
+ITEM_ALIAS.sunflower = 'sunflower2';
 // 인어섬 편(31~40장) 기믹·판 아이콘(조개·진주·먹물·모래·소용돌이·보호막·물살, 파도·섬·배…)도 VARCO 스티커 그림. 처음엔 Noto Emoji PNG였다가 그림체를 맞춤
-// 파자마파티즈 편(41~50장) 아이콘은 아직 Noto Emoji PNG
-const ITEM_PNG = new Set(['mic', 'notes', 'broom', 'feather', 'potato', 'bulb', 'chair', 'ticket', 'nest', 'duck', 'tent', 'thread', 'pajama', 'dance']);
-const ITEM = name => { const n = ITEM_ALIAS[name] || name; return `assets/img/items/${n}.${ITEM_PNG.has(n) ? 'png' : 'webp'}`; }; // 그림을 바꾸면 이름(또는 ?v=)을 바꿔서 폰에 남은 옛 그림 대신 새로 받게
+// 파자마파티즈 편(41~50장) 아이콘도 Noto Emoji PNG였다가 VARCO 스티커 webp로 (춤은 사람 대신 미러볼). png→webp라 주소가 바뀌어 폰도 새로 받음
+const ITEM = name => `assets/img/items/${ITEM_ALIAS[name] || name}.webp`; // 그림을 바꾸면 이름(또는 ?v=)을 바꿔서 폰에 남은 옛 그림 대신 새로 받게
 // 전신 그림이 없는 캐릭터는 얼굴로
 const NO_BODY = new Set(['kani', 'shooting', 'darkstar', 'goblin', 'beetle']);
 const FXI = n => `assets/img/fx/${n}.png`;
