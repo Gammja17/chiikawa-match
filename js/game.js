@@ -533,15 +533,17 @@ function openProfile() {
 const MAP_PAGE = 30;
 const REGIONS = ['봄 들판', '숲과 고블린 동굴', '비 오는 마을', '여름 바닷가', '별똥별 언덕', '할로윈 밤', '가을 소풍길', '눈 내린 새해', '온천 꽃마을', '키메라 숲과 거인의 성',
   '바다 건너 인어섬', '산호 숲과 인어 마을', '바다 동굴과 폭풍의 밤', '다시 노래하는 섬'];
-// 인어섬 편(301~400판) 지역은 아직 새 그림이 없어서 바닷가(4)·밤 언덕(5) 그림을 같이 씀
-const REGION_ART = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 4, 4, 5, 4];
+// 인어섬 편(301~400판): 11 바다 건너 섬 해변, 12 산호 숲·인어 마을, 13 바다 동굴·폭풍 밤, 14 새벽 썰물의 섬
+const REGION_ART = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+// 판 배경은 인어섬 편도 새 그림 (바르코: 섬 바닷가·산호 석호·바다 동굴 폭풍 밤·새벽 섬)
+const STAGE_ART = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
 const regionOf = k => Math.min(Math.floor(k / MAP_PAGE), REGIONS.length - 1);
 let mapPage = null;
 // 판 배경: 지도에서 고른 판만 그 지역 풍경 (오늘의 도전·탑 같은 건 원래 무늬). k는 지도 번호, 없으면 -1
 function stageBg(k) {
   const el = $('#battle');
   el.classList.toggle('has-bg', k >= 0);
-  el.style.setProperty('--stage-bg', k >= 0 ? `url(${new URL(`assets/img/stage/s${REGION_ART[regionOf(k)]}.jpg`, location.href)})` : 'none'); // CSS 변수의 주소는 style.css 기준으로 풀려서 절대 주소로
+  el.style.setProperty('--stage-bg', k >= 0 ? `url(${new URL(`assets/img/stage/s${STAGE_ART[regionOf(k)]}.jpg`, location.href)})` : 'none'); // CSS 변수의 주소는 style.css 기준으로 풀려서 절대 주소로
 }
 
 function openMap(advanceFrom = null, paging = false) {
@@ -865,7 +867,10 @@ const fgClass = (r, c) => {
   const w = Board.floor?.[r][c] || 0;
   // 물살 줄: 구슬 위에 작은 화살표 (칸 사이 경계에), 바닥 무늬는 구슬에 가려서
   const ci = B.mode === 'life' && !hole(r, c) ? (L.st?.current?.rows || []).indexOf(r) : -1;
-  return 'cellfg' + (w ? ' w' + w : '') + (ci >= 0 ? (flowDir(ci) > 0 ? ' flow-r' : ' flow-l') : '');
+  // 소용돌이·모래: 구슬에 가려 안 보이니 구슬 위에도 작은 표시 (입구는 칸 아래, 출구는 칸 위, 모래는 왼쪽 아래 귀퉁이)
+  const ports = Board.portals || [];
+  const whirl = ports.some(p => p.from[0] === r && p.from[1] === c) ? ' whirl-in' : ports.some(p => p.to[0] === r && p.to[1] === c) ? ' whirl-out' : '';
+  return 'cellfg' + (w ? ' w' + w : '') + (ci >= 0 ? (flowDir(ci) > 0 ? ' flow-r' : ' flow-l') + ((flowDir(ci) > 0 ? c === COLS - 1 || hole(r, c + 1) : c === 0 || hole(r, c - 1)) ? ' flow-end' : '') : '') + whirl + (Board.sand?.[r][c] ? ' sand' : '');
 };
 function renderFloor() {
   boardEl.querySelectorAll('.cellbg').forEach((d, i) => (d.className = cellClass(...unkey(i))));

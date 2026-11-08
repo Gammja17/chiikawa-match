@@ -232,13 +232,16 @@ const CREDITS = [
         'hand.webp', 'heart.webp', 'house.webp', 'medal.webp', 'naruto.webp', 'onigiri.webp', 'pancake.webp', 'paperplane.webp',
         'paperplane_o.webp', 'parfait.webp', 'pot.webp', 'ramen.webp', 'ribbon.webp', 'sparkle.webp', 'star.webp', 'starchest.webp', 'stick.webp',
         'sword.webp', 'sword_o.webp', 'target.webp', 'timer.webp', 'weed1.webp', 'weed2.webp',
+        // 인어섬 편(31~40장) 기믹·판 아이콘 (GPT Image 2.6, 2026-11)
+        'boat.webp', 'clam.webp', 'clam_open.webp', 'coral.webp', 'crab.webp', 'fish.webp', 'flow.webp', 'fog.webp', 'ink.webp', 'island.webp',
+        'letter.webp', 'moon.webp', 'note.webp', 'sand.webp', 'seamap.webp', 'shield.webp', 'storm.webp', 'wave.webp', 'whirl.webp',
       ],
-      'img/map': ['m1.jpg', 'm10.jpg', 'm2.jpg', 'm3.jpg', 'm4.jpg', 'm5.jpg', 'm6.jpg', 'm7.jpg', 'm8.jpg', 'm9.jpg'],
+      'img/map': ['m1.jpg', 'm10.jpg', 'm2.jpg', 'm3.jpg', 'm4.jpg', 'm5.jpg', 'm6.jpg', 'm7.jpg', 'm8.jpg', 'm9.jpg', 'm11.jpg', 'm12.jpg', 'm13.jpg', 'm14.jpg'],
       'img/obst': [
         'box_flap.png', 'box_open.png', 'bubble_pop.png', 'dirt.png', 'foam_tex.webp', 'leaf.png', 'ribbon_loose.png',
         'sprout_pull.png', 'weed_pull.png',
       ],
-      'img/stage': ['s1.jpg', 's10.jpg', 's2.jpg', 's3.jpg', 's4.jpg', 's5.jpg', 's6.jpg', 's7.jpg', 's8.jpg', 's9.jpg'],
+      'img/stage': ['s1.jpg', 's10.jpg', 's2.jpg', 's3.jpg', 's4.jpg', 's5.jpg', 's6.jpg', 's7.jpg', 's8.jpg', 's9.jpg', 's11.jpg', 's12.jpg', 's13.jpg', 's14.jpg'],
       'img/ui': [
         'back.png', 'bar_fill.png', 'bar_fill_red.png', 'bar_frame.png', 'book.png', 'cd_clock.png', 'check.png', 'crown.png',
         'debuff_drain.webp', 'debuff_poison.webp', 'debuff_sleep.webp', 'debuff_weak.webp', 'fx_dark.webp', 'fx_dust.webp',
@@ -299,9 +302,6 @@ const CREDITS = [
         'bed.webp', 'berry.webp', 'bomb.webp', 'boom.webp', 'candle.webp', 'cap.webp', 'crown.webp', 'frame.webp', 'gradcap.webp', 'h.webp',
         'honey.webp', 'mirror.webp', 'phones.webp', 'plane.webp', 'plant.webp', 'rainbow.webp', 'rocket.webp', 'sakura.webp', 'shades.webp',
         'sofa.webp', 'sponge.webp', 'sunflower.webp', 'teddy.webp', 'tophat.webp', 'tv.webp', 'v.webp',
-        // 인어섬 편 (31~40장) 기믹·지도 아이콘: 2D/png/128 그대로
-        'boat.png', 'clam.png', 'clam_open.png', 'coral.png', 'crab.png', 'fish.png', 'fog.png', 'ink.png', 'island.png', 'letter.png',
-        'moon.png', 'note.png', 'sand.png', 'seamap.png', 'shield.png', 'storm.png', 'wave.png', 'whirl.png',
       ],
     },
   },
