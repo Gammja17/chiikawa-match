@@ -28,7 +28,7 @@ const Aff = {
     d.aff = d.aff || {};
     d.aff[id] = Math.min(AFF_AT[AFF_AT.length - 1], (d.aff[id] || 0) + n);
     Save.save();
-    if (from) for (let k = 0; k < Math.min(5, 1 + Math.floor(n / 3)); k++) setTimeout(() => floatNum(from.x + (Math.random() - 0.5) * 40, from.y - 20, '♥', '#ff6b8a'), k * 120);
+    if (from) for (let k = 0; k < Math.min(5, 1 + Math.floor(n / 3)); k++) setTimeout(() => floatNum(from.x + (Math.random() - 0.5) * 40, from.y - 20, '♥︎', '#ff6b8a'), k * 120);
     if ($('#house').classList.contains('active')) Aff.bar(homeOf);
     if (Aff.lv(id) > before) await Aff.levelUp(id, Aff.lv(id));
   },
@@ -42,7 +42,7 @@ const Aff = {
     if (lv === 4) { Save.data.tickets = (Save.data.tickets || 0) + 1; reward = '뽑기 티켓 1장'; }
     if (lv === 5) reward = '단짝! 공격·회복 +5%';
     Save.save();
-    await new Promise(done => modal({ title: `호감도 ${lv}단계!`, char: id, text: `${ch.name}: "${lineOf(id)}"`, rows: [['호감도', '♥'.repeat(lv)], ['보상', reward]], btn1: '좋아!', on1: done }));
+    await new Promise(done => modal({ title: `호감도 ${lv}단계!`, char: id, text: `${ch.name}: "${lineOf(id)}"`, rows: [['호감도', `<img class="b-ic" src="${ITEM('heart')}" alt="">`.repeat(lv)], ['보상', reward]], btn1: '좋아!', on1: done }));
     if (lv === 3) await playStory(AFF_STORY[id] || [[id, lineOf(id)], ['chiikawa', '…!! (헤헤)']]);
   },
   // 하루 한 번 쓰다듬기
@@ -58,7 +58,7 @@ const Aff = {
   // 집 위쪽: 하트 단계와 다음 단계까지 막대
   bar(id) {
     const ch = CHARS[charIdx(id)], lv = Aff.lv(id), fav = AFF_FAV[id];
-    $('#affBar').innerHTML = `<span class="hearts5">${[1, 2, 3, 4, 5].map(k => `<i class="${k <= lv ? 'on' : ''}">♥</i>`).join('')}</span>
+    $('#affBar').innerHTML = `<span class="hearts5">${[1, 2, 3, 4, 5].map(k => `<img class="${k <= lv ? 'on' : ''}" src="${ITEM('heart')}" alt="">`).join('')}</span>
       <span class="abar"><i style="width:${Aff.frac(id) * 100}%"></i></span>${fav ? `<small>좋아하는 간식 <img src="${ITEM(fav)}"></small>` : ''}`;
     $('#affBar').style.setProperty('--ring', ch.ring);
   },
