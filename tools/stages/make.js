@@ -281,7 +281,8 @@ function tuneBattle(job, sim) {
   // 공격력: 체력 120이라 60이 넘으면 두 방. 보통 괴물은 세 방(44~59), 보스만 두 방(85→110). 어려움은 주로 괴물 체력으로
   const t = (ch - 7) / 23, jit = rng(hash(sp.name + 'atk'));
   const waves = sp.waves.map(w => {
-    const cd = w.cd || (w.boss ? 4 : 3);
+    // 31~40장 HARD 보스는 3턴마다: 공격력이 상한(115)에 걸려 목표보다 쉬워지던 것을 공격 간격으로 맞춤 (1~30장은 그대로)
+    const cd = ch > 30 && sp.lv === 'hard' && w.boss ? Math.min(w.cd || 4, 3) : w.cd || (w.boss ? 4 : 3);
     const base = w.boss ? lerp(85, 110, t) * (cd <= 3 ? 0.85 : 1) : Math.min(59, lerp(50, 57, t) + (jit() * 6 - 3) - (sp.waves.length >= 3 ? 4 : 0));
     const atk = Math.round(base * (cd <= 2 ? 0.65 : 1));
     const o = { a: w.a, m: w.m, hp: 0, atk, cd };

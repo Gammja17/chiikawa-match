@@ -48,7 +48,7 @@ const Tutor = {
     $('.tip:not(.mtoast)')?.remove(); // 떠 있던 안내 위에 겹치지 않게 (미션 알림은 그대로)
     const el = document.createElement('div');
     el.className = 'tip';
-    el.innerHTML = `<img src="${ITEM(icon)}"><span>${text}</span>`;
+    el.innerHTML = `<img src="${ITEM(icon)}"><span>${glue(text)}</span>`;
     app.appendChild(el);
     Sound.play('special', 1.3, 0.5);
     el.animate([{ transform: 'translate(-50%, -20px)', opacity: 0 }, { transform: 'translate(-50%, 0)', opacity: 1 }], { duration: 260, easing: 'ease-out', fill: 'backwards' });
@@ -238,7 +238,7 @@ const Spot = {
       ov.innerHTML = box('hole', x1, y1, x2 - x1, y2 - y1) +
         box('blk', 0, 0, a.width, y1) + box('blk', 0, y2, a.width, a.height - y2) + box('blk', 0, y1, x1, y2 - y1) + box('blk', x2, y1, a.width - x2, y2 - y1) +
         (tap ? '' : box('blk', x1, y1, x2 - x1, y2 - y1)) +
-        `<div class="spot-say"><img src="${FACE(who)}"><span>${text}</span>${tap ? '' : '<small>톡 눌러서 다음 ▶</small>'}</div>` +
+        `<div class="spot-say"><img src="${FACE(who)}"><span>${glue(text)}</span>${tap ? '' : '<small>톡 눌러서 다음 ▶</small>'}</div>` +
         (tap === true ? `<img class="spot-hand" src="${ITEM('hand')}" style="left:${(x1 + x2) / 2}px;top:${(y1 + y2) / 2}px">` : '');
       app.appendChild(ov);
       // 말풍선은 비춘 곳 아래에 자리가 있으면 아래, 없으면 위
@@ -326,7 +326,8 @@ Tutor.mapFlow = async function (delay) {
   Tutor.busyFlow = true;
   try {
     await sleep(delay);
-    const ready = async () => { while ($('#modal').classList.contains('show') || $('#story').classList.contains('show') || $('#attend').classList.contains('show') || $('.join-show')) await sleep(300); return onMap(); };
+    // 화면 전환(wipe)이 늦게 끝나는 폰에서도 안내를 건너뛰지 않게 전환이 끝날 때까지 기다림
+    const ready = async () => { while (wiping || $('#modal').classList.contains('show') || $('#story').classList.contains('show') || $('#attend').classList.contains('show') || $('.join-show')) await sleep(300); return onMap(); };
     if (!(await ready())) return;
     if (!Tutor.seen('mapFirst') && clearedCount() === 0) {
       Tutor.mark('mapFirst');
@@ -336,7 +337,8 @@ Tutor.mapFlow = async function (delay) {
     // 첫 판을 깨고 오면 이름을 한 번 물어봄 (자동 이름이어도). 구글 이름이 있으면 안 물어봄
     if (!Tutor.seen('nameAsk') && clearedCount() > 0) {
       Tutor.mark('nameAsk');
-      if ((!Save.data.nick || Save.data.nickAuto) &&!(typeof Net !== 'undefined' && Net.user?.displayName)) { await Tutor.askName(); return; }
+      // 이름을 정한 뒤에도 새로 열린 기능 안내는 이어서 ('새 기능 보러 가기'로 왔는데 이름 창만 뜨고 끝나던 것)
+      if ((!Save.data.nick || Save.data.nickAuto) &&!(typeof Net !== 'undefined' && Net.user?.displayName)) { await Tutor.askName(); await sleep(300); if (!(await ready())) return; }
     }
     const u = Unlock.fresh();
     if (u) {
@@ -377,7 +379,7 @@ Tutor.askName = () => new Promise(done => {
   const card = $('#charSheet .sheet-card');
   card.style.setProperty('--ring', CHARS[charIdx('hachiware')].ring);
   card.innerHTML = `<div class="mates-title">이름 정하기</div>
-    <div class="helper-pick"><span class="fig"><img src="${artOf('hachiware')}" draggable="false"></span><div><b>하치와레</b><p>참, 아직 이름을 못 들었다! 뭐라고 부르면 돼~?</p></div></div>
+    <div class="helper-pick"><span class="fig"><img src="${artOf('hachiware')}" draggable="false"></span><div><b>하치와레</b><p>${glue('참, 아직 이름을 못 들었다! 뭐라고 부르면 돼~?')}</p></div></div>
     <input class="name-input" maxlength="12" placeholder="12자까지" autocomplete="off" enterkeyhint="done">
     <p class="survey-note">지도 이름표와 랭킹에 보여요. 프로필에서 언제든 바꿀 수 있어요</p>
     <div class="sheet-btns"><button class="big-btn ghost" data-back>나중에</button><button class="big-btn" data-go>이걸로!</button></div>`;
