@@ -949,7 +949,7 @@ async function pullGacha(n = 1) {
   gachaSkip = { on: false, fns: [] };
   const skipBtn = document.createElement('button');
   skipBtn.className = 'gacha-skip';
-  skipBtn.textContent = '건너뛰기 ▶▶';
+  skipBtn.innerHTML = uiIcons('건너뛰기 ▶▶');
   skipBtn.onclick = () => { Sound.play('click'); skipBtn.remove(); gachaSkip.on = true; FastFwd.on(12); gachaSkip.fns.splice(0).forEach(f => f()); };
   $('.gacha-body').appendChild(skipBtn);
   try {

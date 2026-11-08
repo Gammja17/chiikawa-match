@@ -190,7 +190,7 @@ const League = {
       const rows = await League.top(w);
       const k = rows.findIndex(r => r.id === Net.user.uid);
       if (k < 0) return `<span>이번 주 50위까지 ${rows[rows.length - 1].score - mine.score}점</span>`;
-      return `<span>이번 주 <b>${k + 1}위</b>${k > 0 ? `<small>${esc(rows[k - 1].name)}까지 ${rows[k - 1].score - mine.score}점</small>` : ' 👑'}</span>`;
+      return `<span>이번 주 <b>${k + 1}위</b>${k > 0 ? `<small>${esc(rows[k - 1].name)}까지 ${rows[k - 1].score - mine.score}점</small>` : ' ' + uiIcons('👑')}</span>`;
     } catch (e) { console.warn('리그 기록을 못 올렸어요', e); return null; }
   },
 

@@ -2,7 +2,7 @@
 
 > 이 파일은 `node tools/credits.js`가 `js/credits.js`에서 만듭니다. 고칠 땐 `js/credits.js`를 고치세요.
 
-먼작귀 퍼즐 토벌 대작전!은 팬이 만든 **비공식 게임**입니다. 원작자 나가노 및 치이카와 제작위원회와 관계가 없고, 돈을 받지 않습니다. 게임에 들어간 그림 603개와 소리 28개의 출처를 파일마다 적었습니다. 게임 안에서는 설정 → 만든 사람·출처, 웹에서는 `credits.html`에서 같은 목록을 볼 수 있습니다.
+먼작귀 퍼즐 토벌 대작전!은 팬이 만든 **비공식 게임**입니다. 원작자 나가노 및 치이카와 제작위원회와 관계가 없고, 돈을 받지 않습니다. 게임에 들어간 그림 604개와 소리 28개의 출처를 파일마다 적었습니다. 게임 안에서는 설정 → 만든 사람·출처, 웹에서는 `credits.html`에서 같은 목록을 볼 수 있습니다.
 
 ## 원작 그림
 
@@ -243,7 +243,7 @@
 
 AI 그림 도구와 코드로 이 게임을 위해 새로 만든 그림이에요.
 
-### VARCO로 생성한 그림 (277개)
+### VARCO로 생성한 그림 (299개)
 
 - 권리: 이 게임에서 생성
 - 출처: [VARCO (NCSOFT)](https://3d.varco.ai)
@@ -255,11 +255,11 @@ AI 그림 도구와 코드로 이 게임을 위해 새로 만든 그림이에요
 - `assets/img/fx/`: `dot_l.png`, `dot_m.png`, `drop_b.png`, `drop_p.png`, `heart_l.png`, `heart_o.png`, `heart_p.png`, `heart_r.png`, `star_b.png`, `star_m.png`, `star_p.png`, `star_y.png`, `twinkle1.png`, `twinkle2.png`, `twinkle3.png`, `twinkle4.png`
 - `assets/img/gacha/`: `machine.webp`
 - `assets/img/house/`: `fl_carpet.webp`, `fl_dark.webp`, `fl_grass.webp`, `fl_sand.webp`, `fl_stone.webp`, `fl_tatami.webp`, `fl_tile.webp`, `fl_wood.webp`, `w_check.webp`, `w_cloud.webp`, `w_daisy.webp`, `w_dot.webp`, `w_heart.webp`, `w_night.webp`, `w_star.webp`, `w_stripe.webp`
-- `assets/img/items/`: `bath.webp`, `bento.webp`, `bombball.webp`, `bombball_o.webp`, `box.webp`, `bubble.webp`, `clock.webp`, `coin.webp`, `dango.webp`, `dango3.webp`, `dango3_o.webp`, `donut.webp`, `egg.webp`, `f_balloon.webp`, `f_board.webp`, `f_bookcase.webp`, `f_cake.webp`, `f_clock.webp`, `f_cushion.webp`, `f_frame.webp`, `f_fridge.webp`, `f_futon.webp`, `f_garland.webp`, `f_grass.webp`, `f_kotatsu.webp`, `f_lamp.webp`, `f_monstera.webp`, `f_poster.webp`, `f_rice.webp`, `f_rug.webp`, `f_shelf.webp`, `f_sofa.webp`, `f_stool.webp`, `f_table.webp`, `f_tissue.webp`, `f_toybox.webp`, `f_tv.webp`, `f_wclock.webp`, `f_window.webp`, `gift.webp`, `hand.webp`, `heart.webp`, `house.webp`, `medal.webp`, `naruto.webp`, `onigiri.webp`, `pancake.webp`, `paperplane.webp`, `paperplane_o.webp`, `parfait.webp`, `pot.webp`, `ramen.webp`, `ribbon.webp`, `sparkle.webp`, `star.webp`, `starchest.webp`, `stick.webp`, `sword.webp`, `sword_o.webp`, `target.webp`, `timer.webp`, `weed1.webp`, `weed2.webp`, `boat.webp`, `clam.webp`, `clam_open.webp`, `coral.webp`, `crab.webp`, `fish.webp`, `flow.webp`, `fog.webp`, `ink.webp`, `island.webp`, `letter.webp`, `moon.webp`, `note.webp`, `sand.webp`, `seamap.webp`, `shield.webp`, `storm.webp`, `wave.webp`, `whirl.webp`
+- `assets/img/items/`: `bath.webp`, `bento.webp`, `bombball.webp`, `bombball_o.webp`, `box.webp`, `bubble.webp`, `clock.webp`, `coin.webp`, `dango.webp`, `dango3.webp`, `dango3_o.webp`, `donut.webp`, `egg.webp`, `f_balloon.webp`, `f_board.webp`, `f_bookcase.webp`, `f_cake.webp`, `f_clock.webp`, `f_cushion.webp`, `f_frame.webp`, `f_fridge.webp`, `f_futon.webp`, `f_garland.webp`, `f_grass.webp`, `f_kotatsu.webp`, `f_lamp.webp`, `f_monstera.webp`, `f_poster.webp`, `f_rice.webp`, `f_rug.webp`, `f_shelf.webp`, `f_sofa.webp`, `f_stool.webp`, `f_table.webp`, `f_tissue.webp`, `f_toybox.webp`, `f_tv.webp`, `f_wclock.webp`, `f_window.webp`, `gift.webp`, `hand.webp`, `heart.webp`, `house.webp`, `medal.webp`, `naruto.webp`, `onigiri.webp`, `pancake.webp`, `paperplane.webp`, `paperplane_o.webp`, `parfait.webp`, `pot.webp`, `ramen.webp`, `ribbon.webp`, `sparkle.webp`, `star.webp`, `starchest.webp`, `stick.webp`, `sword.webp`, `sword_o.webp`, `target.webp`, `timer.webp`, `weed1.webp`, `weed2.webp`, `boat.webp`, `clam.webp`, `clam_open.webp`, `coral.webp`, `crab.webp`, `fish.webp`, `flow.webp`, `fog.webp`, `ink.webp`, `island.webp`, `letter.webp`, `moon.webp`, `note.webp`, `sand.webp`, `seamap.webp`, `shield.webp`, `storm.webp`, `wave.webp`, `whirl.webp`, `berry2.webp`, `clover.webp`, `crown2.webp`, `honey_pot.webp`, `sakura2.webp`, `sponge2.webp`, `sunflower2.webp`, `broom.webp`, `bulb.webp`, `chair.webp`, `dance.webp`, `duck.webp`, `feather.webp`, `mic.webp`, `nest.webp`, `notes.webp`, `pajama.webp`, `potato.webp`, `tent.webp`, `thread.webp`, `ticket.webp`
 - `assets/img/map/`: `m1.jpg`, `m10.jpg`, `m2.jpg`, `m3.jpg`, `m4.jpg`, `m5.jpg`, `m6.jpg`, `m7.jpg`, `m8.jpg`, `m9.jpg`, `m11.jpg`, `m12.jpg`, `m13.jpg`, `m14.jpg`
 - `assets/img/obst/`: `box_flap.png`, `box_open.png`, `bubble_pop.png`, `dirt.png`, `foam_tex.webp`, `leaf.png`, `ribbon_loose.png`, `sprout_pull.png`, `weed_pull.png`
 - `assets/img/stage/`: `s1.jpg`, `s10.jpg`, `s2.jpg`, `s3.jpg`, `s4.jpg`, `s5.jpg`, `s6.jpg`, `s7.jpg`, `s8.jpg`, `s9.jpg`, `s11.jpg`, `s12.jpg`, `s13.jpg`, `s14.jpg`
-- `assets/img/ui/`: `back.png`, `bar_fill.png`, `bar_fill_red.png`, `bar_frame.png`, `book.png`, `cd_clock.png`, `check.png`, `crown.png`, `debuff_drain.webp`, `debuff_poison.webp`, `debuff_sleep.webp`, `debuff_weak.webp`, `fx_dark.webp`, `fx_dust.webp`, `fx_poison.webp`, `fx_sleep.webp`, `gear.png`, `home.png`, `lock.png`, `logo.png`, `next.png`, `note.png`, `ring_fill.png`, `ring_frame.png`, `sk_burst.png`, `sk_cross.png`, `sk_line_h.png`, `sk_line_v.png`, `sk_meteor.png`, `sk_rally.png`, `sk_shuffle.png`, `sk_slash.png`, `star_off.png`, `star_on.png`
+- `assets/img/ui/`: `back.png`, `bar_fill.png`, `bar_fill_red.png`, `bar_frame.png`, `book.png`, `cd_clock.png`, `check.png`, `crown.png`, `ff.webp`, `debuff_drain.webp`, `debuff_poison.webp`, `debuff_sleep.webp`, `debuff_weak.webp`, `fx_dark.webp`, `fx_dust.webp`, `fx_poison.webp`, `fx_sleep.webp`, `gear.png`, `home.png`, `lock.png`, `logo.png`, `next.png`, `note.png`, `ring_fill.png`, `ring_frame.png`, `sk_burst.png`, `sk_cross.png`, `sk_line_h.png`, `sk_line_v.png`, `sk_meteor.png`, `sk_rally.png`, `sk_shuffle.png`, `sk_slash.png`, `star_off.png`, `star_on.png`
 - `assets/img/ui/words/`: `battle.webp`, `box.webp`, `bubble.webp`, `char.webp`, `clear.webp`, `exam.webp`, `ing.webp`, `lock.webp`, `score.webp`, `syrup.webp`, `weed.webp`, `d01.webp`, `d02.webp`, `d03.webp`, `d04.webp`, `d05.webp`, `d06.webp`, `d07.webp`, `d08.webp`, `d09.webp`, `d10.webp`, `d11.webp`, `d12.webp`, `d13.webp`, `d14.webp`, `d15.webp`, `d16.webp`, `d17.webp`, `d18.webp`, `d19.webp`, `d20.webp`, `d21.webp`, `d22.webp`, `d23.webp`, `d24.webp`, `d25.webp`, `d26.webp`, `d27.webp`, `d28.webp`, `d29.webp`, `d30.webp`, `d31.webp`, `d32.webp`, `d33.webp`, `d34.webp`, `d35.webp`, `d36.webp`, `d37.webp`, `d38.webp`, `d39.webp`, `d40.webp`, `d41.webp`, `d42.webp`, `d43.webp`, `d44.webp`, `d45.webp`, `d46.webp`, `d47.webp`, `d48.webp`, `d49.webp`, `d50.webp`, `d51.webp`, `d52.webp`, `d53.webp`, `d54.webp`, `d55.webp`, `d56.webp`, `d57.webp`, `d58.webp`, `d59.webp`, `d60.webp`, `d61.webp`, `d62.webp`, `d63.webp`, `d64.webp`, `d65.webp`, `d66.webp`, `d67.webp`, `d68.webp`, `d69.webp`
 
 ### 시럽·국물 무늬 (2개)
@@ -289,14 +289,14 @@ AI 그림 도구와 코드로 이 게임을 위해 새로 만든 그림이에요
 
 자유롭게 쓸 수 있는 라이선스로 공개된 소재예요.
 
-### Noto Emoji 아이콘 (40개)
+### Noto Emoji 아이콘 (19개)
 
 - 권리: Google
 - 출처: [Noto Emoji](https://github.com/googlefonts/noto-emoji)
 - 라이선스: Apache License 2.0 (assets/img/items/LICENSE-noto.txt)
 - 손본 것: 크기를 맞추고 일부는 흰 테두리를 그림
 
-- `assets/img/items/`: `bed.webp`, `berry.webp`, `bomb.webp`, `boom.webp`, `candle.webp`, `cap.webp`, `crown.webp`, `frame.webp`, `gradcap.webp`, `h.webp`, `honey.webp`, `mirror.webp`, `phones.webp`, `plane.webp`, `plant.webp`, `rainbow.webp`, `rocket.webp`, `sakura.webp`, `shades.webp`, `sofa.webp`, `sponge.webp`, `sunflower.webp`, `teddy.webp`, `tophat.webp`, `tv.webp`, `v.webp`, `broom.png`, `bulb.png`, `chair.png`, `dance.png`, `duck.png`, `feather.png`, `mic.png`, `nest.png`, `notes.png`, `pajama.png`, `potato.png`, `tent.png`, `thread.png`, `ticket.png`
+- `assets/img/items/`: `bed.webp`, `bomb.webp`, `boom.webp`, `candle.webp`, `cap.webp`, `frame.webp`, `gradcap.webp`, `h.webp`, `mirror.webp`, `phones.webp`, `plane.webp`, `rainbow.webp`, `rocket.webp`, `shades.webp`, `sofa.webp`, `teddy.webp`, `tophat.webp`, `tv.webp`, `v.webp`
 
 ### Kenney Particle Pack (13개)
 

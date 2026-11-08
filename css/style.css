@@ -54,7 +54,8 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 #btnMapHome::before { background-image: url(../assets/img/ui/home.png); }
 .btn-set::before { background-image: url(../assets/img/ui/gear.png); }
 .btn-tomap::before, #btnFormBack::before { background-image: url(../assets/img/ui/back.png); }
-.b-ic { width: 1.05em; height: 1.05em; margin: 0 .2em; vertical-align: -.15em; }
+.b-ic { width: 1.05em; height: 1.05em; margin: 0 .2em; vertical-align: -.15em; object-fit: contain; }
+.b-ic.ff { width: 1.35em; } /* ▶▶ 빨리 감기 그림은 옆으로 김 */
 .crown-ic { width: 22px; height: 22px; }
 .gchip b .ck { width: 18px; height: 18px; vertical-align: -3px; }
 .goal-check img { width: 64px; height: 64px; display: block; }
@@ -152,6 +153,9 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 .map-pager { position: absolute; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom)); z-index: 5; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; max-width: calc(100% - 40px); padding: 4px; border-radius: 99px; background: var(--paper); box-shadow: var(--sh); }
 .map-pager button { flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--cream); font-size: 14px; color: var(--ink); }
 .map-pager button:disabled { opacity: .3; }
+.map-pager button { font-size: 0; background: var(--cream) center / 22px no-repeat; } /* 글자 ◀ ▶는 폰에 따라 기본 이모지 상자로 나와서 그림으로 */
+#mapPrev { background-image: url(../assets/img/ui/back.png); }
+#mapNext { background-image: url(../assets/img/ui/next.png); }
 .map-pager div { display: flex; flex-direction: column; align-items: center; min-width: 0; padding: 0 4px; }
 .map-pager b { max-width: 100%; font-family: var(--head); font-weight: 400; font-size: 19px; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .map-pager small { font-size: 11px; line-height: 1.2; color: var(--ink2); white-space: nowrap; }
@@ -259,7 +263,7 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 #party .pm.asleep .pm-face { filter: grayscale(.6) brightness(.85); }
 /* 큰 새가 낚아채 간 친구: 반투명 + 깃털 */
 #party .pm.snatched .pm-face { opacity: .3; filter: grayscale(1); }
-#party .pm.snatched::after { content: ''; position: absolute; right: -6px; top: -10px; width: 28px; height: 28px; background: url(../assets/img/items/feather.png) center / contain no-repeat; animation: bob 1.4s ease-in-out infinite; z-index: 3; }
+#party .pm.snatched::after { content: ''; position: absolute; right: -6px; top: -10px; width: 28px; height: 28px; background: url(../assets/img/items/feather.webp) center / contain no-repeat; animation: bob 1.4s ease-in-out infinite; z-index: 3; }
 #party .pm.asleep::after { content: ''; position: absolute; right: -6px; top: -10px; width: 30px; height: 30px; background: url(../assets/img/ui/debuff_sleep.webp) center / contain no-repeat; animation: bob 1.4s ease-in-out infinite; z-index: 3; }
 @keyframes cdRing { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-12deg); } 40% { transform: rotate(10deg); } 60% { transform: rotate(-7deg); } 80% { transform: rotate(4deg); } }
 #feverTag { position: absolute; left: 8px; bottom: 8px; z-index: 3; display: none; width: 150px; height: 27px; background: url(../assets/img/combo/ftag_cheer.webp) left center / contain no-repeat; font-size: 0; color: transparent; transform-origin: 0 50%; animation: pulse .6s infinite; } /* 글자는 그림으로 (읽기 도우미용 글은 그대로) */
@@ -293,7 +297,7 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 #battle.has-bg #arena { background-image: var(--stage-bg); background-position: center 18%; }
 #battle.has-bg .bar-title, #battle.has-bg #lhScore { text-shadow: 0 0 3px #fff, 0 0 6px #fff, 0 0 10px #fff; } /* 밤 하늘 위에서도 판 이름·점수가 읽히게 */
 #boardWrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 8px; min-height: 0; }
-#board { position: relative; width: calc(var(--s) * var(--cols, 7)); height: calc(var(--s) * var(--rows, 7)); border-radius: 16px; background: var(--paper); border: var(--line); box-shadow: var(--sh); touch-action: none; clip-path: inset(-6px -12px -12px round 20px); } /* 맨 윗줄이 통통 튈 때 잘리지 않게 위로 6px 여유 (새 구슬은 위에서 투명하게 들어와서 거의 안 보임). 옆·아래는 그림자 몫 */
+#board { position: relative; width: calc(var(--s) * var(--cols, 7)); height: calc(var(--s) * var(--rows, 7)); border-radius: 16px; background: var(--paper); outline: var(--line); box-shadow: var(--sh); touch-action: none; clip-path: inset(-6px -12px -12px round 20px); } /* 맨 윗줄이 통통 튈 때 잘리지 않게 위로 6px 여유 (새 구슬은 위에서 투명하게 들어와서 거의 안 보임). 옆·아래는 그림자 몫. 테두리는 outline: border로 그리면 판 안쪽이 4px 줄어 맨 오른쪽·아랫줄 구슬이 테두리를 덮음 */
 .cellbg { position: absolute; width: var(--s); height: var(--s); }
 .cellbg::after { content: ''; position: absolute; inset: 2px; border-radius: 10px; background: #f6f1fb; }
 .cellbg:nth-child(even)::after { background: #f1eaf8; }
@@ -365,11 +369,11 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 .cellfg.flow-l::before { left: -21%; transform: scaleX(-1); }
 .cellfg.flow-r.flow-end::before { right: 1%; } .cellfg.flow-l.flow-end::before { left: 1%; } /* 판 끝 칸: 화살표가 판 밖으로 잘리지 않게 칸 안쪽에 */
 .flow-soon .cellfg.flow-r::before, .flow-soon .cellfg.flow-l::before { animation: flowBlink .6s ease-in-out infinite alternate; }
-@keyframes flowBlink { from { opacity: .45; } to { opacity: 1; scale: 1.25; } } /* scale 속성이라 왼쪽 화살표의 뒤집기(transform)는 그대로 */
-/* 먹물 구슬: 얼굴 대신 먹물 덩어리 스티커 */
-.tile .inner.inked { border-radius: 12px; }
-.tile .inner.inked .inkimg { transform: scale(.92); }
-/* 조개: 닫힌 가리비, 맞으면 벌어져 진주가 보임 */
+@keyframes flowBlink { from { opacity: .45; } to { opacity: 1; scale: 1.25; } } /* scale 속성이라 왼쪽 화살표의 뒤집기(transform)는 그대로 */
+/* 먹물 구슬: 얼굴 대신 먹물 덩어리 스티커 */
+.tile .inner.inked { border-radius: 12px; }
+.tile .inner.inked .inkimg { transform: scale(.92); }
+/* 조개: 닫힌 가리비, 맞으면 벌어져 진주가 보임 */
 .tile .inner.clam img { transform: scale(.9); filter: drop-shadow(0 2px 0 #4a426230); }
 /* ---------- 파자마파티즈 기믹 (41~50장) ---------- */
 /* 박자 줄: 분홍 바탕 + 음표 무늬, '쿵' 턴엔 쿵쿵 뜀 */
@@ -394,7 +398,7 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 .tile .inner.ing { animation: bob 1.2s ease-in-out infinite; }
 .tile .inner.ing { border-radius: 12px; background: #fff3df; box-shadow: inset 0 0 0 3px #ff9f43; }
 .tile .inner.ing img { transform: scale(.78); }
-.life-mode #board { background: none; border: 0; box-shadow: none; }
+.life-mode #board { background: none; outline: 0; box-shadow: none; }
 .life-mode .cellbg { background: var(--paper); box-shadow: 0 0 0 1px var(--paper); }
 .life-mode .cellbg.void { background: none; box-shadow: none; }
 .life-mode .cellbg.void::after { display: none; }
@@ -606,9 +610,10 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 /* 피버 중: 판 테두리가 무지갯빛으로 반짝 */
 @keyframes feverGlow { 0% { box-shadow: 0 0 0 4px #ff8ab8, 0 0 18px 6px #ff8ab8; } 33% { box-shadow: 0 0 0 4px #ffd84d, 0 0 18px 6px #ffd84d; } 66% { box-shadow: 0 0 0 4px #7cc4ec, 0 0 18px 6px #7cc4ec; } 100% { box-shadow: 0 0 0 4px #ff8ab8, 0 0 18px 6px #ff8ab8; } }
 #app.fever #board::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: 16px; pointer-events: none; box-shadow: 0 0 0 4px #ff8ab8, 0 0 14px 5px #ffd84d; animation: feverPulse .6s ease-in-out infinite alternate; }
+#app.fever #board { outline-color: #ff8ab8; }
 @keyframes feverPulse { from { opacity: .55; } to { opacity: 1; } }
 /* 일상 퍼즐 피버: 큰 판에서 그림자를 매 프레임 바꾸면 버벅여서 빛은 고정, 점수 막대 위에 남은 턴·초 */
-#app.life-mode.fever #board::before { animation: none; opacity: 1; box-shadow: 0 0 0 4px #ff8ab8, 0 0 18px 6px #ff8ab8; }
+#app.life-mode.fever #board::before { inset: -3px; border-radius: 19px; animation: none; opacity: 1; box-shadow: 0 0 0 3px #ff8ab8, 0 0 18px 6px #ff8ab8; }
 .life-mode #lhScore { position: relative; }
 .life-mode #lhScore .fever-badge { display: none; position: absolute; left: 0; top: calc(100% + 4px); z-index: 1; align-items: center; transform-origin: 0 50%; animation: pulse .6s infinite; }
 .life-mode.fever #lhScore .fever-badge { display: flex; }
@@ -989,7 +994,8 @@ img.shadow { filter: brightness(0) opacity(.15); }
 .node.current .ntag { bottom: calc(100% + 34px); }
 .lvtag { display: inline-block; margin-right: 6px; padding: 1px 8px; border-radius: 8px; font-size: 14px; vertical-align: middle; color: #fff; background: #ffb347; }
 .lvtag.hard { background: #ff5a6e; }
-#app.hard-stage #board { box-shadow: 0 0 0 3px #ff5a6e, var(--sh); }
+#app.hard-stage #board { box-shadow: 0 0 0 5px #ff5a6e, var(--sh); }
+#app.life-mode.hard-stage #board { box-shadow: 0 0 0 3px rgba(255, 255, 255, .8), 0 0 0 6px #ff5a6e; } /* 일상 퍼즐은 판 테두리가 없어서 빨간 띠가 구슬에 딱 붙음: 3px 띄움 (위쪽 clip-path 여유가 6px) */
 
 /* 아이템 터질 범위: 칸이 하얗게 켜짐 (구슬 위, 연출 아래) */
 .zone { position: absolute; z-index: 3; pointer-events: none; border-radius: 18%; background: rgba(255, 255, 255, .8); box-shadow: inset 0 0 0 3px var(--zc), 0 0 12px 3px var(--zc); }
@@ -1279,8 +1285,8 @@ img.shadow { filter: brightness(0) opacity(.15); }
 
 /* ---------- 호감도 ---------- */
 #affBar { display: flex; align-items: center; gap: 8px; margin: 0 14px 8px; padding: 6px 12px; border-radius: 14px; background: var(--paper); box-shadow: var(--sh); font-family: var(--head); flex: none; }
-#affBar .hearts5 i { font-style: normal; font-size: 17px; color: #e6dbe8; }
-#affBar .hearts5 i.on { color: #ff6b8a; }
+#affBar .hearts5 img { width: 17px; height: 17px; vertical-align: middle; opacity: .3; filter: grayscale(1); }
+#affBar .hearts5 img.on { opacity: 1; filter: none; }
 #affBar .abar { flex: 1; height: 8px; border-radius: 4px; background: #efe6f0; overflow: hidden; }
 #affBar .abar i { display: block; height: 100%; border-radius: 4px; background: #ff8aa8; transition: width .4s; }
 #affBar small { display: flex; align-items: center; gap: 2px; font-size: 12px; color: var(--ink2); white-space: nowrap; }
