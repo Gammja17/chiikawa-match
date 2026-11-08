@@ -93,20 +93,35 @@
 
 - `assets/img/skins/chiikawa/`: `dance.gif`
 
-### 옷 갈아입히기 (29개)
+### 옷 갈아입히기 (15개)
 
 - 권리: © nagano / chiikawa committee
 - 출처: [Chiikawa Wiki (Fandom)](https://chiikawa.fandom.com/)
 - 손본 것: 애니메이션·만화 장면과 공식 일러스트에서 친구만 오려 냄
 - 참고: 마법소녀 옷은 MV 「まじかるちいかわ」, 산타 옷은 공식 콜라보 영상 「サンタ・テル・ミー」, 가리비 옷은 明星 チャルメラ 광고 「ホタテ三重奏篇」, 랏코 가면 히어로는 애니메이션 장면에서
 
-- `assets/img/skins/chiikawa/`: `cry.png`, `gelsheet.png`, `hotate.png`, `magical.png`, `melon.png`, `pochette.png`, `santa.png`, `sasumata.png`, `sprout.png`, `squid.png`, `tanuki.png`
-- `assets/img/skins/hachiware/`: `bugnet.png`, `guitar.png`, `hotate.png`, `magical.png`, `santa.png`, `sasumata.png`, `tanuki.png`
+- `assets/img/skins/chiikawa/`: `cry.png`, `hotate.png`, `sasumata.png`, `sprout.png`, `squid.png`, `tanuki.png`
+- `assets/img/skins/hachiware/`: `hotate.png`, `sasumata.png`, `tanuki.png`
 - `assets/img/skins/kurimanju/`: `magical.png`
-- `assets/img/skins/momonga/`: `magical.png`, `santa.png`
-- `assets/img/skins/rakko/`: `mask.png`, `santa.png`
+- `assets/img/skins/rakko/`: `mask.png`
 - `assets/img/skins/shisa/`: `magical.png`
-- `assets/img/skins/usagi/`: `hotate.png`, `magical.png`, `neckie.png`, `santa.png`, `squid.png`
+- `assets/img/skins/usagi/`: `hotate.png`, `neckie.png`, `squid.png`
+
+### VARCO로 전신을 이어 그린 옷 (33개)
+
+- 권리: © nagano / chiikawa committee, © 2022 SANRIO CO., LTD.
+- 출처: MV 「まじかるちいかわ」, 공식 콜라보 영상 「サンタ・テル・ミー」, [치이카와×산리오 캐릭터즈 콜라보 일러스트](https://www.famitsu.com/news/202206/10264618.html), [나가노 X (@ngnchiikawa)](https://x.com/ngnchiikawa), 애니·영화 장면, [VARCO (NCSOFT)](https://3d.varco.ai)
+- 손본 것: 원작 그림에서 오려 낸 옷이 몸이 잘리거나 반투명하게 비쳐서, VARCO 이미지 편집(GPT Image 2.6)으로 같은 그림체의 전신을 이어 그리고 배경을 다시 지움
+- 참고: 마법소녀(치이카와·하치와레·우사기·모몽가)와 산타(치이카와·하치와레·우사기·모몽가·랏코)는 원래 영상 장면, 마이멜로디·키티·푸린·쿠로미·한교동은 산리오 콜라보 일러스트, 나머지는 나가노 일러스트·만화와 애니·영화 장면이 원본
+
+- `assets/img/skins/chiikawa/`: `dressup.png`, `franken.png`, `gelsheet.png`, `magical.png`, `melody.png`, `melon.png`, `pochette.png`, `santa.png`, `tiger.png`
+- `assets/img/skins/hachiware/`: `bugnet.png`, `guitar.png`, `kitty.png`, `magical.png`, `santa.png`, `tiger.png`, `winter.png`
+- `assets/img/skins/usagi/`: `dj.png`, `franken.png`, `magical.png`, `purin.png`, `santa.png`, `tiger.png`, `whitesanta.png`
+- `assets/img/skins/momonga/`: `devil_angel.png`, `kuromi.png`, `magical.png`, `santa.png`
+- `assets/img/skins/rakko/`: `santa.png`, `taxi.png`
+- `assets/img/skins/kurimanju/`: `hangyodon.png`
+- `assets/img/skins/shisa/`: `pantu.png`, `traffic.png`
+- `assets/img/skins/kani/`: `sakura.png`
 
 ### 섬 옷 (영화 인어섬) (8개)
 
@@ -131,33 +146,21 @@
 
 - `assets/img/scenes/`: `island.jpg`
 
-### 산리오 콜라보 옷 (5개)
-
-- 권리: © nagano / chiikawa committee, © 2022 SANRIO CO., LTD.
-- 출처: [치이카와×산리오 캐릭터즈 콜라보 일러스트 (파미통 기사)](https://www.famitsu.com/news/202206/10264618.html)
-- 손본 것: 일러스트에서 먼작귀 친구만 오려 냄
-
-- `assets/img/skins/chiikawa/`: `melody.png`
-- `assets/img/skins/hachiware/`: `kitty.png`
-- `assets/img/skins/usagi/`: `purin.png`
-- `assets/img/skins/momonga/`: `kuromi.png`
-- `assets/img/skins/kurimanju/`: `hangyodon.png`
-
-### 나가노 일러스트·만화 옷 (61개)
+### 나가노 일러스트·만화 옷 (49개)
 
 - 권리: © nagano
 - 출처: [나가노 X (@ngnchiikawa)](https://x.com/ngnchiikawa)
 - 손본 것: 일러스트·만화 칸에서 친구만 오려 냄
 - 참고: 새해(2020~2022)·할로윈(2022~2025)·크리스마스(2022~2025)·생일 일러스트와 만화, 우비(2021-06)·잠옷(2021-04)·문어 옷(2022-06)·도토리 모자(2023-01)·교통 정리(2023-12)·벚꽃 요정(2024-03) 만화, 편의점 점원은 패밀리마트 콜라보 만화
 
-- `assets/img/skins/chiikawa/`: `blackcat.png`, `chicken.png`, `cream.png`, `dress.png`, `franken.png`, `hakama.png`, `mushroom.png`, `nurse.png`, `octopus.png`, `ox.png`, `pajama.png`, `raincoat.png`, `tiger.png`, `tree.png`, `whitesanta.png`, `winter.png`
-- `assets/img/skins/hachiware/`: `blackcat.png`, `chicken.png`, `cream.png`, `dress.png`, `franken.png`, `mushroom.png`, `nurse.png`, `octopus.png`, `ox.png`, `pajama.png`, `raincoat.png`, `snowman.png`, `tiger.png`, `whitesanta.png`, `winter.png`
-- `assets/img/skins/usagi/`: `blackcat.png`, `doctor.png`, `franken.png`, `knit.png`, `mushroom.png`, `ox.png`, `prince.png`, `raincoat.png`, `stollen.png`, `tiger.png`, `tree.png`, `whitesanta.png`
-- `assets/img/skins/momonga/`: `acorn.png`, `bat.png`, `devil.png`, `devil_angel.png`, `pizza.png`, `pumpkin.png`
-- `assets/img/skins/rakko/`: `mochi.png`, `taxi.png`
+- `assets/img/skins/chiikawa/`: `blackcat.png`, `chicken.png`, `cream.png`, `dress.png`, `hakama.png`, `mushroom.png`, `nurse.png`, `octopus.png`, `ox.png`, `pajama.png`, `raincoat.png`, `tree.png`, `whitesanta.png`, `winter.png`
+- `assets/img/skins/hachiware/`: `blackcat.png`, `chicken.png`, `cream.png`, `dress.png`, `franken.png`, `mushroom.png`, `nurse.png`, `octopus.png`, `ox.png`, `pajama.png`, `raincoat.png`, `snowman.png`, `whitesanta.png`
+- `assets/img/skins/usagi/`: `blackcat.png`, `doctor.png`, `knit.png`, `mushroom.png`, `ox.png`, `prince.png`, `raincoat.png`, `stollen.png`, `tree.png`
+- `assets/img/skins/momonga/`: `acorn.png`, `bat.png`, `devil.png`, `pizza.png`, `pumpkin.png`
+- `assets/img/skins/rakko/`: `mochi.png`
 - `assets/img/skins/kurimanju/`: `chestnut.png`, `edamame.png`
-- `assets/img/skins/shisa/`: `clerk.png`, `goat.png`, `pantu.png`, `traffic.png`
-- `assets/img/skins/kani/`: `angel.png`, `bat.png`, `pizza.png`, `sakura.png`
+- `assets/img/skins/shisa/`: `clerk.png`, `goat.png`
+- `assets/img/skins/kani/`: `angel.png`, `bat.png`, `pizza.png`
 
 ### VARCO로 다듬은 옷 (4개)
 
@@ -178,16 +181,14 @@
 
 - `assets/img/skins/chiikawa/`: `darkmagic.png`
 
-### 애니·영화 장면 옷 (4개)
+### 애니·영화 장면 옷 (2개)
 
 - 권리: © nagano / chiikawa committee, 「映画ちいかわ」製作委員会
-- 출처: [애니 123화 장면 (애니메애니메 기사)](https://animeanime.jp/article/2023/12/04/81628.html), [애니 372화 장면 (Chiikawa Wiki, miraheze)](https://chiikawa.miraheze.org/), [영화 장면 컷 (리얼사운드 기사)](https://realsound.jp/)
+- 출처: [애니 123화 장면 (애니메애니메 기사)](https://animeanime.jp/article/2023/12/04/81628.html), [영화 장면 컷 (리얼사운드 기사)](https://realsound.jp/)
 - 손본 것: 장면에서 친구만 오려 냄
-- 참고: 시사 갑옷은 애니 123화, 치이카와 꾸민 모자는 애니 372화, 시사 요리사·우사기 DJ는 영화 『人魚の島のひみつ』 장면
+- 참고: 시사 갑옷은 애니 123화, 시사 요리사는 영화 『人魚の島のひみつ』 장면
 
 - `assets/img/skins/shisa/`: `armor.png`, `chef.png`
-- `assets/img/skins/usagi/`: `dj.png`
-- `assets/img/skins/chiikawa/`: `dressup.png`
 
 ### 스페셜 옷 배경 장면 (5개)
 
