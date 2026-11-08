@@ -236,7 +236,7 @@ const CREDITS = [
         'boat.webp', 'clam.webp', 'clam_open.webp', 'coral.webp', 'crab.webp', 'fish.webp', 'flow.webp', 'fog.webp', 'ink.webp', 'island.webp',
         'letter.webp', 'moon.webp', 'note.webp', 'sand.webp', 'seamap.webp', 'shield.webp', 'storm.webp', 'wave.webp', 'whirl.webp',
         // Noto Emoji였던 것을 스티커 그림으로 (GPT Image 2.6, 2026-11)
-        'crown2.webp', 'honey_pot.webp',
+        'berry2.webp', 'crown2.webp', 'honey_pot.webp', 'sakura2.webp', 'sponge2.webp', 'sunflower2.webp',
       ],
       'img/map': ['m1.jpg', 'm10.jpg', 'm2.jpg', 'm3.jpg', 'm4.jpg', 'm5.jpg', 'm6.jpg', 'm7.jpg', 'm8.jpg', 'm9.jpg', 'm11.jpg', 'm12.jpg', 'm13.jpg', 'm14.jpg'],
       'img/obst': [
@@ -301,9 +301,9 @@ const CREDITS = [
     did: '크기를 맞추고 일부는 흰 테두리를 그림',
     files: {
       'img/items': [
-        'bed.webp', 'berry.webp', 'bomb.webp', 'boom.webp', 'candle.webp', 'cap.webp', 'frame.webp', 'gradcap.webp', 'h.webp',
-        'mirror.webp', 'phones.webp', 'plane.webp', 'plant.webp', 'rainbow.webp', 'rocket.webp', 'sakura.webp', 'shades.webp',
-        'sofa.webp', 'sponge.webp', 'sunflower.webp', 'teddy.webp', 'tophat.webp', 'tv.webp', 'v.webp',
+        'bed.webp', 'bomb.webp', 'boom.webp', 'candle.webp', 'cap.webp', 'frame.webp', 'gradcap.webp', 'h.webp',
+        'mirror.webp', 'phones.webp', 'plane.webp', 'plant.webp', 'rainbow.webp', 'rocket.webp', 'shades.webp',
+        'sofa.webp', 'teddy.webp', 'tophat.webp', 'tv.webp', 'v.webp',
       ],
     },
   },
