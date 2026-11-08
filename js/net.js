@@ -11,8 +11,6 @@ const progressOf = d => {
 const NICK_ADJ = ['잠자는', '꿈꾸는', '배고픈', '용감한', '수줍은', '신난', '졸린', '씩씩한', '반짝이는', '느긋한', '말랑한', '두근두근'];
 const NICK_FRIEND = ['치이카와', '하치와레', '우사기', '모몽가', '랏코', '쿠리만쥬', '시사', '카니'];
 
-// 랭킹에서 뺄 계정 (캡처·시험하다 로컬에서 잘못 올라간 테스트 기록). Firestore 규칙상 지우는 건 콘솔에서만 됨
-const RANK_HIDE = new Set(['y0p9Fc9cQRNQbXMnCiuRraHBiV13', 'nrgbc0Nq3YcaEVweW2E0IenCZUC2']);
 
 const Net = {
   on: false, user: null, listeners: [],
@@ -180,7 +178,7 @@ const Net = {
     const c = Net.cache[field];
     if (c && Date.now() - c.at < maxAge) return c.rows;
     const q = await Net.db.collection('scores').orderBy(field, 'desc').limit(50).get();
-    const rows = q.docs.filter(d => !RANK_HIDE.has(d.id)).map(d => ({ id: d.id, ...d.data() }));
+    const rows = q.docs.map(d => ({ id: d.id, ...d.data() }));
     Net.cache[field] = { at: Date.now(), rows };
     return rows;
   },
