@@ -6,7 +6,7 @@
   Math.random = () => { seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
   const shuffleArr = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   const pickTiles = (g, n, ok = t => !t.special && t.type >= 0) => { const all = []; Board.each(g, (t, r, c) => ok(t) && all.push([r, c])); return shuffleArr(all).slice(0, n); };
-  const SPV = { rainbow: 7, bomb: 4, plane: 3, h: 3, v: 3 }; // 판에 있는 아이템 값 (나중에 쓸 수 있는 힘)
+  const SPV = { rainbow: 7, bomb: 4, plane: 3, h: 3, v: 3, broom: 4 }; // 판에 있는 아이템 값 (나중에 쓸 수 있는 힘)
 
   let S, G; // 지금 판 상태, 판
   const cloneGrid = g => g.map(row => row.map(t => (t ? { ...t } : t)));
@@ -33,6 +33,8 @@
         if (tile.type >= 0) { const id = LIFE_CHARS[tile.type]; S.chars[id] = (S.chars[id] || 0) + 1; }
       });
       if (res.hits.some(h => h.tile.block === 'bubble')) S.popped = true;
+      const beatRows = S.st.beat && (S.turn + 1) % S.st.beat.every === 0 ? S.st.beat.rows : null; // 박자 줄·스포트라이트 (js/life.js onStep)
+      res.cleared.forEach(({ r, c, tile }) => { if (tile.type < 0) return; if (beatRows?.includes(r)) S.notes++; if (Board.spot && Board.inSpot(r, c)) S.claps++; });
       return;
     }
     // 토벌: 맞춘 얼굴마다 공격(카니는 회복)
@@ -135,7 +137,7 @@
     Board.each(G, t => { if (t.block === k) n += t.hp; });
     return n;
   };
-  const remain = g => g.k === 'ing' ? Math.max(0, S.st.ing.n - S.ing) : g.k === 'char' ? Math.max(0, g.n - (S.chars[g.id] || 0))
+  const remain = g => g.k === 'note' ? Math.max(0, g.n - S.notes) : g.k === 'clap' ? Math.max(0, g.n - S.claps) : g.k === 'ing' ? Math.max(0, S.st.ing.n - S.ing) : g.k === 'char' ? Math.max(0, g.n - (S.chars[g.id] || 0))
     : g.k === 'score' ? Math.max(0, g.n - S.score) : count(g.k);
   const done = () => S.st.goals.every(g => remain(g) === 0);
   const potential = () => { let v = 0; Board.each(G, t => { if (t.special) v += SPV[t.special] || 0; }); return v; };
@@ -150,7 +152,7 @@
     });
     return v;
   };
-  const GW = { weed: 10, box: 10, bubble: 11, lock: 9, syrup: 4, char: 2.2, score: 0.012, ing: 45, clam: 10, sand: 5, ink: 8 };
+  const GW = { weed: 10, box: 10, bubble: 11, lock: 9, syrup: 4, char: 2.2, score: 0.012, ing: 45, clam: 10, sand: 5, ink: 8, seat: 10, feather: 9, note: 2.5, clap: 1.5 };
   function lifeValue() {
     let v = 0;
     for (const g of S.st.goals) {
@@ -167,9 +169,11 @@
     const lay = parseLayout(st);
     Board.floor = lay.floor; Board.mask = lay.mask; Board.syrup = lay.syrup; Board.sand = lay.sand; Board.portals = lay.portals;
     S = { life: true, st, score: 0, ing: 0, chars: {}, popped: false, fever: 0, feverGift: false, spawned: lay.ings.length, used: 0, hg: 0, inSkill: false, turn: 0,
-      helperType: LIFE_CHARS.indexOf(helper) };
+      helperType: LIFE_CHARS.indexOf(helper), notes: 0, claps: 0 };
     Board.spawnIng = st.ing ? spawnIng : null;
     G = Board.create(lay);
+    Board.spot = null;
+    if (st.spot) Board.moveSpot(st.spot.size);
   }
 
   const copyOf = s => ({ S: { ...s.S, chars: { ...s.S.chars } }, G: cloneGrid(s.G), syrup: s.syrup && s.syrup.map(r => r.slice()), floor: s.floor && s.floor.map(r => r.slice()), sand: s.sand && s.sand.map(r => r.slice()) });
@@ -196,6 +200,8 @@
     S.turn++;
     const cur = S.st.current; // 물살 (js/life.js Life.flow)
     if (cur && !done() && S.turn % cur.every === 0) { cur.rows.forEach((r, j) => Board.flow(G, r, flowDir(j))); cascade(null, []); }
+    if (!done() && Board.blowFeathers(G).length) cascade(null, []); // 깃털
+    if (S.st.spot && !done() && S.turn % S.st.spot.every === 0) Board.moveSpot(S.st.spot.size); // 스포트라이트
   }
 
   // 남은 이동을 아이템으로 바꿔 터뜨리는 보너스 타임 (시간 판은 3초마다 하나)
@@ -233,7 +239,7 @@
   function battleSetup(stage, team, lv) {
     NTYPES = team.length;
     Board.setSize(7, 7);
-    Board.floor = Board.syrup = Board.mask = Board.sand = Board.portals = null;
+    Board.floor = Board.syrup = Board.mask = Board.sand = Board.portals = Board.spot = null;
     Board.spawnIng = null;
     const chars5 = team.map(id => CHARS.find(c => c.id === id));
     S = { life: false, stage, w: 0, wave: stage.waves[0], monHp: stage.waves[0].hp, sh: stage.waves[0].sh || 0, cd: stage.waves[0].cd, hp: 120, hpMax: 120, fever: 0, rally: 0,

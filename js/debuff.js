@@ -4,21 +4,24 @@
 // 잠재우기(친구 하나 2턴: 공격 반, 게이지 안 참) · 독(3턴 동안 매 턴 조금씩, 체력 1은 남김) · 어둠(2턴 공격 -30%)
 // 수수께끼(친구 하나 게이지 반) · 거품 뿜기(구슬 2개가 거품) · 쿵쿵(판 섞기) · 회복(괴물 체력 15%)
 const MON_SKILL = {
-  anoko: 'sleep', siren: 'sleep', dekatsuyo: 'poison', blackstar: 'weak', sphinx: 'drain', ode: 'bubble', elephant: 'stomp', mermaid: 'heal',
+  anoko: 'sleep', siren: 'sleep', dekatsuyo: 'poison', blackstar: 'weak', sphinx: 'drain', ode: 'bubble', elephant: 'stomp', mermaid: 'heal', bird: 'snatch',
 };
 const DEBUFF_INFO = {
   sleep: { name: '잠', img: 'debuff_sleep' }, poison: { name: '독', img: 'debuff_poison' }, weak: { name: '어둠', img: 'debuff_weak' },
+  snatch: { name: '낚아챔', img: 'debuff_weak' },
 };
 const DBF = n => `assets/img/ui/${n}.webp`;
 ['debuff_sleep', 'debuff_poison', 'debuff_weak', 'debuff_drain', 'fx_sleep', 'fx_poison', 'fx_dark', 'fx_dust'].forEach(n => Preload.add(DBF(n)));
 
 const Debuff = {
-  s: { sleep: {}, poison: 0, poisonDmg: 0, weak: 0 },
+  s: { sleep: {}, poison: 0, poisonDmg: 0, weak: 0, snatch: {} },
   reset() {
-    Debuff.s = { sleep: {}, poison: 0, poisonDmg: 0, weak: 0 };
+    Debuff.s = { sleep: {}, poison: 0, poisonDmg: 0, weak: 0, snatch: {} };
     Debuff.render();
   },
   asleep: k => B.mode === 'battle' && (Debuff.s.sleep[k] || 0) > 0,
+  // 큰 새가 낚아채 간 친구: 그동안 그 친구 구슬은 공격도 게이지도 없음 (돌아오면 다시)
+  snatched: k => B.mode === 'battle' && (Debuff.s.snatch?.[k] || 0) > 0,
   // 어둠이 걸리면 공격이 약해짐
   weaken: dmg => (B.mode === 'battle' && Debuff.s.weak > 0 ? Math.max(1, Math.round(dmg * 0.7)) : dmg),
   // 내 턴이 끝날 때: 독이 한 번 들고, 남은 턴이 하나씩 줄어듦
@@ -39,10 +42,11 @@ const Debuff = {
     }
     if (s.weak > 0) s.weak--;
     Object.keys(s.sleep).forEach(k => { if (--s.sleep[k] <= 0) delete s.sleep[k]; });
+    Object.keys(s.snatch).forEach(k => { if (--s.snatch[k] <= 0) { delete s.snatch[k]; Debuff.say($('#party').children[k], `${teamCh(+k).name} 돌아왔다!`, '#62b866'); } });
     Debuff.render();
   },
   // 디버프가 하나라도 걸려 있나
-  any: () => Debuff.s.poison > 0 || Debuff.s.weak > 0 || Object.keys(Debuff.s.sleep).length > 0,
+  any: () => Debuff.s.poison > 0 || Debuff.s.weak > 0 || Object.keys(Debuff.s.sleep).length > 0 || Object.keys(Debuff.s.snatch).length > 0,
   // 괴물이 공격한 뒤 특수 공격: 보스는 한 번 걸러 한 번, 쫄몹은 웨이브에 한 번 (같은 웨이브 괴물 중 한 마리만, 다른 디버프가 없을 때)
   async special(mon) {
     const kind = MON_SKILL[mon.w.m];
@@ -100,6 +104,16 @@ const Debuff = {
       Board.shuffle(B.grid);
       await settleAll(420);
       Debuff.say($('#boardWrap'), '쿵쿵! 판이 뒤섞였어', '#8a6a4a');
+    } else if (kind === 'snatch') {
+      // 큰 새: 친구 하나를 2턴 동안 낚아채 감 (회복 친구는 안 데려감)
+      const ks = B.team.slice(0, B.real).map((_, k) => k).filter(k => !Debuff.snatched(k) && !teamCh(k).heal);
+      if (!ks.length) return;
+      const k = ks[Math.floor(Math.random() * ks.length)], el = $('#party').children[k];
+      await Debuff.fly(ITEM('feather'), from, centerOf(el), 1.1, true);
+      s.snatch[k] = 2;
+      el.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-26px) rotate(-12deg)' }, { transform: 'translateY(0)' }], { duration: 420, easing: 'ease-out' });
+      Debuff.say(el, `${teamCh(k).name}를 낚아채 갔다!`, '#c27a2c');
+      Sound.play('enemy', 1.4, 0.6);
     } else if (kind === 'heal') {
       const amt = Math.round(mon.max * 0.15);
       mon.hp = Math.min(mon.max, mon.hp + amt);
@@ -156,6 +170,6 @@ const Debuff = {
     if (zz) chips.push(['sleep', Math.max(...Object.values(s.sleep))]);
     box.innerHTML = chips.map(([k, n]) => `<span class="dbf ${k}"><img src="${DBF(DEBUFF_INFO[k].img)}" alt="">${DEBUFF_INFO[k].name}<b>${n}</b></span>`).join('');
     box.style.display = chips.length && B.mode === 'battle' ? '' : 'none';
-    [...$('#party').children].forEach((el, k) => el.classList.toggle('asleep', Debuff.asleep(k)));
+    [...$('#party').children].forEach((el, k) => { el.classList.toggle('asleep', Debuff.asleep(k)); el.classList.toggle('snatched', Debuff.snatched(k)); });
   },
 };

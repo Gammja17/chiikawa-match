@@ -25,6 +25,9 @@ const CHARS = [
     skill: { id: 'stall',    name: '고블린 춤', desc: '다 같이 춤을 춰서 괴물 공격 3턴 늦춤, 작은 피해', need: 14, say: '옴 빰 빰~ 예 예 예~! 제야! 야요!' } },
   { id: 'beetle',    name: '풍뎅이',   ring: '#a5683a', attr: 'cry',   dmg: 10, line: '냐하~',
     skill: { id: 'cheer',    name: '꼬옥 안기', desc: '판 섞고 다른 멤버 게이지 +4', need: 13, say: '냐하~! (꼬옥)' } },
+  // 파자마파티즈의 초록이: 50장 무차페스(500판)를 처음 깨면 합류. 얼굴이 없는 까만 얼굴에 초록 파자마 (그림은 pajama_uwawa.png에서 잘라 냄)
+  { id: 'midori',    name: '초록이',   ring: '#62b866', attr: 'brave', dmg: 11, line: '우와~!',
+    skill: { id: 'convert6', name: '우와 안무', desc: '구슬 6개를 초록이로 바꿈', need: 13, say: '(빙글빙글… 폴짝!) 우와~!' } },
 ];
 // ---------- 스킬 3개: Lv1(기본) · Lv4 · Lv7에 열리고, 친구 카드에서 하나 골라 장착 ----------
 // fx: drop(아이템 놓기) blocks(장애물 한 대씩) gauge(모두 게이지) convert(구슬 바꾸기) delay(괴물 늦추기)
@@ -67,6 +70,9 @@ const MORE_SKILLS = {
   beetle: [
     { id: 'b_hug', name: '꼬옥 꼬옥', desc: '체력 15% 회복하고 판을 섞음 (일상: 이동 +2)', need: 13, say: '냐하~ (꼬옥)', fx: 'heal', heal: 0.15, shuffle: true, life: 2, style: 'cheer' },
     { id: 'b_nyaha', name: '냐하하~', desc: '모두 스킬 게이지 +6 (일상: 이동 +3)', need: 18, say: '냐하하~!', fx: 'gauge', n: 6, life: 3, style: 'cheer' }],
+  midori: [
+    { id: 'mi_dance', name: '우와 댄스', desc: '모두 게이지 +5, 3턴 동안 공격 ×1.3 (일상: 이동 +3)', need: 17, say: '우~ 우~ 와~ 와~ 우와~!', fx: 'rally', life: 3, style: 'convert6' },
+    { id: 'mi_stage', name: '무대 조명', desc: '종이비행기 2개와 폭탄 1개를 놓음', need: 16, say: '(조명 아래에서 폴짝!)', fx: 'drop', items: ['plane', 'plane', 'bomb'], style: 'convert6' }],
 };
 const SKILL_LV = [1, 4, 7];
 CHARS.forEach(c => (c.skills = [{ ...c.skill, lv: 1 }, ...(MORE_SKILLS[c.id] || []).map((s, k) => ({ ...s, lv: SKILL_LV[k + 1] }))]));
@@ -134,7 +140,9 @@ const TILE = id => `assets/img/tiles/${id}.webp`;
 const ITEM_ALIAS = { rocket: 'sword_o', bomb: 'bombball_o', rainbow: 'dango3_o', plane: 'paperplane_o' }; // _o: 테두리를 그림에 미리 그려 둔 판 (CSS 필터는 보너스 타임에 렉)
 ITEM_ALIAS.pearl = 'clam_open'; // 진주 목표: 판 위 가리비가 벌어진 그림 (같은 조개인 게 보이게)
 // 인어섬 편(31~40장) 기믹·판 아이콘(조개·진주·먹물·모래·소용돌이·보호막·물살, 파도·섬·배…)도 VARCO 스티커 그림. 처음엔 Noto Emoji PNG였다가 그림체를 맞춤
-const ITEM = name => `assets/img/items/${ITEM_ALIAS[name] || name}.webp`; // 그림을 바꾸면 이름(또는 ?v=)을 바꿔서 폰에 남은 옛 그림 대신 새로 받게
+// 파자마파티즈 편(41~50장) 아이콘은 아직 Noto Emoji PNG
+const ITEM_PNG = new Set(['mic', 'notes', 'broom', 'feather', 'potato', 'bulb', 'chair', 'ticket', 'nest', 'duck', 'tent', 'thread', 'pajama', 'dance']);
+const ITEM = name => { const n = ITEM_ALIAS[name] || name; return `assets/img/items/${n}.${ITEM_PNG.has(n) ? 'png' : 'webp'}`; }; // 그림을 바꾸면 이름(또는 ?v=)을 바꿔서 폰에 남은 옛 그림 대신 새로 받게
 // 전신 그림이 없는 캐릭터는 얼굴로
 const NO_BODY = new Set(['kani', 'shooting', 'darkstar', 'goblin', 'beetle']);
 const FXI = n => `assets/img/fx/${n}.png`;
@@ -163,6 +171,8 @@ const MONSTERS = {
   // 인어섬 (『映画ちいかわ 人魚の島のひみつ』 공식 사이트 캐릭터 그림)
   siren:     { name: '세이렌',   img: 'assets/img/monsters/siren.webp' },
   mermaid:   { name: '인어',     img: 'assets/img/monsters/mermaid.webp' },
+  // 파자마파티즈 편 큰 새 (원작: 오리를 닮은 키메라). 애니 장면에서 배경을 지워 오려 냄
+  bird:      { name: '큰 새',    img: 'assets/img/monsters/bird.webp' },
 };
 
 const monHue = w => w.hue ?? MONSTERS[w.m]?.hue ?? 0;
@@ -342,6 +352,8 @@ const LINES = {
   shooting: ['반짝!', '반짝반짝~!', '구해 줘서 고마워!', '소원 빌었어?'],
   // 까만별: 소원을 비틀어 들어주는 얄미운 별
   darkstar: ['소원? 들어줄게~ 내 맘대로!', '아~아, 들켰네~', '칫, 재미없어!', '오늘이 계속되면 좋겠다며? 히히.', '야호~!', '해피?'],
+  // 초록이: 말은 거의 없고 노래 소리와 몸짓. 혼자서도 무대를 지킨 씩씩한 아이
+  midori: ['우와~!', '우~ 우~ 와~ 와~', '(빙글빙글… 폴짝!)', '(새 안무를 연습한다)', '(초록 파자마 소매를 정리한다)', '(박수 치며 폴짝폴짝)'],
 };
 const lineOf = id => { const p = LINES[id]; return p ? p[Math.floor(Math.random() * p.length)] : (CHARS.find(c => c.id === id) || {}).line || '…!'; };
 // 옷 갈아입기: assets/img/skins/<친구>/<파일> 그림으로 통째로 바꿔 끼움. 애니·만화 장면에서 배경을 지운 그림 (Chiikawa Wiki)
@@ -497,6 +509,11 @@ const REACT = {
 // 집이 아늑해서 집주인이 주는 선물: 말 대신 몸짓인 친구도 있어서 친구마다 한 줄 (없으면 기본 한 줄)
 const GIFT_SAY = { chiikawa: '…!! (선물을 꼬옥 내민다)', usagi: '야하~!! (선물을 휙 내민다)', kani: '(선물을 살며시 내민다) (후훗)',
   kurimanju: '……(선물을 슥 내민다)', goblin: '(선물을 내밀며) 옴 빰 빰~', momonga: '집이 예쁘니까 특별히 줄게. 칭찬해!',
-  rakko: '…아늑하네! 이거 받아!', shisa: '집이 아늑해서 기쁜 시사~! 선물이에요!' };
+  rakko: '…아늑하네! 이거 받아!', shisa: '집이 아늑해서 기쁜 시사~! 선물이에요!', midori: '(선물을 내밀고 폴짝) 우와~!' };
+// 대사에만 나오는 인물 (친구도 괴물도 아님): 이름과 그림
+const STORY_CAST = {
+  pochette: { name: '포셰트 갑옷 씨', img: 'assets/img/art/armor_one.png' }, // 파자마를 만들어 파는 갑옷 씨 (라멘 가게 갑옷 씨와 다른 사람)
+  pajamas: { name: '파자마파티즈', img: 'assets/img/art/pajama_uwawa.png' }, // 핑크·하양·보라 (초록이는 따로)
+};
 const CHAR_NAME = { shisa: '시사' };
 CHARS.forEach(c => (CHAR_NAME[c.id] = c.name));
