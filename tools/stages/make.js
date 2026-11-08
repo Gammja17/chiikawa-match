@@ -1,9 +1,10 @@
-// 7장~30장 만들기: spec.js(이름·목표·대사) → 판 그림을 짜고, 봇(tools/sim.js)으로 이동 수·별 점수·괴물 체력을 재서 js/chapters.js에 씀
+// 7장~40장 만들기: spec.js(이름·목표·대사) → 판 그림을 짜고, 봇(tools/sim.js)으로 이동 수·별 점수·괴물 체력을 재서 js/chapters.js에 씀
 //   node tools/stages/make.js          바뀐 판만 다시 잼 (잰 값은 tools/stages/tuned.json에 남겨 둠)
 //   node tools/stages/make.js --all    전부 다시 잼
 //   node tools/stages/make.js --only=가게 문 열기,진한 국물
+//   기본은 31장부터만 재고 js/chapters.js의 표시 줄 아래만 다시 씀 (7~30장은 만든 뒤 손으로 고쳐서 그대로 둠). --rewrite-all: 7장부터 전부 다시 재고 파일 전체를 씀
 // 깨는 비율 목표(이 봇 기준, 1~6장을 이 봇으로 잰 값에 맞춤): 보통 93%→88%, 도전 85%, HARD 64%→56% (장이 갈수록 조금씩 빡빡하게)
-// 토벌: 친구 레벨은 60판에서 6, 300판에서 10으로 오른다고 보고 잼 (1~6장은 2→6)
+// 토벌: 친구 레벨은 60판에서 6, 300판에서 10(끝)으로 오른다고 보고 잼 (1~6장은 2→6, 31~40장은 10 그대로)
 const fs = require('fs'), path = require('path'), os = require('os');
 const { Worker, isMainThread, parentPort, workerData } = require('worker_threads');
 const ROOT = path.join(__dirname, '..', '..');
@@ -31,6 +32,8 @@ const SHAPES = {
   pillar: (r, c, R, C) => !(r <= 2 && Math.abs(c - (C - 1) / 2) < 0.6),
   hourglass: (r, c, R, C) => { const d = Math.abs(r - (R - 1) / 2); const e = Math.min(c, C - 1 - c); return !(d < 1.6 && e < (d < 0.6 ? 2 : 1)); },
   arch: (r, c, R, C) => !(r >= R - 2 && Math.abs(c - (C - 1) / 2) < (C % 2 ? 0.6 : 1.1)),
+  // 소용돌이 판: 가운데 두 줄 위 세 칸이 비어 있고, 그 줄은 양쪽 끝 줄 바닥의 소용돌이로만 채워짐 (짝수 칸 판)
+  whirl: (r, c, R, C) => !(r <= 2 && Math.abs(c - (C - 1) / 2) < 1.1),
 };
 // 재료 판은 바닥이 좁아지는 모양, 시럽은 둥근 모양이 어울림
 const SHAPE_FOR = {
@@ -62,9 +65,13 @@ const PAT_FOR = {
   box: ['middle', 'cluster', 'cols', 'center', 'ring', 'checkup', 'frame'],
   bubble: ['bottom', 'cluster', 'frame', 'band', 'edge'],
   lock: ['center', 'ring', 'checker', 'cols', 'middle', 'checkup'],
+  clam: ['middle', 'cluster', 'center', 'ring', 'cols', 'frame'],
+  sand: ['bottom', 'band', 'center', 'ring', 'frame', 'checker', 'cluster'],
+  ink: ['center', 'checker', 'scatter', 'ring', 'middle', 'cols'],
 };
 // 열린 칸 중 이만큼 (여러 장애물이 함께면 줄임)
-const DENS = { weed: 0.22, box: 0.17, bubble: 0.09, lock: 0.17 };
+const DENS = { weed: 0.22, box: 0.17, bubble: 0.09, lock: 0.17, clam: 0.12, sand: 0.34, ink: 0.14 };
+const OBS_CH = { weed: ['w', 'W'], box: ['b', 'g'], bubble: ['o', 'o'], lock: ['l', 'l'], clam: ['c', 'c'], sand: ['d', 'd'], ink: ['k', 'k'] };
 
 function parseGoals(str) {
   const out = { kinds: {}, goals: [], chars: [] };
@@ -76,6 +83,7 @@ function parseGoals(str) {
       out.kinds.box = { big: Math.max(out.kinds.box?.big || 0, big) };
     } else if (tok === 'bubble') { out.kinds.bubble = { big: 0 }; out.goals.push({ k: 'bubble' }); }
     else if (tok === 'lock') { out.kinds.lock = { big: 0 }; out.goals.push({ k: 'lock' }); }
+    else if (tok === 'clam' || tok === 'sand' || tok === 'ink') { out.kinds[tok] = { big: 0 }; out.goals.push({ k: tok }); }
     else if (tok === 'syrup') out.goals.push({ k: 'syrup' });
     else if (tok === 'ing') out.goals.push({ k: 'ing' });
     else if (tok === 'score') out.goals.push({ k: 'score' });
@@ -93,6 +101,13 @@ function buildMap(sp, R, C, shape, knob, seed, boost = 0) {
   const grid = open.map(row => row.map(o => (o ? '.' : '#')));
   const mc = (C - 1) / 2;
   const free = (r, c) => open[r][c] && grid[r][c] === '.';
+  // 소용돌이: 양쪽 끝 줄 바닥이 입구(v), 가운데 두 줄의 맨 위 칸이 출구(V). 왼쪽 입구 → 왼쪽 출구
+  if (sp.whirl) {
+    grid[R - 1][0] = grid[R - 1][C - 1] = 'v';
+    const top = c => { let r = 0; while (r < R && !open[r][c]) r++; return r; };
+    const a = Math.floor((C - 1) / 2), b = C - 1 - a;
+    grid[top(a)][a] = grid[top(b)][b] = 'V';
+  }
   // 재료: 맨 위 줄 좌우 대칭 두 자리
   if (g.goals.some(x => x.k === 'ing')) {
     const top = c => { let r = 0; while (r < R && !open[r][c]) r++; return r; };
@@ -119,7 +134,7 @@ function buildMap(sp, R, C, shape, knob, seed, boost = 0) {
     for (let r = 1; r < R; r++) for (let c = 0; c <= Math.floor(mc); c++) if (free(r, c) && free(r, C - 1 - c)) cells.push([r, c, PAT[pat](r, c, R, C) + rnd() * 1.5]);
     cells.sort((a, b) => b[2] - a[2]);
     const big = Math.max(g.kinds[k].big, k === 'weed' || k === 'box' ? boost : 0);
-    const ch = { weed: ['w', 'W'], box: ['b', 'g'], bubble: ['o', 'o'], lock: ['l', 'l'] }[k];
+    const ch = OBS_CH[k];
     let n = 0;
     for (const [r, c] of cells) {
       if (n >= want) break;
@@ -135,8 +150,13 @@ function buildMap(sp, R, C, shape, knob, seed, boost = 0) {
 // ---------- 목표 수치 ----------
 const lerp = (a, b, t) => a + (b - a) * Math.max(0, Math.min(1, t));
 // 장이 갈수록 빡빡하게. 봇은 친구 스킬을 안 쓰니, 실제로는 강화한 친구 스킬(이동 +, 아이템)이 그 차이를 메움
-const target = (lv, ch) => { const t = (ch - 7) / 23; return lv === 'hard' ? lerp(0.6, 0.4, t) : lv === 'challenge' ? lerp(0.84, 0.68, t) : lerp(0.92, 0.78, t); };
-const teamLv = k => (k <= 60 ? Math.max(2, Math.min(6, 2 + (k - 20) / 10)) : 6 + (k - 60) / 60);
+// 31~40장(인어섬 편)은 30장 값에서 아주 조금만 더 빡빡하게 (친구 레벨이 10에서 멈추고 새 기믹이 붙으니 깨는 비율은 거의 그대로)
+const target = (lv, ch) => {
+  if (ch > 30) { const u = (ch - 30) / 10; return lv === 'hard' ? lerp(0.4, 0.37, u) : lv === 'challenge' ? lerp(0.68, 0.65, u) : lerp(0.78, 0.76, u); }
+  const t = (ch - 7) / 23; return lv === 'hard' ? lerp(0.6, 0.4, t) : lv === 'challenge' ? lerp(0.84, 0.68, t) : lerp(0.92, 0.78, t);
+};
+// 친구 레벨: 60판 6 → 300판 10. 10이 끝(LV_MAX, js/meta.js)이라 300판부터는 10 그대로
+const teamLv = k => (k <= 60 ? Math.max(2, Math.min(6, 2 + (k - 20) / 10)) : Math.min(10, 6 + (k - 60) / 60));
 const round = (x, s) => Math.round(x / s) * s;
 
 // 깨는 비율 tgt가 되는 이동 수: 봇이 깨는 데 든 수 분포에서 그 지점 (bad: 판 모양 때문에 안 채워지는 칸이 생긴 판 수)
@@ -190,7 +210,7 @@ function tuneLife(job, sim) {
   const hasIng = g.goals.some(x => x.k === 'ing'), hasSyrup = g.goals.some(x => x.k === 'syrup');
   const nObs = Object.keys(g.kinds).length;
   // 판 크기: 장이 갈수록, 목표가 많을수록 크게 (최대 9x9)
-  const sizes = sp.size ? [sp.size] : nObs + g.goals.length <= 1 ? [[7, 7], [7, 7], [8, 8]] : nObs + g.goals.length <= 3 ? [[7, 7], [8, 8], [8, 8], [9, 9], [8, 9]] : [[8, 8], [9, 9], [9, 9], [8, 9]];
+  const sizes = sp.size ? [sp.size] : sp.whirl ? [[8, 8], [9, 8]] : nObs + g.goals.length <= 1 ? [[7, 7], [7, 7], [8, 8]] : nObs + g.goals.length <= 3 ? [[7, 7], [8, 8], [8, 8], [9, 9], [8, 9]] : [[8, 8], [9, 9], [9, 9], [8, 9]];
   // 얼굴 6가지(맞추기 어려움)는 뒤로 갈수록 자주: HARD는 12장부터, 보통 판은 20장부터
   const six = sp.lv === 'hard' ? lerp(0.2, 0.8, (ch - 12) / 14) * (ch >= 12) : lerp(0, 0.45, (ch - 20) / 10) * (ch >= 20);
   let types = sp.types || (rnd() < six ? 6 : 5), boost = 0;
@@ -201,12 +221,14 @@ function tuneLife(job, sim) {
   const tgt = target(sp.lv, ch);
   const [minM, maxM] = exam ? [20, 34] : sp.lv === 'hard' ? [14, 32] : [12, 30];
   let knob = 1, seed = hash(sp.name + '#'), last = null;
-  let [R, C] = pick(rnd, sizes), shape = sp.shape || pick(rnd, SHAPE_FOR[hasIng ? 'ing' : hasSyrup ? 'syrup' : 'any']);
+  let [R, C] = pick(rnd, sizes), shape = sp.whirl ? 'whirl' : sp.shape || pick(rnd, SHAPE_FOR[hasIng ? 'ing' : hasSyrup ? 'syrup' : 'any']);
+  // 물살: current 1이면 가운데 한 줄, 2면 위아래로 두 줄 (every: 몇 턴마다, 기본 3)
+  const current = () => sp.current ? { rows: sp.current >= 2 ? [Math.floor(R / 2) - 2, Math.floor(R / 2) + 1] : [Math.floor(R / 2)], every: sp.every || 3 } : null;
   const make = () => {
     const map = buildMap(sp, R, C, shape, knob, seed, boost);
     const goals = g.goals.map(x => ({ ...x, ...(x.k === 'char' ? { n: Math.max(6, Math.round(charN * knob)) } : x.k === 'score' ? { n: round(scoreN * Math.sqrt(knob), 500) } : {}) }));
     const st = { name: sp.name, ...(sp.done ? { done: sp.done } : {}), icon: sp.icon, types, moves: 99, host: sp.host, ...(exam ? { exam: true } : {}), intro: sp.intro, goals, stars: [0, 0, 0],
-      ...(hasIng ? { ing: { n: Math.max(2, Math.round(ingN * Math.sqrt(knob))), max: 2, kinds: sp.ing || ['naruto', 'egg'] } } : {}), map };
+      ...(hasIng ? { ing: { n: Math.max(2, Math.round(ingN * Math.sqrt(knob))), max: 2, kinds: sp.ing || ['naruto', 'egg'] } } : {}), ...(sp.current ? { current: current() } : {}), map };
     return st;
   };
   const measure = (st, runs) => needAt(st, tgt, runs, sim);
@@ -220,7 +242,7 @@ function tuneLife(job, sim) {
       st = make();
       const r = measure(st, 90);
       // 안 채워지는 칸이 생김: 장애물을 늘리다 그랬으면 줄이고, 처음부터면 모양을 바꿈
-      if (r.bad) { if (lo) { hi = knob; knob = Math.sqrt(lo * hi); } else { shape = pick(rnd, ['full', 'corner1', 'corner2', 'octagon', 'round']); seed++; } continue; }
+      if (r.bad) { if (lo) { hi = knob; knob = Math.sqrt(lo * hi); } else { if (!sp.whirl) shape = pick(rnd, ['full', 'corner1', 'corner2', 'octagon', 'round']); seed++; } continue; }
       m = r.m;
       if (!best || off(m) < off(best.m)) best = { knob, m, shape, seed, types, boost };
       if (!off(m)) break;
@@ -266,6 +288,8 @@ function tuneBattle(job, sim) {
     if (w.hue != null) o.hue = w.hue;
     if (w.title) o.title = w.title;
     if (w.boss) o.boss = true;
+    if (w.sh) o.sh = 0; // 보호막: 체력 × w.sh (아래 run에서 체력과 같이 정함)
+    if (w.drop) o.drop = w.drop; // 미믹이 던지는 것 ('clam' 조개)
     return o;
   });
   const stage = { name: sp.name, waves };
@@ -274,7 +298,7 @@ function tuneBattle(job, sim) {
   // 싸움 길이(이긴 판 턴 수 가운데값) 상한: 예전 판처럼 10~13턴, 뒤로 갈수록 조금 길게
   const nw = waves.length, Tmax = Math.round((nw === 1 ? 10 : nw === 2 ? 12 : nw === 3 ? 14 : 18) * lerp(1, 1.3, t) + (sp.lv === 'hard' ? 2 : 0));
   const run = (H, am = 1) => {
-    waves.forEach((w, i) => { w.hp = Math.max(300, round(sp.waves[i].w * H, 10)); w.atk = Math.min(115, Math.round(atk0[i] * am)); });
+    waves.forEach((w, i) => { w.hp = Math.max(300, round(sp.waves[i].w * H, 10)); w.atk = Math.min(115, Math.round(atk0[i] * am)); if (sp.waves[i].sh) w.sh = round(w.hp * sp.waves[i].sh, 10); });
     let win = 0;
     const turns = [];
     for (let n = 0; n < runs; n++) { sim.SIM.seed(hash(sp.name) + n * 7919); const r = sim.SIM.battleRun(stage, team, lv); if (r.win) { win++; turns.push(r.turns); } }
@@ -319,7 +343,7 @@ function emitStage(st, sp, b) {
   return s.replace(/,\n$/, ' },\n');
 }
 function emit(spec, results) {
-  let s = `// 7장~30장: 장마다 10판 (일상 퍼즐 7판, 토벌 3판 안팎)
+  let s = `// 7장~40장: 장마다 10판 (일상 퍼즐 7판, 토벌 3판 안팎)
 // 만든 파일: tools/stages/spec.js(이름·목표·대사)를 고치고 node tools/stages/make.js로 다시 만듦
 // 판 그림은 좌우 대칭으로 짜고, 이동 수·별 점수·괴물 체력은 자동 플레이 봇(tools/sim.js)으로 잼
 // b: 토벌, lv: 'challenge' 도전 / 'hard', story: 시작 전 대사, after: 처음 깼을 때 대사
@@ -335,12 +359,27 @@ function addChapter(name, list) {
   }
 }
 `;
-  for (const chap of spec) {
+  return s + emitChapters(spec, results);
+}
+function emitChapters(list, results) {
+  let s = '';
+  for (const chap of list) {
     s += `\naddChapter(${q(chap.name)}, [\n`;
     for (const sp of chap.stages) s += emitStage(results[sp.name].st, sp, sp.kind === 'b');
     s += ']);\n';
   }
   return s;
+}
+// 7~30장은 만든 뒤에 js/chapters.js에서 대사(말투 고증)·괴물을 손봐서, 다시 만들면 그게 날아감.
+// 그래서 보통은 31장부터만 재고, js/chapters.js의 이 표시 줄 아래만 새로 씀 (--rewrite-all이면 예전처럼 파일 전체)
+const FROM_CH = 31;
+const MARK = '// ==== 31장부터: tools/stages/make.js가 이 줄 아래를 다시 씀 (위쪽 7~30장은 손으로 고친 것이라 그대로 둠) ====';
+function spliceOut(spec, results) {
+  const old = fs.readFileSync(OUT, 'utf8'), nl = old.includes('\r\n') ? '\r\n' : '\n';
+  const at = old.indexOf(MARK);
+  const head = at >= 0 ? old.slice(0, at) : old.replace(/\s*$/, '') + nl + nl;
+  const body = (MARK + '\n' + emitChapters(spec.filter((_, ci) => ci + 7 >= FROM_CH), results)).replace(/\r?\n/g, nl);
+  fs.writeFileSync(OUT, head + body);
 }
 
 // ---------- 일꾼 ----------
@@ -353,7 +392,7 @@ if (!isMainThread) {
   });
 } else {
   const spec = require('./spec.js');
-  const all = process.argv.includes('--all');
+  const all = process.argv.includes('--all'), rewriteAll = process.argv.includes('--rewrite-all');
   const only = (process.argv.find(a => a.startsWith('--only=')) || '').slice(7).split(',').filter(Boolean);
   const cache = fs.existsSync(CACHE) ? JSON.parse(fs.readFileSync(CACHE, 'utf8')) : {};
   const keyOf = (sp, k) => hash(JSON.stringify({ VERSION, k, ...sp, story: 0, after: 0 })).toString(36); // 대사만 바꾸면 다시 안 잼
@@ -361,17 +400,19 @@ if (!isMainThread) {
   let k = 60;
   spec.forEach((chap, ci) => chap.stages.forEach(sp => {
     const key = keyOf(sp, k), ch = ci + 7;
-    if (only.length ? !only.includes(sp.name) : !all && cache[sp.name]?.key === key) { if (cache[sp.name]) results[sp.name] = cache[sp.name]; }
+    const frozen = !rewriteAll && ch < FROM_CH; // 7~30장은 재지 않음 (js/chapters.js 위쪽 그대로)
+    if (frozen || (only.length ? !only.includes(sp.name) : !all && cache[sp.name]?.key === key)) { if (cache[sp.name]) results[sp.name] = cache[sp.name]; }
     else jobs.push({ sp, ch, k, key });
     k++;
   }));
+  const outSpec = rewriteAll ? spec : spec.filter((_, ci) => ci + 7 >= FROM_CH);
   console.log(`잴 판 ${jobs.length}개 (남겨 둔 값 ${Object.keys(results).length}개)`);
   const n = Math.min(os.cpus().length, jobs.length);
   let next = 0, done = 0;
   const t0 = Date.now();
   const save = () => {
     fs.writeFileSync(CACHE, JSON.stringify(Object.fromEntries(Object.entries({ ...cache, ...results }).sort()), null, 0));
-    if (spec.every(c => c.stages.every(sp => results[sp.name]))) fs.writeFileSync(OUT, emit(spec, results));
+    if (outSpec.every(c => c.stages.every(sp => results[sp.name]))) { if (rewriteAll) fs.writeFileSync(OUT, emit(spec, results)); else spliceOut(spec, results); }
   };
   if (!jobs.length) save();
   for (let w = 0; w < n; w++) {

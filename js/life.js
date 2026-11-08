@@ -389,20 +389,30 @@ const HARD_AT = new Set([20, 24, 25, 28, 29, 30, 38, 40, 48, 50, 58, 59, 60]);
 const routeLevel = k => (HARD_AT.has(k + 1) ? 'hard' : CHALLENGE_AT.has(k + 1) ? 'challenge' : '');
 
 // 깼을 때 쾅 찍히는 말: 스테이지에 done이 있으면 그것, 없으면 첫 목표에 맞춰서
-const DONE_WORD = { weed: '제초<br>끝!!', box: '상자<br>다 뜯었다!', bubble: '거품<br>싹싹!', ing: '배달<br>완료!', lock: '리본<br>풀었다!', syrup: '시럽<br>듬뿍!', char: '모으기<br>끝!', score: '목표<br>달성!' };
+const DONE_WORD = { weed: '제초<br>끝!!', box: '상자<br>다 뜯었다!', bubble: '거품<br>싹싹!', ing: '배달<br>완료!', lock: '리본<br>풀었다!', syrup: '시럽<br>듬뿍!', char: '모으기<br>끝!', score: '목표<br>달성!',
+  clam: '진주<br>모았다!', sand: '모래<br>싹싹!', ink: '먹물<br>씻었다!' };
 const doneWord = st => st.done || DONE_WORD[st.goals[0]?.k] || '클리어!';
 
 const GOAL_ICON = { lock: () => ITEM('ribbon'), syrup: () => ITEM('pancake'), weed: () => ITEM('weed2'), box: () => ITEM('box'), bubble: () => ITEM('bubble'), ing: () => ITEM('ramen'),
-  char: g => FACE(g.id), score: () => ITEM('target') };
-const GOAL_NAME = { lock: () => '리본', syrup: () => '시럽', weed: () => '잡초', box: () => '상자', bubble: () => '거품', ing: () => '재료', char: g => CHAR_NAME[g.id], score: () => '점수' };
+  char: g => FACE(g.id), score: () => ITEM('target'), clam: () => ITEM('pearl'), sand: () => ITEM('sand'), ink: () => ITEM('ink') };
+const GOAL_NAME = { lock: () => '리본', syrup: () => '시럽', weed: () => '잡초', box: () => '상자', bubble: () => '거품', ing: () => '재료', char: g => CHAR_NAME[g.id], score: () => '점수',
+  clam: () => '진주', sand: () => '모래', ink: () => '먹물' };
 
+// 판 글자: # 구멍, l 리본, s 시럽, w/W 잡초, b 상자, g 선물 상자, o 거품, i 재료,
+//   c 조개, d 모래 바닥, k 먹물 구슬, v 소용돌이 입구, V 소용돌이 출구 (k번째 v가 k번째 V로 이어짐)
 function parseLayout(st) {
   const floor = Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
   const mask = st.map.map(row => [...row].map(ch => ch !== '#'));
-  const blocks = [], ings = [], locks = [];
+  const blocks = [], ings = [], locks = [], inks = [], ins = [], outs = [];
   const syrup = st.goals.some(g => g.k === 'syrup') ? Array.from({ length: ROWS }, () => new Array(COLS).fill(false)) : null;
+  const sand = st.map.some(row => row.includes('d')) ? Array.from({ length: ROWS }, () => new Array(COLS).fill(0)) : null;
   let k = 0;
   st.map.forEach((row, r) => [...row].forEach((ch, c) => {
+    if (ch === 'c') blocks.push([r, c, 'clam', 2]);
+    if (ch === 'd') sand[r][c] = 1;
+    if (ch === 'k') inks.push([r, c]);
+    if (ch === 'v') ins.push([r, c]);
+    if (ch === 'V') outs.push([r, c]);
     if (ch === 'l') locks.push([r, c]);
     if (ch === 's' && syrup) syrup[r][c] = true;
     if (ch === 'w') blocks.push([r, c, 'weed', 1]);
@@ -412,8 +422,11 @@ function parseLayout(st) {
     if (ch === 'o') blocks.push([r, c, 'bubble', 1]);
     if (ch === 'i') ings.push([r, c, st.ing.kinds[k++ % st.ing.kinds.length]]);
   }));
-  return { floor, mask, blocks, ings, locks, syrup };
+  const portals = ins.length ? ins.slice(0, outs.length).map((from, j) => ({ from, to: outs[j] })) : null;
+  return { floor, mask, blocks, ings, locks, inks, syrup, sand, portals };
 }
+// 물살: st.current = { rows: [줄 번호], every: 몇 턴마다 } 짝수째 줄은 오른쪽, 홀수째 줄은 왼쪽으로
+const flowDir = j => (j % 2 ? -1 : 1);
 
 const MOVE_SVG = '<svg viewBox="0 0 24 24"><ellipse cx="12" cy="15.5" rx="5" ry="4.2"/><circle cx="6" cy="9.5" r="2.1"/><circle cx="10" cy="6" r="2.1"/><circle cx="14" cy="6" r="2.1"/><circle cx="18" cy="9.5" r="2.1"/></svg>';
 const L = { st: null, i: 0, moves: 0, time: 0, score: 0, ing: 0, spawned: 0, chars: {}, popped: false, extra: false, timer: null, goalsHtml: '' };
@@ -442,7 +455,7 @@ const Life = {
     if (run.kind === 'route' && run.i < 2 && !Save.data.helper) L.helper = CHARS.findIndex(c => c.id === 'hachiware'); // 처음 두 판은 하치와레가 알아서 따라옴
     else if ((run.kind !== 'tower' || run.floor === 1 || L.helper == null) && !(await pickHelper(st))) return go(run.kind === 'route' ? openMap : run.kind === 'test' ? TestPlay.back : openChallenge); // 고르다가 돌아가기
     const buddy = !!st.host && CHARS[L.helper]?.id === st.host; // 단짝 보너스
-    Object.assign(L, { hg: 0, run, ending: false, st, i, moves: (st.moves || 0) + (buddy && st.moves ? 2 : 0), time: (st.time || 0) + (buddy && st.time ? 6 : 0), score: 0, ing: 0, chars: {}, popped: false, extra: false, cont: false, goalsHtml: '', feverT: 0, feverGift: false });
+    Object.assign(L, { hg: 0, run, ending: false, st, i, moves: (st.moves || 0) + (buddy && st.moves ? 2 : 0), time: (st.time || 0) + (buddy && st.time ? 6 : 0), score: 0, ing: 0, chars: {}, popped: false, extra: false, cont: false, goalsHtml: '', feverT: 0, feverGift: false, turn: 0 });
     Object.assign(B, { mode: 'life', stage: i, over: false, busy: true, inSkill: false, sel: null, pending: [], maxCombo: 0, fever: 0, moving: new Set(), open: false, quick: null, quickSwapped: null });
     B.team = LIFE_CHARS.slice(0, st.types).map(id => CHARS.findIndex(c => c.id === id));
     Object.assign(B, { real: B.team.length, played: false, dmgBy: {} });
@@ -454,6 +467,8 @@ const Life = {
     Board.floor = lay.floor;
     Board.mask = lay.mask;
     Board.syrup = lay.syrup;
+    Board.sand = lay.sand;
+    Board.portals = lay.portals;
     L.spawned = lay.ings.length;
     Board.spawnIng = st.ing ? spawnIng : null;
     app.classList.add('life-mode');
@@ -484,6 +499,7 @@ const Life = {
     if (run.kind === 'route') Stats.start('l', i, help);
     if (run.kind === 'league') League.began();
     renderFloor();
+    Life.flowHint();
     Life.hud();
     if (run.kind === 'route' && LIFE_STORY[i] && (Save.data.life || [])[i] == null) await playStory(LIFE_STORY[i]);
     await Help.say(help, 'l');
@@ -516,6 +532,8 @@ const Life = {
     let n = 0;
     if (k === 'syrup') { Board.syrup?.forEach((row, r) => row.forEach((v, c) => { if (!v && !hole(r, c)) n++; })); return n; }
     if (k === 'lock') { Board.each(B.grid, t => { if (t.lock) n++; }); return n; }
+    if (k === 'ink') { Board.each(B.grid, t => { if (t.ink) n++; }); return n; }
+    if (k === 'sand') { Board.sand?.forEach(row => row.forEach(v => (n += v ? 1 : 0))); return n; }
     Board.each(B.grid, t => { if (t.block === k) n++; });
     return n;
   },
@@ -567,7 +585,7 @@ const Life = {
 
   onStep(res, combo) {
     const pts = Math.round((res.cleared.length * 20 * combo + res.created.length * 100 + res.hits.length * 50 + res.weeds.length * 60 +
-      res.unlocked.length * 60 + res.syrup.length * 40) * (B.fever ? 1.5 : 1)); // 피버 중 ×1.5
+      res.unlocked.length * 60 + res.syrup.length * 40 + (res.inked?.length || 0) * 60 + (res.sand?.length || 0) * 60) * (B.fever ? 1.5 : 1)); // 피버 중 ×1.5
     res.cleared.forEach(({ tile }) => {
       // 데려간 친구 얼굴이면 게이지 1, 다른 얼굴은 1/3
       if (!B.inSkill) L.hg += tile.type >= 0 && B.team[tile.type] === L.helper ? 1 : 1 / 3;
@@ -640,10 +658,43 @@ const Life = {
       }
     }
     L.popped = false;
+    // 조개: 지난 턴에 벌어진 채로 이번 턴에도 못 맞은 조개는 꼭 닫힘
+    const shut = Board.closeClams(B.grid);
+    if (shut.length) {
+      Sound.play('land', 1.4, 0.6);
+      shut.forEach(({ tile }) => { refreshTile(tile); tile.inner.animate([{ transform: 'scale(1.15,.8)' }, { transform: 'scale(.95,1.05)', offset: 0.6 }, { transform: 'none' }], { duration: 300, easing: 'ease-out' }); });
+    }
+    // 물살: 몇 턴마다 정해진 줄이 옆으로 한 칸씩 밀림
+    L.turn = (L.turn || 0) + 1;
+    const cur = L.st.current;
+    if (cur && !Life.done() && L.turn % cur.every === 0) await Life.flow(cur.rows);
+    else if (cur) Life.flowHint();
     if (L.st.contest && !Life.count('weed')) await Life.regrow();
     if (L.st.dungeon && !Life.count('box') && L.moves > 0) await Dungeon.refill();
     Life.hud();
     await Life.check();
+  },
+
+  // 물살: 줄마다 구슬이 쓱 밀리고, 끝에 닿은 구슬은 반대쪽에서 다시 나타남. 밀려서 맞으면 그대로 터짐
+  async flow(rows) {
+    banner('물살!', 380);
+    Sound.play('swap', 0.75, 0.9);
+    const anims = [];
+    rows.forEach((r, j) => Board.flow(B.grid, r, flowDir(j)).forEach(({ tile, to, wrap }) => {
+      if (!tile.el) return;
+      if (wrap) { place(tile, to[0], to[1]); anims.push(tile.el.animate([{ opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1 }], { duration: 280, easing: 'ease-out' }).finished); }
+      else anims.push(slide(tile, to[0], to[1], 280, 'ease-in-out'));
+      const p = tileCenter(to[0], to[1]);
+      if (Math.random() < 0.5) burst(p.x, p.y, '#9fdcff', 2);
+    }));
+    await Promise.all(anims);
+    Life.flowHint();
+    await cascade(null, []);
+  },
+  // 다음 턴에 물살이 오면 화살표가 깜빡임
+  flowHint() {
+    const cur = L.st?.current;
+    boardEl.classList.toggle('flow-soon', !!cur && (L.turn + 1) % cur.every === 0);
   },
 
   // 피버 선물: 구슬 하나가 반짝 하고 아이템으로 바뀜 (터지지는 않고 그대로 둠)

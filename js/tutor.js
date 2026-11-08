@@ -18,6 +18,13 @@ const TIPS = {
   lock: ['ribbon', '리본 구슬은 못 움직여요. 한 번 맞추면 풀려요'],
   syrup: ['pancake', '시럽 칸이 낀 매치는 그 칸들로 시럽을 번지게 해요'],
   ing: ['ramen', '재료는 맨 아래 칸까지 내려가면 모여요'],
+  // 인어섬 편 (31~40장)
+  clam: ['clam', '조개는 두 번 맞추면 진주가 나와요. 벌어진 채 한 턴을 그냥 넘기면 다시 닫혀요'],
+  sand: ['sand', '모래 바닥 위 구슬을 터뜨리면 모래가 걷혀요'],
+  ink: ['ink', '먹물 구슬은 얼굴이 안 보여요. 바로 옆에서 맞추면 씻겨요'],
+  whirl: ['whirl', '소용돌이로 들어간 구슬은 다른 소용돌이에서 나와요'],
+  current: ['wave', '파란 물살 줄은 몇 턴마다 화살표 쪽으로 한 칸씩 밀려요'],
+  shield: ['shield', '보호막 괴물은 이름 옆 속성으로만 보호막이 깨져요. 다른 속성은 조금만 들어가요'],
 };
 
 const Tutor = {
@@ -52,7 +59,7 @@ const Tutor = {
 
   // 스테이지 시작 때 그 판에 처음 나오는 것 안내
   async onStart() {
-    if (B.mode === 'battle') { await Tutor.battleIntro(); return; }
+    if (B.mode === 'battle') { await Tutor.battleIntro(); if (STAGES[B.stage]?.waves.some(w => w.sh)) Tutor.tip('shield'); return; }
     // 맨 첫 판: 목표, 이동 수를 비춰 주고 → 첫 수를 손가락으로 알려 주고 그 수만 둘 수 있게
     if (L.run?.kind === 'route' && L.i === 0 && !Tutor.seen('firstMove')) {
       B.busy = true;
@@ -77,9 +84,13 @@ const Tutor = {
       }
     }
     const kinds = new Set();
-    Board.each(B.grid, t => { if (t.block) kinds.add(t.block); if (t.lock) kinds.add('lock'); if (t.type === ING) kinds.add('ing'); });
+    Board.each(B.grid, t => { if (t.block) kinds.add(t.block); if (t.lock) kinds.add('lock'); if (t.ink) kinds.add('ink'); if (t.type === ING) kinds.add('ing'); });
     if (Board.syrup) kinds.add('syrup');
-    ['box', 'bubble', 'lock', 'syrup', 'ing'].some(k => kinds.has(k) && !Tutor.seen(k) && (Tutor.tip(k), true));
+    if (Board.sand) kinds.add('sand');
+    if (Board.portals?.length) kinds.add('whirl');
+    if (B.mode === 'life' && L.st?.current) kinds.add('current');
+    if (B.mode === 'battle' && STAGES[B.stage]?.waves.some(w => w.sh)) kinds.add('shield');
+    ['box', 'bubble', 'lock', 'syrup', 'ing', 'clam', 'sand', 'ink', 'whirl', 'current', 'shield'].some(k => kinds.has(k) && !Tutor.seen(k) && (Tutor.tip(k), true));
   },
   // 첫 토벌: 괴물, 공격까지 남은 턴, 친구들, 체력을 차례로 비춤
   async battleIntro() {

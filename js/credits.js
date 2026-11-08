@@ -299,6 +299,9 @@ const CREDITS = [
         'bed.webp', 'berry.webp', 'bomb.webp', 'boom.webp', 'candle.webp', 'cap.webp', 'crown.webp', 'frame.webp', 'gradcap.webp', 'h.webp',
         'honey.webp', 'mirror.webp', 'phones.webp', 'plane.webp', 'plant.webp', 'rainbow.webp', 'rocket.webp', 'sakura.webp', 'shades.webp',
         'sofa.webp', 'sponge.webp', 'sunflower.webp', 'teddy.webp', 'tophat.webp', 'tv.webp', 'v.webp',
+        // 인어섬 편 (31~40장) 기믹·지도 아이콘: 2D/png/128 그대로
+        'boat.png', 'clam.png', 'clam_open.png', 'coral.png', 'crab.png', 'fish.png', 'fog.png', 'ink.png', 'island.png', 'letter.png',
+        'moon.png', 'note.png', 'sand.png', 'seamap.png', 'shield.png', 'storm.png', 'wave.png', 'whirl.png',
       ],
     },
   },

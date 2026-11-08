@@ -39,6 +39,60 @@ window.__errs = { push: e => Guard.report(e[0], e[1], e[2]) };
 if (typeof Net !== 'undefined') Net.onChange(Guard.flush);
 setTimeout(Guard.flush, 4000);
 
+// ---------- 튕김 기록 ----------
+// 아이폰은 메모리가 모자라면 페이지를 말없이 꺼 버려서 에러가 안 남음
+// 그래서 화면이 보이는 동안 2초마다 '살아 있음'과 최근 지나온 화면을 기기에 적고, 숨겨지거나 정상으로 닫히면 지움
+// 다음에 켰을 때 남아 있으면 화면이 켜진 채로 꺼진 것 → errors에 kind 'crash'로 보냄
+//   msg: 켠 지 몇 분 만에, 꺼진 게 몇 초 전인지 / ctx: 마지막 화면 / stack: 최근 화면 6개 (꺼지기 몇 초 전에 거기 있었는지)
+const Alive = {
+  KEY: 'chiikawaMatch.v1.alive',
+  t0: Date.now(), trail: [], last: '',
+  // Guard.ctx()에 지금 떠 있는 창도 붙임 (강화는 친구 상세 창 = sheet)
+  where() {
+    const tags = [['#charSheet', 'sheet'], ['#modal', 'modal'], ['#story', 'story'], ['#pause', 'pause']]
+      .filter(([s]) => document.querySelector(s)?.classList.contains('show')).map(([, n]) => n);
+    if (document.querySelector('.cutin')) tags.push('cutin');
+    return Guard.ctx() + (tags.length ? ' +' + tags.join('+') : '');
+  },
+  beat() {
+    if (document.hidden) return;
+    const now = Date.now(), w = Alive.where();
+    if (w !== Alive.last) {
+      Alive.last = w;
+      Alive.trail.push([now, w]);
+      if (Alive.trail.length > 6) Alive.trail.shift();
+    }
+    const light = typeof Prefs !== 'undefined' && Prefs.d.light ? 1 : 0;
+    try { localStorage.setItem(Alive.KEY, JSON.stringify({ t: now, t0: Alive.t0, ver: VER, light, trail: Alive.trail })); } catch {}
+  },
+  bye() { try { localStorage.removeItem(Alive.KEY); } catch {} },
+  // 켤 때 한 번: 지난번이 켜진 채로 꺼졌으면 보냄
+  check() {
+    let d = null;
+    try { d = JSON.parse(localStorage.getItem(Alive.KEY)); } catch {}
+    Alive.bye();
+    if (!d?.t) return;
+    const trail = Array.isArray(d.trail) ? d.trail : [];
+    const app = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+    const msg = `화면이 켜진 채로 꺼짐 · 켠 지 ${Math.round((d.t - d.t0) / 60000)}분 · ${Math.round((Date.now() - d.t) / 1000)}초 전${app ? ' · 홈 화면 앱' : ''}${d.light ? ' · 연출 가볍게' : ''}`;
+    Guard.sent++;
+    Guard.queue.push({
+      kind: 'crash', msg: msg.slice(0, 300),
+      stack: trail.map(([t, w]) => `${Math.round((t - d.t) / 1000)}초 ${w}`).join('\n').slice(0, 1200),
+      ctx: String(trail.at(-1)?.[1] || '?').slice(0, 300), ver: String(d.ver).slice(0, 20), ua: navigator.userAgent.slice(0, 160),
+    });
+    Guard.flush();
+  },
+};
+if (!window.TEST_PLAY) {
+  Alive.check();
+  Alive.beat();
+  setInterval(Alive.beat, 2000);
+  document.addEventListener('visibilitychange', () => (document.hidden ? Alive.bye() : Alive.beat()));
+  addEventListener('pagehide', Alive.bye);
+  addEventListener('pageshow', Alive.beat); // 뒤로 가기 캐시에서 돌아왔을 때
+}
+
 // ---------- 멈춤 풀기 ----------
 // 판 화면인데 B.busy가 켜진 채로, 창도 연출도 없이 20초가 지나면 멈춘 걸로 봄
 let stuckFor = 0;
