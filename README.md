@@ -241,6 +241,8 @@ npx wrangler deploy
 4. **Firestore Database**를 만들고 저장소의 `firestore.rules`를 올립니다: `npx firebase-tools deploy --only firestore:rules` (또는 콘솔 **규칙**에 그 파일 내용을 붙여 넣기). 아래는 예전 요약이고, 에러 모으기(`errors`)·설문(`feedback`)·주간 리그(`league`)까지 들어 있는 건 `firestore.rules`입니다.
 5. 웹 앱 설정값(`apiKey`, `authDomain`, `projectId`, `appId`)을 `js/firebase-config.js`의 `window.FIREBASE_CONFIG`에 넣습니다. 이 값은 공개되어도 되는 값이고, 실제 보호는 아래 규칙이 맡습니다.
 
+**로컬 테스트는 실제 DB에 안 붙습니다.** `localhost`·`127.0.0.1`·`192.168.x` 같은 내 PC나 같은 와이파이 주소, `file://`로 열면 `js/firebase-config.js`가 설정을 비워서 랭킹·저장·게스트 계정이 실제 Firebase에 생기지 않습니다. 테스트 판 기록이 진짜 랭킹에 섞이는 걸 막으려는 것이고, 꼭 붙여서 시험해야 하면 주소 끝에 `?net`을 붙입니다(예: `http://localhost:8770/?net`).
+
 ```
 rules_version = '2';
 service cloud.firestore {

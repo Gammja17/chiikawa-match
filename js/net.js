@@ -13,13 +13,11 @@ const NICK_FRIEND = ['치이카와', '하치와레', '우사기', '모몽가', '
 
 // 랭킹에서 뺄 계정 (캡처·시험하다 로컬에서 잘못 올라간 테스트 기록). Firestore 규칙상 지우는 건 콘솔에서만 됨
 const RANK_HIDE = new Set(['y0p9Fc9cQRNQbXMnCiuRraHBiV13', 'nrgbc0Nq3YcaEVweW2E0IenCZUC2']);
-// 내 컴퓨터(localhost)에서 켜면 로그인·랭킹·계정 저장을 아예 끔 (시험한 기록이 진짜 랭킹에 올라가지 않게)
-const LOCAL_HOST = ['localhost', '127.0.0.1', '[::1]', ''].includes(location.hostname);
 
 const Net = {
   on: false, user: null, listeners: [],
   async init() {
-    if (!window.FIREBASE_CONFIG || LOCAL_HOST) return;
+    if (!window.FIREBASE_CONFIG) return; // 로컬 테스트 서버에서는 js/firebase-config.js가 비워 둠 (?net이면 켬)
     try {
       for (const f of ['app', 'auth', 'firestore']) await loadScript(`assets/vendor/firebase-${f}-compat.js`);
       firebase.initializeApp(window.FIREBASE_CONFIG);
