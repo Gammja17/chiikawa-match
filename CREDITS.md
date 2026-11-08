@@ -2,7 +2,7 @@
 
 > 이 파일은 `node tools/credits.js`가 `js/credits.js`에서 만듭니다. 고칠 땐 `js/credits.js`를 고치세요.
 
-먼작귀 퍼즐 토벌 대작전!은 팬이 만든 **비공식 게임**입니다. 원작자 나가노 및 치이카와 제작위원회와 관계가 없고, 돈을 받지 않습니다. 게임에 들어간 그림 499개와 소리 28개의 출처를 파일마다 적었습니다. 게임 안에서는 설정 → 만든 사람·출처, 웹에서는 `credits.html`에서 같은 목록을 볼 수 있습니다.
+먼작귀 퍼즐 토벌 대작전!은 팬이 만든 **비공식 게임**입니다. 원작자 나가노 및 치이카와 제작위원회와 관계가 없고, 돈을 받지 않습니다. 게임에 들어간 그림 584개와 소리 28개의 출처를 파일마다 적었습니다. 게임 안에서는 설정 → 만든 사람·출처, 웹에서는 `credits.html`에서 같은 목록을 볼 수 있습니다.
 
 ## 원작 그림
 
@@ -89,6 +89,87 @@
 - `assets/img/skins/shisa/`: `magical.png`
 - `assets/img/skins/usagi/`: `hotate.png`, `magical.png`, `neckie.png`, `santa.png`, `squid.png`
 
+### 섬 옷 (영화 인어섬) (8개)
+
+- 권리: © nagano / 「映画ちいかわ」製作委員会
+- 출처: [『映画ちいかわ 人魚の島のひみつ』 공식 사이트 캐릭터 소개](https://chiikawa.toho-movie.jp/atm/characters.html)
+- 손본 것: 캐릭터 그림에서 이름·설명 글을 빼고 크기를 줄임
+
+- `assets/img/skins/chiikawa/`: `island.png`
+- `assets/img/skins/hachiware/`: `island.png`
+- `assets/img/skins/usagi/`: `island.png`
+- `assets/img/skins/momonga/`: `island.png`
+- `assets/img/skins/rakko/`: `island.png`
+- `assets/img/skins/kurimanju/`: `island.png`
+- `assets/img/skins/shisa/`: `island.png`
+- `assets/img/skins/kani/`: `island.png`
+
+### 섬 옷 배경 장면 (1개)
+
+- 권리: © nagano / 「映画ちいかわ」製作委員会
+- 출처: [『映画ちいかわ 人魚の島のひみつ』 메인 비주얼](https://chiikawa.toho-movie.jp/)
+- 손본 것: 세로로 잘라 크기를 줄임
+
+- `assets/img/scenes/`: `island.jpg`
+
+### 산리오 콜라보 옷 (5개)
+
+- 권리: © nagano / chiikawa committee, © 2022 SANRIO CO., LTD.
+- 출처: [치이카와×산리오 캐릭터즈 콜라보 일러스트 (파미통 기사)](https://www.famitsu.com/news/202206/10264618.html)
+- 손본 것: 일러스트에서 먼작귀 친구만 오려 냄
+
+- `assets/img/skins/chiikawa/`: `melody.png`
+- `assets/img/skins/hachiware/`: `kitty.png`
+- `assets/img/skins/usagi/`: `purin.png`
+- `assets/img/skins/momonga/`: `kuromi.png`
+- `assets/img/skins/kurimanju/`: `hangyodon.png`
+
+### 나가노 일러스트·만화 옷 (61개)
+
+- 권리: © nagano
+- 출처: [나가노 X (@ngnchiikawa)](https://x.com/ngnchiikawa)
+- 손본 것: 일러스트·만화 칸에서 친구만 오려 냄
+- 참고: 새해(2020~2022)·할로윈(2022~2025)·크리스마스(2022~2025)·생일 일러스트와 만화, 우비(2021-06)·잠옷(2021-04)·문어 옷(2022-06)·도토리 모자(2023-01)·교통 정리(2023-12)·벚꽃 요정(2024-03) 만화, 편의점 점원은 패밀리마트 콜라보 만화
+
+- `assets/img/skins/chiikawa/`: `blackcat.png`, `chicken.png`, `cream.png`, `dress.png`, `franken.png`, `hakama.png`, `mushroom.png`, `nurse.png`, `octopus.png`, `ox.png`, `pajama.png`, `raincoat.png`, `tiger.png`, `tree.png`, `whitesanta.png`, `winter.png`
+- `assets/img/skins/hachiware/`: `blackcat.png`, `chicken.png`, `cream.png`, `dress.png`, `franken.png`, `mushroom.png`, `nurse.png`, `octopus.png`, `ox.png`, `pajama.png`, `raincoat.png`, `snowman.png`, `tiger.png`, `whitesanta.png`, `winter.png`
+- `assets/img/skins/usagi/`: `blackcat.png`, `doctor.png`, `franken.png`, `knit.png`, `mushroom.png`, `ox.png`, `prince.png`, `raincoat.png`, `stollen.png`, `tiger.png`, `tree.png`, `whitesanta.png`
+- `assets/img/skins/momonga/`: `acorn.png`, `bat.png`, `devil.png`, `devil_angel.png`, `pizza.png`, `pumpkin.png`
+- `assets/img/skins/rakko/`: `mochi.png`, `taxi.png`
+- `assets/img/skins/kurimanju/`: `chestnut.png`, `edamame.png`
+- `assets/img/skins/shisa/`: `clerk.png`, `goat.png`, `pantu.png`, `traffic.png`
+- `assets/img/skins/kani/`: `angel.png`, `bat.png`, `pizza.png`, `sakura.png`
+
+### VARCO로 다듬은 옷 (4개)
+
+- 권리: © nagano / chiikawa committee
+- 출처: [나가노 X (@ngnchiikawa)](https://x.com/ngnchiikawa), [VARCO (NCSOFT)](https://3d.varco.ai)
+- 손본 것: 원작 그림을 VARCO 이미지 편집(GPT Image 2.6)에 넣어 친구만 남기고 배경을 지움. 다른 친구에 가려진 부분은 같은 그림체로 채움
+- 참고: 모몽가 게 머리띠(만화 2023-01)는 털 윤곽이 열려 있어서, 하치와레·우사기·모몽가 흑마법소녀(굿즈 일러스트 「わるいまじかる」)는 치이카와에 가려져 있어서 그냥 오려 낼 수 없었음
+
+- `assets/img/skins/momonga/`: `crab.png`, `darkmagic.png`
+- `assets/img/skins/hachiware/`: `darkmagic.png`
+- `assets/img/skins/usagi/`: `darkmagic.png`
+
+### 흑마법소녀 옷 (1개)
+
+- 권리: © nagano / chiikawa committee
+- 출처: [마법소녀 굿즈 「わるいまじかる」 일러스트 (Chiikawa Wiki, miraheze)](https://chiikawa.miraheze.org/)
+- 손본 것: 일러스트에서 치이카와만 오려 냄
+
+- `assets/img/skins/chiikawa/`: `darkmagic.png`
+
+### 애니·영화 장면 옷 (4개)
+
+- 권리: © nagano / chiikawa committee, 「映画ちいかわ」製作委員会
+- 출처: [애니 123화 장면 (애니메애니메 기사)](https://animeanime.jp/article/2023/12/04/81628.html), [애니 372화 장면 (Chiikawa Wiki, miraheze)](https://chiikawa.miraheze.org/), [영화 장면 컷 (리얼사운드 기사)](https://realsound.jp/)
+- 손본 것: 장면에서 친구만 오려 냄
+- 참고: 시사 갑옷은 애니 123화, 치이카와 꾸민 모자는 애니 372화, 시사 요리사·우사기 DJ는 영화 『人魚の島のひみつ』 장면
+
+- `assets/img/skins/shisa/`: `armor.png`, `chef.png`
+- `assets/img/skins/usagi/`: `dj.png`
+- `assets/img/skins/chiikawa/`: `dressup.png`
+
 ### 스페셜 옷 배경 장면 (5개)
 
 - 권리: © nagano / chiikawa committee
@@ -142,19 +223,19 @@
 
 AI 그림 도구와 코드로 이 게임을 위해 새로 만든 그림이에요.
 
-### VARCO로 생성한 그림 (276개)
+### VARCO로 생성한 그림 (277개)
 
 - 권리: 이 게임에서 생성
 - 출처: [VARCO (NCSOFT)](https://3d.varco.ai)
 - 손본 것: 배경을 지우고 크기를 맞춤
-- 참고: 배경·지도·지역 풍경, 라멘 가게, 집 벽지·바닥, 가구, 아이템(랏코 검·폭탄·경단·종이비행기), 장애물, 터짐 조각, 체력바·스킬 고리, 버튼 아이콘, 제목 로고, 판 목표 글자
+- 참고: 배경·지도·지역 풍경, 라멘 가게, 집 벽지·바닥, 가구, 아이템(랏코 검·폭탄·경단·종이비행기·장 별 보상 상자), 장애물, 터짐 조각, 체력바·스킬 고리, 버튼 아이콘, 제목 로고, 판 목표 글자
 
 - `assets/img/`: `battle_bg.jpg`, `map_bg.jpg`, `ramen_bg.jpg`
 - `assets/img/combo/`: `bomb_bomb.webp`, `bomb_plane.webp`, `bomb_sword.webp`, `dango_any.webp`, `dango_dango.webp`, `plane_plane.webp`, `sword_plane.webp`, `sword_sword.webp`
 - `assets/img/fx/`: `dot_l.png`, `dot_m.png`, `drop_b.png`, `drop_p.png`, `heart_l.png`, `heart_o.png`, `heart_p.png`, `heart_r.png`, `star_b.png`, `star_m.png`, `star_p.png`, `star_y.png`, `twinkle1.png`, `twinkle2.png`, `twinkle3.png`, `twinkle4.png`
 - `assets/img/gacha/`: `machine.webp`
 - `assets/img/house/`: `fl_carpet.webp`, `fl_dark.webp`, `fl_grass.webp`, `fl_sand.webp`, `fl_stone.webp`, `fl_tatami.webp`, `fl_tile.webp`, `fl_wood.webp`, `w_check.webp`, `w_cloud.webp`, `w_daisy.webp`, `w_dot.webp`, `w_heart.webp`, `w_night.webp`, `w_star.webp`, `w_stripe.webp`
-- `assets/img/items/`: `bath.webp`, `bento.webp`, `bombball.webp`, `bombball_o.webp`, `box.webp`, `bubble.webp`, `clock.webp`, `coin.webp`, `dango.webp`, `dango3.webp`, `dango3_o.webp`, `donut.webp`, `egg.webp`, `f_balloon.webp`, `f_board.webp`, `f_bookcase.webp`, `f_cake.webp`, `f_clock.webp`, `f_cushion.webp`, `f_frame.webp`, `f_fridge.webp`, `f_futon.webp`, `f_garland.webp`, `f_grass.webp`, `f_kotatsu.webp`, `f_lamp.webp`, `f_monstera.webp`, `f_poster.webp`, `f_rice.webp`, `f_rug.webp`, `f_shelf.webp`, `f_sofa.webp`, `f_stool.webp`, `f_table.webp`, `f_tissue.webp`, `f_toybox.webp`, `f_tv.webp`, `f_wclock.webp`, `f_window.webp`, `gift.webp`, `hand.webp`, `heart.webp`, `house.webp`, `medal.webp`, `naruto.webp`, `onigiri.webp`, `pancake.webp`, `paperplane.webp`, `paperplane_o.webp`, `parfait.webp`, `pot.webp`, `ramen.webp`, `ribbon.webp`, `sparkle.webp`, `star.webp`, `stick.webp`, `sword.webp`, `sword_o.webp`, `target.webp`, `timer.webp`, `weed1.webp`, `weed2.webp`, `boat.webp`, `clam.webp`, `clam_open.webp`, `coral.webp`, `crab.webp`, `fish.webp`, `flow.webp`, `fog.webp`, `ink.webp`, `island.webp`, `letter.webp`, `moon.webp`, `note.webp`, `sand.webp`, `seamap.webp`, `shield.webp`, `storm.webp`, `wave.webp`, `whirl.webp`
+- `assets/img/items/`: `bath.webp`, `bento.webp`, `bombball.webp`, `bombball_o.webp`, `box.webp`, `bubble.webp`, `clock.webp`, `coin.webp`, `dango.webp`, `dango3.webp`, `dango3_o.webp`, `donut.webp`, `egg.webp`, `f_balloon.webp`, `f_board.webp`, `f_bookcase.webp`, `f_cake.webp`, `f_clock.webp`, `f_cushion.webp`, `f_frame.webp`, `f_fridge.webp`, `f_futon.webp`, `f_garland.webp`, `f_grass.webp`, `f_kotatsu.webp`, `f_lamp.webp`, `f_monstera.webp`, `f_poster.webp`, `f_rice.webp`, `f_rug.webp`, `f_shelf.webp`, `f_sofa.webp`, `f_stool.webp`, `f_table.webp`, `f_tissue.webp`, `f_toybox.webp`, `f_tv.webp`, `f_wclock.webp`, `f_window.webp`, `gift.webp`, `hand.webp`, `heart.webp`, `house.webp`, `medal.webp`, `naruto.webp`, `onigiri.webp`, `pancake.webp`, `paperplane.webp`, `paperplane_o.webp`, `parfait.webp`, `pot.webp`, `ramen.webp`, `ribbon.webp`, `sparkle.webp`, `star.webp`, `starchest.webp`, `stick.webp`, `sword.webp`, `sword_o.webp`, `target.webp`, `timer.webp`, `weed1.webp`, `weed2.webp`, `boat.webp`, `clam.webp`, `clam_open.webp`, `coral.webp`, `crab.webp`, `fish.webp`, `flow.webp`, `fog.webp`, `ink.webp`, `island.webp`, `letter.webp`, `moon.webp`, `note.webp`, `sand.webp`, `seamap.webp`, `shield.webp`, `storm.webp`, `wave.webp`, `whirl.webp`
 - `assets/img/map/`: `m1.jpg`, `m10.jpg`, `m2.jpg`, `m3.jpg`, `m4.jpg`, `m5.jpg`, `m6.jpg`, `m7.jpg`, `m8.jpg`, `m9.jpg`, `m11.jpg`, `m12.jpg`, `m13.jpg`, `m14.jpg`
 - `assets/img/obst/`: `box_flap.png`, `box_open.png`, `bubble_pop.png`, `dirt.png`, `foam_tex.webp`, `leaf.png`, `ribbon_loose.png`, `sprout_pull.png`, `weed_pull.png`
 - `assets/img/stage/`: `s1.jpg`, `s10.jpg`, `s2.jpg`, `s3.jpg`, `s4.jpg`, `s5.jpg`, `s6.jpg`, `s7.jpg`, `s8.jpg`, `s9.jpg`, `s11.jpg`, `s12.jpg`, `s13.jpg`, `s14.jpg`
