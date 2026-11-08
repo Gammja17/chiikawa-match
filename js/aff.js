@@ -2,7 +2,7 @@
 // Save.data.aff = { 친구id: 점수 }, Save.data.pat = { 친구id: 마지막으로 쓰다듬은 날 }
 // 단계마다: 2 코인 / 3 짧은 이야기 / 4 뽑기 티켓 / 5 단짝 (공격·회복 +5%)
 const AFF_AT = [0, 10, 30, 60, 100];
-const AFF_FAV = { chiikawa: 'dango', hachiware: 'onigiri', usagi: 'parfait', momonga: 'parfait', kurimanju: 'dango', rakko: 'parfait', shisa: 'onigiri', kani: 'dango', goblin: 'onigiri' };
+const AFF_FAV = { chiikawa: 'dango', midori: 'dango', hachiware: 'onigiri', usagi: 'parfait', momonga: 'parfait', kurimanju: 'dango', rakko: 'parfait', shisa: 'onigiri', kani: 'dango', goblin: 'onigiri' };
 const AFF_STORY = {
   chiikawa: [['chiikawa', '(오늘도 같이 있어 줘서…)'], ['chiikawa', '…!! (헤헤…)'], ['hachiware', '오늘 엄청 좋아 보인다~']],
   hachiware: [['hachiware', '있잖아, 새 노래 만들었는데… 들어 줄래?'], ['hachiware', '흐흥~ ♪ 어때? 괜찮다는 거야!?'], ['chiikawa', '…!! (박수)']],

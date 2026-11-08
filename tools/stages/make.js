@@ -68,10 +68,12 @@ const PAT_FOR = {
   clam: ['middle', 'cluster', 'center', 'ring', 'cols', 'frame'],
   sand: ['bottom', 'band', 'center', 'ring', 'frame', 'checker', 'cluster'],
   ink: ['center', 'checker', 'scatter', 'ring', 'middle', 'cols'],
+  seat: ['bottom', 'band', 'rows', 'frame', 'middle'],
+  feather: ['scatter', 'center', 'checker', 'ring', 'cluster'],
 };
 // 열린 칸 중 이만큼 (여러 장애물이 함께면 줄임)
-const DENS = { weed: 0.22, box: 0.17, bubble: 0.09, lock: 0.17, clam: 0.12, sand: 0.34, ink: 0.14 };
-const OBS_CH = { weed: ['w', 'W'], box: ['b', 'g'], bubble: ['o', 'o'], lock: ['l', 'l'], clam: ['c', 'c'], sand: ['d', 'd'], ink: ['k', 'k'] };
+const DENS = { weed: 0.22, box: 0.17, bubble: 0.09, lock: 0.17, clam: 0.12, sand: 0.34, ink: 0.14, seat: 0.18, feather: 0.22 };
+const OBS_CH = { weed: ['w', 'W'], box: ['b', 'g'], bubble: ['o', 'o'], lock: ['l', 'l'], clam: ['c', 'c'], sand: ['d', 'd'], ink: ['k', 'k'], seat: ['a', 'a'], feather: ['f', 'f'] };
 
 function parseGoals(str) {
   const out = { kinds: {}, goals: [], chars: [] };
@@ -83,7 +85,8 @@ function parseGoals(str) {
       out.kinds.box = { big: Math.max(out.kinds.box?.big || 0, big) };
     } else if (tok === 'bubble') { out.kinds.bubble = { big: 0 }; out.goals.push({ k: 'bubble' }); }
     else if (tok === 'lock') { out.kinds.lock = { big: 0 }; out.goals.push({ k: 'lock' }); }
-    else if (tok === 'clam' || tok === 'sand' || tok === 'ink') { out.kinds[tok] = { big: 0 }; out.goals.push({ k: tok }); }
+    else if (tok === 'clam' || tok === 'sand' || tok === 'ink' || tok === 'seat' || tok === 'feather') { out.kinds[tok] = { big: 0 }; out.goals.push({ k: tok }); }
+    else if (tok === 'note' || tok === 'clap') out.goals.push({ k: tok }); // 박자 줄 음표 / 스포트라이트 박수 (수는 tuneLife에서 정함)
     else if (tok === 'syrup') out.goals.push({ k: 'syrup' });
     else if (tok === 'ing') out.goals.push({ k: 'ing' });
     else if (tok === 'score') out.goals.push({ k: 'score' });
@@ -107,6 +110,12 @@ function buildMap(sp, R, C, shape, knob, seed, boost = 0) {
     const top = c => { let r = 0; while (r < R && !open[r][c]) r++; return r; };
     const a = Math.floor((C - 1) / 2), b = C - 1 - a;
     grid[top(a)][a] = grid[top(b)][b] = 'V';
+  }
+  // 빗자루(z): broom 1이면 가운데, 2면 좌우 대칭 두 자리 (판 아래쪽 1/3 줄)
+  if (sp.broom) {
+    const r = Math.min(R - 2, Math.floor(R * 0.66));
+    const cs = sp.broom >= 2 ? [1, C - 2] : [Math.floor(mc)];
+    cs.forEach(c => { if (open[r][c]) grid[r][c] = 'z'; });
   }
   // 재료: 맨 위 줄 좌우 대칭 두 자리
   if (g.goals.some(x => x.k === 'ing')) {
@@ -218,6 +227,8 @@ function tuneLife(job, sim) {
   const ingN = hasIng ? Math.round(lerp(3, 5, (ch - 7) / 23)) : 0;
   const charN = g.chars.length ? Math.round((g.chars.length === 1 ? lerp(26, 36, (ch - 7) / 23) : g.chars.length === 2 ? 18 : g.chars.length === 3 ? 14 : 11)) : 0;
   const scoreN = g.goals.some(x => x.k === 'score') ? round(lerp(9000, 13000, (ch - 7) / 23), 500) : 0;
+  // 음표(박자 줄)/박수(스포트라이트) 목표 수: 친구 모으기처럼 장애물 양(knob)에 맞춰 늘고 줄어듦
+  const noteN = g.goals.some(x => x.k === 'note') ? 10 : 0, clapN = g.goals.some(x => x.k === 'clap') ? 24 : 0;
   const tgt = target(sp.lv, ch);
   const [minM, maxM] = exam ? [20, 34] : sp.lv === 'hard' ? [14, 32] : [12, 30];
   let knob = 1, seed = hash(sp.name + '#'), last = null;
@@ -226,9 +237,10 @@ function tuneLife(job, sim) {
   const current = () => sp.current ? { rows: sp.current >= 2 ? [Math.floor(R / 2) - 2, Math.floor(R / 2) + 1] : [Math.floor(R / 2)], every: sp.every || 3 } : null;
   const make = () => {
     const map = buildMap(sp, R, C, shape, knob, seed, boost);
-    const goals = g.goals.map(x => ({ ...x, ...(x.k === 'char' ? { n: Math.max(6, Math.round(charN * knob)) } : x.k === 'score' ? { n: round(scoreN * Math.sqrt(knob), 500) } : {}) }));
-    const st = { name: sp.name, ...(sp.done ? { done: sp.done } : {}), icon: sp.icon, types, moves: 99, host: sp.host, ...(exam ? { exam: true } : {}), intro: sp.intro, goals, stars: [0, 0, 0],
-      ...(hasIng ? { ing: { n: Math.max(2, Math.round(ingN * Math.sqrt(knob))), max: 2, kinds: sp.ing || ['naruto', 'egg'] } } : {}), ...(sp.current ? { current: current() } : {}), map };
+    const goals = g.goals.map(x => ({ ...x, ...(x.k === 'char' ? { n: Math.max(6, Math.round(charN * knob)) } : x.k === 'note' ? { n: Math.max(4, Math.round(noteN * knob)) } : x.k === 'clap' ? { n: Math.max(8, Math.round(clapN * knob)) } : x.k === 'score' ? { n: round(scoreN * Math.sqrt(knob), 500) } : {}) }));
+    const st = { name: sp.name, ...(sp.done ? { done: sp.done } : {}), icon: sp.icon, types, moves: 99, host: sp.host, ...(exam ? { exam: true } : {}), intro: sp.intro, ...(sp.song ? { song: true } : {}), goals, stars: [0, 0, 0],
+      ...(hasIng ? { ing: { n: Math.max(2, Math.round(ingN * Math.sqrt(knob))), max: 2, kinds: sp.ing || ['naruto', 'egg'] } } : {}), ...(sp.current ? { current: current() } : {}),
+      ...(noteN ? { beat: { rows: [Math.floor(R / 2)], every: sp.every || 3 } } : {}), ...(clapN ? { spot: { size: 3, every: sp.every || 3 } } : {}), map };
     return st;
   };
   const measure = (st, runs) => needAt(st, tgt, runs, sim);
@@ -281,7 +293,8 @@ function tuneBattle(job, sim) {
   // 공격력: 체력 120이라 60이 넘으면 두 방. 보통 괴물은 세 방(44~59), 보스만 두 방(85→110). 어려움은 주로 괴물 체력으로
   const t = (ch - 7) / 23, jit = rng(hash(sp.name + 'atk'));
   const waves = sp.waves.map(w => {
-    const cd = w.cd || (w.boss ? 4 : 3);
+    // 31~40장 HARD 보스는 3턴마다: 공격력이 상한(115)에 걸려 목표보다 쉬워지던 것을 공격 간격으로 맞춤 (1~30장은 그대로)
+    const cd = ch > 30 && sp.lv === 'hard' && w.boss ? Math.min(w.cd || 4, 3) : w.cd || (w.boss ? 4 : 3);
     const base = w.boss ? lerp(85, 110, t) * (cd <= 3 ? 0.85 : 1) : Math.min(59, lerp(50, 57, t) + (jit() * 6 - 3) - (sp.waves.length >= 3 ? 4 : 0));
     const atk = Math.round(base * (cd <= 2 ? 0.65 : 1));
     const o = { a: w.a, m: w.m, hp: 0, atk, cd };
@@ -292,7 +305,7 @@ function tuneBattle(job, sim) {
     if (w.drop) o.drop = w.drop; // 미믹이 던지는 것 ('clam' 조개)
     return o;
   });
-  const stage = { name: sp.name, waves };
+  const stage = { name: sp.name, ...(sp.song ? { song: true } : {}), waves }; // song: 깼을 때 공식 노래 링크 버튼
   const team = require(path.join(ROOT, 'tools', 'sim.js')).pickTeam(sim, stage);
   const runs = 70, atk0 = waves.map(w => w.atk);
   // 싸움 길이(이긴 판 턴 수 가운데값) 상한: 예전 판처럼 10~13턴, 뒤로 갈수록 조금 길게
@@ -317,6 +330,8 @@ function tuneBattle(job, sim) {
     am = alo;
     r = run(H, am);
   }
+  // 큰 새(bird)는 친구를 낚아채는데 봇은 그걸 모름 → 다 잰 뒤에 큰 새 체력·보호막만 15% 덜어서 실제 게임과 맞춤
+  waves.forEach(w => { if (w.m === 'bird') { w.hp = Math.max(300, round(w.hp * 0.85, 10)); if (w.sh) w.sh = round(w.sh * 0.85, 10); } });
   const weakLv = Math.max(1, lv - 3), weak = (() => { let w = 0; for (let n = 0; n < runs; n++) { sim.SIM.seed(hash(sp.name) + n * 7919); if (sim.SIM.battleRun(stage, team, weakLv).win) w++; } return w / runs; })();
   return { st: stage, info: { H: Math.round(H), am: +am.toFixed(2), rate: +r.rate.toFixed(2), weak: +weak.toFixed(2), T: r.T, Tmax, tgt: +tgt.toFixed(2), lv: +lv.toFixed(1), team: team.join(',') } };
 }

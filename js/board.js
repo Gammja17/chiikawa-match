@@ -6,6 +6,8 @@
 //   ink: 먹물 묻은 구슬. 얼굴이 안 보임 (맞추기는 됨). 바로 옆에서 맞추면 먹물이 씻김
 //   clam: 조개 (hp 2). 한 번 맞으면 벌어져 진주가 보이고, 다음 턴까지 또 못 맞히면 다시 닫힘 (closeClams)
 // 판 칸 쪽 기믹: sand 모래 바닥(위 칸이 터지면 걷힘), portals 소용돌이(입구 칸 구슬이 출구 칸으로 빨려 감), flow 물살(줄이 옆으로 밀림)
+// 파자마파티즈 편(41~50장): seat 빈 객석(장애물, 관객), feather 깃털(턴마다 옆 칸으로 날아감), special 'broom' 빗자루(그 줄과 위아래 한 줄씩, 세 줄),
+//   spot 스포트라이트(Board.spot 안에서 터뜨린 구슬 = 박수), 박자 줄은 life.js(st.beat)에서 셈
 let ROWS = 7, COLS = 7; // 판 크기: 토벌은 7x7, 일상 퍼즐은 판 그림(map) 크기대로 (최대 9x9)
 let NTYPES = 7; // 편성 인원에 맞춰 출격 때 바뀜
 const ING = -2, BLOCK = -3;
@@ -32,6 +34,7 @@ const Board = {
   spawnIng: null, // 새 칸을 채울 때 재료를 낼지: () => 재료 이름 | null
   sand: null,     // 모래 바닥: sand[r][c] = 1이면 그 칸 밑에 모래. 그 칸에서 구슬이 터지면 걷힘
   portals: null,  // 소용돌이: [{ from: [r, c], to: [r, c] }] 입구 칸의 구슬이 비어 있는 출구 칸으로 빨려 감
+  spot: null,     // 스포트라이트: { r, c, size } 왼쪽 위 칸과 한 변 길이
 
   // spec: { blocks: [[r, c, 'box'|'bubble', hp]], ings: [[r, c, 이름]], locks: [[r, c]], inks: [[r, c]] }
   create(spec = {}) {
@@ -49,6 +52,7 @@ const Board = {
       }
       (spec.locks || []).forEach(([r, c]) => { if (g[r][c]?.type >= 0) g[r][c].lock = 1; });
       (spec.inks || []).forEach(([r, c]) => { if (g[r][c]?.type >= 0) g[r][c].ink = 1; });
+      (spec.brooms || []).forEach(([r, c]) => { if (g[r][c] && !g[r][c].block) { g[r][c].special = 'broom'; g[r][c].type = -1; } });
     } while (!Board.hasMove(g) || Board.findRuns(g).length);
     return g;
   },
@@ -143,7 +147,10 @@ const Board = {
   // avoid: 이미 지울 칸 (비행기가 그쪽으로는 안 날아감)
   effectCells(g, t, r, c, avoid = new Set()) {
     const out = [];
-    if (t.special === 'h') for (let i = 0; i < COLS; i++) out.push([r, i]);
+    if (t.special === 'broom') {
+      // 빗자루: 그 줄과 위아래 한 줄씩, 세 줄을 싹 쓸어 버림 (그 안의 깃털·장애물도 한 대씩)
+      for (let d = -1; d <= 1; d++) if (r + d >= 0 && r + d < ROWS) for (let i = 0; i < COLS; i++) out.push([r + d, i]);
+    } else if (t.special === 'h') for (let i = 0; i < COLS; i++) out.push([r, i]);
     else if (t.special === 'v') for (let i = 0; i < ROWS; i++) out.push([i, c]);
     else if (t.special === 'bomb') {
       for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++)
@@ -480,6 +487,34 @@ const Board = {
     });
     return out;
   },
+
+  // 깃털: 턴이 끝나면 깃털마다 바람에 날려 옆(상하좌우) 구슬 하나와 자리를 바꿈. 반환: [{ tile, other, from, to }]
+  blowFeathers(g) {
+    const out = [], moved = new Set();
+    Board.each(g, (t, r, c) => {
+      if (t.block !== 'feather' || moved.has(t)) return;
+      const opts = NEAR4.map(([dr, dc]) => [r + dr, c + dc]).filter(([rr, cc]) => inside(rr, cc) && !hole(rr, cc) && movable(g[rr][cc]) && g[rr][cc].type !== ING);
+      if (!opts.length) return;
+      const [rr, cc] = opts[Math.floor(boardRand() * opts.length)], other = g[rr][cc];
+      g[rr][cc] = t; g[r][c] = other;
+      moved.add(t);
+      out.push({ tile: t, other, from: [r, c], to: [rr, cc] });
+    });
+    return out;
+  },
+  // 스포트라이트: 판 안 다른 자리로 옮김 (구멍만 있는 자리는 피함)
+  moveSpot(size = 3) {
+    const cand = [];
+    for (let r = 0; r + size <= ROWS; r++) for (let c = 0; c + size <= COLS; c++) {
+      let open = 0;
+      for (let i = 0; i < size; i++) for (let j = 0; j < size; j++) if (!hole(r + i, c + j)) open++;
+      if (open >= size * size - 2 && !(Board.spot && Board.spot.r === r && Board.spot.c === c)) cand.push([r, c]);
+    }
+    if (!cand.length) return Board.spot;
+    const [r, c] = cand[Math.floor(boardRand() * cand.length)];
+    return (Board.spot = { r, c, size });
+  },
+  inSpot: (r, c) => !!Board.spot && r >= Board.spot.r && r < Board.spot.r + Board.spot.size && c >= Board.spot.c && c < Board.spot.c + Board.spot.size,
 
   // 물살: r번째 줄의 구슬들이 dir(1 오른쪽, -1 왼쪽)으로 한 칸씩 밀림. 끝에 닿은 구슬은 반대쪽 끝으로 돌아 들어옴
   // 장애물·리본·재료·구멍은 제자리, 그 사이 구슬끼리만 돎. 반환: [{ tile, from: [r, c], to: [r, c], wrap }]

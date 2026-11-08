@@ -14,8 +14,12 @@ const Guard = {
       return `${scr} ${B.mode} ${k} ${name} ${ROWS}x${COLS} busy=${B.busy} over=${B.over}`;
     } catch { return '?'; }
   },
+  // 고칠 수 없는 잡음: 사파리 IndexedDB 속(파이어베이스 저장소)·다른 출처 스크립트("Script error.")·끊긴 요청
+  // (예전 기록에서 반복됨. 한 번 켤 때 8개 한도를 먹어서 진짜 에러가 안 남던 것)
+  NOISE: /Indexed Database server|without an in-progress transaction|^Script error\.?$|The user aborted a request/,
   report(kind, msg, stack = '') {
     const key = kind + ':' + msg;
+    if (Guard.NOISE.test(String(msg))) return;
     if (Guard.seen.has(key) || Guard.sent >= 8) return;
     Guard.seen.add(key);
     Guard.sent++;
