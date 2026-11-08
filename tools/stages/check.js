@@ -6,7 +6,9 @@ const { load } = require(path.join(ROOT, 'tools', 'sim.js'));
 const vm = require('vm');
 const ctx = load();
 const G = vm.runInContext('({ LIFE, STAGES, ROUTE, CHAPTERS, STORY, STORY_AFTER, LIFE_STORY, LIFE_STORY_AFTER, CHAR_NAME, MONSTERS, STORY_CAST, LIFE_CHARS, CHARS })', ctx);
-const item = n => ['.webp', '.png'].some(x => fs.existsSync(path.join(ROOT, 'assets', 'img', 'items', n + x)));
+// 그림 이름은 게임처럼 ITEM_ALIAS를 거쳐서 찾음 (예: honey → honey_pot, sakura → sakura2)
+const ALIAS = vm.runInContext('typeof ITEM_ALIAS === "object" ? ITEM_ALIAS : {}', ctx);
+const item = n => ['.webp', '.png'].some(x => fs.existsSync(path.join(ROOT, 'assets', 'img', 'items', (ALIAS[n] || n) + x)));
 const bad = [];
 const err = (where, msg) => bad.push(`${where}: ${msg}`);
 G.LIFE.forEach((st, i) => {
