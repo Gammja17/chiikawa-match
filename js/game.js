@@ -703,8 +703,8 @@ function playStory(lines) {
 
 // ---------- 모달 ----------
 // 글자 속 기호(🏠 ▶ ◀ 🎁 👑)를 손그림 아이콘으로: 기본 이모지는 폰마다 다르게(또는 네모 상자로) 나와서 안 씀 (글은 코드에 적힌 것만 들어옴)
-const UI_ICON = { '🏠': 'assets/img/ui/home.png', '▶': 'assets/img/ui/next.png', '◀': 'assets/img/ui/back.png', '🎁': ITEM('gift'), '👑': ITEM('crown') };
-const uiIcons = s => s.replace(/🏠|▶|◀|🎁|👑/g, m => `<img class="b-ic" src="${UI_ICON[m]}" alt="">`);
+const UI_ICON = { '🏠': 'assets/img/ui/home.png', '▶▶': 'assets/img/ui/ff.webp', '▶': 'assets/img/ui/next.png', '◀': 'assets/img/ui/back.png', '🎁': ITEM('gift'), '👑': ITEM('crown') };
+const uiIcons = s => s.replace(/🏠|▶▶|▶|◀|🎁|👑/g, m => `<img class="b-ic${m === '▶▶' ? ' ff' : ''}" src="${UI_ICON[m]}" alt="">`);
 function modal({ title, stars = null, char, img = null, photo = false, rows = [], text, btn1, on1, btn2 = '', on2 = null, btn3 = '', on3 = null, share = false }) {
   $('#modalTitle').textContent = title;
   // 클리어 자랑하기 (js/share.js): 그림은 결과 창을 띄우기 전에 Share.prepare로 미리 만들어 둠

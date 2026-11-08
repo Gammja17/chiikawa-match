@@ -235,6 +235,8 @@ const CREDITS = [
         // 인어섬 편(31~40장) 기믹·판 아이콘 (GPT Image 2.6, 2026-11)
         'boat.webp', 'clam.webp', 'clam_open.webp', 'coral.webp', 'crab.webp', 'fish.webp', 'flow.webp', 'fog.webp', 'ink.webp', 'island.webp',
         'letter.webp', 'moon.webp', 'note.webp', 'sand.webp', 'seamap.webp', 'shield.webp', 'storm.webp', 'wave.webp', 'whirl.webp',
+        // Noto Emoji였던 것을 스티커 그림으로 (GPT Image 2.6, 2026-11)
+        'crown2.webp', 'honey_pot.webp',
       ],
       'img/map': ['m1.jpg', 'm10.jpg', 'm2.jpg', 'm3.jpg', 'm4.jpg', 'm5.jpg', 'm6.jpg', 'm7.jpg', 'm8.jpg', 'm9.jpg', 'm11.jpg', 'm12.jpg', 'm13.jpg', 'm14.jpg'],
       'img/obst': [
@@ -243,7 +245,7 @@ const CREDITS = [
       ],
       'img/stage': ['s1.jpg', 's10.jpg', 's2.jpg', 's3.jpg', 's4.jpg', 's5.jpg', 's6.jpg', 's7.jpg', 's8.jpg', 's9.jpg', 's11.jpg', 's12.jpg', 's13.jpg', 's14.jpg'],
       'img/ui': [
-        'back.png', 'bar_fill.png', 'bar_fill_red.png', 'bar_frame.png', 'book.png', 'cd_clock.png', 'check.png', 'crown.png',
+        'back.png', 'bar_fill.png', 'bar_fill_red.png', 'bar_frame.png', 'book.png', 'cd_clock.png', 'check.png', 'crown.png', 'ff.webp',
         'debuff_drain.webp', 'debuff_poison.webp', 'debuff_sleep.webp', 'debuff_weak.webp', 'fx_dark.webp', 'fx_dust.webp',
         'fx_poison.webp', 'fx_sleep.webp', 'gear.png', 'home.png', 'lock.png', 'logo.png', 'next.png', 'note.png', 'ring_fill.png',
         'ring_frame.png', 'sk_burst.png', 'sk_cross.png', 'sk_line_h.png', 'sk_line_v.png', 'sk_meteor.png', 'sk_rally.png',
@@ -299,8 +301,8 @@ const CREDITS = [
     did: '크기를 맞추고 일부는 흰 테두리를 그림',
     files: {
       'img/items': [
-        'bed.webp', 'berry.webp', 'bomb.webp', 'boom.webp', 'candle.webp', 'cap.webp', 'crown.webp', 'frame.webp', 'gradcap.webp', 'h.webp',
-        'honey.webp', 'mirror.webp', 'phones.webp', 'plane.webp', 'plant.webp', 'rainbow.webp', 'rocket.webp', 'sakura.webp', 'shades.webp',
+        'bed.webp', 'berry.webp', 'bomb.webp', 'boom.webp', 'candle.webp', 'cap.webp', 'frame.webp', 'gradcap.webp', 'h.webp',
+        'mirror.webp', 'phones.webp', 'plane.webp', 'plant.webp', 'rainbow.webp', 'rocket.webp', 'sakura.webp', 'shades.webp',
         'sofa.webp', 'sponge.webp', 'sunflower.webp', 'teddy.webp', 'tophat.webp', 'tv.webp', 'v.webp',
       ],
     },

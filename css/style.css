@@ -55,7 +55,7 @@ button { font-family: inherit; color: inherit; cursor: pointer; border: 0; backg
 .btn-set::before { background-image: url(../assets/img/ui/gear.png); }
 .btn-tomap::before, #btnFormBack::before { background-image: url(../assets/img/ui/back.png); }
 .b-ic { width: 1.05em; height: 1.05em; margin: 0 .2em; vertical-align: -.15em; object-fit: contain; }
-.b-ic + .b-ic { margin-left: -.35em; } /* ▶▶ 빨리 감기: 화살표 두 개를 붙여서 */
+.b-ic.ff { width: 1.35em; } /* ▶▶ 빨리 감기 그림은 옆으로 김 */
 .crown-ic { width: 22px; height: 22px; }
 .gchip b .ck { width: 18px; height: 18px; vertical-align: -3px; }
 .goal-check img { width: 64px; height: 64px; display: block; }
