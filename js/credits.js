@@ -206,7 +206,7 @@ const CREDITS = [
   { sec: 'made', title: 'VARCO로 생성한 그림', by: '이 게임에서 생성',
     src: [['VARCO (NCSOFT)', 'https://3d.varco.ai']],
     did: '배경을 지우고 크기를 맞춤',
-    note: '배경·지도·지역 풍경, 라멘 가게, 집 벽지·바닥, 가구, 아이템(랏코 검·폭탄·경단·종이비행기), 장애물, 터짐 조각, 체력바·스킬 고리, 버튼 아이콘, 제목 로고, 판 목표 글자',
+    note: '배경·지도·지역 풍경, 라멘 가게, 집 벽지·바닥, 가구, 아이템(랏코 검·폭탄·경단·종이비행기·장 별 보상 상자), 장애물, 터짐 조각, 체력바·스킬 고리, 버튼 아이콘, 제목 로고, 판 목표 글자',
     files: {
       'img': ['battle_bg.jpg', 'map_bg.jpg', 'ramen_bg.jpg'],
       'img/combo': [
@@ -230,7 +230,7 @@ const CREDITS = [
         'f_kotatsu.webp', 'f_lamp.webp', 'f_monstera.webp', 'f_poster.webp', 'f_rice.webp', 'f_rug.webp', 'f_shelf.webp', 'f_sofa.webp',
         'f_stool.webp', 'f_table.webp', 'f_tissue.webp', 'f_toybox.webp', 'f_tv.webp', 'f_wclock.webp', 'f_window.webp', 'gift.webp',
         'hand.webp', 'heart.webp', 'house.webp', 'medal.webp', 'naruto.webp', 'onigiri.webp', 'pancake.webp', 'paperplane.webp',
-        'paperplane_o.webp', 'parfait.webp', 'pot.webp', 'ramen.webp', 'ribbon.webp', 'sparkle.webp', 'star.webp', 'stick.webp',
+        'paperplane_o.webp', 'parfait.webp', 'pot.webp', 'ramen.webp', 'ribbon.webp', 'sparkle.webp', 'star.webp', 'starchest.webp', 'stick.webp',
         'sword.webp', 'sword_o.webp', 'target.webp', 'timer.webp', 'weed1.webp', 'weed2.webp',
       ],
       'img/map': ['m1.jpg', 'm10.jpg', 'm2.jpg', 'm3.jpg', 'm4.jpg', 'm5.jpg', 'm6.jpg', 'm7.jpg', 'm8.jpg', 'm9.jpg'],
