@@ -78,6 +78,7 @@ if (fs.existsSync(HS)) {
     if (!G.CHAPTERS[j]) err(`HARD_STORY[${j}]`, '없는 장');
     Object.entries(s).forEach(([k, l]) => { if (k !== 'start' && k !== 'end') err(`HARD_STORY[${j}]`, `모르는 칸 ${k}`); books[`HARD_STORY[${j}].${k}`] = l; });
   }
+  G.CHAPTERS.forEach((_, j) => ['start', 'end'].forEach(k => HARD_STORY[j]?.[k]?.length || err(`HARD_STORY[${j}]`, `${j + 1}장 ${k} 대사 없음`)));
   for (const [name, lines] of Object.entries(books)) lines.forEach(([id, a]) => {
     if (id === 'scene') { if (!fs.existsSync(path.join(ROOT, a))) err(name, `장면 그림 없음 ${a}`); return; }
     G.CHAR_NAME[id] || G.MONSTERS[id] || G.STORY_CAST[id] || err(name, `모르는 친구 ${id}`);
