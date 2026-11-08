@@ -49,7 +49,9 @@ const routeStage = k => (ROUTE[k][0] === 'b' ? STAGES : LIFE)[ROUTE[k][1]];
 const routeStars = k => (ROUTE[k][0] === 'b' ? Save.data.stars : Save.data.life || [])[ROUTE[k][1]];
 const routeIdx = (t, i) => ROUTE.findIndex(([tt, ii]) => tt === t && ii === i);
 const unlockedIdx = () => { const k = ROUTE.findIndex((_, k) => routeStars(k) == null); return k < 0 ? ROUTE.length - 1 : k; };
-const goRoute = k => (ROUTE[k][0] === 'b' ? openFormation(ROUTE[k][1]) : Life.start(ROUTE[k][1]));
+const goRoute = k => { Hard.play = false; return ROUTE[k][0] === 'b' ? openFormation(ROUTE[k][1]) : Life.start(ROUTE[k][1]); };
+// 지금 토벌 판 (하드면 하드 값으로 덮은 판, js/hard.js)
+const bStage = () => (B.hard ? B.hardSt : STAGES[B.stage]);
 
 // 이미지 미리 불러오기
 [...CHARS.map(c => FACE(c.id)), ...CHARS.map(c => TILE(c.id)),
@@ -571,12 +573,15 @@ function stageBg(k) {
 
 function openMap(advanceFrom = null, paging = false) {
   Life.stopTimer();
+  Hard.play = false; // 하드 판은 지도에서 다시 고를 때 정함
   show('map');
+  Hard.toggleUi(); // 오른쪽 위 보통/HARD 스위치 (js/hard.js)
+  const hard = Hard.on;
   Meta.coinUI();
   Hearts.ui();
   if (!paging && clearedCount() > 0) Meta.checkDaily(); // 출석 도장은 첫 판을 깬 뒤부터 (처음엔 바로 첫 판으로)
   const STAGES = ROUTE.map((_, k) => routeStage(k));
-  const cur = unlockedIdx(), pages = Math.ceil(STAGES.length / MAP_PAGE);
+  const ncur = unlockedIdx(), cur = hard ? Hard.cur() : ncur, pages = Math.ceil(STAGES.length / MAP_PAGE);
   // 지도는 30판(3장)씩 한 지역: 위의 ◀ ▶로 넘김. 판을 깨고 오면 지금 판이 있는 지역으로
   if (advanceFrom != null || mapPage == null) mapPage = Math.min(pages - 1, Math.floor(cur / MAP_PAGE));
   if (advanceFrom != null && Math.floor(advanceFrom / MAP_PAGE) !== mapPage) advanceFrom = null; // 새 지역으로 넘어가면 걷는 연출 없이
@@ -584,13 +589,13 @@ function openMap(advanceFrom = null, paging = false) {
   $('#mapRegion').textContent = REGIONS[r];
   $('#mapRange').textContent = `스테이지 ${a0 + 1}~${a1}`;
   $('#mapPrev').disabled = mapPage === 0;
-  $('#mapNext').disabled = mapPage >= pages - 1 || mapPage > Math.floor(cur / MAP_PAGE); // 지금 지역의 다음 지역까지만 미리 보기
+  $('#mapNext').disabled = mapPage >= pages - 1 || mapPage > Math.floor(ncur / MAP_PAGE); // 지금 지역의 다음 지역까지만 미리 보기
   $('#mapScroll').style.backgroundImage = `url(assets/img/map/m${REGION_ART[r]}.jpg)`;
   Sound.music('map');
   $('#btnRamen').classList.toggle('on', ramenFree() && !Save.data.buff);
   friendsDot();
   rankDot();
-  if (!paging) { Achieve.check(); ChapStar.notify(); }
+  if (!paging) { Achieve.check(); ChapStar.notify(); setTimeout(Hard.prize, 900); }
   const path = $('#mapPath');
   path.innerHTML = '';
   path.style.height = NODE_TOP + (a1 - a0) * NODE_GAP + 40 + 'px';
@@ -612,7 +617,7 @@ function openMap(advanceFrom = null, paging = false) {
   CHAPTERS.forEach(([at, name], j) => {
     if (at < a0 || at >= a1) return;
     const b = document.createElement('div');
-    b.className = 'chapter-band' + (at > cur ? ' locked' : '');
+    b.className = 'chapter-band' + ((hard ? !Hard.open(j) : at > cur) ? ' locked' : '');
     // 지금 판이 장 첫 판이면 위쪽은 친구들·판 이름이 차지해서, 띠를 별 아래로 내림 (안 그러면 셋이 겹쳐 글자가 가려짐)
     b.style.top = pts[at].y + (at === cur ? 70 : -NODE_GAP / 2) + 'px';
     b.dataset.chap = j;
@@ -626,26 +631,26 @@ function openMap(advanceFrom = null, paging = false) {
   STAGES.forEach((st, i) => {
     if (i < a0 || i >= a1) return;
     const n = document.createElement('button');
-    const locked = i > cur;
+    const locked = hard ? Hard.locked(i) : i > cur;
     const boss = st.waves?.some(w => w.boss);
     const lv = routeLevel(i);
     n.className = 'node' + (locked ? ' locked' : '') + (boss ? ' boss' : '') + (i === cur ? ' current' : '') + (lv ? ' ' + lv : '');
     n.style.left = pts[i].x + 'px';
     n.style.top = pts[i].y + 'px';
-    const s = routeStars(i) || 0;
+    const s = (hard ? Hard.stars(i) : routeStars(i)) || 0;
     const lastW = !st.icon && st.waves[st.waves.length - 1];
     const icon = st.icon ? ITEM(st.icon) : MONSTERS[lastW.m].img;
     const tint = lastW && monHue(lastW) ? ` style="filter:hue-rotate(${monHue(lastW)}deg) saturate(1.3)"` : ''; // 토벌 칸은 마지막 괴물 그림 (색 변형까지)
     const kind = st.exam ? ['exam', 'gradcap'] : st.icon ? ['life', 'plant'] : ['hunt', 'sword']; // 일상·토벌·시험 배지
     n.innerHTML = `<i class="nkind ${kind[0]}"><img src="${ITEM(kind[1])}" alt=""></i>` + (st.host ? `<img class="nhost" src="${FACE(st.host)}" alt="">` : '') + (locked ? LOCK_SVG : `<img class="nicon" src="${icon}"${tint} loading="lazy"><span class="nnum">${i + 1}</span>`) +
       (i === cur ? `<span class="nname">${st.name}</span>` : '') +
-      (lv && !locked ? `<span class="ntag">${lv === 'hard' ? 'HARD' : '도전'}</span>` : '') +
+      (lv && !locked ? `<span class="ntag">${lv === 'hard' ? (hard ? 'HARD+' : 'HARD') : '도전'}</span>` : '') +
       (s ? `<span class="nstars">${[0, 1, 2].map(k => `<i class="${k < s ? 'on' : ''}"></i>`).join('')}</span>` : '');
     if (!st.icon) n.classList.add('battle');
     n.onclick = () => {
-      if (locked) { Sound.play('bad'); n.animate([{ transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' }, { transform: 'none' }], { duration: 200 }); return; }
+      if (locked) { if (hard) Hard.why(i); Sound.play('bad'); n.animate([{ transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' }, { transform: 'none' }], { duration: 200 }); return; }
       Sound.play('click');
-      Hearts.need(() => go(() => goRoute(i)));
+      Hearts.need(() => go(() => (hard ? Hard.go(i) : goRoute(i))));
     };
     path.appendChild(n);
   });
@@ -812,14 +817,15 @@ Object.defineProperty(B, 'monMax', { get: () => tgt()?.max ?? 1 });
 const monImg = () => (tgt() || B.lastMon || B.mons?.[0])?.el.img || $('#monster');
 const cdEl = () => (tgt() || B.mons?.[0])?.el.cd || $('#countdown');
 // 지금 때리는 괴물의 정보 (속성·공격력 등)
-const curWave = () => tgt()?.w || STAGES[B.stage].waves[B.wave];
+const curWave = () => tgt()?.w || bStage().waves[B.wave];
 // 이 웨이브에 나오는 괴물들: 둘이면 체력 55%씩(합 1.1배), 셋이면 38%씩. 공격은 나눠서 약하게, 카운트다운은 1씩 어긋나게
 function waveMembers(stage, wv) {
-  const w = STAGES[stage].waves[wv], k = routeIdx('b', stage);
+  const S0 = stage === B.stage && B.hard ? B.hardSt : STAGES[stage];
+  const w = S0.waves[wv], k = routeIdx('b', stage);
   let n = w.group || 0;
   if (!n && !w.boss && wv === 0 && k >= GROUP_AT) n = k >= TRIO_AT && stage % 2 === 0 ? 3 : 2;
   if (n < 2) return [w];
-  const others = STAGES[stage].waves.filter(x => !x.boss && x !== w);
+  const others = S0.waves.filter(x => !x.boss && x !== w);
   const share = n === 2 ? 0.55 : 0.38, atkK = n === 2 ? 0.6 : 0.45;
   return Array.from({ length: n }, (_, j) => {
     const base = j === 0 ? w : others[j - 1] || { ...w, hue: (monHue(w) + 50 * j) % 360 };
@@ -1129,7 +1135,7 @@ function spawnMonster(animated) {
     return m;
   });
   Sound.music(list.some(w => w.boss) ? 'boss' : 'battle'); // 보스가 나오면 곡이 바뀜
-  const nw = STAGES[B.stage].waves.length;
+  const nw = bStage().waves.length;
   $('#waveInfo').innerHTML = nw > 1 ? Array.from({ length: nw }, (_, k) => `<i class="${k <= B.wave ? 'on' : ''}"></i>`).join('') : '';
   markMatchup();
   markPick();
@@ -1165,6 +1171,7 @@ async function startStage(i) {
   Board.spawnIng = null;
   Board.spot = null;
   boardEl.classList.remove('flow-soon', 'beat-now');
+  B.hard = Hard.play; B.hardSt = B.hard ? Hard.battle(i) : null; // 하드 모드 (js/hard.js)
   B.stage = i; B.wave = 0; B.over = false; B.busy = true; B.inSkill = false; B.sel = null; B.pending = [];
   const bowl = Ramen.takeBattle(); // 먹고 온 라멘
   B.teamHp = B.teamMax = (bowl && (bowl.id === 'hp' || bowl.id === 'okinawa') ? 150 : 120) + trainLv('hp') * TRAIN.hp.per; // + 라멘 체력 수련
@@ -1183,9 +1190,10 @@ async function startStage(i) {
   B.played = false;
   NTYPES = B.team.length;
   B.gauge = B.team.map((k, j) => (j < B.real && bowl && (bowl.id === 'gauge' || bowl.id === 'okinawa') ? Math.floor(skillNeed(CHARS[k].id, false) / 2) : 0));
-  const help = Help.level('b', i); // 여러 번 막힌 스테이지면 응원 선물 (js/stats.js)
+  const help = B.hard ? 0 : Help.level('b', i); // 여러 번 막힌 스테이지면 응원 선물 (js/stats.js). 하드는 없음
   Help.battle(help);
-  Stats.start('b', i, help);
+  if (B.hard) { if (Stats.run && !Stats.run.ended) Stats.end('quit'); Stats.run = null; } // 하드 판은 플레이 기록(GA)에 안 섞음
+  else Stats.start('b', i, help);
   show('battle');
   stageTitle(routeIdx('b', i), STAGES[i].name);
   buildParty();
@@ -1199,9 +1207,10 @@ async function startStage(i) {
   setTimeout(speedLines, 600);
   spawnMonster(false);
   updateTeam();
-  if (STORY[i] && Save.data.stars[i] == null) await playStory(STORY[i]);
+  if (B.hard) await Hard.intro(routeIdx('b', i), 'usagi'); // 하드는 대사 대신 장 첫 판에 한 줄
+  else if (STORY[i] && Save.data.stars[i] == null) await playStory(STORY[i]);
   await Help.say(help, 'b');
-  await dropIn(routeLevel(routeIdx('b', i)) === 'hard' ? 'HARD!' : '토벌 시작!');
+  await dropIn(B.hard ? 'HARD MODE!' : routeLevel(routeIdx('b', i)) === 'hard' ? 'HARD!' : '토벌 시작!');
   if (bowl) banner(`${bowl.name}!`, 500);
   B.busy = false;
   Tutor.onStart();
@@ -1223,9 +1232,10 @@ setInterval(() => {
 
 // 스테이지 제목 + 난이도 딱지
 function stageTitle(k, name) {
-  const lv = k >= 0 ? routeLevel(k) : '';
-  $('#stageName').innerHTML = (lv ? `<b class="lvtag ${lv}">${lv === 'hard' ? 'HARD' : '도전'}</b>` : '') + (k >= 0 ? `${k + 1}. ` : '') + name;
-  app.classList.toggle('hard-stage', lv === 'hard');
+  const lv = k >= 0 ? routeLevel(k) : '', hm = k >= 0 && Hard.play; // 하드 모드 판은 보라 딱지 하나 (난이도 딱지 대신)
+  $('#stageName').innerHTML = (hm ? '<b class="lvtag hm">HARD MODE</b>' : lv ? `<b class="lvtag ${lv}">${lv === 'hard' ? 'HARD' : '도전'}</b>` : '') + (k >= 0 ? `${k + 1}. ` : '') + name;
+  app.classList.toggle('hard-stage', !hm && lv === 'hard');
+  app.classList.toggle('hard-mode', hm);
 }
 
 // 판 떨어지며 등장
@@ -2437,7 +2447,7 @@ async function monsterDefeated() {
   out.cancel();
   if (last?.w.boss) Achieve.add('boss');
   B.wave++;
-  if (B.wave < STAGES[B.stage].waves.length) {
+  if (B.wave < bStage().waves.length) {
     await banner(`WAVE ${B.wave + 1}`, 400);
     spawnMonster(true);
     await sleep(500);
@@ -2451,33 +2461,37 @@ async function win() {
   B.busy = true;
   const ratio = B.teamHp / B.teamMax;
   const stars = ratio >= 0.7 ? 3 : ratio >= 0.35 ? 2 : 1;
-  const firstClear = Save.data.stars[B.stage] == null;
-  Stats.end('clear', { stars, hp_left: Math.round(ratio * 100) });
-  const coins = Meta.reward(stars, firstClear), treat = Meta.treat('b', B.stage, stars, firstClear);
+  const hard = B.hard; // 하드 모드: 별은 따로 (js/hard.js), 처음 깬 판 보상(라멘·이야기·친구 합류·랭킹)은 보통 판에서만
+  const firstClear = (hard ? Hard.s().b : Save.data.stars)[B.stage] == null;
+  if (!hard) Stats.end('clear', { stars, hp_left: Math.round(ratio * 100) });
+  const coins = Hard.coins(Meta.reward(stars, firstClear), hard), treat = Meta.treat('b', B.stage, stars, firstClear);
   Daily.add('win');
   Daily.add('battle');
   Aff.afterWin(B.team.slice(0, B.real).map(k => CHARS[k].id));
-  if (firstClear) Save.data.ramen = true;
-  Save.data.stars[B.stage] = Math.max(Save.data.stars[B.stage] || 0, stars);
+  if (hard) Hard.win('b', B.stage, stars);
+  else {
+    if (firstClear) Save.data.ramen = true;
+    Save.data.stars[B.stage] = Math.max(Save.data.stars[B.stage] || 0, stars);
+  }
   setTimeout(() => Net.submit(), 0);
   Save.save();
-  const rank = firstClear && Net.clearRank();
+  const rank = firstClear && !hard && Net.clearRank();
   Sound.play('win', 1);
   await clearShow();
-  const k = routeIdx('b', B.stage), isLast = k === ROUTE.length - 1;
-  if (STORY_AFTER[B.stage] && firstClear) await playStory(STORY_AFTER[B.stage]); // 장 끝 대사
-  if (firstClear) await Meta.stageJoin('b', B.stage);
+  const k = routeIdx('b', B.stage), next = hard ? Hard.next(k) : k + 1, isLast = next < 0 || next >= ROUTE.length;
+  if (STORY_AFTER[B.stage] && firstClear && !hard) await playStory(STORY_AFTER[B.stage]); // 장 끝 대사
+  if (firstClear && !hard) await Meta.stageJoin('b', B.stage);
   const ch = mvp(), shard = firstClear && Meta.shardGift(ch.id, stars);
   Sound.music(null);
   const from = k;
-  Share.prepare({ k, name: STAGES[B.stage].name, stars, mode: 'b', char: ch.id, rows: [['남은 체력', Math.round(ratio * 100) + '%']] });
+  Share.prepare({ k, name: STAGES[B.stage].name + (hard ? ' (HARD)' : ''), stars, mode: 'b', char: ch.id, rows: [['남은 체력', Math.round(ratio * 100) + '%']] });
   modal({
     share: true, song: !!STAGES[B.stage].song,
-    title: '토벌 성공!', stars, char: ch.id, text: `MVP ${ch.name}: "${lineOf(ch.id)}"`,
+    title: hard ? 'HARD 토벌 성공!' : '토벌 성공!', stars, char: ch.id, text: `MVP ${ch.name}: "${lineOf(ch.id)}"`,
     rows: [['남은 체력', Math.round(ratio * 100) + '%'], [`<img class="row-ic" src="${ITEM('coin')}">`, '+' + coins], treat, shard].filter(Boolean),
     btn2: '🏠 지도로', on2: () => go(() => openMap(firstClear ? from : null)),
-    btn1: isLast ? '🏠 지도로' : Unlock.fresh() ? '🎁 새 기능 보러 가기' : '다음 스테이지 ▶', // 새 기능이 열렸으면 지도로 데려가서 안내
-    on1: () => (isLast || Unlock.fresh() ? go(() => openMap(firstClear ? from : null)) : Hearts.need(() => go(() => goRoute(k + 1)), () => go(() => openMap(firstClear ? from : null)))),
+    btn1: isLast ? '🏠 지도로' : !hard && Unlock.fresh() ? '🎁 새 기능 보러 가기' : '다음 스테이지 ▶', // 새 기능이 열렸으면 지도로 데려가서 안내
+    on1: () => (isLast || (!hard && Unlock.fresh()) ? go(() => openMap(firstClear ? from : null)) : Hearts.need(() => go(() => (hard ? Hard.go(next) : goRoute(next))), () => go(() => openMap(firstClear ? from : null)))),
   });
   Net.rankLine(rank);
 }
@@ -2492,7 +2506,7 @@ async function lose() {
   const lost = () => Stats.end('fail', { monster_hp: monLeft, wave: B.wave + 1 });
   modal({
     title: '실패…', stars: 0, img: 'assets/img/art/scene_scared.jpg', photo: true, text: '치이카와: (훌쩍…) 상성 좋은 친구랑 다시 가 보자',
-    rows: [['괴물 체력', Math.ceil((aliveMons().reduce((t, m) => t + m.hp, 0) / Math.max(1, (B.mons || []).reduce((t, m) => t + m.max, 0))) * 100) + '%'], ['웨이브', `${B.wave + 1} / ${STAGES[B.stage].waves.length}`], [`<img class="row-ic" src="${ITEM('heart')}">`, '-1']],
+    rows: [['괴물 체력', Math.ceil((aliveMons().reduce((t, m) => t + m.hp, 0) / Math.max(1, (B.mons || []).reduce((t, m) => t + m.max, 0))) * 100) + '%'], ['웨이브', `${B.wave + 1} / ${bStage().waves.length}`], [`<img class="row-ic" src="${ITEM('heart')}">`, '-1']],
     btn2: '🏠 지도로', on2: () => { lost(); Hearts.lose(); go(openMap); },
     btn1: '다시 하기', on1: () => { lost(); Hearts.lose(); Hearts.need(() => go(() => startStage(B.stage)), () => go(openMap)); },
     ...(!B.cont && (Items.n('cont') || Save.data.coins >= itemPrice('cont')) ? { // 이어하기: 체력 절반 채우고 그 자리에서 계속. 이어하기권이 없으면 코인으로, 스테이지마다 한 번
@@ -2523,7 +2537,8 @@ function openFormation(i) {
   const saved = (Save.data.team || DEFAULT_TEAM).map(id => CHARS.findIndex(c => c.id === id)).filter(k => k >= 0);
   formPick = saved.filter(k => Meta.owned(CHARS[k].id)).slice(0, TEAM_SIZE);
   show('formation');
-  $('#formStage').textContent = `${routeIdx('b', i) + 1}. ${STAGES[i].name}`;
+  $('#formStage').textContent = `${Hard.play ? 'HARD · ' : ''}${routeIdx('b', i) + 1}. ${STAGES[i].name}`;
+  $('#formation').classList.toggle('hard-mode', Hard.play);
   const seen = new Set();
   $('.attr-rule').innerHTML = matchupSVG();
   $('#formEnemies').innerHTML = STAGES[i].waves.filter(w => {

@@ -15,3 +15,6 @@ dist/
 
 # 화면 점검 스크린샷 (tools/visual-todo.md가 가리킴, 저장소에는 안 올림)
 tools/shots/
+
+# 하드 모드 봇 깨는 비율 보고 (node tools/stages/hard.js --report가 씀)
+tools/stages/hard-report.json

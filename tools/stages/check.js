@@ -1,4 +1,5 @@
 // 스테이지 데이터 점검: 판 크기, 목표와 판 글자, 얼굴 가짓수, 아이콘·재료 그림 파일, 대사 속 친구, 괴물
+// 하드 모드 값(js/hard-data.js)도 보통 판에 덮어 같은 점검 + 500판이 다 있는지, 판 크기가 같은지, 이동이 보통보다 적은지
 //   node tools/stages/check.js
 const fs = require('fs'), path = require('path');
 const ROOT = path.join(__dirname, '..', '..');
@@ -9,8 +10,7 @@ const G = vm.runInContext('({ LIFE, STAGES, ROUTE, CHAPTERS, STORY, STORY_AFTER,
 const item = n => ['.webp', '.png'].some(x => fs.existsSync(path.join(ROOT, 'assets', 'img', 'items', n + x)));
 const bad = [];
 const err = (where, msg) => bad.push(`${where}: ${msg}`);
-G.LIFE.forEach((st, i) => {
-  const w = `일상 ${i} ${st.name}`;
+const checkLife = (st, w) => {
   const R = st.map.length, C = st.map[0].length;
   if (R < 5 || R > 9 || C < 5 || C > 9) err(w, `판 크기 ${R}x${C}`);
   if (st.map.some(r => r.length !== C)) err(w, '줄 길이가 다름');
@@ -45,7 +45,29 @@ G.LIFE.forEach((st, i) => {
   if (!(st.moves > 0) && !(st.time > 0)) err(w, '이동 수·시간 없음');
   if (!(st.stars[0] < st.stars[1] && st.stars[1] < st.stars[2])) err(w, `별 점수 순서 ${st.stars}`);
   if (st.host && !G.CHAR_NAME[st.host]) err(w, `host ${st.host}`);
-});
+};
+G.LIFE.forEach((st, i) => checkLife(st, `일상 ${i} ${st.name}`));
+// 하드 모드
+const HD = path.join(ROOT, 'js', 'hard-data.js');
+if (fs.existsSync(HD)) {
+  vm.runInContext(fs.readFileSync(HD, 'utf8') + ';this.HARD_DATA = HARD_DATA;', ctx, { filename: 'js/hard-data.js' });
+  const H = ctx.HARD_DATA;
+  G.ROUTE.forEach(([t, i], k) => {
+    const h = H[t][i], w = `하드 ${k + 1} ${(t === 'b' ? G.STAGES : G.LIFE)[i].name}`;
+    if (!h) return err(w, '하드 값 없음 (node tools/stages/hard.js)');
+    if (t === 'b') {
+      const st = G.STAGES[i];
+      if (h.waves.length !== st.waves.length) err(w, '웨이브 수가 다름');
+      h.waves.forEach(x => { if (!(x.hp > 0 && x.atk > 0 && x.atk <= 120 && x.cd >= 2)) err(w, `괴물 값 ${JSON.stringify(x)}`); });
+      return;
+    }
+    const st = G.LIFE[i], hs = { ...JSON.parse(JSON.stringify(st)), ...JSON.parse(JSON.stringify(h)) };
+    checkLife(hs, w);
+    if (hs.map.length !== st.map.length || hs.map[0].length !== st.map[0].length) err(w, '판 크기가 보통과 다름');
+    if (st.moves && !(hs.moves < st.moves)) err(w, `이동 ${hs.moves} (보통 ${st.moves})`);
+    if (st.time && !(hs.time < st.time)) err(w, `시간 ${hs.time} (보통 ${st.time})`);
+  });
+} else err('js/hard-data.js', '없음');
 G.STAGES.forEach((st, i) => st.waves.forEach(wv => {
   if (!G.MONSTERS[wv.m]) err(`토벌 ${i} ${st.name}`, `괴물 ${wv.m}`);
   if (!(wv.hp > 0 && wv.atk > 0 && wv.cd > 0)) err(`토벌 ${i} ${st.name}`, '체력·공격·턴');

@@ -159,7 +159,7 @@ const Daily = {
       <button class="mini-btn" data-id="bonus" ${!all || ms.bonus ? 'disabled' : ''}>${ms.bonus ? '받음' : '받기'}</button></div>`;
     const cs = ChapStar.claimable();
     el.querySelector('.att-line').innerHTML = `출석 도장 ${Math.min(a.n, ATTEND.length)} / ${ATTEND.length}<button class="mini-btn" data-att>도장판 보기</button>`;
-    el.querySelector('.cs-line').innerHTML = `장 별 보상 ${ChapStar.fullCount()} / ${CHAPTERS.length}<button class="mini-btn${cs ? ' ready' : ''}" data-cs>${cs ? `받기 ${cs}` : '장 목록'}</button>`;
+    el.querySelector('.cs-line').innerHTML = `장 별 보상 ${ChapStar.fullCount()} / ${CHAPTERS.length}${Hard.any() ? ` · 하드 ${ChapStar.fullCount(true)}` : ''}<button class="mini-btn${cs ? ' ready' : ''}" data-cs>${cs ? `받기 ${cs}` : '장 목록'}</button>`;
     el.querySelectorAll('[data-id]').forEach(b => (b.onclick = () => {
       const id = b.dataset.id, c = centerOf(b);
       if (id === 'bonus') { ms.bonus = true; Daily.give({ tickets: 1 }); floatNum(c.x, c.y - 20, '뽑기 티켓 +1', '#ff5d9e'); }
