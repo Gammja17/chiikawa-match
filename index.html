@@ -298,7 +298,7 @@ window.__errs = [];
 addEventListener('error', e => window.__errs.push(['error', e.message, (e.filename || '') + ':' + e.lineno + ':' + e.colno + '\n' + (e.error?.stack || '')]));
 addEventListener('unhandledrejection', e => window.__errs.push(['promise', String(e.reason?.message || e.reason), e.reason?.stack || '']));
 </script>
-<script src="js/data.js?v=54"></script>
+<script src="js/data.js?v=55"></script>
 <script src="js/audio.js?v=33"></script>
 <script src="js/board.js?v=34"></script>
 <script src="js/particles.js?v=3"></script>
@@ -322,7 +322,7 @@ addEventListener('unhandledrejection', e => window.__errs.push(['promise', Strin
 <script src="js/share.js?v=2"></script>
 <script src="js/league.js?v=1"></script>
 <script src="js/testplay.js?v=1"></script>
-<script src="js/credits.js?v=5"></script>
+<script src="js/credits.js?v=6"></script>
 <script>if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(() => {});</script>
 </body>
 </html>
